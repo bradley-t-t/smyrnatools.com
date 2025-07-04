@@ -1,9 +1,12 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
 import {Mixer} from '../../models/Mixer';
+import {AuthService} from '../../services/auth/AuthService';
 import './MixerAddView.css';
 
-function MixerAddView({plants, operators, onClose, onMixerAdded}) {
+function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
+    // Check if we have operators
+    const hasOperators = Array.isArray(operators) && operators.length > 0;
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [assignedOperator, setAssignedOperator] = useState('0');
@@ -31,6 +34,12 @@ function MixerAddView({plants, operators, onClose, onMixerAdded}) {
         setIsSaving(true);
 
         try {
+            // Get current user ID
+            const userId = AuthService.currentUser?.id;
+            if (!userId) {
+                throw new Error('User ID not available. Please log in again.');
+            }
+
             // If status is not Active, operators should be unassigned
             const operatorToSave = status !== 'Active' ? '0' : assignedOperator;
 
@@ -44,20 +53,24 @@ function MixerAddView({plants, operators, onClose, onMixerAdded}) {
                 last_service_date: lastServiceDate || null,
                 last_chip_date: lastChipDate || null,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                updated_by: userId,
+                updated_last: new Date().toISOString()
             });
 
             // Save the new mixer
-            const savedMixer = await MixerService.createMixer(newMixer);
+            const savedMixer = await MixerService.createMixer(newMixer, userId);
 
             if (savedMixer) {
                 // Notify parent component
                 onMixerAdded(savedMixer);
                 onClose();
+            } else {
+                throw new Error('Failed to add mixer - no data returned from server');
             }
         } catch (error) {
             console.error('Error adding mixer:', error);
-            setError('Failed to add mixer. Please try again.');
+            setError(`Failed to add mixer: ${error.message || 'Unknown error'}`);
         } finally {
             setIsSaving(false);
         }
@@ -137,12 +150,28 @@ function MixerAddView({plants, operators, onClose, onMixerAdded}) {
                                 disabled={status !== 'Active'}
                             >
                                 <option value="0">Unassigned</option>
-                                {operators.map(operator => (
+                                {operators
+                                  .filter(operator => {
+                                    // Debug operators to see what positions are available
+                                    if (!hasOperators) {
+                                      console.log('No operators available');
+                                    }
+                                    // Handle case where position might not be set
+                                    return operator.position === "Mixer Operator" || 
+                                           operator.position?.toLowerCase().includes('mixer') ||
+                                           operator.position?.toLowerCase().includes('driver');
+                                  })
+                                  .map(operator => (
                                     <option key={operator.employeeId} value={operator.employeeId}>
                                         {operator.name}
                                     </option>
                                 ))}
                             </select>
+                            {operators.length === 0 && (
+                              <div className="warning-message" style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
+                                No operators available
+                              </div>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -154,10 +183,14 @@ function MixerAddView({plants, operators, onClose, onMixerAdded}) {
                                         type="button"
                                         className={`star-button ${cleanlinessRating >= star ? 'active' : ''}`}
                                         onClick={() => setCleanlinessRating(star)}
+                                        aria-label={`Set ${star} star rating`}
                                     >
-                                        ⭐
+                                        {cleanlinessRating >= star ? '★' : '☆'}
                                     </button>
                                 ))}
+                            </div>
+                            <div className="rating-text">
+                                {cleanlinessRating ? `${cleanlinessRating} star${cleanlinessRating !== 1 ? 's' : ''}` : 'Not Rated'}
                             </div>
                         </div>
 

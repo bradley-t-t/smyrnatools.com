@@ -99,8 +99,55 @@ class UserServiceImpl {
         if (userId === 'anonymous') return 'Anonymous';
 
         try {
+            // First check if it's an operator ID
+            const { data: opData } = await supabase
+                .from('operators')
+                .select('name')
+                .eq('employee_id', userId)
+                .single();
+
+            if (opData && opData.name) {
+                return opData.name;
+            }
+
+            // Next try to get user profile that might have first/last name
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', userId)
+                .single();
+
+            if (profileData && (profileData.first_name || profileData.last_name)) {
+                const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+                if (fullName) return fullName;
+            }
+
+            // If no profile with name, try to get the user from auth
             const user = await this.getUserById(userId);
-            return user.name || `User ${userId.substring(0, 8)}`;
+
+            // If user has name property, use it
+            if (user && user.name) {
+                return user.name;
+            }
+
+            // If user has first_name/last_name properties
+            if (user && (user.firstName || user.lastName)) {
+                return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+            }
+
+            // If user has email, extract name part before @ symbol
+            if (user && user.email) {
+                const emailName = user.email.split('@')[0];
+                // Convert email username to title case (e.g., john.doe -> John Doe)
+                return emailName
+                    .replace(/\./g, ' ')
+                    .split(' ')
+                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join(' ');
+            }
+
+            // Last resort - use user ID prefix
+            return `User ${userId.substring(0, 8)}`;
         } catch (error) {
             console.error(`[UserService] Error getting display name for ${userId}:`, error);
             return `User ${userId.substring(0, 8)}`;

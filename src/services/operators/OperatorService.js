@@ -405,4 +405,68 @@ export class OperatorService {
             return [];
         }
     }
+
+    /**
+     * Fetch operators with active status first
+     */
+    static async fetchOperators() {
+        try {
+            // First get all active operators
+            const {data: activeData, error: activeError} = await supabase
+                .from('operators')
+                .select('*')
+                .eq('status', 'Active')
+                .order('name');
+
+            if (activeError) throw activeError;
+
+            // Then get operators with other statuses
+            const {data: otherData, error: otherError} = await supabase
+                .from('operators')
+                .select('*')
+                .not('status', 'eq', 'Active')
+                .order('name');
+
+            if (otherError) throw otherError;
+
+            // Combine the results with active operators first
+            const operatorsData = [...(activeData || []), ...(otherData || [])];
+
+            // Convert to our model format, ensuring employee_id is properly mapped
+            return operatorsData.map(op => ({
+                employeeId: op.employee_id,
+                name: op.name,
+                plantCode: op.plant_code,
+                status: op.status,
+                isTrainer: op.is_trainer,
+                assignedTrainer: op.assigned_trainer,
+                position: op.position,
+                createdAt: op.created_at,
+                updatedAt: op.updated_at
+            }));
+        } catch (error) {
+            console.error('Error fetching operators:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get detailed operator information by employee ID
+     */
+    static async getOperatorById(employeeId) {
+        try {
+            const {data, error} = await supabase
+                .from('operators')
+                .select('*')
+                .eq('employee_id', employeeId)
+                .single();
+
+            if (error) throw error;
+
+            return data ? Operator.fromApiFormat(data) : null;
+        } catch (error) {
+            console.error(`Error fetching operator ${employeeId}:`, error);
+            return null;
+        }
+    }
 }

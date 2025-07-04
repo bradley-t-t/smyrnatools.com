@@ -113,30 +113,43 @@ export class MixerService {
      */
     static async addMixer(mixer, userId) {
         try {
+            if (!userId) {
+                console.error('No user ID provided when adding mixer');
+                throw new Error('Authentication required to add mixer');
+            }
+
             const apiData = mixer.toApiFormat ? mixer.toApiFormat() : {
-                truck_number: mixer.truckNumber,
-                assigned_plant: mixer.assignedPlant,
-                assigned_operator: mixer.assignedOperator,
-                last_service_date: formatDate(mixer.lastServiceDate),
-                last_chip_date: formatDate(mixer.lastChipDate),
-                cleanliness_rating: mixer.cleanlinessRating,
-                status: mixer.status,
+                truck_number: mixer.truckNumber || mixer.truck_number,
+                assigned_plant: mixer.assignedPlant || mixer.assigned_plant,
+                assigned_operator: mixer.assignedOperator || mixer.assigned_operator || '0',
+                last_service_date: formatDate(mixer.lastServiceDate || mixer.last_service_date),
+                last_chip_date: formatDate(mixer.lastChipDate || mixer.last_chip_date),
+                cleanliness_rating: mixer.cleanlinessRating !== undefined ? mixer.cleanlinessRating : (mixer.cleanliness_rating !== undefined ? mixer.cleanliness_rating : 0),
+                status: mixer.status || 'Active',
+                created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 updated_last: new Date().toISOString(),
                 updated_by: userId
             };
 
-            // Set the updated_by field to the current user
-            apiData.updated_by = userId;
+            // Log data being sent to help debug
+            console.log('Adding mixer with data:', JSON.stringify(apiData));
 
             const {data, error} = await supabase
                 .from('mixers')
                 .insert([apiData])
                 .select();
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase error when adding mixer:', error);
+                throw new Error(`Database error: ${error.message}`);
+            }
 
-            return data[0] ? Mixer.fromApiFormat(data[0]) : null;
+            if (!data || data.length === 0) {
+                throw new Error('No data returned after adding mixer');
+            }
+
+            return Mixer.fromApiFormat(data[0]);
         } catch (error) {
             console.error('Error adding mixer:', error);
             throw error;
@@ -147,6 +160,18 @@ export class MixerService {
      * Alias for addMixer for backward compatibility
      */
     static async createMixer(mixer, userId) {
+        // If userId is not provided, try to get it from current auth session
+        if (!userId) {
+            try {
+                const { data } = await supabase.auth.getUser();
+                userId = data?.user?.id;
+                if (!userId) {
+                    console.warn('No user ID available when creating mixer');
+                }
+            } catch (error) {
+                console.error('Error getting current user:', error);
+            }
+        }
         return this.addMixer(mixer, userId);
     }
 

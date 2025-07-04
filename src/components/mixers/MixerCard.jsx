@@ -14,6 +14,8 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
         }
     };
 
+    const cardProps = onSelect ? { onClick: handleCardClick } : {};
+
     const getDaysSince = (dateStr) => {
         if (!dateStr) return null;
         const date = new Date(dateStr);
@@ -26,17 +28,13 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const daysSinceChip = getDaysSince(mixer.lastChipDate);
 
     return (
-        <div className="mixer-card" onClick={handleCardClick}>
+        <div className="mixer-card" {...cardProps}>
             <div className="card-content">
+                <div className="status-dot" style={{backgroundColor: statusColor, width: '20px', height: '20px', top: '16px', right: '16px', position: 'absolute', borderRadius: '50%', border: '2px solid white', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)', zIndex: 2}} title={mixer.status || 'Unknown'}></div>
                 <div className="card-header">
                     <h3 className="mixer-name">Truck #{mixer.truckNumber || 'N/A'}</h3>
-                    <div className="status-indicator" style={{backgroundColor: statusColor}}></div>
                 </div>
                 <div className="card-details">
-                    <div className="detail-row">
-                        <div className="detail-label">Status</div>
-                        <div className="detail-value">{mixer.status || 'Unknown'}</div>
-                    </div>
                     <div className="detail-row">
                         <div className="detail-label">Plant</div>
                         <div className="detail-value">{plantName}</div>
@@ -84,6 +82,10 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         <div className="detail-value">
                             {mixer.cleanlinessRating ? `${mixer.cleanlinessRating}/5` : 'Not Rated'}
                         </div>
+                    </div>
+                    <div className="detail-row">
+                        <div className="detail-label">Status</div>
+                        <div className="detail-value">{mixer.status || 'Unknown'}</div>
                     </div>
                 </div>
                 {onDelete && (

@@ -1,4 +1,35 @@
 /* MixerAddView.css */
+
+.rating-container {
+    display: flex;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.star-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    margin-right: 5px;
+    padding: 0;
+    color: #c4c4c4;
+    transition: color 0.2s;
+}
+
+.star-button.active {
+    color: #333;
+}
+
+.star-button:hover {
+    color: #666;
+}
+
+.rating-text {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #666;
+}
 .add-mixer-modal-backdrop {
     position: fixed;
     top: 0;

@@ -62,9 +62,17 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const fetchOperators = async () => {
         try {
             const data = await OperatorService.fetchOperators();
-            setOperators(data);
+            if (Array.isArray(data)) {
+                setOperators(data);
+                console.log(`Loaded ${data.length} operators`, 
+                    data.filter(op => op.position === 'Mixer Operator').length + ' are Mixer Operators');
+            } else {
+                console.error('Error: operators data is not an array', data);
+                setOperators([]);
+            }
         } catch (error) {
             console.error('Error fetching operators:', error);
+            setOperators([]);
         }
     };
 
@@ -273,9 +281,10 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             className="ios-select"
                             value={selectedPlant}
                             onChange={(e) => setSelectedPlant(e.target.value)}
+                            aria-label="Filter by plant"
                         >
                             <option value="">All Plants</option>
-                            {plants.map(plant => (
+                            {plants.sort((a, b) => a.plantName.localeCompare(b.plantName)).map(plant => (
                                 <option key={plant.plantCode} value={plant.plantCode}>
                                     {plant.plantName}
                                 </option>

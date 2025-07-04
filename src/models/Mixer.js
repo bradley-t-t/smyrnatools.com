@@ -101,21 +101,11 @@ export class Mixer {
     }
 
     /**
-     * Get a status label with emoji indicator
+     * Get the status value
+     * @returns {string} The status string
      */
-    getStatusLabel() {
-        switch (this.status) {
-            case 'Active':
-                return '🟢 Active';
-            case 'Maintenance':
-                return '🔧 Maintenance';
-            case 'Out of Service':
-                return '🔴 Out of Service';
-            case 'Scheduled':
-                return '🟡 Scheduled';
-            default:
-                return this.status;
-        }
+    getStatus() {
+        return this.status || 'Unknown';
     }
 
     /**
@@ -230,21 +220,10 @@ export class MixerUtils {
     }
 
     /**
-     * Get color for status display
+     * Get status display text
      */
-    static statusColor(status) {
-        switch (status) {
-            case 'Active':
-                return '#34c759';
-            case 'Spare':
-                return '#ffcc00';
-            case 'In Shop':
-                return '#ff9500';
-            case 'Retired':
-                return '#ff3b30';
-            default:
-                return '#8e8e93';
-        }
+    static getStatusDisplay(status) {
+        return status || 'Unknown';
     }
 
     /**
@@ -304,6 +283,6 @@ export class MixerUtils {
      */
     static cleanlinessText(rating) {
         if (rating === null || rating === undefined) return 'Unknown';
-        return '⭐'.repeat(rating);
+        return '★'.repeat(rating);
     }
 }

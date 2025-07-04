@@ -1,4 +1,4 @@
-import supabase from '../core/Supabase';
+import supabase from '../../core/SupabaseClient';
 import {AuthUtils} from '../../utils/AuthUtils';
 
 class AuthServiceImpl {
@@ -6,6 +6,45 @@ class AuthServiceImpl {
         this.currentUser = null;
         this.isAuthenticated = false;
         this.observers = [];
+        this.operatorCache = {}; // Cache for operator lookups
+    }
+
+    /**
+     * Get operator information from the operators table
+     * @param {string} employeeId - The employee ID to lookup
+     * @returns {Promise<Object|null>} - The operator information or null
+     */
+    async getOperatorInfo(employeeId) {
+        if (!employeeId) return null;
+
+        // Check cache first
+        if (this.operatorCache[employeeId]) {
+            return this.operatorCache[employeeId];
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('operators')
+                .select('*')
+                .eq('employee_id', employeeId)
+                .single();
+
+            if (error) {
+                console.error('Error fetching operator:', error);
+                return null;
+            }
+
+            if (data) {
+                // Cache the result
+                this.operatorCache[employeeId] = data;
+                return data;
+            }
+
+            return null;
+        } catch (error) {
+            console.error(`Error fetching operator info for ${employeeId}:`, error);
+            return null;
+        }
     }
 
     /**

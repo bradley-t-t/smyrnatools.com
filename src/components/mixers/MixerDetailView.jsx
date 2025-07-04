@@ -3,9 +3,11 @@ import {MixerUtils} from '../../models/Mixer';
 import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
+import {UserService} from '../../services/auth/UserService';
 import Theme from '../../utils/Theme';
 import supabase from '../../core/SupabaseClient';
 import MixerHistoryView from './MixerHistoryView';
+import MixerCard from './MixerCard';
 import './MixerDetailView.css';
 
 function MixerDetailView({mixerId, onClose}) {
@@ -16,6 +18,7 @@ function MixerDetailView({mixerId, onClose}) {
     const [isSaving, setIsSaving] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [updatedByEmail, setUpdatedByEmail] = useState(null);
 
     // Editable fields
     const [truckNumber, setTruckNumber] = useState('');
@@ -62,6 +65,18 @@ function MixerDetailView({mixerId, onClose}) {
 
             const plantsData = await PlantService.fetchPlants();
             setPlants(plantsData);
+
+            // Try to get user name if we have updatedBy
+            if (mixerData.updatedBy) {
+                try {
+                    // Get user display name from UserService - we've enhanced this to prioritize full name
+                    const userName = await UserService.getUserDisplayName(mixerData.updatedBy);
+                    setUpdatedByEmail(userName);
+                } catch (error) {
+                    console.log('Could not fetch user info:', error);
+                    setUpdatedByEmail('Unknown User');
+                }
+            }
         } catch (error) {
             console.error('Error fetching mixer details:', error);
         } finally {
@@ -101,7 +116,6 @@ function MixerDetailView({mixerId, onClose}) {
                 lastServiceDate: formatDate(lastServiceDate),
                 lastChipDate: formatDate(lastChipDate),
                 updatedAt: new Date().toISOString(),
-                updatedLast: new Date().toISOString(),
                 updatedBy: userId || mixer.updatedBy
             };
 
@@ -185,6 +199,10 @@ function MixerDetailView({mixerId, onClose}) {
 
             // Update local state
             setMixer(updatedMixer);
+
+            // Refresh data to update MixerCard
+            fetchData();
+
             alert('Changes saved successfully');
 
         } catch (error) {
@@ -214,6 +232,11 @@ function MixerDetailView({mixerId, onClose}) {
     const handleDelete = async () => {
         if (!mixer) return;
 
+        if (!showDeleteConfirmation) {
+            setShowDeleteConfirmation(true);
+            return;
+        }
+
         try {
             await supabase
                 .from('mixers')
@@ -234,7 +257,16 @@ function MixerDetailView({mixerId, onClose}) {
     const getOperatorName = (operatorId) => {
         if (!operatorId || operatorId === '0') return 'None';
         const operator = operators.find(op => op.employeeId === operatorId);
-        return operator ? operator.name : 'Unknown';
+
+        if (operator) {
+            // Include position if available
+            if (operator.position) {
+                return `${operator.name} (${operator.position})`;
+            }
+            return operator.name;
+        }
+
+        return 'Unknown';
     };
 
     const getPlantName = (plantCode) => {
@@ -318,15 +350,39 @@ function MixerDetailView({mixerId, onClose}) {
 
             {/* Content */}
             <div className="detail-content">
+                {/* Display MixerCard at the top */}
+                <div className="mixer-card-preview">
+                    <MixerCard 
+                        mixer={mixer}
+                        operatorName={getOperatorName(mixer.assignedOperator)}
+                        plantName={getPlantName(mixer.assignedPlant)}
+                        showOperatorWarning={false}
+                    />
+                </div>
+
                 <div className="detail-card">
                     <div className="card-header">
-                        <h2>General Information</h2>
-                        <div
-                            className="status-indicator"
-                            style={{backgroundColor: Theme.statusColors[status] || Theme.statusColors.default}}
-                        >
-                            {status}
+                        <h2>Edit Information</h2>
+                    </div>
+                    <p className="edit-instructions">Make changes below and click Save when finished.</p>
+
+                    <div className="metadata-info">
+                        <div className="metadata-row">
+                            <span className="metadata-label">Created:</span>
+                            <span className="metadata-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</span>
                         </div>
+                        <div className="metadata-row">
+                            <span className="metadata-label">Last Updated:</span>
+                            <span className="metadata-value">{mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'N/A'}</span>
+                        </div>
+                        {mixer.updatedBy && (
+                            <div className="metadata-row">
+                                <span className="metadata-label">Updated By:</span>
+                                <span className="metadata-value">
+                                    {updatedByEmail || 'Unknown User'}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-group">
@@ -455,6 +511,7 @@ function MixerDetailView({mixerId, onClose}) {
                             </div>
                         </div>
                     </div>
+
                 </div>
 
                 <div className="form-actions">
@@ -469,6 +526,7 @@ function MixerDetailView({mixerId, onClose}) {
                     <button
                         className="danger-button"
                         onClick={() => setShowDeleteConfirmation(true)}
+                        disabled={isSaving}
                     >
                         Delete Mixer
                     </button>
