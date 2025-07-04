@@ -1,0 +1,88 @@
+.user-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.user-label.size-small {
+    font-size: 12px;
+}
+
+.user-label.size-medium {
+    font-size: 14px;
+}
+
+.user-label.size-large {
+    font-size: 16px;
+}
+
+.user-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #007aff;
+    color: white;
+    border-radius: 50%;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.user-label.size-small .user-initials {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+}
+
+.user-label.size-medium .user-initials {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+}
+
+.user-label.size-large .user-initials {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+.user-name {
+    color: #333;
+}
+
+/* Loading state */
+.user-label.loading .user-name,
+.user-label.loading .user-initials {
+    color: transparent;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.user-label.loading .user-initials {
+    background-color: #e0e0e0;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
+/* Error state */
+.user-label.error .user-name {
+    color: #e53935;
+}
+
+.user-label.error .user-initials {
+    background-color: #e53935;
+}
+
+.user-label.error i {
+    color: #e53935;
+}

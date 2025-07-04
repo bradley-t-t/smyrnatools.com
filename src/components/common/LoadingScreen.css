@@ -1,0 +1,55 @@
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--background-color);
+    z-index: 1000;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    background-color: var(--card-background);
+    box-shadow: var(--shadow-lg);
+    max-width: 90%;
+    width: 320px;
+}
+
+.loading-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 24px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin: 16px auto;
+    border: 4px solid rgba(0, 56, 150, 0.2);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spinner 1s ease-in-out infinite;
+}
+
+.loading-message {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-color);
+    margin: 0;
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}

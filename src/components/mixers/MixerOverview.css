@@ -1,0 +1,197 @@
+.mixer-overview {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.mixer-overview h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+    text-align: center;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.overview-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.overview-card h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.75rem;
+}
+
+/* Status Card */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.status-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+
+.status-item:hover {
+    transform: scale(1.05);
+}
+
+.status-count {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.status-item.active {
+    background-color: rgba(46, 204, 113, 0.1);
+}
+
+.status-item.active .status-count {
+    color: #2ecc71;
+}
+
+.status-item.in-shop {
+    background-color: rgba(241, 196, 15, 0.1);
+}
+
+.status-item.in-shop .status-count {
+    color: #f1c40f;
+}
+
+.status-item.spare {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.status-item.spare .status-count {
+    color: #3498db;
+}
+
+.status-item.retired {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.status-item.retired .status-count {
+    color: #e74c3c;
+}
+
+/* Maintenance Card */
+.maintenance-stats {
+    display: flex;
+    justify-content: space-around;
+}
+
+.maintenance-stat {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: rgba(52, 152, 219, 0.05);
+    min-width: 120px;
+}
+
+.stat-icon {
+    font-size: 1.8rem;
+    color: #3498db;
+    margin-right: 1rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Plant Card */
+.plant-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.plant-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.plant-item:last-child {
+    border-bottom: none;
+}
+
+.plant-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.plant-count {
+    background-color: #f1f1f1;
+    border-radius: 12px;
+    padding: 0.25rem 0.75rem;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #3498db;
+    animation: spin 1s ease-in-out infinite;
+    margin: 2rem auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .maintenance-stat {
+        width: 100%;
+    }
+}
