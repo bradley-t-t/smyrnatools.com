@@ -32,13 +32,18 @@ const applyInitialTheme = () => {
   }
 };
 
+// Import the PreferencesProvider
+import { PreferencesProvider } from './context/PreferencesContext';
+
 // Apply theme before any rendering
 applyInitialTheme();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <React.StrictMode>
-        <App/>
+        <PreferencesProvider>
+            <App/>
+        </PreferencesProvider>
     </React.StrictMode>
 );
 

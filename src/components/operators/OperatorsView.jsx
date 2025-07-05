@@ -1,10 +1,15 @@
 import React, {useEffect, useRef, useState} from 'react';
 import './OperatorsView.css';
-import supabase from '../../core/SupabaseClient';
+import {supabase} from '../../core/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorHistoryView from './OperatorHistoryView';
+import Theme from '../../utils/Theme';
+import OperatorCard from './OperatorCard';
+import {usePreferences} from '../../context/PreferencesContext';
 
 function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
+    // Get user preferences for theming
+    const {preferences} = usePreferences();
     // State variables
     const [operators, setOperators] = useState([]);
     const [filteredOperators, setFilteredOperators] = useState([]);
@@ -334,29 +339,16 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
         setShowControlPanel(true);
     };
 
-    // Get trainer name by ID
+    // getTrainerName utility function for finding operator's trainer name
     const getTrainerName = (trainerId) => {
         if (!trainerId || trainerId === '0') return 'None';
         const trainer = operators.find(op => op.employeeId === trainerId);
         return trainer ? trainer.name : 'Unknown';
     };
 
-    // Get status color
+    // Get status color from Theme
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'Active':
-                return '#38a169'; // green
-            case 'Light Duty':
-                return '#ecc94b'; // yellow
-            case 'Pending Start':
-                return '#ed8936'; // orange
-            case 'Terminated':
-                return '#e53e3e'; // red
-            case 'Training':
-                return '#3182ce'; // blue
-            default:
-                return '#718096'; // gray
-        }
+        return Theme.operatorStatusColors[status] || Theme.operatorStatusColors.default;
     };
 
     // Status counts for overview
@@ -368,54 +360,16 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
     // Number of trainers
     const filteredTrainersCount = filteredOperators.filter(op => op.isTrainer).length;
 
-    // Render OperatorCard component
-    const OperatorCard = ({operator}) => {
-        const trainerName = getTrainerName(operator.assignedTrainer);
-        const statusColor = getStatusColor(operator.status);
-
-        return (
-            <div className="operator-card" onClick={() => handleOperatorSelection(operator)}>
-                <div className="card-content">
-                    <div className="card-header">
-                        <h3 className="operator-name">{operator.name}</h3>
-                        <div className="status-indicator" style={{backgroundColor: statusColor}}></div>
-                    </div>
-                    <div className="card-details">
-                        <div className="detail-row">
-                            <div className="detail-label">Employee ID</div>
-                            <div className="detail-value">{operator.employeeId}</div>
-                        </div>
-                        <div className="detail-row">
-                            <div className="detail-label">Plant</div>
-                            <div className="detail-value">{operator.plantCode || 'None'}</div>
-                        </div>
-                        <div className="detail-row">
-                            <div className="detail-label">Status</div>
-                            <div className="detail-value">{operator.status}</div>
-                        </div>
-                        <div className="detail-row">
-                            <div className="detail-label">Position</div>
-                            <div className="detail-value">{operator.position || 'Not Assigned'}</div>
-                        </div>
-                        <div className="detail-row">
-                            <div className="detail-label">Trainer</div>
-                            <div className="detail-value">{operator.isTrainer ? 'Yes' : 'No'}</div>
-                        </div>
-                        <div className="detail-row">
-                            <div className="detail-label">Assigned Trainer</div>
-                            <div className="detail-value">{trainerName}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <div className="dashboard-container operators-view">
             {/* Header */}
             <div className="dashboard-header">
-                <h1>{title || 'Operator Fleet'}</h1>
+                <h1>
+                    {title || 'Operators'}
+                    {(searchText || selectedPlant) && (
+                        <span className="filtered-indicator">(Filtered)</span>
+                    )}
+                </h1>
                 <div className="dashboard-actions">
                     {setShowSidebar && (
                         <button className="action-button" onClick={() => setShowSidebar(!showSidebar)}>
@@ -423,7 +377,11 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                             Menu
                         </button>
                     )}
-                    <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
+                    <button 
+                        className="action-button primary" 
+                        onClick={() => setShowAddSheet(true)}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                    >
                         <i className="fas fa-plus"></i>
                         Add Operator
                     </button>
@@ -436,7 +394,7 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                     <input
                         type="text"
                         className="ios-search-input"
-                        placeholder="Search by name or status..."
+                        placeholder="Search operators..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                     />
@@ -456,22 +414,23 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                             className="ios-select"
                             value={selectedPlant}
                             onChange={(e) => setSelectedPlant(e.target.value)}
+                            aria-label="Filter by plant"
                         >
                             <option value="">All Plants</option>
-                            {plants.map((plant) => (
-                                <option key={plant.id} value={plant.plant_code}>
+                            {plants.sort((a, b) => a.plant_name.localeCompare(b.plant_name)).map(plant => (
+                                <option key={plant.plant_code} value={plant.plant_code}>
                                     {plant.plant_name}
                                 </option>
                             ))}
                         </select>
                     </div>
 
-                    {(selectedPlant || searchText) && (
+                    {(searchText || selectedPlant) && (
                         <button
                             className="filter-reset-button"
                             onClick={() => {
-                                setSelectedPlant('');
                                 setSearchText('');
+                                setSelectedPlant('');
                             }}
                         >
                             <i className="fas fa-undo"></i>
@@ -482,6 +441,10 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                     <button
                         className="ios-button"
                         onClick={() => setShowOverview(true)}
+                            style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                     >
                         <i className="fas fa-chart-bar"></i>
                         Overview
@@ -489,37 +452,22 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                 </div>
             </div>
 
-            {/* Content Container */}
             <div className="content-container">
                 {isLoading ? (
-                    <div className="loading-container">
-                        <div className="ios-spinner"></div>
-                        <p>Loading operators...</p>
-                    </div>
+                    <div className="loading-indicator">Loading operators...</div>
                 ) : filteredOperators.length === 0 ? (
-                    <div className="no-results-container">
-                        <div className="no-results-icon">
-                            <i className="fas fa-user-slash"></i>
-                        </div>
-                        <h3>No Operators Found</h3>
-                        <p>
-                            {searchText || selectedPlant
-                                ? "No operators match your search criteria."
-                                : "There are no operators in the system yet."}
-                        </p>
-                        <button
-                            className="primary-button"
-                            onClick={() => setShowAddSheet(true)}
-                        >
-                            Add Operator
-                        </button>
+                    <div className="no-results">
+                        <div className="no-results-icon">🔍</div>
+                        <p>No operators found. Please adjust your search or plant filter.</p>
                     </div>
                 ) : (
                     <div className="operators-grid">
-                        {filteredOperators.map((operator) => (
-                            <OperatorCard
-                                key={operator.employeeId}
-                                operator={operator}
+                        {filteredOperators.map(operator => (
+                            <OperatorCard 
+                                key={operator.employeeId} 
+                                operator={operator} 
+                                plantName={plants.find(p => p.plant_code === operator.plantCode)?.plant_name || 'None'}
+                                onSelect={handleOperatorSelection}
                             />
                         ))}
                     </div>
@@ -528,80 +476,77 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
 
             {/* Add Operator Modal */}
             {showAddSheet && (
-                <div className="modal-backdrop" onClick={() => setShowAddSheet(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-backdrop">
+                    <div className="modal-content">
                         <div className="modal-header">
-                            <h2>Add Operator</h2>
+                            <h2>Add New Operator</h2>
                             <button className="close-button" onClick={() => setShowAddSheet(false)}>
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>
                         <div className="modal-body">
                             <div className="form-group">
-                                <label htmlFor="employeeId">Employee ID</label>
+                                <label>Employee ID</label>
                                 <input
                                     type="text"
-                                    id="employeeId"
+                                    className="form-control"
                                     value={newEmployeeId}
                                     onChange={(e) => setNewEmployeeId(e.target.value)}
-                                    className="form-control"
+                                    placeholder="Enter employee ID"
                                     required
                                 />
                             </div>
                             <div className="form-group">
-                                <label htmlFor="name">Name</label>
+                                <label>Name</label>
                                 <input
                                     type="text"
-                                    id="name"
+                                    className="form-control"
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
-                                    className="form-control"
+                                    placeholder="Enter full name"
                                     required
                                 />
                             </div>
                             <div className="form-group">
-                                <label htmlFor="position">Position</label>
+                                <label>Plant</label>
                                 <select
-                                    id="position"
-                                    value={newPosition}
-                                    onChange={(e) => setNewPosition(e.target.value)}
                                     className="form-control"
-                                >
-                                    <option value="">Select a Position</option>
-                                    {positions.map((position) => (
-                                        <option key={position} value={position}>
-                                            {position}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="plant">Plant</label>
-                                <select
-                                    id="plant"
                                     value={newPlantCode}
                                     onChange={(e) => setNewPlantCode(e.target.value)}
-                                    className="form-control"
                                 >
-                                    <option value="">None</option>
-                                    {plants.map((plant) => (
-                                        <option key={plant.id} value={plant.plant_code}>
+                                    <option value="">Select a plant</option>
+                                    {plants.map(plant => (
+                                        <option key={plant.plant_code} value={plant.plant_code}>
                                             {plant.plant_name}
                                         </option>
                                     ))}
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label htmlFor="status">Status</label>
+                                <label>Status</label>
                                 <select
-                                    id="status"
+                                    className="form-control"
                                     value={newStatus}
                                     onChange={(e) => setNewStatus(e.target.value)}
-                                    className="form-control"
                                 >
-                                    {statuses.map((status) => (
+                                    {statuses.map(status => (
                                         <option key={status} value={status}>
                                             {status}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Position</label>
+                                <select
+                                    className="form-control"
+                                    value={newPosition}
+                                    onChange={(e) => setNewPosition(e.target.value)}
+                                >
+                                    <option value="">Select position</option>
+                                    {positions.map(pos => (
+                                        <option key={pos} value={pos}>
+                                            {pos}
                                         </option>
                                     ))}
                                 </select>
@@ -609,26 +554,25 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                             <div className="form-group checkbox-group">
                                 <input
                                     type="checkbox"
-                                    id="isTrainer"
+                                    id="is-trainer"
+                                    className="form-checkbox"
                                     checked={newIsTrainer}
                                     onChange={(e) => setNewIsTrainer(e.target.checked)}
-                                    className="form-checkbox"
                                 />
-                                <label htmlFor="isTrainer">Is Trainer</label>
+                                <label htmlFor="is-trainer">Is a Trainer</label>
                             </div>
-                            {newStatus === 'Training' && (
+                            {!newIsTrainer && (
                                 <div className="form-group">
-                                    <label htmlFor="assignedTrainer">Assigned Trainer</label>
+                                    <label>Assigned Trainer</label>
                                     <select
-                                        id="assignedTrainer"
+                                        className="form-control"
                                         value={newAssignedTrainer}
                                         onChange={(e) => setNewAssignedTrainer(e.target.value)}
-                                        className="form-control"
                                     >
-                                        <option value="">Unassigned</option>
+                                        <option value="0">None</option>
                                         {operators
-                                            .filter((op) => op.isTrainer)
-                                            .map((trainer) => (
+                                            .filter(op => op.isTrainer)
+                                            .map(trainer => (
                                                 <option key={trainer.employeeId} value={trainer.employeeId}>
                                                     {trainer.name}
                                                 </option>
@@ -638,30 +582,28 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                             )}
                         </div>
                         <div className="modal-footer">
-                            <button
-                                className="cancel-button"
-                                onClick={() => setShowAddSheet(false)}
-                            >
+                            <button className="cancel-button" onClick={() => setShowAddSheet(false)}>
                                 Cancel
                             </button>
                             <button
                                 className="primary-button"
                                 onClick={addOperator}
-                                disabled={!newEmployeeId || !newName || !newPosition}
+                                disabled={!newEmployeeId || !newName}
+                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                             >
-                                Save
+                                Add Operator
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Operator Control Panel */}
+            {/* Control Panel Modal */}
             {showControlPanel && selectedOperator && (
-                <div className="modal-backdrop" onClick={() => setShowControlPanel(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-backdrop">
+                    <div className="modal-content control-panel-modal">
                         <div className="modal-header">
-                            <h2>Operator Control Panel</h2>
+                            <h2>Operator Details</h2>
                             <button className="close-button" onClick={() => setShowControlPanel(false)}>
                                 <i className="fas fa-times"></i>
                             </button>
@@ -683,139 +625,56 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                                         </div>
                                         <div className="info-row">
                                             <div className="info-label">Plant</div>
-                                            <div className="info-value">{selectedOperator.plantCode || 'None'}</div>
+                                            <div className="info-value">
+                                                {plants.find(p => p.plant_code === selectedOperator.plantCode)?.plant_name || 'None'}
+                                            </div>
                                         </div>
                                         <div className="info-row">
                                             <div className="info-label">Status</div>
                                             <div className="info-value">{selectedOperator.status}</div>
                                         </div>
-                                        <div className="info-row">
-                                            <div className="info-label">Position</div>
-                                            <div
-                                                className="info-value">{selectedOperator.position || 'Not Assigned'}</div>
-                                        </div>
                                     </div>
                                     <div className="info-column">
                                         <div className="info-row">
-                                            <div className="info-label">Trainer</div>
-                                            <div
-                                                className="info-value">{selectedOperator.isTrainer ? 'Yes' : 'No'}</div>
+                                            <div className="info-label">Position</div>
+                                            <div className="info-value">{selectedOperator.position || 'Not Assigned'}</div>
                                         </div>
                                         <div className="info-row">
-                                            <div className="info-label">Assigned Trainer</div>
-                                            <div
-                                                className="info-value">{getTrainerName(selectedOperator.assignedTrainer)}</div>
+                                            <div className="info-label">Trainer</div>
+                                            <div className="info-value">
+                                                {selectedOperator.isTrainer ? 'Is a Trainer' : getTrainerName(selectedOperator.assignedTrainer)}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="control-panel-actions">
+                                <h3>Actions</h3>
                                 <div className="action-grid">
-                                    <button className="action-tile" onClick={() => {
-                                        // Edit operators info
-                                        const updatedOperator = {...selectedOperator};
-                                        // Open a modal to edit the operators info
-                                        // For simplicity, we'll just prompt for now
-                                        const newName = prompt('Enter new name:', selectedOperator.name);
-                                        if (newName && newName !== selectedOperator.name) {
-                                            updatedOperator.name = newName;
-                                            updateOperator(updatedOperator);
-                                        }
-                                    }}>
-                                        <i className="fas fa-user-edit"></i>
-                                        <span>Operator Info</span>
-                                    </button>
-                                    <button className="action-tile" onClick={() => {
-                                        // Assign plant
-                                        const updatedOperator = {...selectedOperator};
-                                        // Show a dropdown with all plants
-                                        const plantIndex = prompt(
-                                            'Select plant number:\n' +
-                                            plants.map((p, i) => `${i + 1}. ${p.plant_name}`).join('\n') +
-                                            '\n0. None'
-                                        );
-                                        if (plantIndex !== null) {
-                                            const index = parseInt(plantIndex);
-                                            if (index === 0) {
-                                                updatedOperator.plantCode = null;
-                                                updateOperator(updatedOperator);
-                                            } else if (index > 0 && index <= plants.length) {
-                                                updatedOperator.plantCode = plants[index - 1].plant_code;
-                                                updateOperator(updatedOperator);
-                                            }
-                                        }
-                                    }}>
-                                        <i className="fas fa-building"></i>
-                                        <span>Assign Plant</span>
-                                    </button>
-                                    <button className="action-tile" onClick={() => {
-                                        // Change status
-                                        const updatedOperator = {...selectedOperator};
-                                        // Show a dropdown with all statuses
-                                        const statusIndex = prompt(
-                                            'Select status number:\n' +
-                                            statuses.map((s, i) => `${i + 1}. ${s}`).join('\n')
-                                        );
-                                        if (statusIndex !== null) {
-                                            const index = parseInt(statusIndex);
-                                            if (index > 0 && index <= statuses.length) {
-                                                updatedOperator.status = statuses[index - 1];
-                                                if (updatedOperator.status !== 'Training') {
-                                                    updatedOperator.assignedTrainer = '0';
-                                                }
-                                                updateOperator(updatedOperator);
-                                            }
-                                        }
-                                    }}>
-                                        <i className="fas fa-exchange-alt"></i>
-                                        <span>Change Status</span>
-                                    </button>
-                                    <button className="action-tile" onClick={() => {
-                                        // Training settings
-                                        const updatedOperator = {...selectedOperator};
-                                        // Toggle trainer status
-                                        const confirmMessage = `${selectedOperator.name} is ${selectedOperator.isTrainer ? '' : 'not '}a trainer. Change?`;
-                                        if (window.confirm(confirmMessage)) {
-                                            updatedOperator.isTrainer = !selectedOperator.isTrainer;
-                                            // If changing to not a trainer and is in training, also change status
-                                            if (!updatedOperator.isTrainer && updatedOperator.status === 'Training') {
-                                                const trainingConfirmMessage = 'This operators is in training. Change status to Active?';
-                                                if (window.confirm(trainingConfirmMessage)) {
-                                                    updatedOperator.status = 'Active';
-                                                    updatedOperator.assignedTrainer = '0';
-                                                }
-                                            }
-                                            updateOperator(updatedOperator);
-                                        }
-                                    }}>
-                                        <i className="fas fa-user-graduate"></i>
-                                        <span>Training Settings</span>
-                                    </button>
-                                    <button className="action-tile" onClick={() => {
-                                        // View history
-                                        setShowHistory(true);
-                                        setShowControlPanel(false);
-                                    }}>
+                                    <div className="action-tile" onClick={() => setShowHistory(true)}>
                                         <i className="fas fa-history"></i>
                                         <span>View History</span>
-                                    </button>
-                                    <button className="action-tile delete" onClick={() => {
-                                        setOperatorToDelete(selectedOperator);
-                                        setShowDeleteConfirmation(true);
-                                        setShowControlPanel(false);
-                                    }}>
+                                    </div>
+                                    <div className="action-tile">
+                                        <i className="fas fa-edit"></i>
+                                        <span>Edit Operator</span>
+                                    </div>
+                                    <div
+                                        className="action-tile delete"
+                                        onClick={() => {
+                                            setOperatorToDelete(selectedOperator);
+                                            setShowDeleteConfirmation(true);
+                                        }}
+                                    >
                                         <i className="fas fa-trash-alt"></i>
                                         <span>Delete Operator</span>
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button
-                                className="cancel-button"
-                                onClick={() => setShowControlPanel(false)}
-                            >
+                            <button className="cancel-button" onClick={() => setShowControlPanel(false)}>
                                 Close
                             </button>
                         </div>
@@ -823,10 +682,18 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                 </div>
             )}
 
-            {/* Confirmation Dialog */}
+            {/* History View */}
+            {showHistory && selectedOperator && (
+                <OperatorHistoryView
+                    operator={selectedOperator}
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
+
+            {/* Delete Confirmation */}
             {showDeleteConfirmation && operatorToDelete && (
-                <div className="modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
-                    <div className="confirmation-dialog" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-backdrop">
+                    <div className="confirmation-dialog">
                         <div className="confirmation-header">
                             <h3>Confirm Delete</h3>
                         </div>
@@ -837,7 +704,10 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                         <div className="confirmation-footer">
                             <button
                                 className="cancel-button"
-                                onClick={() => setShowDeleteConfirmation(false)}
+                                onClick={() => {
+                                    setShowDeleteConfirmation(false);
+                                    setOperatorToDelete(null);
+                                }}
                             >
                                 Cancel
                             </button>
@@ -846,6 +716,8 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                                 onClick={() => {
                                     deleteOperator(operatorToDelete);
                                     setShowDeleteConfirmation(false);
+                                    setOperatorToDelete(null);
+                                    setShowControlPanel(false);
                                 }}
                             >
                                 Delete
@@ -857,8 +729,8 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
 
             {/* Overview Modal */}
             {showOverview && (
-                <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-backdrop">
+                    <div className="modal-content">
                         <div className="modal-header">
                             <h2>Operators Overview</h2>
                             <button className="close-button" onClick={() => setShowOverview(false)}>
@@ -867,6 +739,7 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                         </div>
                         <div className="modal-body">
                             <div className="overview-metrics">
+                                <h3>Status Breakdown</h3>
                                 <div className="metrics-row">
                                     {statusCounts.map(({status, count}) => (
                                         <div className="metric-card" key={status}>
@@ -874,31 +747,30 @@ function OperatorsView({title, showSidebar, setShowSidebar, onSelectOperator}) {
                                             <div className="metric-value">{count}</div>
                                         </div>
                                     ))}
+                                </div>
+
+                                <h3 className="section-title">Trainers</h3>
+                                <div className="metrics-row">
                                     <div className="metric-card">
                                         <div className="metric-title">Trainers</div>
                                         <div className="metric-value">{filteredTrainersCount}</div>
+                                    </div>
+                                    <div className="metric-card">
+                                        <div className="metric-title">Operators</div>
+                                        <div className="metric-value">
+                                            {filteredOperators.length - filteredTrainersCount}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button
-                                className="primary-button"
-                                onClick={() => setShowOverview(false)}
-                            >
+                            <button className="cancel-button" onClick={() => setShowOverview(false)}>
                                 Close
                             </button>
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* History Modal */}
-            {showHistory && selectedOperator && (
-                <OperatorHistoryView
-                    employeeId={selectedOperator.employeeId}
-                    onClose={() => setShowHistory(false)}
-                />
             )}
         </div>
     );

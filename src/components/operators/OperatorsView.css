@@ -1,5 +1,128 @@
 /* Operators View Styles */
 
+.operators-view {
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.operators-view h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.filtered-indicator {
+    font-size: 0.7em;
+    color: var(--text-secondary);
+    font-weight: normal;
+    margin-left: 10px;
+}
+
+/* iOS Search input */
+.ios-search-input {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    border-radius: 10px;
+    border: 1px solid var(--divider);
+    font-size: 15px;
+    background-color: var(--background);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+    background-repeat: no-repeat;
+    background-position: 12px center;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.ios-search-input:focus {
+    outline: none;
+    border-color: var(--accent-light);
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.search-bar {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-bar .clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text-light);
+    color: white;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.search-bar .clear:hover {
+    background: var(--text-primary);
+}
+
+/* iOS Select styles */
+.ios-select {
+    padding: 10px 30px 10px 15px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid var(--divider);
+    background-color: var(--background);
+    color: var(--text-primary);
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: all 0.2s ease;
+    min-width: 160px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.ios-select:focus {
+    outline: none;
+    border-color: var(--accent-light);
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.filter-wrapper {
+    position: relative;
+}
+
+.filter-reset-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    background-color: var(--background);
+    border: 1px solid var(--divider);
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-reset-button:hover {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border-color: var(--accent-light);
+}
+
 /* Operator Card */
 .operator-card {
     background-color: var(--card-bg);
@@ -76,9 +199,11 @@
 /* Operators Grid */
 .operators-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--spacing-lg);
-    padding: var(--spacing-md);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 /* Operator Control Panel */
@@ -145,6 +270,62 @@
     font-size: 16px;
     color: var(--text-primary);
     font-weight: 600;
+}
+
+/* Search and Filters */
+.search-filters {
+    background-color: var(--card-bg);
+    padding: var(--spacing-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-start;
+    z-index: 99;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.filters {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* iOS Button Style */
+.ios-button {
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(49, 130, 206, 0.25);
+}
+
+.ios-button:hover {
+    background: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+}
+
+.ios-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(49, 130, 206, 0.2);
 }
 
 /* Control Panel Actions */

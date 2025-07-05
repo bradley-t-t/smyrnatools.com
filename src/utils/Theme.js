@@ -96,6 +96,14 @@ const Theme = {
     // Get theme based on mode
     getTheme: (mode = 'light') => {
         return mode === 'dark' ? Theme.dark : Theme.light;
+    },
+    operatorStatusColors: {
+        'Active': '#38a169',      // green
+        'Light Duty': '#ecc94b',  // yellow
+        'Pending Start': '#ed8936', // orange
+        'Terminated': '#e53e3e',  // red
+        'Training': '#3182ce',    // blue
+        'default': '#718096'      // gray
     }
 };
 

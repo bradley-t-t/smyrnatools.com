@@ -320,7 +320,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         </button>
                     </div>
                 ) : (
-                    <div className="mixers-grid">
+                    <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
                         {filteredMixers.map(mixer => (
                             <MixerCard
                                 key={mixer.id}

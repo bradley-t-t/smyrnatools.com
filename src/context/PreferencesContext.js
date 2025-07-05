@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase, logSupabaseError, extractSupabaseErrorMessage } from '../core/SupabaseClient';
+import { supabase, logSupabaseError } from '../core/SupabaseClient';
 
 // Create context
 const PreferencesContext = createContext();
@@ -85,7 +85,11 @@ export const PreferencesProvider = ({ children }) => {
         document.documentElement.classList.toggle('dark-mode', preferences.themeMode === 'dark');
         document.documentElement.classList.remove('accent-blue', 'accent-red');
         document.documentElement.classList.add(`accent-${preferences.accentColor}`);
-        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+        try {
+            localStorage.setItem('userPreferences', JSON.stringify(preferences));
+        } catch (error) {
+            console.error('Error saving preferences to localStorage:', error);
+        }
     }, [preferences]);
 
     // Fetch user preferences from database
@@ -127,7 +131,11 @@ export const PreferencesProvider = ({ children }) => {
             accentColor: data.accent_color,
         };
         setPreferences(newPreferences);
-        localStorage.setItem('userPreferences', JSON.stringify(newPreferences));
+        try {
+            localStorage.setItem('userPreferences', JSON.stringify(newPreferences));
+        } catch (error) {
+            console.error('Error saving preferences to localStorage:', error);
+        }
     };
 
     // Create default user preferences
@@ -181,10 +189,16 @@ export const PreferencesProvider = ({ children }) => {
         }
     };
 
-    // Update preferences
-    const updatePreferences = async (newPreferences) => {
+    // Update preferences (for both single key-value and object updates)
+    const updatePreferences = async (keyOrObject, value) => {
         try {
-            const updatedPreferences = { ...preferences, ...newPreferences };
+            let updatedPreferences;
+            if (typeof keyOrObject === 'string') {
+                updatedPreferences = { ...preferences, [keyOrObject]: value };
+            } else {
+                updatedPreferences = { ...preferences, ...keyOrObject };
+            }
+
             setPreferences(updatedPreferences);
             localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences));
 
@@ -200,9 +214,9 @@ export const PreferencesProvider = ({ children }) => {
     };
 
     // Toggle specific preference values
-    const toggleNavbarMinimized = () => updatePreferences({ navbarMinimized: !preferences.navbarMinimized });
-    const setThemeMode = (mode) => (mode === 'light' || mode === 'dark') && updatePreferences({ themeMode: mode });
-    const setAccentColor = (color) => (color === 'red' || color === 'blue') && updatePreferences({ accentColor: color });
+    const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized);
+    const setThemeMode = (mode) => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode);
+    const setAccentColor = (color) => (color === 'red' || color === 'blue') && updatePreferences('accentColor', color);
 
     return (
         <PreferencesContext.Provider
