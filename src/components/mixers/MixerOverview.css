@@ -181,23 +181,6 @@
     color: #555;
 }
 
-/* Loading Spinner */
-.loading-spinner {
-    display: block;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-top-color: #3498db;
-    animation: spin 1s ease-in-out infinite;
-    margin: 2rem auto;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

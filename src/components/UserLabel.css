@@ -255,3 +255,75 @@
         background-position: -200% 0;
     }
 }
+.user-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-label.size-small {
+    font-size: 0.8rem;
+}
+
+.user-label.size-medium {
+    font-size: 1rem;
+}
+
+.user-label.size-large {
+    font-size: 1.2rem;
+}
+
+.user-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    background-color: #003896; /* Smyrna blue */
+    color: white;
+    font-weight: bold;
+}
+
+.user-name {
+    font-weight: 500;
+}
+
+/* Loading styles */
+.user-label .loading-dots {
+    display: inline-block;
+    overflow: hidden;
+    height: 1.2em;
+    margin-left: 0.2em;
+    vertical-align: bottom;
+    animation: loading-dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes loading-dots {
+    0% { width: 0; }
+    20% { width: 0.25em; }
+    40% { width: 0.5em; }
+    60% { width: 0.75em; }
+    80% { width: 1em; }
+    100% { width: 0; }
+}
+
+.user-label .user-initials.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+/* Error styles */
+.user-label.error .user-initials.error {
+    background-color: #E31837; /* Smyrna red */
+}
+
+.user-label.error .user-name {
+    color: #E31837; /* Smyrna red */
+}

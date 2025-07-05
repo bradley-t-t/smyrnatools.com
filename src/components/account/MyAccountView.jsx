@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {supabase} from '../../core/SupabaseClient';
 import {AuthService} from '../../services/auth/AuthService';
+import SimpleLoading from '../common/SimpleLoading';
 import './MyAccountView.css';
 
 function MyAccountView({userId}) {
@@ -21,17 +22,6 @@ function MyAccountView({userId}) {
 
     useEffect(() => {
         fetchUserProfile();
-
-        // Add a fallback method to ensure we get the name if the first fetch fails
-        const checkProfileAgain = setTimeout(() => {
-            // If we still don't have the name, try again
-            if (!firstName && !lastName) {
-                console.log('Name still not loaded, trying again');
-                fetchUserProfile();
-            }
-        }, 1000);
-
-        return () => clearTimeout(checkProfileAgain);
     }, []);
 
     const fetchUserProfile = async () => {
@@ -303,7 +293,7 @@ function MyAccountView({userId}) {
                 <p>Manage your personal information and security settings</p>
             </div>
 
-            {loading && <div className="loading-spinner">Loading...</div>}
+            {loading && <SimpleLoading />}
 
             <div className="account-content">
                 {message && (
@@ -375,7 +365,7 @@ function MyAccountView({userId}) {
                         {/* Phone field removed as it doesn't exist in the database schema */}
                         <div className="form-actions">
                             <button type="submit" className="save-button" disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Changes'}
+                                Save Changes
                             </button>
                         </div>
                     </form>
@@ -488,7 +478,7 @@ function MyAccountView({userId}) {
                                     className="modal-submit-btn"
                                     disabled={loading || !currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8}
                                 >
-                                    {loading ? 'Updating...' : 'Update Password'}
+                                    Update Password
                                 </button>
                             </div>
                         </form>

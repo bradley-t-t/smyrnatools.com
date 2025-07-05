@@ -154,20 +154,11 @@
     color: #777;
 }
 
-.loading-spinner {
-    display: block;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-top-color: #3498db;
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 1rem;
+.static-loading {
+    font-size: 16px;
+    color: #666;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
 
 .chart-error button {
     margin-top: 10px;

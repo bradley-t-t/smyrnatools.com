@@ -4,10 +4,13 @@ import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
+import SimpleLoading from '../common/SimpleLoading';
+import LoadingText from '../common/LoadingText';
 import Theme from '../../utils/Theme';
 import supabase from '../../core/SupabaseClient';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCard from './MixerCard';
+import '../common/LoadingText.css';
 import './MixerDetailView.css';
 
 function MixerDetailView({mixerId, onClose}) {
@@ -18,8 +21,13 @@ function MixerDetailView({mixerId, onClose}) {
     const [isSaving, setIsSaving] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [updatedByEmail, setUpdatedByEmail] = useState(null);
     const [message, setMessage] = useState('');
+
+    // Original values for detecting changes
+    const [originalValues, setOriginalValues] = useState({});
 
     // Editable fields
     const [truckNumber, setTruckNumber] = useState('');
@@ -41,6 +49,40 @@ function MixerDetailView({mixerId, onClose}) {
         fetchData();
     }, [mixerId]);
 
+    // Track changes to detect unsaved changes
+    useEffect(() => {
+        if (!originalValues.truckNumber && !isLoading) return;
+
+        // Skip during initial load
+        if (isLoading) return;
+
+        const formatDateForComparison = (date) => {
+            if (!date) return '';
+            return date instanceof Date ? date.toISOString().split('T')[0] : '';
+        };
+
+        const hasChanges = 
+            truckNumber !== originalValues.truckNumber ||
+            assignedOperator !== originalValues.assignedOperator ||
+            assignedPlant !== originalValues.assignedPlant ||
+            status !== originalValues.status ||
+            cleanlinessRating !== originalValues.cleanlinessRating ||
+            formatDateForComparison(lastServiceDate) !== formatDateForComparison(originalValues.lastServiceDate) ||
+            formatDateForComparison(lastChipDate) !== formatDateForComparison(originalValues.lastChipDate);
+
+        setHasUnsavedChanges(hasChanges);
+    }, [
+        truckNumber, 
+        assignedOperator, 
+        assignedPlant, 
+        status, 
+        cleanlinessRating, 
+        lastServiceDate, 
+        lastChipDate, 
+        originalValues,
+        isLoading
+    ]);
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -49,13 +91,36 @@ function MixerDetailView({mixerId, onClose}) {
             setMixer(mixerData);
 
             // Set form field values
-            setTruckNumber(mixerData.truckNumber || '');
-            setAssignedOperator(mixerData.assignedOperator || '');
-            setAssignedPlant(mixerData.assignedPlant || '');
-            setStatus(mixerData.status || '');
-            setCleanlinessRating(mixerData.cleanlinessRating || 0);
-            setLastServiceDate(mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null);
-            setLastChipDate(mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null);
+            const truckNum = mixerData.truckNumber || '';
+            const operator = mixerData.assignedOperator || '';
+            const plant = mixerData.assignedPlant || '';
+            const statusVal = mixerData.status || '';
+            const rating = mixerData.cleanlinessRating || 0;
+            const serviceDate = mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null;
+            const chipDate = mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null;
+
+            // Set current values
+            setTruckNumber(truckNum);
+            setAssignedOperator(operator);
+            setAssignedPlant(plant);
+            setStatus(statusVal);
+            setCleanlinessRating(rating);
+            setLastServiceDate(serviceDate);
+            setLastChipDate(chipDate);
+
+            // Store original values for change detection
+            setOriginalValues({
+                truckNumber: truckNum,
+                assignedOperator: operator,
+                assignedPlant: plant,
+                status: statusVal,
+                cleanlinessRating: rating,
+                lastServiceDate: serviceDate,
+                lastChipDate: chipDate
+            });
+
+            // Reset unsaved changes flag
+            setHasUnsavedChanges(false);
 
             // Update CSS variable for the rating slider
             document.documentElement.style.setProperty('--rating-value', mixerData.cleanlinessRating || 0);
@@ -82,11 +147,13 @@ function MixerDetailView({mixerId, onClose}) {
             console.error('Error fetching mixer details:', error);
         } finally {
             setIsLoading(false);
+            setHasUnsavedChanges(false);
         }
     };
 
     // Save changes
     const handleSave = async () => {
+        return new Promise(async (resolve, reject) => {
         if (!mixer || !mixer.id) {
             alert('Error: Cannot save mixer with undefined ID');
             return;
@@ -183,6 +250,20 @@ function MixerDetailView({mixerId, onClose}) {
             setMessage('Changes saved successfully!');
             setTimeout(() => setMessage(''), 3000);
 
+            // Update original values to match current values
+            setOriginalValues({
+                truckNumber,
+                assignedOperator,
+                assignedPlant,
+                status,
+                cleanlinessRating,
+                lastServiceDate,
+                lastChipDate
+            });
+
+            // Reset unsaved changes flag
+            setHasUnsavedChanges(false);
+
         } catch (error) {
             console.error('Error saving mixer:', error);
             // Show more detailed error message to help troubleshoot
@@ -203,7 +284,9 @@ function MixerDetailView({mixerId, onClose}) {
             alert(`Error saving changes: ${errorMessage}`);
         } finally {
             setIsSaving(false);
+            resolve(); // Resolve the promise when save is complete
         }
+        });
     };
 
     // Delete mixer
@@ -228,6 +311,15 @@ function MixerDetailView({mixerId, onClose}) {
             alert('Error deleting mixer');
         } finally {
             setShowDeleteConfirmation(false);
+        }
+    };
+
+    // Handle back button click with unsaved changes check
+    const handleBackClick = () => {
+        if (hasUnsavedChanges) {
+            setShowUnsavedChangesModal(true);
+        } else {
+            onClose();
         }
     };
 
@@ -274,9 +366,11 @@ function MixerDetailView({mixerId, onClose}) {
                     <button className="back-button" onClick={onClose}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1>Loading...</h1>
+                    <h1>Mixer Details</h1>
                 </div>
-                <div className="loading-spinner"></div>
+                <div className="detail-content">
+                    <div className="content-loading-container"></div>
+                </div>
             </div>
         );
     }
@@ -302,17 +396,14 @@ function MixerDetailView({mixerId, onClose}) {
         <div className="mixer-detail-view">
             {isSaving && (
                 <div className="saving-overlay">
-                    <div className="saving-indicator">
-                        <div className="saving-spinner"></div>
-                        <span>Saving changes...</span>
-                    </div>
+                    <div className="saving-indicator"></div>
                 </div>
             )}
 
             {/* Header */}
             <div className="detail-header">
                 <div className="header-left">
-                    <button className="back-button" onClick={onClose} aria-label="Back to mixers">
+                    <button className="back-button" onClick={handleBackClick} aria-label="Back to mixers">
                         <i className="fas fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
@@ -472,27 +563,17 @@ function MixerDetailView({mixerId, onClose}) {
                                     </button>
                                 ))}
                             </div>
-                            <div className="rating-slider-container">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="5"
-                                    value={cleanlinessRating}
-                                    onChange={(e) => setCleanlinessRating(parseInt(e.target.value))}
-                                    className="rating-slider"
-                                    aria-label="Adjust cleanliness rating"
-                                />
+                            {cleanlinessRating > 0 && (
                                 <div className="rating-value-display">
-                  <span className="rating-label">
-                    {cleanlinessRating === 0 && 'Not Rated'}
-                      {cleanlinessRating === 1 && 'Poor (1/5)'}
-                      {cleanlinessRating === 2 && 'Fair (2/5)'}
-                      {cleanlinessRating === 3 && 'Good (3/5)'}
-                      {cleanlinessRating === 4 && 'Very Good (4/5)'}
-                      {cleanlinessRating === 5 && 'Excellent (5/5)'}
-                  </span>
+                                    <span className="rating-label">
+                                        {cleanlinessRating === 1 && 'Poor'}
+                                        {cleanlinessRating === 2 && 'Fair'}
+                                        {cleanlinessRating === 3 && 'Good'}
+                                        {cleanlinessRating === 4 && 'Very Good'}
+                                        {cleanlinessRating === 5 && 'Excellent'}
+                                    </span>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
 
@@ -542,6 +623,47 @@ function MixerDetailView({mixerId, onClose}) {
                                 onClick={handleDelete}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Unsaved changes confirmation */}
+            {showUnsavedChangesModal && (
+                <div className="confirmation-modal">
+                    <div className="confirmation-content">
+                        <h2>Unsaved Changes</h2>
+                        <p>You have unsaved changes. Are you sure you want to leave without saving?</p>
+
+                        <div className="confirmation-actions">
+                            <button
+                                className="cancel-button"
+                                onClick={() => setShowUnsavedChangesModal(false)}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                className="primary-button"
+                                onClick={async () => {
+                                    setShowUnsavedChangesModal(false);
+                                    await handleSave();
+                                    // After saving is complete, navigate back
+                                    onClose();
+                                }}
+                            >
+                                Save Changes
+                            </button>
+
+                            <button
+                                className="danger-button"
+                                onClick={() => {
+                                    setShowUnsavedChangesModal(false);
+                                    onClose();
+                                }}
+                            >
+                                Discard Changes
                             </button>
                         </div>
                     </div>

@@ -71,10 +71,10 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
     if (isLoading) {
         return (
             <span className={`user-label size-${size} loading`}>
-        {showIcon && <i className="fas fa-user"></i>}
-                {showInitials && <span className="user-initials loading-placeholder">..</span>}
-                <span className="user-name loading-placeholder">Loading...</span>
-      </span>
+                {showIcon && <i className="fas fa-user"></i>}
+                {showInitials && <span className="user-initials loading">?</span>}
+                <span className="user-name loading"></span>
+            </span>
         );
     }
 

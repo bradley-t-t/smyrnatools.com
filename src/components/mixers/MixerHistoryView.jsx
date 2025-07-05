@@ -2,6 +2,8 @@ import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import UserLabel from '../UserLabel';
+import SimpleLoading from '../common/SimpleLoading';
+import '../common/LoadingText.css';
 import './MixerHistoryView.css';
 
 function MixerHistoryView({mixer, onClose}) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MixerService } from '../../services/mixers/MixerService';
+import SimpleLoading from '../common/SimpleLoading';
 import './CleanlinessHistoryChart.css';
 
 const CleanlinessHistoryChart = ({ mixers }) => {
@@ -118,8 +119,7 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                     <h2>Cleanliness Trend</h2>
                 </div>
                 <div className="chart-loading">
-                    <div className="loading-spinner"></div>
-                    <p>Loading chart data...</p>
+                    <div className="static-loading">Loading...</div>
                 </div>
             </div>
         );
