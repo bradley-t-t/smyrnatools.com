@@ -51,20 +51,45 @@ export class Mixer {
      * Convert to API format for database operations
      */
     toApiFormat() {
-        return {
-            id: this.id,
+        // Format date to YYYY-MM-DD HH:MM:SS+00 format
+        const formatDateForDb = (date) => {
+            if (!date) return null;
+            const d = new Date(date);
+            if (isNaN(d.getTime())) return null;
+
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const seconds = String(d.getSeconds()).padStart(2, '0');
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
+        };
+
+        const now = formatDateForDb(new Date());
+
+        // Create the base object without id
+        const apiObject = {
             truck_number: this.truckNumber,
             assigned_plant: this.assignedPlant,
             assigned_operator: this.assignedOperator,
-            last_service_date: this.lastServiceDate,
-            last_chip_date: this.lastChipDate,
+            last_service_date: this.lastServiceDate ? formatDateForDb(this.lastServiceDate) : null,
+            last_chip_date: this.lastChipDate ? formatDateForDb(this.lastChipDate) : null,
             cleanliness_rating: this.cleanlinessRating,
             status: this.status,
-            created_at: this.createdAt,
-            updated_at: new Date().toISOString(),
-            updated_last: new Date().toISOString(),
+            created_at: this.createdAt ? formatDateForDb(this.createdAt) : now,
+            updated_at: now,
+            updated_last: now,
             updated_by: this.updatedBy
         };
+
+        // Only include id if it exists to avoid setting null IDs
+        if (this.id) {
+            apiObject.id = this.id;
+        }
+
+        return apiObject;
     }
 
     /**
@@ -133,7 +158,7 @@ export class MixerUtils {
      * Check if service is overdue (more than 90 days)
      */
     static isServiceOverdue(date) {
-        if (!date) return true; // No service date means it's overdue
+        if (!date) return false; // No service date means it's unknown, not overdue
 
         const serviceDate = new Date(date);
         const today = new Date();
@@ -147,7 +172,7 @@ export class MixerUtils {
      * Check if chip is overdue (more than 180 days)
      */
     static isChipOverdue(date) {
-        if (!date) return true; // No chip date means it's overdue
+        if (!date) return false; // No chip date means it's unknown, not overdue
 
         const chipDate = new Date(date);
         const today = new Date();

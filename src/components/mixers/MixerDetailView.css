@@ -743,6 +743,32 @@ select.form-control {
     margin: 0 10px 0 0;
 }
 
+    .message {
+        margin: 0 auto 20px auto;
+        padding: 10px 15px;
+        border-radius: var(--radius-md);
+        text-align: center;
+        max-width: 90%;
+        animation: fadeMessage 0.3s ease-in;
+    }
+
+    .message.success {
+        background-color: #d1f7dd;
+        color: #0d6832;
+        border: 1px solid #34c759;
+    }
+
+    .message.error {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #dc2626;
+    }
+
+    @keyframes fadeMessage {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
 .saving-overlay {
     position: fixed;
     top: 0;

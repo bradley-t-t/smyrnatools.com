@@ -17,7 +17,6 @@ class AuthServiceImpl {
     async getOperatorInfo(employeeId) {
         if (!employeeId) return null;
 
-        // Check cache first
         if (this.operatorCache[employeeId]) {
             return this.operatorCache[employeeId];
         }
@@ -54,11 +53,12 @@ class AuthServiceImpl {
         try {
             const trimmedEmail = email.trim().toLowerCase();
 
-            // Get user record with email
+            // Get user record with email - only select necessary fields to optimize query
             const {data: users, error} = await supabase
                 .from('users')
-                .select('*')
-                .eq('email', trimmedEmail);
+                .select('id, email, password_hash, salt')
+                .eq('email', trimmedEmail)
+                .limit(1); // Limit to 1 record for performance
 
             if (error) throw error;
 
@@ -77,10 +77,14 @@ class AuthServiceImpl {
 
             // Successful login
             this.currentUser = user;
+            // Make sure userId is directly accessible on currentUser
+            this.currentUser.userId = user.id;
             this.isAuthenticated = true;
 
             // Store authentication in session
             sessionStorage.setItem('userId', user.id);
+
+            console.log('User logged in successfully:', user.id);
 
             // Notify observers
             this._notifyObservers();
@@ -312,18 +316,31 @@ class AuthServiceImpl {
 
             if (!userId) return false;
 
-            // Get user record
+            // Get user record - only select necessary fields with timeout
             const {data: users, error} = await supabase
                 .from('users')
-                .select('*')
-                .eq('id', userId);
+                .select('id, email')
+                .eq('id', userId)
+                .limit(1)
+                .abortSignal(AbortSignal.timeout(3000)); // Add 3s timeout
 
-            if (error || !users || users.length === 0) {
+            if (error) {
+                console.error('Error restoring session:', error);
+                // Don't remove userId from session on network errors
+                // Only set isAuthenticated to false
+                this.isAuthenticated = false;
+                return false;
+            }
+
+            if (!users || users.length === 0) {
+                console.warn('User not found when restoring session');
                 sessionStorage.removeItem('userId');
                 return false;
             }
 
             this.currentUser = users[0];
+            // Make sure userId is directly accessible on currentUser
+            this.currentUser.userId = users[0].id;
             this.isAuthenticated = true;
 
             // Notify observers

@@ -4,6 +4,23 @@
     margin: 0 auto;
 }
 
+.filtered-indicator {
+    font-size: 0.7em;
+    color: #666;
+    font-weight: normal;
+    margin-left: 10px;
+}
+
+.filter-indicator {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+    padding: 5px 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    display: inline-block;
+}
+
 .mixer-overview h1 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
@@ -68,36 +85,8 @@
     color: #666;
 }
 
-.status-item.active {
-    background-color: rgba(46, 204, 113, 0.1);
-}
-
-.status-item.active .status-count {
-    color: #2ecc71;
-}
-
-.status-item.in-shop {
-    background-color: rgba(241, 196, 15, 0.1);
-}
-
-.status-item.in-shop .status-count {
-    color: #f1c40f;
-}
-
-.status-item.spare {
-    background-color: rgba(52, 152, 219, 0.1);
-}
-
-.status-item.spare .status-count {
-    color: #3498db;
-}
-
-.status-item.retired {
-    background-color: rgba(231, 76, 60, 0.1);
-}
-
-.status-item.retired .status-count {
-    color: #e74c3c;
+.status-item .status-count {
+    color: #333;
 }
 
 /* Maintenance Card */
@@ -143,6 +132,36 @@
     justify-content: space-between;
     padding: 0.75rem 0;
     border-bottom: 1px solid #eee;
+}
+
+/* Cleanliness Card */
+.cleanliness-card {
+    min-height: 340px;
+    display: flex;
+    overflow: visible;
+}
+
+.cleanliness-card .cleanliness-history-chart {
+    flex: 1;
+    width: 100%;
+}
+
+.cleanliness-card .chart-container {
+    margin-top: 0;
+    width: 100%;
+    overflow: visible;
+}
+
+.cleanliness-card .x-axis {
+    margin-right: 10px;
+}
+
+.cleanliness-card .chart-header {
+    margin-bottom: 10px;
+}
+
+.cleanliness-card .y-axis {
+    min-width: 20px;
 }
 
 .plant-item:last-child {

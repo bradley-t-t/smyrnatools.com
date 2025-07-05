@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
+import {OperatorService} from '../../services/operators/OperatorService';
 import UserLabel from '../UserLabel';
 import './MixerHistoryView.css';
 
@@ -7,10 +8,21 @@ function MixerHistoryView({mixer, onClose}) {
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [operators, setOperators] = useState([]);
 
     useEffect(() => {
         fetchHistory();
+        fetchOperators();
     }, [mixer.id]);
+
+    const fetchOperators = async () => {
+        try {
+            const operatorsData = await OperatorService.fetchOperators();
+            setOperators(operatorsData);
+        } catch (err) {
+            console.error('Error fetching operators:', err);
+        }
+    };
 
     const fetchHistory = async () => {
         setIsLoading(true);
@@ -79,9 +91,26 @@ function MixerHistoryView({mixer, onClose}) {
         }
     };
 
+    // Get operator name from ID
+    const getOperatorName = (operatorId) => {
+        if (!operatorId || operatorId === '0') return 'None';
+        const operator = operators.find(op => op.employeeId === operatorId);
+
+        if (operator) {
+            return `${operator.name} (${operatorId})`;
+        }
+
+        return `Unknown (${operatorId})`;
+    };
+
     // Format old and new values for display
     const formatValue = (fieldName, value) => {
         if (value === null || value === undefined) return 'N/A';
+
+        // For operators, show name and ID
+        if (fieldName === 'assigned_operator') {
+            return getOperatorName(value);
+        }
 
         if (fieldName === 'cleanliness_rating') {
             return '★'.repeat(parseInt(value));

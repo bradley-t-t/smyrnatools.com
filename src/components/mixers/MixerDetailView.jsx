@@ -19,6 +19,7 @@ function MixerDetailView({mixerId, onClose}) {
     const [showHistory, setShowHistory] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [updatedByEmail, setUpdatedByEmail] = useState(null);
+    const [message, setMessage] = useState('');
 
     // Editable fields
     const [truckNumber, setTruckNumber] = useState('');
@@ -86,7 +87,10 @@ function MixerDetailView({mixerId, onClose}) {
 
     // Save changes
     const handleSave = async () => {
-        if (!mixer) return;
+        if (!mixer || !mixer.id) {
+            alert('Error: Cannot save mixer with undefined ID');
+            return;
+        }
 
         setIsSaving(true);
 
@@ -94,20 +98,56 @@ function MixerDetailView({mixerId, onClose}) {
             // Store original mixer for history comparison
             const originalMixer = {...mixer};
 
-            // Get current user for tracking who made changes
-            const {data: {user}} = await supabase.auth.getUser();
-            const userId = user?.id;
+            // Try multiple methods to get the current user ID
+            let userId = null;
 
-            // Format dates properly to avoid any issues
+            // Method 1: Get from sessionStorage (most reliable)
+            userId = sessionStorage.getItem('userId');
+
+            // Method 2: If not in sessionStorage, try supabase auth
+            if (!userId) {
+                try {
+                    const {data: {user}} = await supabase.auth.getUser();
+                    userId = user?.id;
+                } catch (authError) {
+                    console.error('Error getting user from Supabase auth:', authError);
+                }
+            }
+
+            // Strong authentication check
+            if (!userId) {
+                // This shouldn't happen in normal flow, as app should redirect to login
+                console.error('No authenticated user found');
+                alert('Your session has expired. Please refresh the page and log in again.');
+                throw new Error('Authentication required: You must be logged in to update mixers');
+            }
+
+            // Format dates properly to avoid any issues with specific format: YYYY-MM-DD HH:MM:SS+00
             const formatDate = (date) => {
                 if (!date) return null;
-                if (date instanceof Date) return date.toISOString();
-                return date; // assume it's already a string
+                try {
+                    const parsedDate = date instanceof Date ? date : new Date(date);
+                    if (isNaN(parsedDate.getTime())) return null;
+
+                    // Format to YYYY-MM-DD HH:MM:SS+00 format
+                    const year = parsedDate.getFullYear();
+                    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(parsedDate.getDate()).padStart(2, '0');
+                    const hours = String(parsedDate.getHours()).padStart(2, '0');
+                    const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+                    const seconds = String(parsedDate.getSeconds()).padStart(2, '0');
+
+                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
+                } catch (e) {
+                    console.error('Date parsing error:', e);
+                    return null;
+                }
             };
 
             // Create updated mixer object
             const updatedMixer = {
                 ...mixer,
+                id: mixer.id, // Ensure ID is explicitly included
                 truckNumber,
                 assignedOperator,
                 assignedPlant,
@@ -122,80 +162,16 @@ function MixerDetailView({mixerId, onClose}) {
             console.log('Saving mixer:', updatedMixer);
 
             // Update the mixer
-            await MixerService.updateMixer(mixer.id, updatedMixer);
+            await MixerService.updateMixer(updatedMixer.id, updatedMixer);
 
             // We already have userId from above
 
-            // Create history entries for changed fields
-            if (originalMixer.truckNumber !== updatedMixer.truckNumber) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'truck_number',
-                    originalMixer.truckNumber,
-                    updatedMixer.truckNumber,
-                    userId
-                );
-            }
+            // Make sure we have a valid userId for history entries
+            const historyUserId = userId || sessionStorage.getItem('userId') || '00000000-0000-0000-0000-000000000000';
+            console.log('Using history userId:', historyUserId);
 
-            if (originalMixer.assignedPlant !== updatedMixer.assignedPlant) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'assigned_plant',
-                    originalMixer.assignedPlant,
-                    updatedMixer.assignedPlant,
-                    userId
-                );
-            }
-
-            if (originalMixer.assignedOperator !== updatedMixer.assignedOperator) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'assigned_operator',
-                    originalMixer.assignedOperator,
-                    updatedMixer.assignedOperator,
-                    userId
-                );
-            }
-
-            if (originalMixer.status !== updatedMixer.status) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'status',
-                    originalMixer.status,
-                    updatedMixer.status,
-                    userId
-                );
-            }
-
-            if (originalMixer.cleanlinessRating !== updatedMixer.cleanlinessRating) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'cleanliness_rating',
-                    originalMixer.cleanlinessRating,
-                    updatedMixer.cleanlinessRating,
-                    userId
-                );
-            }
-
-            if (originalMixer.lastServiceDate !== updatedMixer.lastServiceDate) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'last_service_date',
-                    originalMixer.lastServiceDate,
-                    updatedMixer.lastServiceDate,
-                    userId
-                );
-            }
-
-            if (originalMixer.lastChipDate !== updatedMixer.lastChipDate) {
-                await MixerService.createHistoryEntry(
-                    updatedMixer.id,
-                    'last_chip_date',
-                    originalMixer.lastChipDate,
-                    updatedMixer.lastChipDate,
-                    userId
-                );
-            }
+            // History entries are now automatically created in the MixerService.updateMixer method
+            // We removed the manual history entry creation here to prevent duplicate entries
 
             // Update local state
             setMixer(updatedMixer);
@@ -203,7 +179,9 @@ function MixerDetailView({mixerId, onClose}) {
             // Refresh data to update MixerCard
             fetchData();
 
-            alert('Changes saved successfully');
+            // Set a success message that will clear itself after a few seconds
+            setMessage('Changes saved successfully!');
+            setTimeout(() => setMessage(''), 3000);
 
         } catch (error) {
             console.error('Error saving mixer:', error);
@@ -350,6 +328,12 @@ function MixerDetailView({mixerId, onClose}) {
 
             {/* Content */}
             <div className="detail-content">
+                {message && (
+                    <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
+                        {message}
+                    </div>
+                )}
+
                 {/* Display MixerCard at the top */}
                 <div className="mixer-card-preview">
                     <MixerCard 
@@ -454,7 +438,7 @@ function MixerDetailView({mixerId, onClose}) {
                             onChange={(e) => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
                             className="form-control"
                         />
-                        {MixerUtils.isServiceOverdue(lastServiceDate) && (
+                        {lastServiceDate && MixerUtils.isServiceOverdue(lastServiceDate) && (
                             <div className="warning-text">Service overdue</div>
                         )}
                     </div>
@@ -467,7 +451,7 @@ function MixerDetailView({mixerId, onClose}) {
                             onChange={(e) => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}
                             className="form-control"
                         />
-                        {MixerUtils.isChipOverdue(lastChipDate) && (
+                        {lastChipDate && MixerUtils.isChipOverdue(lastChipDate) && (
                             <div className="warning-text">Chip overdue</div>
                         )}
                     </div>

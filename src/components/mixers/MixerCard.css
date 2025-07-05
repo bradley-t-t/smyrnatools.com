@@ -423,6 +423,21 @@
   font-weight: normal;
 }
 
+.stars-container {
+  display: inline-flex;
+  align-items: center;
+}
+
+.filled-star {
+  color: #FFD700;
+  margin-right: 2px;
+}
+
+.empty-star {
+  color: #cccccc;
+  margin-right: 2px;
+}
+
 .warning-badge {
   color: #f97316;
   margin-left: 5px;

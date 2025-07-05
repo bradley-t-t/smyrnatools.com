@@ -119,6 +119,8 @@ export class MixerService {
             }
 
             const apiData = mixer.toApiFormat ? mixer.toApiFormat() : {
+                // Don't include ID in the apiData when creating a new mixer to ensure Supabase generates one
+                // id: mixer.id, // Remove this to let database generate UUID
                 truck_number: mixer.truckNumber || mixer.truck_number,
                 assigned_plant: mixer.assignedPlant || mixer.assigned_plant,
                 assigned_operator: mixer.assignedOperator || mixer.assigned_operator || '0',
@@ -160,30 +162,87 @@ export class MixerService {
      * Alias for addMixer for backward compatibility
      */
     static async createMixer(mixer, userId) {
-        // If userId is not provided, try to get it from current auth session
+        // If userId is not provided, try to get it from multiple sources
         if (!userId) {
-            try {
-                const { data } = await supabase.auth.getUser();
-                userId = data?.user?.id;
-                if (!userId) {
-                    console.warn('No user ID available when creating mixer');
+            // Try to get from sessionStorage first (most reliable in this app)
+            userId = sessionStorage.getItem('userId');
+
+            // If not in sessionStorage, try auth service
+            if (!userId) {
+                try {
+                    const { data } = await supabase.auth.getUser();
+                    userId = data?.user?.id;
+                } catch (error) {
+                    console.error('Error getting current user from auth:', error);
                 }
-            } catch (error) {
-                console.error('Error getting current user:', error);
+            }
+
+            if (!userId) {
+                console.warn('No user ID available when creating mixer');
+                throw new Error('Authentication required: Please log in again');
             }
         }
+
+        // Make sure mixer doesn't have an ID set to allow database to generate one
+        if (mixer.id === null || mixer.id === undefined) {
+            // This is correct - we want the database to generate the ID
+            console.log('Creating new mixer with auto-generated ID');
+        } else {
+            // Remove ID to ensure database generates one
+            console.log('Removing existing ID to ensure database generates a new one');
+            delete mixer.id;
+        }
+
         return this.addMixer(mixer, userId);
     }
 
     /**
      * Update an existing mixer
      */
-    static async updateMixer(mixer, userId) {
+    static async updateMixer(mixerId, mixer, userId) {
         try {
+            // If mixerId is an object, it's probably the mixer object itself (backwards compatibility)
+            const id = typeof mixerId === 'object' ? mixerId.id : mixerId;
+
+            if (!id) {
+                throw new Error('Mixer ID is required for updates');
+            }
+
+            // Make sure mixer has an ID property
+            if (typeof mixer === 'object') {
+                mixer.id = id;
+            }
+
+            // Strict authentication check - require a valid UUID
+            if (!userId || userId === 'anonymous') {
+                // Try multiple methods to get the current user ID
+
+                // Method 1: Try session storage first (most reliable in this app)
+                const sessionUserId = sessionStorage.getItem('userId');
+                if (sessionUserId) {
+                    userId = sessionUserId;
+                    console.log('Using userId from sessionStorage:', userId);
+                } else {
+                    // Method 2: Try to get from supabase auth
+                    try {
+                        const { data } = await supabase.auth.getUser();
+                        userId = data?.user?.id;
+                        console.log('Using userId from supabase auth:', userId);
+                    } catch (authError) {
+                        console.error('Error getting user from Supabase auth:', authError);
+                    }
+                }
+
+                // If still no valid user ID, reject the operation
+                if (!userId || userId === 'anonymous') {
+                    throw new Error('Authentication required: Could not determine current user');
+                }
+            }
+
             // Get current mixer data for history tracking
-            const currentMixer = await this.getMixerById(mixer.id);
+            const currentMixer = await this.getMixerById(id);
             if (!currentMixer) {
-                throw new Error(`Mixer with ID ${mixer.id} not found`);
+                throw new Error(`Mixer with ID ${id} not found`);
             }
 
             // Update mixer
@@ -191,8 +250,8 @@ export class MixerService {
                 truck_number: mixer.truckNumber,
                 assigned_plant: mixer.assignedPlant,
                 assigned_operator: mixer.assignedOperator || null,
-                last_service_date: formatDate(mixer.lastServiceDate),
-                last_chip_date: formatDate(mixer.lastChipDate),
+                last_service_date: formatDateForSupabase(mixer.lastServiceDate),
+                last_chip_date: formatDateForSupabase(mixer.lastChipDate),
                 cleanliness_rating: mixer.cleanlinessRating,
                 status: mixer.status,
                 updated_at: new Date().toISOString(),
@@ -208,14 +267,14 @@ export class MixerService {
             const {data, error} = await supabase
                 .from('mixers')
                 .update(apiData)
-                .eq('id', mixer.id)
+                .eq('id', id) // Use the normalized id variable
                 .select();
 
             if (error) {
                 if (logSupabaseError) {
-                    logSupabaseError(`updating mixer with id ${mixer.id}`, error);
+                    logSupabaseError(`updating mixer with id ${id}`, error);
                 } else {
-                    console.error(`Error updating mixer with ID ${mixer.id}:`, error);
+                    console.error(`Error updating mixer with ID ${id}:`, error);
                 }
                 throw new Error(`Failed to update mixer: ${error.message}`);
             }
@@ -237,7 +296,7 @@ export class MixerService {
             for (const {field, dbField} of fieldsToTrack) {
                 if (currentMixer[field] !== mixer[field]) {
                     const historyEntry = {
-                        mixer_id: mixer.id,
+                        mixer_id: id, // Use the normalized id
                         field_name: dbField,
                         old_value: currentMixer[field]?.toString() || '',
                         new_value: mixer[field]?.toString() || '',
@@ -262,7 +321,9 @@ export class MixerService {
 
             return data && data.length > 0 ? Mixer.fromApiFormat(data[0]) : mixer;
         } catch (error) {
-            console.error(`Error updating mixer with ID ${mixer.id}:`, error);
+            // Use mixerId as fallback in error message since id might be out of scope in catch block
+            const errorId = typeof mixerId === 'object' ? mixerId.id : mixerId;
+            console.error(`Error updating mixer with ID ${errorId}:`, error);
             throw error;
         }
     }
@@ -305,14 +366,31 @@ export class MixerService {
             // Get current user if not provided
             let userId = changedBy;
             if (!userId) {
-                // Get the current authenticated user
-                const {data, error} = await supabase.auth.getUser();
+                // Try session storage first (most reliable in this app)
+                userId = sessionStorage.getItem('userId');
 
-                if (error) {
-                    console.error('Error getting current user:', error);
-                    userId = 'anonymous';
+                // If not in session storage, try supabase auth
+                if (!userId) {
+                    try {
+                        // Get the current authenticated user
+                        const {data, error} = await supabase.auth.getUser();
+                        if (error) {
+                            console.error('Error getting current user:', error);
+                        } else {
+                            userId = data.user?.id;
+                        }
+                    } catch (authError) {
+                        console.error('Error in supabase auth:', authError);
+                    }
+                }
+
+                // If we still don't have a userId, this is an issue
+                if (!userId) {
+                    console.error('Failed to get user ID for history entry');
+                    // Instead of throwing an error, we'll use a placeholder ID for history
+                    // This allows the main operation to succeed even if history has issues
+                    userId = '00000000-0000-0000-0000-000000000000'; // Use a valid UUID placeholder
                 } else {
-                    userId = data.user?.id || 'anonymous';
                     console.log('Current user ID for history entry:', userId);
                 }
             }
@@ -362,6 +440,50 @@ export class MixerService {
             return data.map(history => MixerHistory.fromApiFormat(history));
         } catch (error) {
             console.error(`Error fetching history for mixer with ID ${id}:`, error);
+            return [];
+        }
+    }
+
+    /**
+     * Get cleanliness history for a specific mixer or all mixers
+     * @param {string} [mixerId] - Optional mixer ID to filter by
+     * @param {number} [months=6] - Number of months to look back
+     * @returns {Promise<Array>} - Array of cleanliness history entries
+     */
+    static async getCleanlinessHistory(mixerId = null, months = 6) {
+        try {
+            // Create date threshold for filtering
+            const threshold = new Date();
+            threshold.setMonth(threshold.getMonth() - months);
+
+            // Build optimized query to only get the fields we need
+            let query = supabase
+                .from('mixer_history')
+                .select('mixer_id, field_name, old_value, new_value, changed_at, changed_by')
+                .eq('field_name', 'cleanliness_rating')
+                .gte('changed_at', threshold.toISOString())
+                .order('changed_at', {ascending: true})
+                .abortSignal(AbortSignal.timeout(5000)); // Add 5s timeout
+
+            // Add mixer filter if provided
+            if (mixerId) {
+                query = query.eq('mixer_id', mixerId);
+            }
+
+            // Set cache policy to use cached results if available
+            query = query.select('*', { cache: 'default' });
+
+            // Limit to reasonable number of records
+            query = query.limit(200);
+
+            const {data, error} = await query;
+
+            if (error) throw error;
+
+            // Return raw data for faster processing (avoid mapping each item)
+            return data;
+        } catch (error) {
+            console.error('Error fetching cleanliness history:', error);
             return [];
         }
     }

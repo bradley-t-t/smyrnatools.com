@@ -21,6 +21,12 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
         e.preventDefault();
         setError('');
 
+        console.log('AuthState:', {
+            isAuthenticated: AuthService.isAuthenticated,
+            currentUser: AuthService.currentUser,
+            userId: AuthService.currentUser?.id || sessionStorage.getItem('userId') || 'not available'
+        });
+
         if (!truckNumber) {
             setError('Truck number is required');
             return;
@@ -34,14 +40,39 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
         setIsSaving(true);
 
         try {
-            // Get current user ID
-            const userId = AuthService.currentUser?.id;
+            // Get current user ID - try multiple approaches to ensure we get a valid ID
+            let userId = AuthService.currentUser?.id;
+
+            // If not available directly from AuthService, try sessionStorage
+            if (!userId) {
+                userId = sessionStorage.getItem('userId');
+            }
+
+            // Final check - if we still don't have a userId, we can't proceed
             if (!userId) {
                 throw new Error('User ID not available. Please log in again.');
             }
 
             // If status is not Active, operators should be unassigned
             const operatorToSave = status !== 'Active' ? '0' : assignedOperator;
+
+            // Format date to YYYY-MM-DD HH:MM:SS+00 format
+            const formatDateForDb = (date) => {
+                if (!date) return null;
+                const d = new Date(date);
+                if (isNaN(d.getTime())) return null;
+
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const seconds = String(d.getSeconds()).padStart(2, '0');
+
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
+            };
+
+            const now = formatDateForDb(new Date());
 
             // Create a new Mixer object
             const newMixer = new Mixer({
@@ -50,12 +81,12 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                 assigned_operator: operatorToSave,
                 cleanliness_rating: cleanlinessRating,
                 status: status,
-                last_service_date: lastServiceDate || null,
-                last_chip_date: lastChipDate || null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                last_service_date: lastServiceDate ? formatDateForDb(new Date(lastServiceDate)) : null,
+                last_chip_date: lastChipDate ? formatDateForDb(new Date(lastChipDate)) : null,
+                created_at: now,
+                updated_at: now,
                 updated_by: userId,
-                updated_last: new Date().toISOString()
+                updated_last: now
             });
 
             // Save the new mixer

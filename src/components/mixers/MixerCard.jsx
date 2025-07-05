@@ -52,12 +52,10 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Last Service</div>
-                        <div className={`detail-value ${isServiceOverdue ? 'overdue' : ''}`}>
+                        <div className={`detail-value ${mixer.lastServiceDate && isServiceOverdue ? 'overdue' : ''}`}>
                             {mixer.lastServiceDate ? (
                                 <>
                                     {new Date(mixer.lastServiceDate).toLocaleDateString()}
-                                    {daysSinceService &&
-                                        <span className="days-ago"> ({daysSinceService} days ago)</span>}
                                 </>
                             ) : (
                                 'Unknown'
@@ -66,11 +64,10 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Last Chip</div>
-                        <div className={`detail-value ${isChipOverdue ? 'overdue' : ''}`}>
+                        <div className={`detail-value ${mixer.lastChipDate && isChipOverdue ? 'overdue' : ''}`}>
                             {mixer.lastChipDate ? (
                                 <>
                                     {new Date(mixer.lastChipDate).toLocaleDateString()}
-                                    {daysSinceChip && <span className="days-ago"> ({daysSinceChip} days ago)</span>}
                                 </>
                             ) : (
                                 'Unknown'
@@ -80,7 +77,16 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                     <div className="detail-row">
                         <div className="detail-label">Cleanliness</div>
                         <div className="detail-value">
-                            {mixer.cleanlinessRating ? `${mixer.cleanlinessRating}/5` : 'Not Rated'}
+                            {mixer.cleanlinessRating ? (
+                                <div className="stars-container">
+                                    {[...Array(5)].map((_, i) => (
+                                        <i key={i} 
+                                           className={`fas fa-star ${i < mixer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
+                                           aria-hidden="true"
+                                        ></i>
+                                    ))}
+                                </div>
+                            ) : 'Not Rated'}
                         </div>
                     </div>
                     <div className="detail-row">
@@ -88,20 +94,6 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         <div className="detail-value">{mixer.status || 'Unknown'}</div>
                     </div>
                 </div>
-                {onDelete && (
-                    <div className="card-footer">
-                        <button
-                            className="delete-button"
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent triggering onSelect
-                                onDelete(mixer.id);
-                            }}
-                            title="Delete Mixer"
-                        >
-                            <i className="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     );

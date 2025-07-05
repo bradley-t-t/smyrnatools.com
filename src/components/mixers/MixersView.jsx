@@ -6,6 +6,7 @@ import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
+import MixerOverview from './MixerOverview';
 // Theme is not used directly in this component
 import './MixersView.css';
 
@@ -178,7 +179,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     // Overview popup component
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>Mixers Overview</h2>
                     <button className="close-button" onClick={() => setShowOverview(false)}>
@@ -186,43 +187,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </button>
                 </div>
                 <div className="modal-body">
-                    <div className="overview-metrics">
-                        <div className="metrics-row">
-                            {statusCounts.map(({status, count}) => (
-                                <div className="metric-card" key={status}>
-                                    <div className="metric-title">{status}</div>
-                                    <div className="metric-value">{count}</div>
-                                </div>
-                            ))}
-                            <div className="metric-card">
-                                <div className="metric-title">Need Service</div>
-                                <div className="metric-value">{pastDueServiceCount}</div>
-                            </div>
-                            <div className="metric-card">
-                                <div className="metric-title">Need Chip</div>
-                                <div
-                                    className="metric-value">{mixers.filter(m => MixerUtils.isChipOverdue(m.lastChipDate)).length}</div>
-                            </div>
-                            <div className="metric-card">
-                                <div className="metric-title">Avg. Cleanliness</div>
-                                <div className="metric-value">{averageCleanliness()}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="overview-section">
-                        <h3>Plant Distribution</h3>
-                        <div className="plant-distribution">
-                            {plants.map(plant => {
-                                const count = mixers.filter(m => m.assignedPlant === plant.plantCode).length;
-                                return count > 0 ? (
-                                    <div key={plant.plantCode} className="plant-item">
-                                        <div className="plant-name">{plant.plantName || plant.plantCode}</div>
-                                        <div className="plant-count">{count}</div>
-                                    </div>
-                                ) : null;
-                            })}
-                        </div>
-                    </div>
+                    <MixerOverview filteredMixers={filteredMixers} selectedPlant={selectedPlant} />
                 </div>
                 <div className="modal-footer">
                     <button
@@ -327,6 +292,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </button>
                 </div>
             </div>
+
 
             {/* Content Container */}
             <div className="content-container">

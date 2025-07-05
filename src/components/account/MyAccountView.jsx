@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {supabase} from '../../core/SupabaseClient';
+import {AuthService} from '../../services/auth/AuthService';
 import './MyAccountView.css';
 
 function MyAccountView({userId}) {
@@ -10,8 +11,11 @@ function MyAccountView({userId}) {
     const [email, setEmail] = useState('');
     const [userRole, setUserRole] = useState('');
     const [plantCode, setPlantCode] = useState('');
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState(null);
 
@@ -208,16 +212,32 @@ function MyAccountView({userId}) {
         e.preventDefault();
         try {
             setLoading(true);
+            setPasswordError('');
             setMessage('');
 
+            if (!currentPassword) {
+                throw new Error('Current password is required');
+            }
+
             if (newPassword !== confirmPassword) {
-                throw new Error('Passwords do not match');
+                throw new Error('New passwords do not match');
             }
 
-            if (newPassword.length < 6) {
-                throw new Error('Password must be at least 6 characters');
+            if (newPassword.length < 8) {
+                throw new Error('Password must be at least 8 characters');
             }
 
+            // First verify the current password by signing in
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: currentPassword,
+            });
+
+            if (signInError) {
+                throw new Error('Current password is incorrect');
+            }
+
+            // Then update to the new password
             const {error} = await supabase.auth.updateUser({
                 password: newPassword,
             });
@@ -226,12 +246,15 @@ function MyAccountView({userId}) {
                 throw error;
             }
 
+            // Clear form and close modal
+            setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
+            setShowPasswordModal(false);
             setMessage('Password updated successfully!');
         } catch (error) {
             console.error('Error updating password:', error.message);
-            setMessage(`Error: ${error.message}`);
+            setPasswordError(error.message);
         } finally {
             setLoading(false);
         }
@@ -247,6 +270,31 @@ function MyAccountView({userId}) {
 
     // We'll use the authentication check from fetchUserProfile instead of a separate userId
     // If fetchUserProfile encounters an error, it will show the appropriate message
+
+    // Handle sign out
+    const handleSignOut = async () => {
+        try {
+            setLoading(true);
+
+            // Use AuthService to sign out
+            await AuthService.signOut();
+
+            // Also sign out from Supabase Auth
+            await supabase.auth.signOut();
+
+            // Clear session storage
+            sessionStorage.removeItem('userId');
+
+            // Redirect to login page (the app will handle this automatically on next render)
+            window.location.href = '/';
+
+        } catch (error) {
+            console.error('Error signing out:', error);
+            setMessage(`Error signing out: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="my-account-container">
@@ -339,39 +387,114 @@ function MyAccountView({userId}) {
                         <h2>Security</h2>
                         <p>Manage your password and security settings</p>
                     </div>
-                    <form onSubmit={updatePassword} className="account-form">
-                        <div className="form-group">
-                            <label htmlFor="new_password">New Password</label>
-                            <input
-                                type="password"
-                                id="new_password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="New Password"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="confirm_password">Confirm Password</label>
-                            <input
-                                type="password"
-                                id="confirm_password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm Password"
-                            />
-                        </div>
-                        <div className="form-actions">
-                            <button
-                                type="submit"
-                                className="save-button"
-                                disabled={loading || !newPassword || newPassword !== confirmPassword}
-                            >
-                                {loading ? 'Updating...' : 'Update Password'}
-                            </button>
-                        </div>
-                    </form>
+
+                    <button 
+                        className="password-button" 
+                        onClick={() => setShowPasswordModal(true)}
+                    >
+                        <span className="password-button-text">
+                            <i className="fas fa-lock"></i>
+                            Change Password
+                        </span>
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
+
+                    <div className="sign-out-divider"></div>
+
+                    <button 
+                        className="sign-out-button" 
+                        onClick={handleSignOut} 
+                        disabled={loading}
+                    >
+                        <span className="sign-out-button-text">
+                            <i className="fas fa-sign-out-alt"></i>
+                            Sign Out
+                        </span>
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
+
+            {/* Password Change Modal */}
+            {showPasswordModal && (
+                <div className="modal-backdrop" onClick={() => !loading && setShowPasswordModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Change Password</h3>
+                            <button 
+                                className="modal-close-btn" 
+                                onClick={() => !loading && setShowPasswordModal(false)}
+                                disabled={loading}
+                            >
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        {passwordError && (
+                            <div className="message error">
+                                {passwordError}
+                            </div>
+                        )}
+
+                        <form onSubmit={updatePassword}>
+                            <div className="form-group">
+                                <label htmlFor="current_password">Current Password</label>
+                                <input
+                                    type="password"
+                                    id="current_password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    placeholder="Enter your current password"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="new_password">New Password</label>
+                                <input
+                                    type="password"
+                                    id="new_password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter new password"
+                                    required
+                                />
+                                <small>Password must be at least 8 characters</small>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="confirm_password">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    id="confirm_password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Confirm new password"
+                                    required
+                                />
+                            </div>
+
+                            <div className="modal-actions">
+                                <button 
+                                    type="button" 
+                                    className="modal-cancel-btn"
+                                    onClick={() => setShowPasswordModal(false)}
+                                    disabled={loading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="modal-submit-btn"
+                                    disabled={loading || !currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8}
+                                >
+                                    {loading ? 'Updating...' : 'Update Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

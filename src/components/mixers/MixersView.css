@@ -650,6 +650,12 @@
     flex-direction: column;
 }
 
+/* Wider modal for overview */
+.modal-content.overview-modal {
+    max-width: 1000px;
+    width: 95%;
+}
+
 .card-header {
     display: flex;
     justify-content: space-between;

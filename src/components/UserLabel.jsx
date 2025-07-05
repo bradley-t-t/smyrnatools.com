@@ -23,34 +23,29 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
             }
 
             try {
-                console.log(`[UserLabel] Calling UserService.getUserById(${userId})`);
-                const user = await UserService.getUserById(userId);
-                console.log(`[UserLabel] Got user:`, user);
+                // Use the enhanced getUserDisplayName method which prioritizes full name
+                console.log(`[UserLabel] Calling UserService.getUserDisplayName(${userId})`);
+                const displayName = await UserService.getUserDisplayName(userId);
+                console.log(`[UserLabel] Got display name:`, displayName);
 
                 if (!isMounted) return;
 
-                if (user) {
-                    const name = user.name || user.email || 'Unknown';
-                    setUserName(name);
+                setUserName(displayName);
 
-                    // Generate initials
-                    if (user.name) {
-                        const nameParts = user.name.trim().split(' ').filter(part => part);
-                        if (nameParts.length > 1) {
-                            setInitials(`${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase());
-                        } else {
-                            setInitials(user.name.substring(0, 2).toUpperCase());
-                        }
-                    } else if (user.email) {
-                        setInitials(user.email.substring(0, 2).toUpperCase());
-                    } else {
-                        setInitials('?');
-                    }
-                } else {
-                    // Use a generic display format when no user data is available
-                    const displayName = `User ${userId.substring(0, 8)}`;
-                    setUserName(displayName);
+                // Generate initials from the display name
+                const nameParts = displayName.trim().split(' ').filter(part => part);
+                if (nameParts.length > 1) {
+                    // If we have multiple parts (first and last name), use first letter of first and last
+                    setInitials(`${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase());
+                } else if (displayName.includes('@')) {
+                    // If it's an email address
+                    setInitials(displayName.substring(0, 2).toUpperCase());
+                } else if (displayName.startsWith('User ')) {
+                    // If it's a fallback user ID format
                     setInitials(userId.substring(0, 2).toUpperCase());
+                } else {
+                    // Otherwise use first two letters
+                    setInitials(displayName.substring(0, 2).toUpperCase());
                 }
             } catch (error) {
                 console.error('[UserLabel] Error fetching user:', error);
