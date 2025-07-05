@@ -76,11 +76,6 @@
     margin-top: 8px;
 }
 
-.vertical-navbar:not(.collapsed) .navbar-logo {
-    width: 100%;
-    max-width: 200px;
-    padding: 0 10px;
-}
 
 .navbar-header {
     display: flex;
@@ -97,12 +92,16 @@
 }
 
 .navbar-logo {
-    width: 100%;
-    height: auto;
     object-fit: contain;
     margin: 0 auto;
-    max-width: 190px;
     display: block;
+}
+
+.vertical-navbar:not(.collapsed) .navbar-logo {
+    width: 100%;
+    height: auto;
+    max-width: 220px;
+    max-height: 90px; /* Much bigger logo when expanded */
 }
 
 .navbar-title {
@@ -188,6 +187,11 @@
 .menu-icon {
     font-size: 16px;
     color: #333333;
+    min-width: 24px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .menu-icon i {
@@ -274,7 +278,11 @@
     box-sizing: border-box;
 }
 
-.navbar-logo {
+.vertical-navbar:not(.collapsed) .logo-container {
+    padding: 20px 15px 25px;
+}
+
+.vertical-navbar.collapsed .navbar-logo {
     width: 45px;
     height: 45px;
 }
@@ -324,6 +332,11 @@
     border-left: 3px solid transparent;
 }
 
+.vertical-navbar:not(.collapsed) .menu-item {
+    display: flex;
+    align-items: center;
+}
+
 .menu-item:hover {
     background-color: rgba(49, 130, 206, 0.05);
 }
@@ -341,15 +354,34 @@
     width: 24px;
 }
 
+.vertical-navbar:not(.collapsed) .menu-icon {
+    color: #333333;
+    opacity: 1;
+    font-size: 18px;
+    margin-right: 5px;
+}
+
 .menu-text {
     font-size: 16px;
     color: #4a5568;
     white-space: nowrap;
 }
 
+.vertical-navbar:not(.collapsed) .menu-text {
+    display: inline-block;
+    opacity: 1;
+    visibility: visible;
+    font-weight: 500;
+}
+
 .menu-item.active .menu-text {
     font-weight: 600;
     color: #3182ce;
+}
+
+.menu-item.active .menu-icon {
+    color: #b80017; /* Company red for active items */
+    opacity: 1;
 }
 
 .content-area {

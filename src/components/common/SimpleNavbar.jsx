@@ -86,13 +86,12 @@ export default function SimpleNavbar({
                                 className={`menu-item ${selectedView === item.id ? 'active' : ''}`}
                                 onClick={() => onSelectView(item.id)}
                             >
+                                <span className="menu-icon"
+                                      title={item.text}>
+                                    {getIconForMenuItem(item.id)}
+                                </span>
                                 {!collapsed && <span className="menu-text"
                                                      style={selectedView === item.id ? {color: '#b80017'} : {}}>{item.text}</span>}
-                                {collapsed && <span className="menu-icon"
-                                                    style={selectedView === item.id ? {color: '#b80017'} : {}}
-                                                    title={item.text}>
-                                    {getIconForMenuItem(item.id)}
-                                </span>}
                             </li>
                         ))}
 
@@ -101,6 +100,10 @@ export default function SimpleNavbar({
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''}`}
                             onClick={() => onSelectView('MyAccount')}
                         >
+                            <span className="menu-icon"
+                                  title="My Account">
+                                {getIconForMenuItem('MyAccount')}
+                            </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
                                     <span className="menu-text"
@@ -108,11 +111,6 @@ export default function SimpleNavbar({
                                     {userName && <span className="user-name">{userName}</span>}
                                 </div>
                             )}
-                            {collapsed && <span className="menu-icon"
-                                                style={selectedView === 'MyAccount' ? {color: '#b80017'} : {}}
-                                                title="My Account">
-                                {getIconForMenuItem('MyAccount')}
-                            </span>}
                         </li>
 
                         {showLogout && (
@@ -120,17 +118,14 @@ export default function SimpleNavbar({
                                 className={`menu-item ${selectedView === 'Logout' ? 'active' : ''}`}
                                 onClick={() => onSelectView('Logout')}
                             >
-                                {!collapsed && (
-                                    <>
-                                        <span className="menu-text"
-                                              style={selectedView === 'Logout' ? {color: '#b80017'} : {}}>Logout</span>
-                                    </>
-                                )}
-                                {collapsed && <span className="menu-icon"
-                                                    style={selectedView === 'Logout' ? {color: '#b80017'} : {}}
-                                                    title="Logout">
+                                <span className="menu-icon"
+                                      title="Logout">
                                     {getIconForMenuItem('Logout')}
-                                </span>}
+                                </span>
+                                {!collapsed && (
+                                    <span className="menu-text"
+                                          style={selectedView === 'Logout' ? {color: '#b80017'} : {}}>Logout</span>
+                                )}
                             </li>
                         )}
                     </ul>
