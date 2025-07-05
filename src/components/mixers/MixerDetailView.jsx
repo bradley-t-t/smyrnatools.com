@@ -325,6 +325,24 @@ function MixerDetailView({mixerId, onClose}) {
         }
     };
 
+    // Add event listener for browser back button
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (hasUnsavedChanges) {
+                // Standard way to show a confirmation dialog before leaving
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [hasUnsavedChanges]);
+
     // Helper functions
     const getOperatorName = (operatorId) => {
         if (!operatorId || operatorId === '0') return 'None';
@@ -649,37 +667,47 @@ function MixerDetailView({mixerId, onClose}) {
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes. Are you sure you want to leave without saving?</p>
+                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
 
                         <div className="confirmation-actions">
                             <button
                                 className="cancel-button"
                                 onClick={() => setShowUnsavedChangesModal(false)}
                             >
-                                Cancel
+                                Continue Editing
                             </button>
 
                             <button
                                 className="primary-button"
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
-                                    await handleSave();
-                                    // After saving is complete, navigate back
-                                    onClose();
+                                    try {
+                                        await handleSave();
+                                        // Show brief success message
+                                        setMessage('Changes saved successfully!');
+                                        // After saving is complete, navigate back
+                                        setTimeout(() => onClose(), 800);
+                                    } catch (error) {
+                                        console.error('Error saving before navigation:', error);
+                                        setMessage('Error saving changes. Please try again.');
+                                        setTimeout(() => setMessage(''), 3000);
+                                    }
                                 }}
                                 style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                             >
-                                Save Changes
+                                Save & Leave
                             </button>
 
                             <button
                                 className="danger-button"
                                 onClick={() => {
                                     setShowUnsavedChangesModal(false);
+                                    // Reset form to original values to prevent unsaved changes warning
+                                    setHasUnsavedChanges(false);
                                     onClose();
                                 }}
                             >
-                                Discard Changes
+                                Discard & Leave
                             </button>
                         </div>
                     </div>
