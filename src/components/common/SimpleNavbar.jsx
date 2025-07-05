@@ -1,11 +1,45 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import './SimpleNavbar.css';
 import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+
+// Add FontAwesome stylesheet dynamically if not already present
+const ensureFontAwesome = () => {
+  if (!document.getElementById('font-awesome-stylesheet')) {
+    const link = document.createElement('link');
+    link.id = 'font-awesome-stylesheet';
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+    link.integrity = 'sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==';
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  }
+};
+
+// Function to get appropriate icon for each menu item
+const getIconForMenuItem = (id) => {
+    switch(id) {
+        case 'Dashboard': return <i className="fas fa-tachometer-alt"></i>;
+        case 'Mixers': return <i className="fas fa-truck"></i>;
+        case 'Tractors': return <i className="fas fa-tractor"></i>;
+        case 'Trailers': return <i className="fas fa-trailer"></i>;
+        case 'Heavy Equipment': return <i className="fas fa-snowplow"></i>;
+        case 'Operators': return <i className="fas fa-users"></i>;
+        case 'Plants': return <i className="fas fa-industry"></i>;
+        case 'Regions': return <i className="fas fa-map-marker-alt"></i>;
+        case 'Reports': return <i className="fas fa-file-alt"></i>;
+        case 'Settings': return <i className="fas fa-cog"></i>;
+        case 'MyAccount': return <i className="fas fa-user"></i>;
+        case 'Logout': return <i className="fas fa-sign-out-alt"></i>;
+        default: return <i className="fas fa-clipboard-list"></i>;
+    }
+};
 
 const menuItems = [
     {text: 'Dashboard', id: 'Dashboard'},
     {text: 'Mixers', id: 'Mixers'},
     {text: 'Tractors', id: 'Tractors'},
+    {text: 'Trailers', id: 'Trailers'},
+    {text: 'Heavy Equipment', id: 'Heavy Equipment'},
     {text: 'Operators', id: 'Operators'},
     {text: 'Plants', id: 'Plants'},
     {text: 'Regions', id: 'Regions'},
@@ -23,6 +57,10 @@ export default function SimpleNavbar({
                                          onExternalLink
                                      }) {
     const [collapsed, setCollapsed] = useState(false);
+
+    useEffect(() => {
+        ensureFontAwesome();
+    }, []);
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
@@ -50,8 +88,11 @@ export default function SimpleNavbar({
                             >
                                 {!collapsed && <span className="menu-text"
                                                      style={selectedView === item.id ? {color: '#b80017'} : {}}>{item.text}</span>}
-                                {collapsed && <span className="menu-initial"
-                                                    style={selectedView === item.id ? {color: '#b80017'} : {}}>{item.text.charAt(0)}</span>}
+                                {collapsed && <span className="menu-icon"
+                                                    style={selectedView === item.id ? {color: '#b80017'} : {}}
+                                                    title={item.text}>
+                                    {getIconForMenuItem(item.id)}
+                                </span>}
                             </li>
                         ))}
 
@@ -61,14 +102,17 @@ export default function SimpleNavbar({
                             onClick={() => onSelectView('MyAccount')}
                         >
                             {!collapsed && (
-                                <>
+                                <div className="user-menu-content">
                                     <span className="menu-text"
                                           style={selectedView === 'MyAccount' ? {color: '#b80017'} : {}}>My Account</span>
-                                    {userName && <div className="user-name">{userName}</div>}
-                                </>
+                                    {userName && <span className="user-name">{userName}</span>}
+                                </div>
                             )}
-                            {collapsed && <span className="menu-initial"
-                                                style={selectedView === 'MyAccount' ? {color: '#b80017'} : {}}>A</span>}
+                            {collapsed && <span className="menu-icon"
+                                                style={selectedView === 'MyAccount' ? {color: '#b80017'} : {}}
+                                                title="My Account">
+                                {getIconForMenuItem('MyAccount')}
+                            </span>}
                         </li>
 
                         {showLogout && (
@@ -82,8 +126,11 @@ export default function SimpleNavbar({
                                               style={selectedView === 'Logout' ? {color: '#b80017'} : {}}>Logout</span>
                                     </>
                                 )}
-                                {collapsed && <span className="menu-initial"
-                                                    style={selectedView === 'Logout' ? {color: '#b80017'} : {}}>L</span>}
+                                {collapsed && <span className="menu-icon"
+                                                    style={selectedView === 'Logout' ? {color: '#b80017'} : {}}
+                                                    title="Logout">
+                                    {getIconForMenuItem('Logout')}
+                                </span>}
                             </li>
                         )}
                     </ul>
