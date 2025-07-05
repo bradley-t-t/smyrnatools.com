@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import './SimpleNavbar.css';
 import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+import { usePreferences } from '../../context/PreferencesContext';
 
 // Add FontAwesome stylesheet dynamically if not already present
 const ensureFontAwesome = () => {
@@ -56,7 +57,8 @@ export default function SimpleNavbar({
                                          unreadMessageCount = 0,
                                          onExternalLink
                                      }) {
-    const [collapsed, setCollapsed] = useState(false);
+    const { preferences, toggleNavbarMinimized } = usePreferences();
+    const [collapsed, setCollapsed] = useState(preferences.navbarMinimized);
 
     useEffect(() => {
         ensureFontAwesome();
@@ -64,7 +66,13 @@ export default function SimpleNavbar({
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
+        toggleNavbarMinimized();
     };
+
+    // Update collapsed state when preference changes
+    useEffect(() => {
+        setCollapsed(preferences.navbarMinimized);
+    }, [preferences.navbarMinimized]);
 
     return (
         <div className="app-container">
@@ -75,7 +83,7 @@ export default function SimpleNavbar({
                     </div>
                 </div>
                 <button className="collapse-btn" onClick={toggleCollapse}>
-                    {collapsed ? '→' : '←'}
+                    <i className="fas fa-chevron-right collapse-icon"></i>
                 </button>
 
                 <nav className="navbar-menu">
@@ -90,8 +98,7 @@ export default function SimpleNavbar({
                                       title={item.text}>
                                     {getIconForMenuItem(item.id)}
                                 </span>
-                                {!collapsed && <span className="menu-text"
-                                                     style={selectedView === item.id ? {color: '#b80017'} : {}}>{item.text}</span>}
+                                                                                     {!collapsed && <span className="menu-text">{item.text}</span>}
                             </li>
                         ))}
 
@@ -106,8 +113,7 @@ export default function SimpleNavbar({
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text"
-                                          style={selectedView === 'MyAccount' ? {color: '#b80017'} : {}}>My Account</span>
+                                                                              <span className="menu-text">My Account</span>
                                     {userName && <span className="user-name">{userName}</span>}
                                 </div>
                             )}
@@ -123,8 +129,7 @@ export default function SimpleNavbar({
                                     {getIconForMenuItem('Logout')}
                                 </span>
                                 {!collapsed && (
-                                    <span className="menu-text"
-                                          style={selectedView === 'Logout' ? {color: '#b80017'} : {}}>Logout</span>
+                                                                              <span className="menu-text">Logout</span>
                                 )}
                             </li>
                         )}

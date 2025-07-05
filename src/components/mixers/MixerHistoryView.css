@@ -16,7 +16,7 @@
 }
 
 .history-modal {
-    background-color: white;
+    background-color: var(--bg-primary);
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     width: 90%;
@@ -26,6 +26,7 @@
     flex-direction: column;
     animation: slideUp 0.3s ease-out;
     overflow: hidden;
+    color: var(--text-primary);
 }
 
 @keyframes slideUp {
@@ -53,7 +54,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background-color: #003896; /* Company blue */
+    background-color: var(--accent); /* Use theme accent color */
     color: white;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
@@ -63,6 +64,7 @@
     margin: 0;
     font-size: 18px;
     font-weight: 600;
+  color: var(--text-primary);
 }
 
 .history-modal-content {
@@ -76,12 +78,13 @@
     padding: 12px 16px;
     display: flex;
     justify-content: flex-end;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid var(--border-light);
+    background-color: var(--bg-primary);
 }
 
 .cancel-button {
-    background-color: #f2f2f7;
-    color: #222d64;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
@@ -92,7 +95,7 @@
 }
 
 .cancel-button:hover {
-    background-color: #e5e5ea;
+    background-color: var(--bg-hover);
 }
 
 .loading-spinner-container {
@@ -101,15 +104,15 @@
     align-items: center;
     justify-content: center;
     padding: 40px 0;
-    color: #8e8e93;
+    color: var(--text-secondary);
 }
 
 .ios-spinner {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border: 3px solid rgba(34, 45, 100, 0.2);
-    border-top-color: #222d64;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--accent);
     animation: spin 0.8s linear infinite;
     margin-bottom: 16px;
 }
@@ -140,7 +143,7 @@
 .empty-history {
     text-align: center;
     padding: 40px 0;
-    color: #8e8e93;
+    color: var(--text-secondary);
 }
 
 .empty-icon {
@@ -166,7 +169,8 @@
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 4px solid #222d64;
+    border-left: 4px solid var(--accent);
+    background-color: var(--bg-secondary);
 }
 
 .history-item:hover {
@@ -179,19 +183,19 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 12px;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .history-field-name {
     font-weight: 600;
     font-size: 15px;
-    color: #222d64;
+    color: var(--text-primary);
 }
 
 .history-timestamp {
     font-size: 13px;
-    color: #8e8e93;
+    color: var(--text-secondary);
 }
 
 .history-change {
@@ -203,12 +207,12 @@
 
 .history-old-value, .history-new-value {
     font-size: 14px;
-    color: #333333;
+    color: var(--text-primary);
 }
 
 .history-arrow {
     align-self: center;
-    color: #8e8e93;
+    color: var(--text-secondary);
     font-size: 18px;
     margin: 4px 0;
 }
@@ -217,7 +221,7 @@
     padding: 6px 12px 12px 12px;
     display: flex;
     align-items: center;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--border-light);
     margin-top: 6px;
 }
 
@@ -228,13 +232,13 @@
 
 .value-label {
     font-weight: 500;
-    color: #8e8e93;
+    color: var(--text-secondary);
     margin-right: 6px;
 }
 
 .history-new-value {
     font-weight: 500;
-    color: #222222;
+    color: var(--text-primary);
 }
 
 /* Media query for larger screens */

@@ -19,7 +19,7 @@
 
 .chart-header h2 {
     font-size: 1.3rem;
-    color: #333;
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -29,21 +29,22 @@
 }
 
 .period-selector button {
-    background: #f1f1f1;
+    background: var(--bg-tertiary);
     border: none;
     border-radius: 4px;
     padding: 5px 10px;
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    color: var(--text-secondary);
 }
 
 .period-selector button:hover {
-    background: #e1e1e1;
+    background: var(--border-medium);
 }
 
 .period-selector button.active {
-    background: #3498db;
+    background: var(--accent-primary);
     color: white;
 }
 
@@ -65,7 +66,7 @@
 
 .y-label {
     font-size: 0.8rem;
-    color: #777;
+    color: var(--text-secondary);
     height: 20px;
     display: flex;
     align-items: center;
@@ -75,8 +76,8 @@
     flex-grow: 1;
     position: relative;
     height: 100%;
-    border-left: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    border-left: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .grid-lines {
@@ -90,7 +91,7 @@
     position: absolute;
     width: 100%;
     height: 1px;
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--border-light);
     /* Position grid lines from the bottom instead of from the top */
     top: auto;
 }
@@ -107,7 +108,7 @@
     position: absolute;
     transform: translateX(-50%);
     font-size: 0.8rem;
-    color: #777;
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
@@ -117,7 +118,7 @@
     align-items: center;
     margin-top: 1.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-light);
 }
 
 .legend-item {
@@ -134,12 +135,12 @@
 
 .legend-label {
     font-size: 0.9rem;
-    color: #555;
+    color: var(--text-secondary);
 }
 
 .chart-summary {
     font-size: 0.8rem;
-    color: #777;
+    color: var(--text-secondary);
 }
 
 /* Loading state */
@@ -151,12 +152,12 @@
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    color: #777;
+    color: var(--text-secondary);
 }
 
 .static-loading {
     font-size: 16px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 

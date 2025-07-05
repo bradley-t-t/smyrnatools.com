@@ -236,7 +236,7 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                         <polyline
                             points={getChartPoints()}
                             fill="none"
-                            stroke="#3498db"
+                            stroke="var(--accent-primary)"
                             strokeWidth="2"
                         />
 
@@ -252,7 +252,7 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                                     cx={x}
                                     cy={y}
                                     r="3"
-                                    fill="#3498db"
+                                    fill="var(--accent-primary)"
                                     className="data-point"
                                     data-date={point.date}
                                     data-value={point.avgRating.toFixed(1)}
@@ -289,7 +289,7 @@ const CleanlinessHistoryChart = ({ mixers }) => {
 
             <div className="chart-legend">
                 <div className="legend-item">
-                    <div className="legend-color" style={{ backgroundColor: '#3498db' }}></div>
+                    <div className="legend-color" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
                     <div className="legend-label">Avg. Rating</div>
                 </div>
                 <div className="chart-summary">

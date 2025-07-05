@@ -30,7 +30,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     return (
         <div className="mixer-card" {...cardProps}>
             <div className="card-content">
-                <div className="status-dot" style={{backgroundColor: statusColor, width: '20px', height: '20px', top: '16px', right: '16px', position: 'absolute', borderRadius: '50%', border: '2px solid white', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)', zIndex: 2}} title={mixer.status || 'Unknown'}></div>
+                <div className="status-dot" style={{backgroundColor: statusColor, width: '20px', height: '20px', top: '16px', right: '16px', position: 'absolute', borderRadius: '50%', border: '2px solid var(--bg-primary)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)', zIndex: 2}} title={mixer.status || 'Unknown'}></div>
                 <div className="card-header">
                     <h3 className="mixer-name">Truck #{mixer.truckNumber || 'N/A'}</h3>
                 </div>

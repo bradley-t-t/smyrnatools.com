@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {usePreferences} from '../../context/PreferencesContext';
 import {MixerService} from '../../services/mixers/MixerService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import UserLabel from '../UserLabel';
@@ -7,6 +8,7 @@ import '../common/LoadingText.css';
 import './MixerHistoryView.css';
 
 function MixerHistoryView({mixer, onClose}) {
+    const {preferences} = usePreferences();
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -79,17 +81,20 @@ function MixerHistoryView({mixer, onClose}) {
         // Normalize the field name to handle both camelCase and snake_case
         const normalizedFieldName = fieldName.includes('_') ? fieldName : fieldName.replace(/([A-Z])/g, '_$1').toLowerCase();
 
+        // Use dark mode aware colors
+        const isDarkMode = preferences.themeMode === 'dark';
+
         switch (normalizedFieldName) {
             case 'status':
-                return '#d9dbe6'; // Light gray
+                return isDarkMode ? '#2d3142' : '#d9dbe6'; // Gray
             case 'verification':
-                return '#e1f5fe'; // Light blue
+                return isDarkMode ? '#1a365d' : '#e1f5fe'; // Blue
             case 'assigned_operator':
-                return '#e8f5e9'; // Light green
+                return isDarkMode ? '#1c3829' : '#e8f5e9'; // Green
             case 'assigned_plant':
-                return '#fff3e0'; // Light orange
+                return isDarkMode ? '#3d2c1a' : '#fff3e0'; // Orange
             default:
-                return '#f8f8f8'; // Very light gray instead of white
+                return isDarkMode ? '#222222' : '#f8f8f8'; // Default bg
         }
     };
 
@@ -128,7 +133,7 @@ function MixerHistoryView({mixer, onClose}) {
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
-                <div className="history-modal-header" style={{backgroundColor: '#003896'}}>
+                <div className="history-modal-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                     <h2>History for Truck #{mixer.truckNumber}</h2>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>

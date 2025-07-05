@@ -1,5 +1,5 @@
 .mixer-card {
-    background-color: #ffffff;
+    background-color: var(--bg-primary);
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 16px;
@@ -17,7 +17,7 @@
 .mixer-card:active {
     transform: translateY(0px);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-    background-color: #f7f9ff;
+    background-color: var(--bg-hover);
 }
 
 .card-content {
@@ -137,6 +137,8 @@
   margin-bottom: 16px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
+  width: 100%;
+  max-width: 600px;
 }
 
 .mixer-card:hover {
@@ -161,7 +163,7 @@
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+    color: var(--text-primary);
 }
 
 .card-details {
@@ -174,16 +176,17 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
-  padding: 4px 0;
+  padding: 8px 0;
+  align-items: center;
 }
 
 .detail-label {
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .detail-value {
-  color: #333;
+  color: var(--text-primary);
   font-weight: 600;
   text-align: right;
 }
@@ -192,7 +195,7 @@
   color: #dc2626;
 }
 .mixer-card {
-    background-color: #ffffff;
+    background-color: var(--bg-primary);
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 16px;
@@ -231,7 +234,7 @@
     margin: 0;
     font-size: 1.2rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .status-dot {
@@ -259,15 +262,18 @@
     padding: 4px 0;
 }
 .mixer-card {
-  background-color: #ffffff;
+  background-color: var(--bg-primary);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
   overflow: hidden;
   margin-bottom: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-light);
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .mixer-card:hover {
@@ -276,8 +282,16 @@
 }
 
 .card-content {
-  padding: 16px;
+  padding: 24px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-color: var(--bg-primary);
 }
 
 .card-header {
@@ -285,27 +299,31 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: nowrap;
 }
 
 .mixer-name {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .status-dot {
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 2px solid white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   z-index: 2;
+  margin: 0;
 }
 
 .card-details {
@@ -322,12 +340,12 @@
 }
 
 .detail-label {
-  color: #666;
-  font-weight: 500;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .detail-value {
-  color: #333;
+    color: var(--text-primary);
   font-weight: 600;
   text-align: right;
 }
@@ -338,7 +356,7 @@
 
 .days-ago {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: normal;
 }
 
@@ -370,12 +388,12 @@
   background-color: #fee2e2;
 }
 .detail-label {
-    color: #666;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
 .detail-value {
-    color: #333;
+    color: var(--text-primary);
     font-weight: 600;
     text-align: right;
 }

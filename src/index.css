@@ -1,6 +1,53 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Essential fixes for content overflow issues */
+* {
+  box-sizing: border-box;
+}
 
+html, body, #root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Make sure all containers have proper width constraints */
+.layout-container {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.content-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Specific fix for mixer detail view */
+.mixer-detail-view {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.detail-content {
+  width: 100%;
+  max-width: 800px;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow-x: hidden;
+}
+
+/* Add responsive constraints to detail cards */
+.detail-card, .mixer-card {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 :root {
     --primary-color: #003896;
     --primary-hover: #002d76;
@@ -62,7 +109,82 @@ button {
 input, select, textarea {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
 
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Custom CSS variables */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f5;
+  --bg-hover: #e9ecef;
+
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+
+  --accent: #003896;
+  --accent-light: #e7f5ff;
+  --accent-dark: #002d77;
+  --accent-transparent: rgba(0, 56, 150, 0.1);
+
+  --border-light: #dee2e6;
+  --border-medium: #ced4da;
+  --border-dark: #adb5bd;
+
+  --shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+  --danger: #dc3545;
+  --warning: #ffc107;
+  --success: #198754;
+}
+
+/* Dark mode theme */
+.dark-mode {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #2c2c2c;
+  --bg-hover: #333333;
+
+  --text-primary: #e9ecef;
+  --text-secondary: #adb5bd;
+
+  --border-light: #333333;
+  --border-medium: #444444;
+  --border-dark: #666666;
+}
+
+/* Accent color variants */
+.accent-red {
+  --accent: #b80017;
+  --accent-light: #ffe3e3;
+  --accent-dark: #8a0011;
+  --accent-transparent: rgba(184, 0, 23, 0.1);
+}
+
+.accent-blue {
+  --accent: #003896;
+  --accent-light: #e7f5ff;
+  --accent-dark: #002d77;
+  --accent-transparent: rgba(0, 56, 150, 0.1);
+}
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

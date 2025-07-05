@@ -1,0 +1,234 @@
+:root {
+    /* Light Theme Variables (Default) */
+    --text-primary: #212122;
+    --text-secondary: #666666;
+    --text-light: #ffffff;
+
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f6f4;
+    --bg-tertiary: #e5e5ea;
+    --bg-navbar: #f5f5f5;
+
+    --border-light: #e5e5ea;
+    --border-medium: #c7c7cc;
+
+    /* Blue Accent (Default) */
+    --accent-primary: #003896;
+    --accent-secondary: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: #dbeafe;
+    --accent-border: #93c5fd;
+}
+
+/* Dark Mode */
+.dark-mode {
+    --text-primary: #f5f5f5;
+    --text-secondary: #aaaaaa;
+    --text-light: #f5f5f5;
+
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #121212;
+    --bg-tertiary: #2a2a2a;
+    --bg-navbar: #1e1e1e;
+
+    --border-light: #333333;
+    --border-medium: #333333;
+}
+
+:root {
+    /* Light theme variables */
+    --primary: #2d3748;
+    --primary-dark: #1a202c;
+    --primary-light: #4a5568;
+    --secondary: #718096;
+    --accent: #b80017;
+    --accent-light: #d4001b;
+    --accent-dark: #980013;
+    --success: #38a169;
+    --warning: #ecc94b;
+    --error: #e53e3e;
+    --info: #4299e1;
+    --text-primary: #1a202c;
+    --text-secondary: #718096;
+    --text-light: #a0aec0;
+    --background: #f7fafc;
+    --card-bg: #ffffff;
+    --card-border: #edf2f7;
+    --card-border-hover: #e2e8f0;
+    --divider: #e2e8f0;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-hover: 0 15px 30px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Dark mode variables */
+.dark-mode {
+    --primary: #121212;
+    --primary-dark: #000000;
+    --primary-light: #2a2a2a;
+    --secondary: #5a5a5a;
+    --accent: #d4001b;
+    --accent-light: #e60020;
+    --accent-dark: #980013;
+    --success: #48bb78;
+    --warning: #f6e05e;
+    --error: #fc8181;
+    --info: #63b3ed;
+    --text-primary: #f5f5f5;
+    --text-secondary: #aaaaaa;
+    --text-light: #777777;
+    --background: #121212;
+    --card-bg: #1e1e1e;
+    --card-border: #333333;
+    --card-border-hover: #444444;
+    --divider: #333333;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.7);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+    --shadow-hover: 0 15px 30px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+}
+
+/* Red accent color */
+.accent-red {
+    --accent: #b80017;
+    --accent-light: #d4001b;
+    --accent-dark: #980013;
+}
+
+/* Blue accent color */
+.accent-blue {
+    --accent: #003896;
+    --accent-light: #0048c3;
+    --accent-dark: #002c78;
+}
+
+/* Apply theme to body to ensure all components inherit the theme */
+body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Style inputs, buttons, and other common elements for both themes */
+input, select, textarea, button {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border-color: var(--divider);
+}
+
+input::placeholder, select::placeholder, textarea::placeholder {
+    color: var(--text-light);
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    outline-color: var(--accent);
+}
+
+button.primary {
+    background-color: var(--accent);
+    color: white;
+}
+
+button.primary:hover {
+    background-color: var(--accent-dark);
+}
+
+/* Override card and container styles for dark mode */
+.dark-mode .card,
+.dark-mode .modal-content,
+.dark-mode .search-filters,
+.dark-mode .mixer-card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    color: var(--text-primary);
+}
+
+.dark-mode .ios-search-input,
+.dark-mode .ios-select {
+    background-color: var(--primary-dark);
+    color: var(--text-primary);
+    border-color: var(--card-border);
+}
+
+.dark-mode .ios-search-input::placeholder {
+    color: var(--text-light);
+}
+
+.dark-mode .dashboard-container,
+.dark-mode .mixers-content,
+.dark-mode .App {
+    background-color: var(--background);
+}
+
+.dark-mode .no-results-container {
+    background-color: var(--card-bg);
+}
+
+/* Handle table styles in dark mode */
+.dark-mode table {
+    border-color: var(--divider);
+    color: var(--text-primary);
+}
+
+.dark-mode th, 
+.dark-mode td {
+    border-color: var(--divider);
+}
+
+.dark-mode tr:nth-child(even) {
+    background-color: var(--primary-light);
+}
+
+.dark-mode .dashboard-header h1 {
+    color: var(--text-primary);
+}
+
+/* Fix text colors in dark mode */
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5, .dark-mode h6 {
+    color: var(--text-primary);
+}
+
+.dark-mode p, .dark-mode span, .dark-mode div, .dark-mode label {
+    color: var(--text-primary);
+}
+
+.dark-mode .detail-value,
+.dark-mode .truck-info h3 {
+    color: var(--text-primary);
+}
+
+.dark-mode .detail-label,
+.dark-mode .detail-icon,
+.dark-mode .plant-badge {
+    color: var(--text-secondary);
+}
+
+/* Handle dark mode for selects and dropdowns */
+.dark-mode .ios-select option {
+    background-color: var(--primary-dark);
+    color: var(--text-primary);
+}
+
+/* Red Accent */
+.accent-red {
+    --accent-primary: #b80017;
+    --accent-secondary: #dc2626;
+    --accent-hover: #b91c1c;
+    --accent-light: #fee2e2;
+    --accent-border: #fca5a5;
+    --accent-primary-rgb: 184, 0, 23;
+}
+
+/* Blue Accent */
+.accent-blue {
+    --accent-primary: #003896;
+    --accent-secondary: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: #dbeafe;
+    --accent-border: #93c5fd;
+    --accent-primary-rgb: 0, 56, 150;
+}

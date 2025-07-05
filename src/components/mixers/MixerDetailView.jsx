@@ -8,12 +8,14 @@ import SimpleLoading from '../common/SimpleLoading';
 import LoadingText from '../common/LoadingText';
 import Theme from '../../utils/Theme';
 import supabase from '../../core/SupabaseClient';
+import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCard from './MixerCard';
 import '../common/LoadingText.css';
 import './MixerDetailView.css';
 
 function MixerDetailView({mixerId, onClose}) {
+    const {preferences} = usePreferences();
     const [mixer, setMixer] = useState(null);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -403,14 +405,23 @@ function MixerDetailView({mixerId, onClose}) {
             {/* Header */}
             <div className="detail-header">
                 <div className="header-left">
-                    <button className="back-button" onClick={handleBackClick} aria-label="Back to mixers">
+                    <button 
+                        className="back-button" 
+                        onClick={handleBackClick} 
+                        aria-label="Back to mixers"
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                    >
                         <i className="fas fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'N/A'}</h1>
                 <div className="header-actions">
-                    <button className="history-button" onClick={() => setShowHistory(true)}>
+                    <button 
+                        className="history-button" 
+                        onClick={() => setShowHistory(true)}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                    >
                         <i className="fas fa-history"></i>
                         <span>History</span>
                     </button>
@@ -418,7 +429,7 @@ function MixerDetailView({mixerId, onClose}) {
             </div>
 
             {/* Content */}
-            <div className="detail-content">
+            <div className="detail-content" style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
                         {message}
@@ -558,8 +569,11 @@ function MixerDetailView({mixerId, onClose}) {
                                         className={`star-button ${star <= cleanlinessRating ? 'active' : ''}`}
                                         onClick={() => setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
                                         aria-label={`Rate ${star} of 5 stars`}
+                                        style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
                                     >
-                                        <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}></i>
+                                        <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} 
+                                           style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
+                                        ></i>
                                     </button>
                                 ))}
                             </div>
@@ -584,6 +598,7 @@ function MixerDetailView({mixerId, onClose}) {
                         className="primary-button save-button"
                         onClick={handleSave}
                         disabled={isSaving}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                     >
                         {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -652,6 +667,7 @@ function MixerDetailView({mixerId, onClose}) {
                                     // After saving is complete, navigate back
                                     onClose();
                                 }}
+                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                             >
                                 Save Changes
                             </button>

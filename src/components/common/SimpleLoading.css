@@ -5,6 +5,8 @@
   padding: 1.5rem;
   color: #666;
   font-size: 1rem;
+    background: none;
+    animation: none;
   /* Ensure no animation is applied */
   animation: none;
 }

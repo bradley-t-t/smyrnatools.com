@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './index.css';
 import './App.css';
 import MixersView from './components/mixers/MixersView';
+import SettingsView from './components/settings/SettingsView';
 import MixerDetailView from './components/mixers/MixerDetailView';
 import OperatorsView from './components/operators/OperatorsView';
 import WebView from './components/common/WebView';
@@ -11,6 +12,9 @@ import MyAccountView from './components/account/MyAccountView';
 import SimpleNavbar from "./components/common/SimpleNavbar";
 import {AuthProvider} from './context/AuthContext';
 import {supabase} from './core/SupabaseClient';
+import {PreferencesProvider} from './context/PreferencesContext';
+import './styles/theme.css';
+import './styles/global.css';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');
@@ -236,6 +240,8 @@ function AppContent() {
 
                 console.log('No userId available, redirecting to login');
                 return <LoginView/>;
+                case 'Settings':
+                  return <SettingsView />;
             default:
                 return (
                     <div className="coming-soon">
@@ -263,9 +269,32 @@ function AppContent() {
 }
 
 function App() {
+  // Apply overflow protection to prevent horizontal scrolling
+  React.useEffect(() => {
+    document.documentElement.style.overflowX = 'hidden';
+    document.body.style.overflowX = 'hidden';
+
+    // Clean up on unmount
+    return () => {
+      document.documentElement.style.overflowX = '';
+      document.body.style.overflowX = '';
+    };
+  }, []);
+  // Apply overflow protection
+  React.useEffect(() => {
+    document.documentElement.style.overflowX = 'hidden';
+    document.body.style.overflowX = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflowX = '';
+      document.body.style.overflowX = '';
+    };
+  }, []);
     return (
         <AuthProvider>
-            <AppContent/>
+            <PreferencesProvider>
+                <AppContent/>
+            </PreferencesProvider>
         </AuthProvider>
     );
 }
