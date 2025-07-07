@@ -13,6 +13,10 @@ function MixerHistoryView({mixer, onClose}) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [operators, setOperators] = useState([]);
+    const [sortConfig, setSortConfig] = useState({
+        key: 'changedAt',
+        direction: 'descending'
+    });
 
     useEffect(() => {
         fetchHistory();
@@ -112,7 +116,7 @@ function MixerHistoryView({mixer, onClose}) {
 
     // Format old and new values for display
     const formatValue = (fieldName, value) => {
-        if (value === null || value === undefined) return 'N/A';
+        if (value === null || value === undefined || value === '') return 'N/A';
 
         // For operators, show name and ID
         if (fieldName === 'assigned_operator') {
@@ -128,6 +132,51 @@ function MixerHistoryView({mixer, onClose}) {
         }
 
         return value;
+    };
+
+    // Sort history items based on sortConfig
+    const sortedHistory = React.useMemo(() => {
+        let sortableItems = [...history];
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                // Handle both camelCase and snake_case fields
+                let aValue, bValue;
+
+                if (sortConfig.key === 'changedAt') {
+                    aValue = a.changedAt || a.changed_at;
+                    bValue = b.changedAt || b.changed_at;
+                } else if (sortConfig.key === 'fieldName') {
+                    aValue = a.fieldName || a.field_name;
+                    bValue = b.fieldName || b.field_name;
+                } else if (sortConfig.key === 'oldValue') {
+                    aValue = a.oldValue || a.old_value;
+                    bValue = b.oldValue || b.old_value;
+                } else if (sortConfig.key === 'newValue') {
+                    aValue = a.newValue || a.new_value;
+                    bValue = b.newValue || b.new_value;
+                } else if (sortConfig.key === 'changedBy') {
+                    aValue = a.changedBy || a.changed_by;
+                    bValue = b.changedBy || b.changed_by;
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [history, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
     };
 
     return (
@@ -158,7 +207,7 @@ function MixerHistoryView({mixer, onClose}) {
                         </div>
                     ) : (
                         <div className="history-timeline">
-                            {history.map((entry, index) => (
+                                                            {sortedHistory.map((entry, index) => (
                                 <div
                                     key={entry.id || index}
                                     className="history-item"

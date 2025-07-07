@@ -1,12 +1,14 @@
 import React from 'react';
 import {MixerUtils} from '../../models/Mixer';
 import Theme from '../../utils/Theme';
+import {usePreferences} from '../../context/PreferencesContext';
 import './MixerCard.css';
 
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
     const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
     const statusColor = Theme.statusColors[mixer.status] || Theme.statusColors.default;
+    const {preferences} = usePreferences();
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {
@@ -29,10 +31,10 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
 
     return (
         <div className="mixer-card" {...cardProps}>
+            <div className="card-status-indicator" style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}} title={mixer.status || 'Unknown'}></div>
             <div className="card-content">
-                <div className="status-dot" style={{backgroundColor: statusColor, width: '20px', height: '20px', top: '16px', right: '16px', position: 'absolute', borderRadius: '50%', border: '2px solid var(--bg-primary)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)', zIndex: 2}} title={mixer.status || 'Unknown'}></div>
                 <div className="card-header">
-                    <h3 className="mixer-name">Truck #{mixer.truckNumber || 'N/A'}</h3>
+                    <h3 className="mixer-name" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>Truck #{mixer.truckNumber || 'N/A'}</h3>
                 </div>
                 <div className="card-details">
                     <div className="detail-row">
@@ -82,6 +84,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                                     {[...Array(5)].map((_, i) => (
                                         <i key={i} 
                                            className={`fas fa-star ${i < mixer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
+                                           style={i < mixer.cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
                                            aria-hidden="true"
                                         ></i>
                                     ))}

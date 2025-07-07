@@ -13,8 +13,8 @@ import SimpleNavbar from "./components/common/SimpleNavbar";
 import {AuthProvider} from './context/AuthContext';
 import {supabase} from './core/SupabaseClient';
 import {PreferencesProvider} from './context/PreferencesContext';
-import './styles/theme.css';
-import './styles/global.css';
+import './styles/Theme.css';
+import './styles/Global.css';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');

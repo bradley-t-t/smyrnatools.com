@@ -470,7 +470,35 @@ function MixerDetailView({mixerId, onClose}) {
                     </div>
                     <p className="edit-instructions">Make changes below and click Save when finished.</p>
 
-                    <div className="metadata-info">
+                    <div className="history-table-container">
+                        <table className="history-table">
+                            <thead>
+                                <tr>
+                                    <th width="130">Field</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Created</th>
+                                    <td>{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Updated</th>
+                                    <td>{mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'N/A'}</td>
+                                </tr>
+                                {mixer.updatedBy && (
+                                    <tr>
+                                        <th>Updated By</th>
+                                        <td>{updatedByEmail || 'Unknown User'}</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Keep the original metadata div for backwards compatibility */}
+                    <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
                             <span className="metadata-label">Created:</span>
                             <span className="metadata-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</span>
@@ -487,7 +515,7 @@ function MixerDetailView({mixerId, onClose}) {
                                 </span>
                             </div>
                         )}
-                    </div>
+                    </div> {/* Close the hidden metadata-info div */}
 
                     <div className="form-group">
                         <label>Truck Number</label>
@@ -587,7 +615,6 @@ function MixerDetailView({mixerId, onClose}) {
                                         className={`star-button ${star <= cleanlinessRating ? 'active' : ''}`}
                                         onClick={() => setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
                                         aria-label={`Rate ${star} of 5 stars`}
-                                        style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
                                     >
                                         <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} 
                                            style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}

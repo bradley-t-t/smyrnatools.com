@@ -1,203 +1,139 @@
 .operator-card {
-  background-color: var(--bg-primary);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-  overflow: hidden;
-  margin-bottom: 16px;
-  border: 1px solid var(--border-light);
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.operator-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-}
-
-.operator-card .card-content {
-  padding: 24px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-  background-color: var(--bg-primary);
-}
-/* Operator Card Styles */
-.operator-card {
-    background-color: var(--card-bg);
-    border-radius: var(--border-radius-lg);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.03);
-    height: 100%;
-    position: relative;
     overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-light);
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 100%;
     display: flex;
 }
 
 .operator-card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-    transform: translateY(-3px);
+    transform: translateY(-4px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     border-color: rgba(49, 130, 206, 0.2);
+}
+
+.operator-card:active {
+    transform: translateY(0px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    background-color: #f7f9ff;
 }
 
 .card-content {
     flex: 1;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-lg, 24px);
+    position: relative;
     display: flex;
     flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    background-color: var(--bg-primary);
+}
+
+.card-status-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background-color: #cccccc;
+    z-index: 1;
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: nowrap;
 }
 
 .operator-name {
     margin: 0;
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 600;
     color: var(--text-primary);
-}
-
-.status-dot {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid var(--bg-primary);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    z-index: 2;
 }
 
 .card-details {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: 8px;
 }
 
 .detail-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-xs) 0;
+    font-size: 0.9rem;
+    padding: 4px 0;
 }
 
 .detail-label {
-    font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
 }
 
 .detail-value {
-    font-size: 14px;
     color: var(--text-primary);
     font-weight: 600;
     text-align: right;
 }
 
-.badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
 .trainer-badge {
-    background-color: rgba(49, 130, 206, 0.1);
-    color: var(--accent);
-}
-.operator-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  width: 100%;
-  max-width: 100%;
-  flex-wrap: nowrap;
+    background-color: #38a169;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
 }
 
-.operator-card .operator-name {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
+.card-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: flex-end;
 }
 
-.operator-card .status-dot {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 2;
-  margin: 0;
+.delete-button {
+    background-color: #fecaca;
+    color: #b91c1c;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-.operator-card .card-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.operator-card .detail-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  padding: 4px 0;
-}
-
-.operator-card .detail-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.operator-card .detail-value {
-  color: var(--text-primary);
-  font-weight: 600;
-  text-align: right;
-}
-
-.operator-card .badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-.operator-card .trainer-badge {
-  background-color: #38a169;
-  color: white;
+.delete-button:hover {
+    background-color: #fee2e2;
 }
 
 @media (max-width: 768px) {
-  .operator-card .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+    .operator-card .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-  .operator-card .operator-name {
-    margin-bottom: 8px;
-  }
+    .operator-card .operator-name {
+        margin-bottom: 8px;
+    }
 }

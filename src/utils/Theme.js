@@ -13,11 +13,11 @@ const Theme = {
 
     // Status colors for mixers
     statusColors: {
-        'Active': '#34c759', // Green
+        'Active': '#38a169', // Green - same as operatorStatusColors
         'Spare': '#007AFF', // Blue
         'In Shop': '#FF9500', // Orange
-        'Retired': '#FF3B30', // Red
-        'default': '#8e8e93' // Gray
+        'Retired': '#e53e3e', // Red - same as operatorStatusColors
+        'default': '#718096' // Gray - same as operatorStatusColors
     },
 
     // Light mode colors
