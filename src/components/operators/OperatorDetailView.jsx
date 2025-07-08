@@ -46,7 +46,6 @@ function OperatorDetailView({operatorId, onClose}) {
         if (isLoading) return;
 
         const hasChanges =
-            employeeId !== originalValues.employeeId ||
             name !== originalValues.name ||
             assignedPlant !== originalValues.assignedPlant ||
             status !== originalValues.status ||
@@ -327,8 +326,8 @@ function OperatorDetailView({operatorId, onClose}) {
                         <input
                             type="text"
                             value={employeeId}
-                            onChange={(e) => setEmployeeId(e.target.value)}
-                            className="form-control"
+                            readOnly
+                            className="form-control disabled-field"
                         />
                     </div>
 

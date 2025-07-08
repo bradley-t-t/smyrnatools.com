@@ -255,6 +255,13 @@
     border-bottom: none;
 }
 
+.disabled-field {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    opacity: 0.8;
+    border-color: #ddd;
+}
+
 .history-table tr:hover {
     background-color: var(--bg-hover);
 }

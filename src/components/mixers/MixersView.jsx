@@ -4,6 +4,7 @@ import {MixerUtils} from '../../models/Mixer';
 import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
+import {usePreferences} from '../../context/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
 import MixerOverview from './MixerOverview';
@@ -11,14 +12,17 @@ import MixerOverview from './MixerOverview';
 import './MixersView.css';
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
+    // Access preferences context
+    const { preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters } = usePreferences();
+
     // State variables
     const [mixers, setMixers] = useState([]);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchText, setSearchText] = useState('');
-    const [selectedPlant, setSelectedPlant] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [searchText, setSearchText] = useState(preferences.mixerFilters?.searchText || '');
+    const [selectedPlant, setSelectedPlant] = useState(preferences.mixerFilters?.selectedPlant || '');
+    const [statusFilter, setStatusFilter] = useState(preferences.mixerFilters?.statusFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
@@ -31,10 +35,17 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         'Past Due Service', 'Verified', 'Not Verified'
     ];
 
-    // Fetch data on component mount
+    // Fetch data on component mount and load filters from preferences
     useEffect(() => {
         fetchAllData();
-    }, []);
+
+        // Load filters from preferences
+        if (preferences.mixerFilters) {
+            setSearchText(preferences.mixerFilters.searchText || '');
+            setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
+            setStatusFilter(preferences.mixerFilters.statusFilter || '');
+        }
+    }, [preferences.mixerFilters]);
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -155,6 +166,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const handleSelectMixer = (mixerId) => {
         const mixer = mixers.find(m => m.id === mixerId);
         if (mixer) {
+            // Save current filters before navigating to detail view
+            saveLastViewedFilters();
+
             setSelectedMixer(mixer);
             if (onSelectMixer) {
                 onSelectMixer(mixerId);
@@ -236,12 +250,19 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         className="ios-search-input"
                         placeholder="Search by truck or operator..."
                         value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setSearchText(value);
+                            updateMixerFilter('searchText', value);
+                        }}
                     />
                     {searchText && (
                         <button
                             className="clear"
-                            onClick={() => setSearchText('')}
+                            onClick={() => {
+                                setSearchText('');
+                                updateMixerFilter('searchText', '');
+                            }}
                         >
                             <i className="fas fa-times"></i>
                         </button>
@@ -253,7 +274,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         <select
                             className="ios-select"
                             value={selectedPlant}
-                            onChange={(e) => setSelectedPlant(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedPlant(value);
+                                updateMixerFilter('selectedPlant', value);
+                            }}
                             aria-label="Filter by plant"
                         >
                             <option value="">All Plants</option>
@@ -269,7 +294,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         <select
                             className="ios-select"
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setStatusFilter(value);
+                                updateMixerFilter('statusFilter', value);
+                            }}
                         >
                             {filterOptions.map(option => (
                                 <option key={option} value={option}>{option}</option>
@@ -284,6 +313,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 setSearchText('');
                                 setSelectedPlant('');
                                 setStatusFilter('');
+                                resetMixerFilters();
                             }}
                         >
                             <i className="fas fa-undo"></i>
