@@ -134,6 +134,41 @@ export class Mixer {
     }
 
     /**
+     * Set mixer status and handle related business rules
+     * @param {string} newStatus - New status value
+     * @returns {Mixer} - Returns this for method chaining
+     */
+    setStatus(newStatus) {
+        // Ensure status is valid
+        if (!newStatus) return this;
+
+        this.status = newStatus;
+
+        // If setting to In Shop, Retired, or Spare, automatically unassign operator
+        if (['In Shop', 'Retired', 'Spare'].includes(newStatus)) {
+            this.assignedOperator = null;
+        }
+
+        return this;
+    }
+
+    /**
+     * Assign operator to this mixer and handle related business rules
+     * @param {string} operatorId - The ID of the operator to assign
+     * @returns {Mixer} - Returns this for method chaining
+     */
+    assignOperator(operatorId) {
+        this.assignedOperator = operatorId || null;
+
+        // If assigning an operator, ensure status is Active
+        if (this.assignedOperator && this.status !== 'Active') {
+            this.status = 'Active';
+        }
+
+        return this;
+    }
+
+    /**
      * Get a formatted last service date
      */
     getFormattedServiceDate() {

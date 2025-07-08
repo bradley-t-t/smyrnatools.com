@@ -354,6 +354,19 @@ export class MixerService {
                 updated_by: userId
             };
 
+            // Handle business rules for status and operator assignment
+            // Rule 1: When assigning an operator to a mixer with non-Active status, update status to Active
+            if (apiData.assigned_operator && apiData.assigned_operator !== currentMixer.assignedOperator && apiData.status !== 'Active') {
+                console.log(`Automatically setting status to Active because operator ${apiData.assigned_operator} was assigned`);
+                apiData.status = 'Active';
+            }
+
+            // Rule 2: When setting status to In Shop, Retired, or Spare, unassign the operator
+            if (['In Shop', 'Retired', 'Spare'].includes(apiData.status) && apiData.assigned_operator) {
+                console.log(`Automatically unassigning operator because status was set to ${apiData.status}`);
+                apiData.assigned_operator = null;
+            }
+
             // Set the updated_by field to the current user and update updated_at timestamp
             // Note: We intentionally don't update updated_last here as that should only
             // happen with the verify button
