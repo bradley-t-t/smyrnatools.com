@@ -353,6 +353,15 @@
   color: #dc2626;
 }
 
+  .verification-flag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #dc2626;
+  font-size: 1.2rem;
+  z-index: 10;
+  }
+
 .days-ago {
   font-size: 0.8rem;
   color: var(--text-secondary);

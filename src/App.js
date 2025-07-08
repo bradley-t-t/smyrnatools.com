@@ -6,6 +6,7 @@ import MixersView from './components/mixers/MixersView';
 import SettingsView from './components/settings/SettingsView';
 import MixerDetailView from './components/mixers/MixerDetailView';
 import OperatorsView from './components/operators/OperatorsView';
+import ManagersView from './components/managers/ManagersView';
 import WebView from './components/common/WebView';
 import LoginView from './components/auth/LoginView';
 import LoadingScreen from './components/common/LoadingScreen';
@@ -239,6 +240,14 @@ function AppContent() {
                         showSidebar={false}
                         setShowSidebar={() => {
                         }}
+                    />
+                );
+                            case 'Managers':
+                return (
+                    <ManagersView
+                        title={title}
+                        showSidebar={false}
+                        setShowSidebar={() => {}}
                     />
                 );
             case 'MyAccount':

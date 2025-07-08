@@ -117,17 +117,19 @@ class UserServiceImpl {
                 .eq('id', userId)
                 .single();
 
-            if (profileData && (profileData.first_name || profileData.last_name)) {
-                const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+            if (profileData) {
+                const firstName = profileData.first_name || '';
+                const lastName = profileData.last_name || '';
+                const fullName = `${firstName} ${lastName}`.trim();
                 if (fullName) return fullName;
             }
 
             // If no profile with name, try to get the user from auth
             const user = await this.getUserById(userId);
 
-            // If user has name property, use it
+            // If user has name property, use it (but remove any 'User' prefix)
             if (user && user.name) {
-                return user.name;
+                return user.name.replace(/^User\s+/i, '');
             }
 
             // If user has first_name/last_name properties
@@ -146,11 +148,11 @@ class UserServiceImpl {
                     .join(' ');
             }
 
-            // Last resort - use user ID prefix
-            return `User ${userId.substring(0, 8)}`;
+            // Last resort - just use the first part of ID without 'User' prefix
+            return userId.substring(0, 8);
         } catch (error) {
             console.error(`[UserService] Error getting display name for ${userId}:`, error);
-            return `User ${userId.substring(0, 8)}`;
+            return userId.substring(0, 8);
         }
     }
 }

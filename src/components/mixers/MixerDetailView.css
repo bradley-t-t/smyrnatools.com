@@ -103,6 +103,18 @@
     background-color: var(--accent-dark);
 }
 
+.verify-button {
+    background-color: var(--accent);
+    color: white;
+    border-radius: 6px;
+    min-width: 110px;
+    justify-content: center;
+}
+
+.verify-button:hover {
+    background-color: var(--accent-dark);
+}
+
 .detail-content {
     padding: 24px;
     display: flex;

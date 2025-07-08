@@ -7,6 +7,7 @@ import './MixerCard.css';
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
     const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
+    const isVerified = mixer.isVerified();
     const statusColor = Theme.statusColors[mixer.status] || Theme.statusColors.default;
     const {preferences} = usePreferences();
 
@@ -32,6 +33,11 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     return (
         <div className="mixer-card" {...cardProps}>
             <div className="card-status-indicator" style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}} title={mixer.status || 'Unknown'}></div>
+            {!isVerified && (
+                <div className="verification-flag" title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' : 'Mixer not verified since last Sunday'}>
+                    <i className="fas fa-flag" style={{color: '#e74c3c'}}></i>
+                </div>
+            )}
             <div className="card-content">
                 <div className="card-header">
                     <h3 className="mixer-name" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>Truck #{mixer.truckNumber || 'N/A'}</h3>

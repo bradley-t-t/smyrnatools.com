@@ -219,24 +219,47 @@ function MyAccountView({userId}) {
                 throw new Error('Password must be at least 8 characters');
             }
 
-            // First verify the current password by signing in
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: currentPassword,
-            });
+            // Get user data from database first
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('id, email, password_hash, salt')
+                .eq('email', email)
+                .single();
 
-            if (signInError) {
+            if (userError || !userData) {
+                throw new Error('Could not verify current password');
+            }
+
+            // Verify current password using AuthUtils
+            const { AuthUtils } = await import('../../utils/AuthUtils');
+            const computedHash = await AuthUtils.hashPassword(currentPassword, userData.salt);
+
+            if (computedHash !== userData.password_hash) {
                 throw new Error('Current password is incorrect');
             }
 
-            // Then update to the new password
-            const {error} = await supabase.auth.updateUser({
-                password: newPassword,
-            });
+            // Ensure we're using the same method to hash the password as the Swift client
+            // by directly creating and storing the hash ourselves instead of using updatePassword
+            const salt = AuthUtils.generateSalt();
+            const newPasswordHash = await AuthUtils.hashPassword(newPassword, salt);
 
-            if (error) {
-                throw error;
+            // Update password directly in the database instead of using AuthService
+            // This ensures compatibility with Swift client
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({
+                    password_hash: newPasswordHash,
+                    salt: salt,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', userData.id);
+
+            if (updateError) {
+                throw updateError;
             }
+
+            // Log the success for debugging
+            console.log('Password updated successfully with new salt:', salt);
 
             // Clear form and close modal
             setCurrentPassword('');

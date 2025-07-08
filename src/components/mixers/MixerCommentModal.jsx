@@ -167,7 +167,7 @@ function MixerCommentModal({ mixerId, mixerNumber, onClose }) {
                 <div key={comment.id} className="comment-item">
                   <div className="comment-metadata">
                     <span className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
-                    <span className="comment-date">{formatDate(comment.createdAt)}</span>
+                    <span className="comment-date" style={{ marginLeft: '8px' }}>{formatDate(comment.createdAt)}</span>
                     <button 
                       className="delete-comment-button" 
                       onClick={() => handleDeleteComment(comment.id)}

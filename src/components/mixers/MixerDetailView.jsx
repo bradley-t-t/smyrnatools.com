@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {MixerUtils} from '../../models/Mixer';
+import {Mixer, MixerUtils} from '../../models/Mixer';
 import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
@@ -227,6 +227,7 @@ function MixerDetailView({mixerId, onClose}) {
                 lastServiceDate: formatDate(lastServiceDate),
                 lastChipDate: formatDate(lastChipDate),
                 updatedAt: new Date().toISOString(),
+                // Don't update updatedLast as that should only be updated by verify button
                 updatedBy: userId || mixer.updatedBy
             };
 
@@ -315,6 +316,70 @@ function MixerDetailView({mixerId, onClose}) {
             alert('Error deleting mixer');
         } finally {
             setShowDeleteConfirmation(false);
+        }
+    };
+
+    // Verify mixer
+    const handleVerifyMixer = async () => {
+        if (!mixer) return;
+
+        setIsSaving(true);
+
+        try {
+            // Try multiple methods to get the current user ID
+            let userId = null;
+
+            // Method 1: Get from sessionStorage (most reliable)
+            userId = sessionStorage.getItem('userId');
+
+            // Method 2: If not in sessionStorage, try supabase auth
+            if (!userId) {
+                try {
+                    const {data: {user}} = await supabase.auth.getUser();
+                    userId = user?.id;
+                } catch (authError) {
+                    console.error('Error getting user from Supabase auth:', authError);
+                }
+            }
+
+            // Strong authentication check
+            if (!userId) {
+                console.error('No authenticated user found');
+                alert('Your session has expired. Please refresh the page and log in again.');
+                throw new Error('Authentication required: You must be logged in to verify mixers');
+            }
+
+            // Update only the updated_last field to mark it as verified
+            // We intentionally don't update updated_at here
+            const {data, error} = await supabase
+                .from('mixers')
+                .update({
+                    updated_last: new Date().toISOString(),
+                    updated_by: userId
+                })
+                .eq('id', mixer.id)
+                .select();
+
+            if (error) {
+                console.error('Error verifying mixer:', error);
+                throw new Error(`Failed to verify mixer: ${error.message}`);
+            }
+
+            // Update local state
+            if (data && data.length > 0) {
+                setMixer(Mixer.fromApiFormat(data[0]));
+                setMessage('Mixer verified successfully!');
+                setTimeout(() => setMessage(''), 3000);
+            }
+
+            // Refresh data
+            fetchData();
+
+        } catch (error) {
+            console.error('Error verifying mixer:', error);
+            alert(`Error verifying mixer: ${error.message}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -444,6 +509,14 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'N/A'}</h1>
                 <div className="header-actions">
+                    <button 
+                        className="verify-button" 
+                        onClick={handleVerifyMixer}
+                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                    >
+                        <i className="fas fa-check-circle"></i>
+                        <span>Verify</span>
+                    </button>
                     <button className="comments-button" onClick={() => setShowComments(true)}>
                         <i className="fas fa-comments"></i> Comments
                     </button>
@@ -496,13 +569,26 @@ function MixerDetailView({mixerId, onClose}) {
                                     <td>{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</td>
                                 </tr>
                                 <tr>
-                                    <th>Last Updated</th>
-                                    <td>{mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'N/A'}</td>
+                                    <th>Last Verified</th>
+                                    <td>
+                                        {mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'Never verified'}
+                                        {!mixer.isVerified() && (
+                                            <span className="verification-status-warning" style={{marginLeft: '10px', color: '#e74c3c'}}>
+                                                <i className="fas fa-exclamation-triangle" style={{marginRight: '5px'}}></i>
+                                                {!mixer.updatedLast || !mixer.updatedBy ? 'Needs verification' : 'Verification outdated'}
+                                            </span>
+                                        )}
+                                    </td>
                                 </tr>
-                                {mixer.updatedBy && (
+                                {mixer.updatedBy ? (
                                     <tr>
-                                        <th>Updated By</th>
+                                        <th>Verified By</th>
                                         <td>{updatedByEmail || 'Unknown User'}</td>
+                                    </tr>
+                                ) : (
+                                    <tr>
+                                        <th>Verified By</th>
+                                        <td><span style={{color: '#e74c3c'}}>No verification record</span></td>
                                     </tr>
                                 )}
                             </tbody>

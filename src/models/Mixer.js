@@ -148,6 +148,14 @@ export class Mixer {
         if (!this.lastChipDate) return 'Not available';
         return new Date(this.lastChipDate).toLocaleDateString();
     }
+
+    /**
+     * Check if the mixer is verified
+     * @returns {boolean} Whether the mixer is verified
+     */
+    isVerified() {
+        return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy);
+    }
 }
 
 /**
@@ -309,5 +317,47 @@ export class MixerUtils {
     static cleanlinessText(rating) {
         if (rating === null || rating === undefined) return 'Unknown';
         return '★'.repeat(rating);
+    }
+
+    /**
+     * Check if mixer is verified (updated_last after the last Sunday at noon)
+     * and has not been modified since the last verification
+     * 
+     * This method returns false in these cases:
+     * 1. If updated_last or updated_by is null/undefined
+     * 2. If the last verification (updated_last) was before the last Sunday at noon
+     * 3. If there have been changes (updated_at) since the last verification (updated_last)
+     * 
+     * @param {string} updatedLastTimestamp - The timestamp when the mixer was last verified
+     * @param {string} updatedAtTimestamp - The timestamp when the mixer was last modified
+     * @param {string} updatedBy - The user who last verified the mixer (optional)
+     * @returns {boolean} Whether the mixer is considered verified
+     */
+    static isVerified(updatedLastTimestamp, updatedAtTimestamp, updatedBy) {
+        // If updated_last or updated_by is null/undefined, mixer is not verified
+        if (!updatedLastTimestamp || !updatedBy) return false;
+
+        const updatedLastDate = new Date(updatedLastTimestamp);
+        const today = new Date();
+        const lastSunday = new Date();
+
+        // Set to last Sunday
+        lastSunday.setDate(today.getDate() - today.getDay());
+        // Set to noon
+        lastSunday.setHours(12, 0, 0, 0);
+
+        // Check if verified after last Sunday
+        const isAfterLastSunday = updatedLastDate > lastSunday;
+
+        // If there's an updated_at timestamp, check if changes have been made since verification
+        if (updatedAtTimestamp) {
+            const updatedAtDate = new Date(updatedAtTimestamp);
+            // Return false if changes have been made after verification
+            if (updatedAtDate > updatedLastDate) {
+                return false;
+            }
+        }
+
+        return isAfterLastSunday;
     }
 }

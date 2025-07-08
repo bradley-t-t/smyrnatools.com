@@ -25,6 +25,7 @@ const getIconForMenuItem = (id) => {
         case 'Trailers': return <i className="fas fa-trailer"></i>;
         case 'Heavy Equipment': return <i className="fas fa-snowplow"></i>;
         case 'Operators': return <i className="fas fa-users"></i>;
+        case 'Managers': return <i className="fas fa-user-tie"></i>;
         case 'Plants': return <i className="fas fa-industry"></i>;
         case 'Regions': return <i className="fas fa-map-marker-alt"></i>;
         case 'Reports': return <i className="fas fa-file-alt"></i>;
@@ -42,6 +43,7 @@ const menuItems = [
     {text: 'Trailers', id: 'Trailers'},
     {text: 'Heavy Equipment', id: 'Heavy Equipment'},
     {text: 'Operators', id: 'Operators'},
+    {text: 'Managers', id: 'Managers'},
     {text: 'Plants', id: 'Plants'},
     {text: 'Regions', id: 'Regions'},
     {text: 'Reports', id: 'Reports'},

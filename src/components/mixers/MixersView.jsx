@@ -111,9 +111,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 } else if (statusFilter === 'Past Due Service') {
                     matchesStatus = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
                 } else if (statusFilter === 'Verified') {
-                    matchesStatus = mixer.isVerified === true;
+                    matchesStatus = mixer.isVerified();
                 } else if (statusFilter === 'Not Verified') {
-                    matchesStatus = mixer.isVerified === false;
+                    matchesStatus = !mixer.isVerified();
                 }
             }
 
@@ -169,6 +169,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     }));
 
     const pastDueServiceCount = mixers.filter(m => MixerUtils.isServiceOverdue(m.lastServiceDate)).length;
+    const verifiedCount = mixers.filter(m => m.isVerified()).length;
+    const unverifiedCount = mixers.length - verifiedCount;
+    const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length;
 
     // Calculate average cleanliness rating
     const averageCleanliness = () => {
@@ -187,7 +190,12 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </button>
                 </div>
                 <div className="modal-body">
-                    <MixerOverview filteredMixers={filteredMixers} selectedPlant={selectedPlant} />
+                    <MixerOverview 
+                        filteredMixers={filteredMixers} 
+                        selectedPlant={selectedPlant} 
+                        unverifiedCount={unverifiedCount}
+                        neverVerifiedCount={neverVerifiedCount}
+                    />
                 </div>
                 <div className="modal-footer">
                     <button
