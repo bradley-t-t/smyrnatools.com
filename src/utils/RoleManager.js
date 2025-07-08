@@ -1,11 +1,12 @@
 /**
- * Role types matching the Swift app
+ * Role types for the application
  */
 export const UserRoleType = {
-    admin: 'Admin',
-    manager: 'Manager',
-    operator: 'Operator',
-    guest: 'Guest'
+    guest: 'Guest',
+    plantManager: 'Plant Manager',
+    districtManager: 'District Manager',
+    generalManager: 'General Manager',
+    itAccess: 'IT Access'
 };
 
 /**
@@ -18,7 +19,7 @@ export class RoleManager {
     static hasPermission(permission, forRole = UserRoleType.guest) {
         // Basic permissions mapping
         const permissionsMap = {
-            [UserRoleType.admin]: [
+            [UserRoleType.generalManager]: [
                 'mixers.view', 'mixers.edit', 'mixers.delete', 'mixers.add',
                 'tractors.view', 'tractors.edit', 'tractors.delete', 'tractors.add',
                 'trailers.view', 'trailers.edit', 'trailers.delete', 'trailers.add',
@@ -31,7 +32,7 @@ export class RoleManager {
                 'archive.view', 'archive.edit', 'archive.delete', 'archive.add',
                 'messages.view', 'messages.send', 'itaccess.view'
             ],
-            [UserRoleType.manager]: [
+            [UserRoleType.districtManager]: [
                 'mixers.view', 'mixers.edit', 'mixers.add',
                 'tractors.view', 'tractors.edit', 'tractors.add',
                 'trailers.view', 'trailers.edit', 'trailers.add',
@@ -43,7 +44,7 @@ export class RoleManager {
                 'archive.view',
                 'messages.view', 'messages.send', 'itaccess.view'
             ],
-            [UserRoleType.operator]: [
+            [UserRoleType.plantManager]: [
                 'mixers.view',
                 'tractors.view',
                 'trailers.view',
@@ -53,8 +54,12 @@ export class RoleManager {
                 'list.view',
                 'messages.view', 'messages.send', 'itaccess.view'
             ],
+            [UserRoleType.itAccess]: [
+                'itaccess.view',
+                'messages.view', 'messages.send'
+            ],
             [UserRoleType.guest]: [
-                'itaccess.view'
+                'none'
             ]
         };
 

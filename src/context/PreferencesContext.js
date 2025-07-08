@@ -9,6 +9,12 @@ const defaultPreferences = {
     navbarMinimized: false,
     themeMode: 'light',
     accentColor: 'red',
+    mixerFilters: {
+        searchText: '',
+        selectedPlant: '',
+        statusFilter: ''
+    },
+    lastViewedFilters: null
 };
 
 export const PreferencesProvider = ({ children }) => {
@@ -129,6 +135,12 @@ export const PreferencesProvider = ({ children }) => {
             navbarMinimized: data.navbar_minimized,
             themeMode: data.theme_mode,
             accentColor: data.accent_color,
+            mixerFilters: data.mixer_filters || {
+                searchText: '',
+                selectedPlant: '',
+                statusFilter: ''
+            },
+            lastViewedFilters: data.last_viewed_filters
         };
         setPreferences(newPreferences);
         try {
@@ -136,6 +148,132 @@ export const PreferencesProvider = ({ children }) => {
         } catch (error) {
             console.error('Error saving preferences to localStorage:', error);
         }
+    };
+
+
+
+
+
+    // Update mixer filters and save to database
+    const updateMixerFilters = async (filters) => {
+        try {
+            setPreferences(prev => {
+                const newPrefs = { ...prev, mixerFilters: filters };
+                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+                return newPrefs;
+            });
+
+            // If user is authenticated, save to database
+            const { data } = await supabase.auth.getUser();
+            if (data?.user?.id) {
+                // Check if user preferences exist
+                const { data: existingPrefs } = await supabase
+                    .from('user_preferences')
+                    .select('id')
+                    .eq('user_id', data.user.id);
+
+                if (!existingPrefs || existingPrefs.length === 0) {
+                    // Create user preferences if they don't exist
+                    await supabase
+                        .from('user_preferences')
+                        .insert([{
+                            user_id: data.user.id,
+                            mixer_filters: filters,
+                            theme_mode: preferences.themeMode,
+                            accent_color: preferences.accentColor,
+                            navbar_minimized: preferences.navbarMinimized
+                        }]);
+                } else {
+                    // Update existing preferences
+                    await supabase
+                        .from('user_preferences')
+                        .update({ 
+                            mixer_filters: filters,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', data.user.id);
+                }
+
+                console.log('Saved mixer filters to database:', filters);
+            }
+        } catch (error) {
+            console.error('Error updating mixer filters:', error);
+        }
+    };
+
+    // Save the current filters before navigating to detail view
+    const saveLastViewedFilters = async () => {
+        try {
+            const lastFilters = { ...preferences.mixerFilters };
+
+            setPreferences(prev => {
+                const newPrefs = { ...prev, lastViewedFilters: lastFilters };
+                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+                return newPrefs;
+            });
+
+            // If user is authenticated, save to database
+            const { data } = await supabase.auth.getUser();
+            if (data?.user?.id) {
+                // Check if user preferences exist
+                const { data: existingPrefs } = await supabase
+                    .from('user_preferences')
+                    .select('id')
+                    .eq('user_id', data.user.id);
+
+                if (!existingPrefs || existingPrefs.length === 0) {
+                    // Create user preferences if they don't exist
+                    await supabase
+                        .from('user_preferences')
+                        .insert([{
+                            user_id: data.user.id,
+                            last_viewed_filters: lastFilters,
+                            mixer_filters: preferences.mixerFilters,
+                            theme_mode: preferences.themeMode,
+                            accent_color: preferences.accentColor,
+                            navbar_minimized: preferences.navbarMinimized
+                        }]);
+                } else {
+                    // Update existing preferences
+                    await supabase
+                        .from('user_preferences')
+                        .update({ 
+                            last_viewed_filters: lastFilters,
+                            updated_at: new Date().toISOString() 
+                        })
+                        .eq('user_id', data.user.id);
+                }
+
+                console.log('Saved last viewed filters to database:', lastFilters);
+            }
+        } catch (error) {
+            console.error('Error saving last viewed filters:', error);
+        }
+    };
+
+    // Update a single mixer filter field
+    const updateMixerFilter = async (key, value) => {
+        try {
+            const updatedFilters = {
+                ...preferences.mixerFilters,
+                [key]: value
+            };
+
+            await updateMixerFilters(updatedFilters);
+        } catch (error) {
+            console.error(`Error updating mixer filter ${key}:`, error);
+        }
+    };
+
+    // Reset all mixer filters
+    const resetMixerFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            statusFilter: ''
+        };
+
+        await updateMixerFilters(emptyFilters);
     };
 
     // Create default user preferences
@@ -156,6 +294,12 @@ export const PreferencesProvider = ({ children }) => {
                     navbar_minimized: preferences.navbarMinimized,
                     theme_mode: preferences.themeMode,
                     accent_color: preferences.accentColor,
+                        mixer_filters: preferences.mixerFilters || {
+                            searchText: '',
+                            selectedPlant: '',
+                            statusFilter: ''
+                        },
+                        last_viewed_filters: preferences.lastViewedFilters
                 }]);
 
             if (error) throw error;
@@ -173,6 +317,8 @@ export const PreferencesProvider = ({ children }) => {
                 navbar_minimized: prefsToUpdate.navbarMinimized,
                 theme_mode: prefsToUpdate.themeMode,
                 accent_color: prefsToUpdate.accentColor,
+                    mixer_filters: prefsToUpdate.mixerFilters,
+                    last_viewed_filters: prefsToUpdate.lastViewedFilters,
                 updated_at: new Date().toISOString(),
             };
 
@@ -227,6 +373,10 @@ export const PreferencesProvider = ({ children }) => {
                 setThemeMode,
                 setAccentColor,
                 updatePreferences,
+                updateMixerFilters,
+                updateMixerFilter,
+                resetMixerFilters,
+                saveLastViewedFilters,
             }}
         >
             {children}

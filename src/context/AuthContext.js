@@ -318,7 +318,7 @@ export function AuthProvider({children}) {
 
             const userRole = {
                 user_id: userId,
-                role_name: 'guest',
+                role_name: 'Guest',
                 created_at: now,
                 updated_at: now
             };
@@ -354,9 +354,27 @@ export function AuthProvider({children}) {
     }
 
     async function signOut() {
-        sessionStorage.removeItem('userId');
-        localStorage.removeItem('cachedPlants');
-        setUser(null);
+        try {
+            // Clear all relevant storage items
+            sessionStorage.removeItem('userId');
+            localStorage.removeItem('cachedPlants');
+            localStorage.removeItem('userRole');
+
+            // Clear authentication state
+            setUser(null);
+
+            // Log signout success
+            console.log('User signed out successfully');
+
+            // Notify listeners of signout
+            const signOutEvent = new CustomEvent('authSignOut');
+            window.dispatchEvent(signOutEvent);
+
+            return true;
+        } catch (error) {
+            console.error('Error during sign out:', error);
+            return false;
+        }
     }
 
     async function checkBiometricSupport() {

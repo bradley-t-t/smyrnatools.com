@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {useAuth} from '../../context/AuthContext';
 import {AuthUtils} from '../../utils/AuthUtils';
 import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+import PasswordRecoveryView from './PasswordRecoveryView';
 import './LoginView.css';
 
 // Force reload function to handle successful login
@@ -11,6 +12,7 @@ const forceReload = () => {
 
 function LoginView() {
     const [isSignUp, setIsSignUp] = useState(false);
+    const [showRecovery, setShowRecovery] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -172,12 +174,16 @@ function LoginView() {
     };
 
     return (
-        <div className="login-container" id="login-scroll-container">
-            <div className="login-box">
-                <div className="login-header">
-                    <img src={SmyrnaLogo} alt="Smyrna Logo" className="login-logo"/>
-                    <h1>{isSignUp ? 'Create Account' : 'Sign In'}</h1>
-                </div>
+        <>
+            {showRecovery ? (
+                <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)} />
+            ) : (
+                <div className="login-container" id="login-scroll-container">
+                    <div className="login-box">
+                        <div className="login-header">
+                            <img src={SmyrnaLogo} alt="Smyrna Logo" className="login-logo"/>
+                            <h1>{isSignUp ? 'Create Account' : 'Sign In'}</h1>
+                        </div>
 
                 <div className="auth-mode-selector">
                     <button
@@ -215,6 +221,17 @@ function LoginView() {
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter your password"
                         />
+                        {!isSignUp && (
+                            <div className="forgot-password">
+                                <button
+                                    type="button"
+                                    className="text-button"
+                                    onClick={() => setShowRecovery(true)}
+                                >
+                                    Forgot Password?
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {isSignUp && (
@@ -293,9 +310,11 @@ function LoginView() {
                             {isSignUp ? 'Sign In' : 'Sign Up'}
                         </button>
                     </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            )}
+        </>
     );
 }
 

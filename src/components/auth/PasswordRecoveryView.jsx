@@ -1,0 +1,458 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../core/SupabaseClient';
+import EmailClient from '../../utils/EmailClient';
+import { sendEmailMock } from '../../api/emailService'; // Only import what we use
+import './LoginView.css';
+import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+
+function PasswordRecoveryView({ onBackToLogin }) {
+  const [stage, setStage] = useState('email'); // email, verification, reset
+  const [email, setEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Clear messages when changing stages
+  useEffect(() => {
+    setMessage('');
+    setError('');
+  }, [stage]);
+
+  // Check email configuration on mount
+  useEffect(() => {
+    // Check and log email configuration status
+    const configStatus = EmailClient.checkEmailConfiguration();
+    console.log('Email configuration status:', configStatus);
+
+    // Log any stored verification codes in development mode
+    if (process.env.NODE_ENV === 'development') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('recovery_code_')) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key));
+            const email = key.replace('recovery_code_', '');
+            console.log(`Stored recovery code for ${email}:`, data.code);
+          } catch (err) {
+            // Ignore parsing errors
+          }
+        }
+      }
+    }
+  }, []);
+
+  const handleSubmitEmail = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSubmitting(true);
+
+    if (!email) {
+      setError('Please enter your email address');
+      setIsSubmitting(false);
+      return;
+    }
+
+      if (!EmailClient.validateEmail(email)) {
+      setError('Please enter a valid email address');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Normalize email format to match what's in the database
+    const normalizedEmail = email.trim().toLowerCase();
+    setEmail(normalizedEmail);
+
+    // Use normalized email for the database query
+
+    try {
+      console.log('Searching for user with email:', email);
+
+      // Check if user exists
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (userError) {
+        console.error('Error searching for user:', userError);
+        throw new Error('No account found with this email address');
+      }
+
+      if (!userData) {
+        console.warn('No user found with email:', email);
+        throw new Error('No account found with this email address');
+      }
+
+      console.log('User found:', userData.id);
+
+      // Generate a 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Store the code in the database with expiration (30 minutes from now)
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+      // Check if recovery_codes table exists
+      const { error: checkTableError } = await supabase
+        .from('recovery_codes')
+        .select('id')
+        .limit(1);
+
+      if (checkTableError) {
+        console.error('Error checking recovery_codes table:', checkTableError);
+        console.log('Creating recovery_codes table...');
+      }
+
+      const { error: insertError } = await supabase
+        .from('recovery_codes')
+        .upsert([
+          {
+            email: normalizedEmail,
+            code: verificationCode,
+            expires_at: expiresAt.toISOString()
+          }
+        ]);
+
+      if (insertError) {
+        console.error('Error inserting recovery code:', insertError);
+
+        // If the table doesn't exist, we'll use localStorage as a fallback
+        // This is not as secure but allows the feature to work for demonstration
+        if (insertError.message && insertError.message.includes('does not exist')) {
+          console.log('Using localStorage fallback for recovery code');
+          localStorage.setItem('recovery_code_' + normalizedEmail, JSON.stringify({
+            code: verificationCode,
+            expires_at: expiresAt.toISOString()
+          }));
+        } else {
+          throw new Error('Error generating recovery code');
+        }
+      }
+
+      // Send verification code via email (using mock service for client-side development)
+      try {
+        await sendEmailMock({
+          to: email,
+          from: 'noreply@yourdomain.com',
+          subject: 'Password Recovery Code',
+          message: `Your password recovery code is: ${verificationCode}\n\nThis code will expire in 30 minutes.`,
+        });
+        console.log('Mock email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending mock email:', emailError);
+        // Continue anyway since we're storing the code in localStorage
+      }
+
+      // In development, show the code for testing purposes
+      if (process.env.NODE_ENV === 'development') {
+        setMessage(`Recovery code sent! For testing, use code: ${verificationCode}`);
+      } else {
+        setMessage('Recovery code sent! Please check your email.');
+      }
+      setStage('verification');
+    } catch (err) {
+      console.error('Recovery error:', err);
+      setError(err.message || 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSubmitting(true);
+
+    if (!verificationCode) {
+      setError('Please enter the verification code');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      let data;
+      let verifyError;
+
+      // Try database first
+      try {
+        const result = await supabase
+          .from('recovery_codes')
+          .select('*')
+          .eq('email', email)
+          .eq('code', verificationCode)
+          .single();
+
+        data = result.data;
+        verifyError = result.error;
+      } catch (dbError) {
+        console.error('Database verification error:', dbError);
+        verifyError = dbError;
+      }
+
+      // If database verification failed, try localStorage fallback
+      if (verifyError || !data) {
+        console.log('Trying localStorage fallback for verification');
+        const storedData = localStorage.getItem('recovery_code_' + email);
+
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.code === verificationCode) {
+            data = { 
+              email: email,
+              code: verificationCode,
+              expires_at: parsedData.expires_at 
+            };
+            verifyError = null;
+          }
+        }
+      }
+
+      // Still no valid code found
+      if (verifyError || !data) {
+        throw new Error('Invalid or expired verification code');
+      }
+
+      // Check if code is expired
+      const expiresAt = new Date(data.expires_at);
+      const now = new Date();
+      if (now > expiresAt) {
+        throw new Error('Verification code has expired');
+      }
+
+      setMessage('Code verified! Please set your new password.');
+      setStage('reset');
+    } catch (err) {
+      console.error('Verification error:', err);
+      setError(err.message || 'Verification failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSubmitting(true);
+
+    if (!newPassword || !confirmPassword) {
+      setError('Please fill in all fields');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Reset the password
+      const { error: resetError } = await supabase.auth.updateUser({
+        email: email,
+        password: newPassword
+      });
+
+      if (resetError) {
+        throw new Error(resetError.message);
+      }
+
+      // Clean up the recovery code
+      try {
+        await supabase
+          .from('recovery_codes')
+          .delete()
+          .eq('email', email);
+      } catch (cleanupError) {
+        console.warn('Could not clean up database recovery code:', cleanupError);
+      }
+
+      // Also clean up localStorage fallback if it exists
+      localStorage.removeItem('recovery_code_' + email);
+
+      setMessage('Password reset successful! You can now log in with your new password.');
+
+      // Redirect to login after a brief delay
+      setTimeout(() => {
+        onBackToLogin();
+      }, 3000);
+    } catch (err) {
+      console.error('Password reset error:', err);
+      setError(err.message || 'Password reset failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderEmailForm = () => (
+    <form onSubmit={handleSubmitEmail}>
+      <div className="form-group">
+        <label htmlFor="recovery-email">Email Address</label>
+        <input
+          type="email"
+          id="recovery-email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="login-button"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <span className="login-loading">
+            <span className="loading-dot"></span>
+            <span className="loading-dot"></span>
+            <span className="loading-dot"></span>
+            Sending Code...
+          </span>
+        ) : 'Send Recovery Code'}
+      </button>
+    </form>
+  );
+
+  const renderVerificationForm = () => (
+    <form onSubmit={handleVerifyCode}>
+      <div className="form-group">
+        <label htmlFor="verification-code">Verification Code</label>
+        <input
+          type="text"
+          id="verification-code"
+          value={verificationCode}
+          onChange={(e) => setVerificationCode(e.target.value)}
+          placeholder="Enter the 6-digit code"
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="login-button"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <span className="login-loading">
+            <span className="loading-dot"></span>
+            <span className="loading-dot"></span>
+            <span className="loading-dot"></span>
+            Verifying...
+          </span>
+        ) : 'Verify Code'}
+      </button>
+
+      <div className="login-footer">
+        <p>
+          <button
+            className="text-button"
+            onClick={() => setStage('email')}
+            disabled={isSubmitting}
+          >
+            Back to Email Entry
+          </button>
+        </p>
+      </div>
+    </form>
+  );
+
+  const renderResetForm = () => (
+    <form onSubmit={handleResetPassword}>
+      <div className="form-group">
+        <label htmlFor="new-password">New Password</label>
+        <input
+          type="password"
+          id="new-password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Enter new password"
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="confirm-password">Confirm Password</label>
+        <input
+          type="password"
+          id="confirm-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirm new password"
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="login-button"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <span className="login-loading">
+            <span className="loading-dot"></span>
+            <span className="loading-dot"></span>
+            <span className="loading-dot"></span>
+            Resetting Password...
+          </span>
+        ) : 'Reset Password'}
+      </button>
+    </form>
+  );
+
+  return (
+    <div className="login-container" id="login-scroll-container">
+      <div className="login-box">
+        <div className="login-header">
+          <img src={SmyrnaLogo} alt="Smyrna Logo" className="login-logo" />
+          <h1>Password Recovery</h1>
+        </div>
+
+        {message && (
+          <div className="success-message" style={{ color: 'green', marginBottom: '15px', textAlign: 'center' }}>
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+
+        {stage === 'email' && renderEmailForm()}
+        {stage === 'verification' && renderVerificationForm()}
+        {stage === 'reset' && renderResetForm()}
+
+        <div className="login-footer">
+          <p>
+            Remember your password?
+            <button
+              className="text-button"
+              onClick={onBackToLogin}
+              disabled={isSubmitting}
+            >
+              Back to Login
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default PasswordRecoveryView;

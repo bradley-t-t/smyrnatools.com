@@ -12,15 +12,18 @@ import LoginView from './components/auth/LoginView';
 import LoadingScreen from './components/common/LoadingScreen';
 import MyAccountView from './components/account/MyAccountView';
 import SimpleNavbar from "./components/common/SimpleNavbar";
+import GuestView from './components/auth/GuestView';
 import {AuthProvider} from './context/AuthContext';
 import {supabase} from './core/SupabaseClient';
 import {PreferencesProvider} from './context/PreferencesContext';
+import {UserRoleType} from './utils/RoleManager';
 import './styles/Theme.css';
 import './styles/Global.css';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [userRole, setUserRole] = useState('');
 
     // Handle responsive layout
     useEffect(() => {
@@ -39,6 +42,22 @@ function AppContent() {
     const [loading, setLoading] = useState(true);
     const [session, setSession] = useState(null);
     const [userId, setUserId] = useState(null);
+
+    // Listen for auth sign out events
+    useEffect(() => {
+        const handleSignOut = () => {
+            // Clear state on sign out
+            setUserId(null);
+            setUserRole('');
+            setSelectedView('Mixers');
+        };
+
+        window.addEventListener('authSignOut', handleSignOut);
+
+        return () => {
+            window.removeEventListener('authSignOut', handleSignOut);
+        };
+    }, []);
 
     // Check for authentication on component mount
     useEffect(() => {
@@ -63,10 +82,17 @@ function AppContent() {
                     const storedUserId = sessionStorage.getItem('userId');
                     if (storedUserId) {
                         setUserId(storedUserId);
+                    } else {
+                        // Clear state if no user ID found
+                        setUserId(null);
+                        setUserRole('');
                     }
                 }
             } catch (error) {
                 console.error('Error checking auth:', error);
+                // Clear state on error
+                setUserId(null);
+                setUserRole('');
             } finally {
                 setLoading(false);
             }
@@ -119,8 +145,35 @@ function AppContent() {
     useEffect(() => {
         if (userId) {
             fetchUserProfile(userId);
+            fetchUserRole(userId);
         }
     }, [userId]);
+
+    // Function to fetch user role
+    const fetchUserRole = async (userId) => {
+        try {
+            const { data, error } = await supabase
+                .from('user_roles')
+                .select('role_name')
+                .eq('user_id', userId)
+                .single();
+
+            if (error) {
+                console.error('Error fetching user role:', error);
+                setUserRole('');
+                return;
+            }
+
+            if (data && data.role_name) {
+                setUserRole(data.role_name);
+            } else {
+                setUserRole('');
+            }
+        } catch (error) {
+            console.error('Error in fetchUserRole:', error);
+            setUserRole('');
+        }
+    };
 
     // Format user name for display
     const [userDisplayName, setUserDisplayName] = useState('');
@@ -164,6 +217,11 @@ function AppContent() {
     // If not authenticated, show login
     if (!userId) {
         return <LoginView/>;
+    }
+
+    // If user has Guest role, show restricted access view
+    if (userRole === UserRoleType.guest) {
+        return <GuestView />;
     }
 
     // Handle view selection
@@ -213,20 +271,38 @@ function AppContent() {
         switch (selectedView) {
             case 'Mixers':
                 if (selectedMixer) {
-                    return (
-                        <MixerDetailView
-                            mixerId={selectedMixer}
-                            onClose={() => {
-                                setSelectedMixer(null);
-                                setTitle('Mixers');
-                            }}
-                        />
-                    );
+                    console.log('App.js: Rendering MixerDetailView with ID:', selectedMixer);
+                    try {
+                        return (
+                            <MixerDetailView
+                                mixerId={selectedMixer}
+                                onClose={() => {
+                                    setSelectedMixer(null);
+                                    setTitle('Mixers');
+                                }}
+                            />
+                        );
+                    } catch (error) {
+                        console.error('Error rendering MixerDetailView:', error);
+                        setSelectedMixer(null);
+                        setTitle('Mixers');
+                        return (
+                            <MixersView
+                                onSelectMixer={(mixerId) => {
+                                    if (mixerId) {
+                                        setSelectedMixer(mixerId);
+                                        setTitle('Mixer Details');
+                                    }
+                                }}
+                            />
+                        );
+                    }
                 }
                 return (
                     <MixersView
                         onSelectMixer={(mixerId) => {
                             if (mixerId) {
+                                // The filters will be preserved in the context
                                 setSelectedMixer(mixerId);
                                 setTitle('Mixer Details');
                             }
@@ -302,16 +378,7 @@ function App() {
       document.body.style.overflowX = '';
     };
   }, []);
-  // Apply overflow protection
-  React.useEffect(() => {
-    document.documentElement.style.overflowX = 'hidden';
-    document.body.style.overflowX = 'hidden';
 
-    return () => {
-      document.documentElement.style.overflowX = '';
-      document.body.style.overflowX = '';
-    };
-  }, []);
     return (
         <AuthProvider>
             <PreferencesProvider>

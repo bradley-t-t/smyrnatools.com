@@ -152,7 +152,7 @@ class AuthServiceImpl {
             // Create user role record
             const userRole = {
                 user_id: userId,
-                role_name: 'guest',
+                role_name: 'Guest',
                 created_at: now,
                 updated_at: now
             };

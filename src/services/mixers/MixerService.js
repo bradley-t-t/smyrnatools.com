@@ -1,5 +1,5 @@
 import supabase from '../../core/SupabaseClient';
-import {Mixer} from '../../models/Mixer';
+import {Mixer, MixerUtils} from '../../models/Mixer';
 import {MixerHistory} from '../../models/MixerHistory';
 
 // Define helper functions directly in this file since SupabaseHelpers is not available
@@ -66,14 +66,35 @@ export class MixerService {
      */
     static async getMixerById(id) {
         try {
+            if (!id) {
+                console.error('Cannot fetch mixer: Invalid ID provided');
+                return null;
+            }
+
+            console.log(`Fetching mixer with ID: ${id}`);
+
             const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
                 .eq('id', id)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                // Log specific error for not found case
+                if (error.code === 'PGRST116') {
+                    console.error(`Mixer with ID ${id} not found in database`);
+                } else {
+                    console.error(`Error fetching mixer with ID ${id}:`, error);
+                }
+                return null; // Return null instead of throwing error
+            }
 
+            if (!data) {
+                console.error(`No data returned for mixer with ID ${id}`);
+                return null;
+            }
+
+            console.log(`Successfully retrieved mixer: ${data.truck_number}`);
             return Mixer.fromApiFormat(data);
         } catch (error) {
             console.error(`Error fetching mixer with ID ${id}:`, error);
@@ -85,7 +106,81 @@ export class MixerService {
      * Alias for getMixerById for backward compatibility
      */
     static async fetchMixerById(id) {
-        return this.getMixerById(id);
+        try {
+            if (!id) {
+                console.error('fetchMixerById called with invalid ID:', id);
+                return null;
+            }
+
+            // Validate the format of the UUID
+            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidPattern.test(id)) {
+                console.error(`Invalid UUID format for ID: ${id}`);
+                return null;
+            }
+
+            console.log(`fetchMixerById: Searching for mixer with ID ${id}`);
+
+            // Try direct database query first as it's more reliable
+            try {
+                console.log('Trying direct database query first');
+                const {data, error} = await supabase
+                    .from('mixers')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (!error && data) {
+                    console.log('Direct query found the mixer:', data.truck_number);
+                    const mixer = Mixer.fromApiFormat(data);
+
+                    // Ensure the isVerified method exists
+                    if (typeof mixer.isVerified !== 'function') {
+                        mixer.isVerified = function() {
+                            return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy);
+                        };
+                    }
+
+                    return mixer;
+                }
+
+                console.error('Direct query failed:', error?.message || 'No data returned');
+                if (error?.code === 'PGRST116') {
+                    console.log('This is a "not found" error from Supabase');
+                }
+            } catch (directError) {
+                console.error('Error in direct query:', directError);
+            }
+
+            // Fall back to the getMixerById method
+            console.log('Falling back to getMixerById method');
+            const result = await this.getMixerById(id);
+
+            if (!result) {
+                console.error(`No mixer found with ID ${id} using either method`);
+
+                // Additional debugging: Try a raw query to check if ID exists at all
+                try {
+                    const { count, error } = await supabase
+                        .from('mixers')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('id', id);
+
+                    if (!error) {
+                        console.log(`ID existence check: count = ${count}`);
+                    }
+                } catch (e) {
+                    console.error('Error in ID existence check:', e);
+                }
+
+                return null;
+            }
+
+            return result;
+        } catch (error) {
+            console.error(`Error in fetchMixerById for ID ${id}:`, error);
+            return null;
+        }
     }
 
     /**

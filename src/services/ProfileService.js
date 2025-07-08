@@ -53,7 +53,7 @@ class ProfileServiceImpl {
 
             const userRole = {
                 user_id: userId,
-                role_name: roleName || 'guest',
+                role_name: roleName || 'Guest',
                 created_at: now,
                 updated_at: now
             };

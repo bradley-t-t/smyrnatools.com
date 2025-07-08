@@ -135,6 +135,12 @@
     color: #333;
 }
 
+.forgot-password {
+    text-align: right;
+    margin-top: 4px;
+    font-size: 0.85em;
+}
+
 .form-group input {
     width: 100%;
     padding: 14px;

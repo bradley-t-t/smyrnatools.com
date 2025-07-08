@@ -35,7 +35,7 @@ export class Profile {
 export class UserRole {
     constructor(data = {}) {
         this.userId = data.user_id || '';
-        this.roleName = data.role_name || 'guest';
+        this.roleName = data.role_name || 'Guest';
         this.createdAt = data.created_at || '';
         this.updatedAt = data.updated_at || '';
     }
