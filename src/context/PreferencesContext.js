@@ -14,6 +14,12 @@ const defaultPreferences = {
         selectedPlant: '',
         statusFilter: ''
     },
+    operatorFilters: {
+        searchText: '',
+        selectedPlant: '',
+        statusFilter: '',
+        trainerFilter: ''
+    },
     lastViewedFilters: null
 };
 
@@ -140,6 +146,12 @@ export const PreferencesProvider = ({ children }) => {
                 selectedPlant: '',
                 statusFilter: ''
             },
+            operatorFilters: data.operator_filters || {
+                searchText: '',
+                selectedPlant: '',
+                statusFilter: '',
+                trainerFilter: ''
+            },
             lastViewedFilters: data.last_viewed_filters
         };
         setPreferences(newPreferences);
@@ -153,6 +165,53 @@ export const PreferencesProvider = ({ children }) => {
 
 
 
+
+    // Update operator filters and save to database
+    const updateOperatorFilters = async (filters) => {
+        try {
+            setPreferences(prev => {
+                const newPrefs = { ...prev, operatorFilters: filters };
+                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+                return newPrefs;
+            });
+
+            // If user is authenticated, save to database
+            const { data } = await supabase.auth.getUser();
+            if (data?.user?.id) {
+                // Check if user preferences exist
+                const { data: existingPrefs } = await supabase
+                    .from('user_preferences')
+                    .select('id')
+                    .eq('user_id', data.user.id);
+
+                if (!existingPrefs || existingPrefs.length === 0) {
+                    // Create user preferences if they don't exist
+                    await supabase
+                        .from('user_preferences')
+                        .insert([{
+                            user_id: data.user.id,
+                            operator_filters: filters,
+                            theme_mode: preferences.themeMode,
+                            accent_color: preferences.accentColor,
+                            navbar_minimized: preferences.navbarMinimized
+                        }]);
+                } else {
+                    // Update existing preferences
+                    await supabase
+                        .from('user_preferences')
+                        .update({ 
+                            operator_filters: filters,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', data.user.id);
+                }
+
+                console.log('Saved operator filters to database:', filters);
+            }
+        } catch (error) {
+            console.error('Error updating operator filters:', error);
+        }
+    };
 
     // Update mixer filters and save to database
     const updateMixerFilters = async (filters) => {
@@ -251,6 +310,20 @@ export const PreferencesProvider = ({ children }) => {
         }
     };
 
+    // Update a single operator filter field
+    const updateOperatorFilter = async (key, value) => {
+        try {
+            const updatedFilters = {
+                ...preferences.operatorFilters,
+                [key]: value
+            };
+
+            await updateOperatorFilters(updatedFilters);
+        } catch (error) {
+            console.error(`Error updating operator filter ${key}:`, error);
+        }
+    };
+
     // Update a single mixer filter field
     const updateMixerFilter = async (key, value) => {
         try {
@@ -263,6 +336,18 @@ export const PreferencesProvider = ({ children }) => {
         } catch (error) {
             console.error(`Error updating mixer filter ${key}:`, error);
         }
+    };
+
+    // Reset all operator filters
+    const resetOperatorFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            statusFilter: '',
+            trainerFilter: ''
+        };
+
+        await updateOperatorFilters(emptyFilters);
     };
 
     // Reset all mixer filters
@@ -299,6 +384,12 @@ export const PreferencesProvider = ({ children }) => {
                             selectedPlant: '',
                             statusFilter: ''
                         },
+                        operator_filters: preferences.operatorFilters || {
+                            searchText: '',
+                            selectedPlant: '',
+                            statusFilter: '',
+                            trainerFilter: ''
+                        },
                         last_viewed_filters: preferences.lastViewedFilters
                 }]);
 
@@ -318,6 +409,7 @@ export const PreferencesProvider = ({ children }) => {
                 theme_mode: prefsToUpdate.themeMode,
                 accent_color: prefsToUpdate.accentColor,
                     mixer_filters: prefsToUpdate.mixerFilters,
+                    operator_filters: prefsToUpdate.operatorFilters,
                     last_viewed_filters: prefsToUpdate.lastViewedFilters,
                 updated_at: new Date().toISOString(),
             };
@@ -376,6 +468,9 @@ export const PreferencesProvider = ({ children }) => {
                 updateMixerFilters,
                 updateMixerFilter,
                 resetMixerFilters,
+                updateOperatorFilters,
+                updateOperatorFilter,
+                resetOperatorFilters,
                 saveLastViewedFilters,
             }}
         >

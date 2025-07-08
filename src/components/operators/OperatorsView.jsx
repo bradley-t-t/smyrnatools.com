@@ -8,13 +8,13 @@ import OperatorCard from './OperatorCard';
 import {usePreferences} from '../../context/PreferencesContext';
 
 function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator}) {
-    const {preferences} = usePreferences();
+    const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences();
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchText, setSearchText] = useState('');
-    const [selectedPlant, setSelectedPlant] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [searchText, setSearchText] = useState(preferences.operatorFilters?.searchText || '');
+    const [selectedPlant, setSelectedPlant] = useState(preferences.operatorFilters?.selectedPlant || '');
+    const [statusFilter, setStatusFilter] = useState(preferences.operatorFilters?.statusFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
@@ -50,6 +50,15 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
     useEffect(() => {
         fetchAllData();
     }, []);
+
+    // Load filters from preferences when they change
+    useEffect(() => {
+        if (preferences.operatorFilters) {
+            setSearchText(preferences.operatorFilters.searchText || '');
+            setSelectedPlant(preferences.operatorFilters.selectedPlant || '');
+            setStatusFilter(preferences.operatorFilters.statusFilter || '');
+        }
+    }, [preferences.operatorFilters]);
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -302,10 +311,17 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 className="ios-search-input"
                                 placeholder="Search by name or ID..."
                                 value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSearchText(value);
+                                    updateOperatorFilter('searchText', value);
+                                }}
                             />
                             {searchText && (
-                                <button className="clear" onClick={() => setSearchText('')}>
+                                <button className="clear" onClick={() => {
+                                    setSearchText('');
+                                    updateOperatorFilter('searchText', '');
+                                }}>
                                     <i className="fas fa-times"></i>
                                 </button>
                             )}
@@ -316,7 +332,11 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 <select
                                     className="ios-select"
                                     value={selectedPlant}
-                                    onChange={(e) => setSelectedPlant(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setSelectedPlant(value);
+                                        updateOperatorFilter('selectedPlant', value);
+                                    }}
                                     aria-label="Filter by plant"
                                 >
                                     <option value="">All Plants</option>
@@ -332,7 +352,11 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 <select
                                     className="ios-select"
                                     value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setStatusFilter(value);
+                                        updateOperatorFilter('statusFilter', value);
+                                    }}
                                 >
                                     {filterOptions.map(option => (
                                         <option key={option} value={option}>{option}</option>
@@ -347,6 +371,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                         setSearchText('');
                                         setSelectedPlant('');
                                         setStatusFilter('');
+                                        resetOperatorFilters();
                                     }}
                                 >
                                     <i className="fas fa-undo"></i>
