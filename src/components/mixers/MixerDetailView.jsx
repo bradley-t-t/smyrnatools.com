@@ -65,7 +65,7 @@ function MixerDetailView({mixerId, onClose}) {
             return date instanceof Date ? date.toISOString().split('T')[0] : '';
         };
 
-        const hasChanges = 
+        const hasChanges =
             truckNumber !== originalValues.truckNumber ||
             assignedOperator !== originalValues.assignedOperator ||
             assignedPlant !== originalValues.assignedPlant ||
@@ -76,13 +76,13 @@ function MixerDetailView({mixerId, onClose}) {
 
         setHasUnsavedChanges(hasChanges);
     }, [
-        truckNumber, 
-        assignedOperator, 
-        assignedPlant, 
-        status, 
-        cleanlinessRating, 
-        lastServiceDate, 
-        lastChipDate, 
+        truckNumber,
+        assignedOperator,
+        assignedPlant,
+        status,
+        cleanlinessRating,
+        lastServiceDate,
+        lastChipDate,
         originalValues,
         isLoading
     ]);
@@ -326,6 +326,17 @@ function MixerDetailView({mixerId, onClose}) {
         setIsSaving(true);
 
         try {
+            // First, check if there are unsaved changes and save them
+            if (hasUnsavedChanges) {
+                try {
+                    await handleSave();
+                } catch (saveError) {
+                    console.error('Error saving changes before verification:', saveError);
+                    alert('Failed to save your changes before verification. Please try saving manually first.');
+                    throw new Error('Failed to save changes before verification');
+                }
+            }
+
             // Try multiple methods to get the current user ID
             let userId = null;
 
@@ -497,9 +508,9 @@ function MixerDetailView({mixerId, onClose}) {
             {/* Header */}
             <div className="detail-header">
                 <div className="header-left">
-                    <button 
-                        className="back-button" 
-                        onClick={handleBackClick} 
+                    <button
+                        className="back-button"
+                        onClick={handleBackClick}
                         aria-label="Back to mixers"
                         style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                     >
@@ -509,19 +520,11 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'N/A'}</h1>
                 <div className="header-actions">
-                    <button 
-                        className="verify-button" 
-                        onClick={handleVerifyMixer}
-                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
-                    >
-                        <i className="fas fa-check-circle"></i>
-                        <span>Verify</span>
-                    </button>
                     <button className="comments-button" onClick={() => setShowComments(true)}>
                         <i className="fas fa-comments"></i> Comments
                     </button>
-                    <button 
-                        className="history-button" 
+                    <button
+                        className="history-button"
                         onClick={() => setShowHistory(true)}
                         style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                     >
@@ -541,199 +544,216 @@ function MixerDetailView({mixerId, onClose}) {
 
                 {/* Display MixerCard at the top */}
                 <div className="mixer-card-preview">
-                    <MixerCard 
+                    <MixerCard
                         mixer={mixer}
                         operatorName={getOperatorName(mixer.assignedOperator)}
                         plantName={getPlantName(mixer.assignedPlant)}
                         showOperatorWarning={false}
                     />
                 </div>
-
                 <div className="detail-card">
                     <div className="card-header">
-                        <h2>Edit Information</h2>
+                        <h2>Verification Status</h2>
                     </div>
-                    <p className="edit-instructions">Make changes below and click Save when finished.</p>
-
-                    <div className="history-table-container">
-                        <table className="history-table">
-                            <thead>
-                                <tr>
-                                    <th width="130">Field</th>
-                                    <th>Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th>Created</th>
-                                    <td>{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <th>Last Verified</th>
-                                    <td>
-                                        {mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'Never verified'}
-                                        {!mixer.isVerified() && (
-                                            <span className="verification-status-warning" style={{marginLeft: '10px', color: '#e74c3c'}}>
-                                                <i className="fas fa-exclamation-triangle" style={{marginRight: '5px'}}></i>
-                                                {!mixer.updatedLast || !mixer.updatedBy ? 'Needs verification' : 'Verification outdated'}
-                                            </span>
-                                        )}
-                                    </td>
-                                </tr>
-                                {mixer.updatedBy ? (
-                                    <tr>
-                                        <th>Verified By</th>
-                                        <td>{updatedByEmail || 'Unknown User'}</td>
-                                    </tr>
-                                ) : (
-                                    <tr>
-                                        <th>Verified By</th>
-                                        <td><span style={{color: '#e74c3c'}}>No verification record</span></td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Keep the original metadata div for backwards compatibility */}
-                    <div className="metadata-info" style={{display: 'none'}}>
-                        <div className="metadata-row">
-                            <span className="metadata-label">Created:</span>
-                            <span className="metadata-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</span>
-                        </div>
-                        <div className="metadata-row">
-                            <span className="metadata-label">Last Updated:</span>
-                            <span className="metadata-value">{mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'N/A'}</span>
-                        </div>
-                        {mixer.updatedBy && (
-                            <div className="metadata-row">
-                                <span className="metadata-label">Updated By:</span>
-                                <span className="metadata-value">
-                                    {updatedByEmail || 'Unknown User'}
-                                </span>
-                            </div>
-                        )}
-                    </div> {/* Close the hidden metadata-info div */}
-
-                    <div className="form-group">
-                        <label>Truck Number</label>
-                        <input
-                            type="text"
-                            value={truckNumber}
-                            onChange={(e) => setTruckNumber(e.target.value)}
-                            className="form-control"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Status</label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="form-control"
-                        >
-                            <option value="">Select Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Spare">Spare</option>
-                            <option value="In Shop">In Shop</option>
-                            <option value="Retired">Retired</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Assigned Plant</label>
-                        <select
-                            value={assignedPlant}
-                            onChange={(e) => setAssignedPlant(e.target.value)}
-                            className="form-control"
-                        >
-                            <option value="">Select Plant</option>
-                            {plants.map(plant => (
-                                <option key={plant.plantCode} value={plant.plantCode}>
-                                    {plant.plantName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Assigned Operator</label>
-                        <select
-                            value={assignedOperator}
-                            onChange={(e) => setAssignedOperator(e.target.value)}
-                            className="form-control"
-                        >
-                            <option value="0">None</option>
-                            {operators.map(operator => (
-                                <option key={operator.employeeId} value={operator.employeeId}>
-                                    {operator.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="detail-card">
-                    <h2>Maintenance Information</h2>
-
-                    <div className="form-group">
-                        <label>Last Service Date</label>
-                        <input
-                            type="date"
-                            value={lastServiceDate ? formatDate(lastServiceDate) : ''}
-                            onChange={(e) => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
-                            className="form-control"
-                        />
-                        {lastServiceDate && MixerUtils.isServiceOverdue(lastServiceDate) && (
-                            <div className="warning-text">Service overdue</div>
-                        )}
-                    </div>
-
-                    <div className="form-group">
-                        <label>Last Chip Date</label>
-                        <input
-                            type="date"
-                            value={lastChipDate ? formatDate(lastChipDate) : ''}
-                            onChange={(e) => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}
-                            className="form-control"
-                        />
-                        {lastChipDate && MixerUtils.isChipOverdue(lastChipDate) && (
-                            <div className="warning-text">Chip overdue</div>
-                        )}
-                    </div>
-
-                    <div className="form-group">
-                        <label>Cleanliness Rating</label>
-                        <div className="cleanliness-rating-editor">
-                            <div className="star-input">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
-                                        key={star}
-                                        type="button"
-                                        className={`star-button ${star <= cleanlinessRating ? 'active' : ''}`}
-                                        onClick={() => setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
-                                        aria-label={`Rate ${star} of 5 stars`}
-                                    >
-                                        <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} 
-                                           style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
-                                        ></i>
-                                    </button>
-                                ))}
-                            </div>
-                            {cleanlinessRating > 0 && (
-                                <div className="rating-value-display">
-                                    <span className="rating-label">
-                                        {cleanlinessRating === 1 && 'Poor'}
-                                        {cleanlinessRating === 2 && 'Fair'}
-                                        {cleanlinessRating === 3 && 'Good'}
-                                        {cleanlinessRating === 4 && 'Very Good'}
-                                        {cleanlinessRating === 5 && 'Excellent'}
-                                    </span>
+                    <div className="verification-card">
+                        <div className="verification-card-header">
+                            <i className="fas fa-clipboard-check"></i>
+                            <h3></h3>
+                            {mixer.isVerified() ? (
+                                <div className="verification-badge verified">
+                                    <i className="fas fa-check-circle"></i>
+                                    <span>Verified</span>
+                                </div>
+                            ) : (
+                                <div className="verification-badge needs-verification">
+                                    <i className="fas fa-exclamation-circle"></i>
+                                    <span>{!mixer.updatedLast || !mixer.updatedBy ? 'Needs Verification' : 'Verification Outdated'}</span>
                                 </div>
                             )}
                         </div>
-                    </div>
 
+                        <div className="verification-details">
+                            <div className="verification-item">
+                                <div className="verification-icon">
+                                    <i className="fas fa-calendar-plus"></i>
+                                </div>
+                                <div className="verification-info">
+                                    <span className="verification-label">Created</span>
+                                    <span className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</span>
+                                </div>
+                            </div>
+
+                            <div className="verification-item">
+                                <div className="verification-icon" style={{ color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : '#f59e0b') : '#ef4444' }}>
+                                    <i className="fas fa-calendar-check"></i>
+                                </div>
+                                <div className="verification-info">
+                                    <span className="verification-label">Last Verified</span>
+                                    <span className="verification-value" style={{ color: mixer.updatedLast ? (mixer.isVerified() ? 'inherit' : '#f59e0b') : '#ef4444' }}>
+                                        {mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'Never verified'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="verification-item">
+                                <div className="verification-icon" style={{ color: mixer.updatedBy ? '#10b981' : '#ef4444' }}>
+                                    <i className="fas fa-user-check"></i>
+                                </div>
+                                <div className="verification-info">
+                                    <span className="verification-label">Verified By</span>
+                                    <span className="verification-value" style={{ color: mixer.updatedBy ? 'inherit' : '#ef4444' }}>
+                                        {mixer.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            className="verify-now-button"
+                            onClick={handleVerifyMixer}
+                            style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        >
+                            <i className="fas fa-check-circle"></i>
+                            Verify Now
+                        </button>
+
+                        <div className="verification-notice">
+                            <i className="fas fa-info-circle"></i>
+                            <p>
+                                Assets require verification after any changes are made and/or at the start of each work week.
+                                <strong>  Due: Every Friday at 10:00 AM.</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div className="detail-card">
+                    <div className="card-header">
+                        <h2>Mixer Information</h2>
+                    </div>
+                    <p className="edit-instructions">You can make changes below. Remember to save your changes.</p>
+
+                    <div className="form-sections">
+                        <div className="form-section basic-info">
+                            <h3>Basic Information</h3>
+                            <div className="form-group">
+                                <label>Truck Number</label>
+                                <input
+                                    type="text"
+                                    value={truckNumber}
+                                    onChange={(e) => setTruckNumber(e.target.value)}
+                                    className="form-control"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Status</label>
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="form-control"
+                                >
+                                    <option value="">Select Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Spare">Spare</option>
+                                    <option value="In Shop">In Shop</option>
+                                    <option value="Retired">Retired</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Assigned Plant</label>
+                                <select
+                                    value={assignedPlant}
+                                    onChange={(e) => setAssignedPlant(e.target.value)}
+                                    className="form-control"
+                                >
+                                    <option value="">Select Plant</option>
+                                    {plants.map(plant => (
+                                        <option key={plant.plantCode} value={plant.plantCode}>
+                                            {plant.plantName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Assigned Operator</label>
+                                <select
+                                    value={assignedOperator}
+                                    onChange={(e) => setAssignedOperator(e.target.value)}
+                                    className="form-control"
+                                >
+                                    <option value="0">None</option>
+                                    {operators.map(operator => (
+                                        <option key={operator.employeeId} value={operator.employeeId}>
+                                            {operator.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-section maintenance-info">
+                            <h3>Maintenance Information</h3>
+                            <div className="form-group">
+                                <label>Last Service Date</label>
+                                <input
+                                    type="date"
+                                    value={lastServiceDate ? formatDate(lastServiceDate) : ''}
+                                    onChange={(e) => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
+                                    className="form-control"
+                                />
+                                {lastServiceDate && MixerUtils.isServiceOverdue(lastServiceDate) && (
+                                    <div className="warning-text">Service overdue</div>
+                                )}
+                            </div>
+
+                            <div className="form-group">
+                                <label>Last Chip Date</label>
+                                <input
+                                    type="date"
+                                    value={lastChipDate ? formatDate(lastChipDate) : ''}
+                                    onChange={(e) => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}
+                                    className="form-control"
+                                />
+                                {lastChipDate && MixerUtils.isChipOverdue(lastChipDate) && (
+                                    <div className="warning-text">Chip overdue</div>
+                                )}
+                            </div>
+
+                            <div className="form-group">
+                                <label>Cleanliness Rating</label>
+                                <div className="cleanliness-rating-editor">
+                                    <div className="star-input">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                type="button"
+                                                className={`star-button ${star <= cleanlinessRating ? 'active' : ''}`}
+                                                onClick={() => setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
+                                                aria-label={`Rate ${star} of 5 stars`}
+                                            >
+                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
+                                                   style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
+                                                ></i>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {cleanlinessRating > 0 && (
+                                        <div className="rating-value-display">
+                                            <span className="rating-label">
+                                                {cleanlinessRating === 1 && 'Poor'}
+                                                {cleanlinessRating === 2 && 'Fair'}
+                                                {cleanlinessRating === 3 && 'Good'}
+                                                {cleanlinessRating === 4 && 'Very Good'}
+                                                {cleanlinessRating === 5 && 'Excellent'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="form-actions">

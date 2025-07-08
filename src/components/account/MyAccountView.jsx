@@ -462,7 +462,7 @@ function MyAccountView({userId}) {
                         disabled={loading}
                         style={{ backgroundColor: 'var(--bg-primary)' }}
                     >
-                        <span className="sign-out-button-text">
+                        <span className="sign-out-button-text" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
                             <i className="fas fa-sign-out-alt" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
                             Sign Out
                         </span>

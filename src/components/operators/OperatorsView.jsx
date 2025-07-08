@@ -291,12 +291,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                             )}
                         </h1>
                         <div className="dashboard-actions">
-                            {setShowSidebar && (
-                                <button className="action-button" onClick={() => setShowSidebar(!showSidebar)}>
-                                    <i className="fas fa-bars"></i>
-                                    Menu
-                                </button>
-                            )}
                             <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
                                 <i className="fas fa-plus"></i>
                                 Add Operator
