@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import './OperatorsView.css';
 import {supabase} from '../../core/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
-import OperatorHistoryView from './OperatorHistoryView';
 import OperatorDetailView from './OperatorDetailView';
 import Theme from '../../utils/Theme';
 import OperatorCard from './OperatorCard';
@@ -391,7 +390,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                         operator={operator}
                                         plantName={getPlantName(operator.plantCode)}
                                         onSelect={handleSelectOperator}
-                                        onDelete={() => deleteOperator(operator.employeeId)}
                                     />
                                 ))}
                             </div>
@@ -514,13 +512,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 </div>
                             </div>
                         </div>
-                    )}
-
-                    {showHistory && selectedOperator && (
-                        <OperatorHistoryView
-                            operator={selectedOperator}
-                            onClose={() => setShowHistory(false)}
-                        />
                     )}
 
                     {showOverview && <OverviewPopup />}

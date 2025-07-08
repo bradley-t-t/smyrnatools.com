@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './index.css';
 import './App.css';
+import MobileNavToggle from './components/common/MobileNavToggle';
 import MixersView from './components/mixers/MixersView';
 import SettingsView from './components/settings/SettingsView';
 import MixerDetailView from './components/mixers/MixerDetailView';
@@ -18,6 +19,17 @@ import './styles/Global.css';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    // Handle responsive layout
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const [title, setTitle] = useState('Mixers');
     const [selectedMixer, setSelectedMixer] = useState(null);
     const [selectedTractor, setSelectedTractor] = useState(null);
@@ -254,6 +266,7 @@ function AppContent() {
 
     return (
         <div className="App">
+            {isMobile && <MobileNavToggle />}
             <SimpleNavbar
                 selectedView={selectedView}
                 onSelectView={handleViewSelection}

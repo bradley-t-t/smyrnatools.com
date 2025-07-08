@@ -179,21 +179,22 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="isTrainer">Is Trainer</label>
-                            <div className="checkbox-field">
-                                <input
-                                    id="isTrainer"
-                                    type="checkbox"
-                                    checked={isTrainer}
-                                    onChange={(e) => {
-                                        setIsTrainer(e.target.checked);
-                                        if (e.target.checked) {
-                                            setAssignedTrainer('0');
-                                        }
-                                    }}
-                                />
-                                <label htmlFor="isTrainer">Is a Trainer</label>
-                            </div>
+                            <label htmlFor="isTrainer">Trainer Status</label>
+                            <select
+                                id="isTrainer"
+                                className="ios-select"
+                                value={isTrainer ? "true" : "false"}
+                                onChange={(e) => {
+                                    const isTrainerValue = e.target.value === "true";
+                                    setIsTrainer(isTrainerValue);
+                                    if (isTrainerValue) {
+                                        setAssignedTrainer('0');
+                                    }
+                                }}
+                            >
+                                <option value="false">Non-Trainer</option>
+                                <option value="true">Trainer</option>
+                            </select>
                         </div>
 
                         <div className="form-group">

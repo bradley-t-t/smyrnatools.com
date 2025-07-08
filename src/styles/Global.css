@@ -186,6 +186,12 @@ html, body, #root {
     overflow: hidden;
 }
 
+/* Allow scrolling in login view and other auth screens */
+.login-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Ensure all containers properly contain their content */
 .layout-container, .app-container, .content-container {
     width: 100%;

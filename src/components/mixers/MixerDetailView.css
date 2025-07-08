@@ -324,6 +324,7 @@
     display: flex;
     justify-content: space-between;
     margin-top: 24px;
+    gap: 16px;
 }
 
 .primary-button, .save-button {

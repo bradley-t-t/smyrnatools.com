@@ -66,19 +66,7 @@ function OperatorCard({ operator, plantName, onSelect, onDelete }) {
                         </div>
                     )}
                 </div>
-                {onDelete && (
-                    <div className="card-footer">
-                        <button
-                            className="delete-button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(operator.id);
-                            }}
-                        >
-                            Delete
-                        </button>
-                    </div>
-                )}
+                {/* Delete button removed */}
             </div>
         </div>
     );

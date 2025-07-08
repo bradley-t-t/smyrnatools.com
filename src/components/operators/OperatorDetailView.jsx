@@ -5,7 +5,6 @@ import {UserService} from '../../services/auth/UserService';
 import Theme from '../../utils/Theme';
 import supabase from '../../core/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
-import OperatorHistoryView from './OperatorHistoryView';
 import OperatorCard from './OperatorCard';
 import './OperatorDetailView.css';
 
@@ -16,7 +15,6 @@ function OperatorDetailView({operatorId, onClose}) {
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -283,10 +281,6 @@ function OperatorDetailView({operatorId, onClose}) {
                 </div>
                 <h1>{operator.name || 'Operator Details'}</h1>
                 <div className="header-actions">
-                    <button className="history-button" onClick={() => setShowHistory(true)}>
-                        <i className="fas fa-history"></i>
-                        <span>History</span>
-                    </button>
                 </div>
             </div>
 
@@ -310,33 +304,6 @@ function OperatorDetailView({operatorId, onClose}) {
                         <h2>Edit Information</h2>
                     </div>
                     <p className="edit-instructions">Make changes below and click Save when finished.</p>
-
-                    <div className="history-table-container">
-                        <table className="history-table">
-                            <thead>
-                            <tr>
-                                <th width="130">Field</th>
-                                <th>Value</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <th>Created</th>
-                                <td>{operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <th>Last Updated</th>
-                                <td>{operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'N/A'}</td>
-                            </tr>
-                            {operator.updatedBy && (
-                                <tr>
-                                    <th>Updated By</th>
-                                    <td>{updatedByEmail || 'Unknown User'}</td>
-                                </tr>
-                            )}
-                            </tbody>
-                        </table>
-                    </div>
 
                     <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
@@ -362,7 +329,6 @@ function OperatorDetailView({operatorId, onClose}) {
                             value={employeeId}
                             onChange={(e) => setEmployeeId(e.target.value)}
                             className="form-control"
-                            readOnly={true}
                         />
                     </div>
 
@@ -426,15 +392,22 @@ function OperatorDetailView({operatorId, onClose}) {
                     <h2>Training Information</h2>
 
                     <div className="form-group">
-                        <div className="checkbox-field">
-                            <input
-                                type="checkbox"
-                                id="is-trainer"
-                                checked={isTrainer}
-                                onChange={(e) => setIsTrainer(e.target.checked)}
-                            />
-                            <label htmlFor="is-trainer">Is a Trainer</label>
-                        </div>
+                        <label>Trainer Status</label>
+                        <select
+                            id="trainer-status"
+                            className="form-control"
+                            value={isTrainer ? "true" : "false"}
+                            onChange={(e) => {
+                                const isTrainerValue = e.target.value === "true";
+                                setIsTrainer(isTrainerValue);
+                                if (isTrainerValue) {
+                                    setAssignedTrainer('0');
+                                }
+                            }}
+                        >
+                            <option value="false">Non-Trainer</option>
+                            <option value="true">Trainer</option>
+                        </select>
                     </div>
 
                     <div className="form-group">
@@ -474,10 +447,6 @@ function OperatorDetailView({operatorId, onClose}) {
                 </div>
             </div>
 
-            {showHistory && (
-                <OperatorHistoryView operator={operator} onClose={() => setShowHistory(false)} />
-            )}
-
             {showDeleteConfirmation && (
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
@@ -505,7 +474,7 @@ function OperatorDetailView({operatorId, onClose}) {
                                 Continue Editing
                             </button>
                             <button
-                                className="primary-button"
+                                    className="primary-button save-button"
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
                                     try {

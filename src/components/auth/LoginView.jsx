@@ -24,6 +24,25 @@ function LoginView() {
     const timeoutRef = useRef(null);
 
     // Clear timeout on component unmount and set up auth success listener
+            // Ensure scrolling works on mobile devices
+            useEffect(() => {
+        const loginContainer = document.getElementById('login-scroll-container');
+        if (loginContainer) {
+            // Enable momentum scrolling for iOS
+            loginContainer.style.WebkitOverflowScrolling = 'touch';
+        }
+
+        // Unlock scroll when login view is mounted
+        document.body.style.overflow = 'auto';
+        document.documentElement.style.overflow = 'auto';
+
+        return () => {
+            // Reset overflow when component unmounts
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+            }, []);
+
     useEffect(() => {
         // Set up listener for auth success events
         const handleAuthSuccess = (event) => {
@@ -153,7 +172,7 @@ function LoginView() {
     };
 
     return (
-        <div className="login-container">
+        <div className="login-container" id="login-scroll-container">
             <div className="login-box">
                 <div className="login-header">
                     <img src={SmyrnaLogo} alt="Smyrna Logo" className="login-logo"/>

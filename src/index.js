@@ -4,6 +4,9 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './utils/ReportWebVitals';
 
+// Import the PreferencesProvider
+import { PreferencesProvider } from './context/PreferencesContext';
+
 const meta = document.createElement('meta');
 meta.name = 'viewport';
 meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
@@ -31,9 +34,6 @@ const applyInitialTheme = () => {
     console.error('Error applying initial theme:', error);
   }
 };
-
-// Import the PreferencesProvider
-import { PreferencesProvider } from './context/PreferencesContext';
 
 // Apply theme before any rendering
 applyInitialTheme();

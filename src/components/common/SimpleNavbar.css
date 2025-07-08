@@ -412,12 +412,15 @@
 /* Media query for mobile responsiveness */
 @media (max-width: 768px) {
     .vertical-navbar {
-        position: absolute;
+        position: fixed;
         left: 0;
         top: 0;
         height: 100%;
         transform: translateX(0);
         transition: transform 0.3s ease, width 0.3s ease;
+        z-index: 1010;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 250px;
     }
 
     .vertical-navbar.collapsed {
@@ -427,5 +430,17 @@
     .content-area {
         margin-left: 0;
         width: 100%;
+        padding-top: 10px;
+        padding-left: 55px; /* Make room for the toggle button */
+    }
+
+    /* Hide the collapse button on mobile as we use the floating button instead */
+    .collapse-btn {
+        display: none;
+    }
+
+    /* Create space for the mobile menu toggle */
+    .dashboard-header {
+        padding-left: 40px;
     }
 }
