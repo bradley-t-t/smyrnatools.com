@@ -10,6 +10,7 @@ import Theme from '../../utils/Theme';
 import supabase from '../../core/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
+import MixerCommentModal from './MixerCommentModal';
 import MixerCard from './MixerCard';
 import '../common/LoadingText.css';
 import './MixerDetailView.css';
@@ -22,6 +23,7 @@ function MixerDetailView({mixerId, onClose}) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [showComments, setShowComments] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -414,6 +416,13 @@ function MixerDetailView({mixerId, onClose}) {
 
     return (
         <div className="mixer-detail-view">
+            {showComments && (
+                <MixerCommentModal
+                    mixerId={mixerId}
+                    mixerNumber={mixer?.truckNumber}
+                    onClose={() => setShowComments(false)}
+                />
+            )}
             {isSaving && (
                 <div className="saving-overlay">
                     <div className="saving-indicator"></div>
@@ -435,6 +444,9 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'N/A'}</h1>
                 <div className="header-actions">
+                    <button className="comments-button" onClick={() => setShowComments(true)}>
+                        <i className="fas fa-comments"></i> Comments
+                    </button>
                     <button 
                         className="history-button" 
                         onClick={() => setShowHistory(true)}

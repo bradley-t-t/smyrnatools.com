@@ -1,5 +1,5 @@
-import supabase from '../core/Supabase';
-import {MixerComment} from '../../models/MixerComment';
+import { supabase } from '../../core/SupabaseClient';
+import { MixerComment } from '../../models/MixerComment';
 
 export class MixerCommentService {
     // Fetch all comments for a mixer

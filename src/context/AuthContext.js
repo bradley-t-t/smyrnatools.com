@@ -292,7 +292,10 @@ export function AuthProvider({children}) {
 
             const salt = AuthUtils.generateSalt();
             const passwordHash = await AuthUtils.hashPassword(password, salt);
-            const userId = crypto.randomUUID();
+
+            // Generate UUID using our improved helper function that works across all environments
+            const { generateUUID } = await import('../utils/UUIDHelper');
+            const userId = generateUUID();
             const now = new Date().toISOString();
 
             const user = {
