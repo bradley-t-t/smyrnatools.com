@@ -140,9 +140,13 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                                 required
                             >
                                 <option value="">Select Plant</option>
-                                {plants.map(plant => (
+                                {plants.sort((a, b) => {
+                                    const aCode = parseInt(a.plantCode?.replace(/\D/g, '') || '0');
+                                    const bCode = parseInt(b.plantCode?.replace(/\D/g, '') || '0');
+                                    return aCode - bCode;
+                                }).map(plant => (
                                     <option key={plant.plantCode} value={plant.plantCode}>
-                                        {plant.plantName}
+                                        ({plant.plantCode}) {plant.plantName}
                                     </option>
                                 ))}
                             </select>

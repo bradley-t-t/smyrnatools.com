@@ -334,9 +334,13 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                     aria-label="Filter by plant"
                                 >
                                     <option value="">All Plants</option>
-                                    {plants.sort((a, b) => a.plant_name.localeCompare(b.plant_name)).map(plant => (
+                                    {plants.sort((a, b) => {
+                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
+                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
+                                        return aCode - bCode;
+                                    }).map(plant => (
                                         <option key={plant.plant_code} value={plant.plant_code}>
-                                            {plant.plant_name}
+                                            ({plant.plant_code}) {plant.plant_name}
                                         </option>
                                     ))}
                                 </select>
