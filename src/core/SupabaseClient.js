@@ -1,8 +1,8 @@
 import {createClient} from '@supabase/supabase-js';
 
-// Initialize Supabase client with production values
-const supabaseUrl = 'https://hzudmeptzciqukwlroos.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6dWRtZXB0emNpcXVrd2xyb29zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NDA2NzIsImV4cCI6MjA2MjIxNjY3Mn0.PVoS3UeyEwXkQdX5SQkrQRI2IEvRMPD-lfwXD5DwgTI';
+// Initialize Supabase client with environment variables
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Create and export the Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -87,6 +87,12 @@ export const formatDateForSupabase = (date) => {
  */
 export const isSupabaseConfigured = (supabase) => {
     if (!supabase) return false;
+
+    // Check environment variables are set
+    if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_ANON_KEY) {
+        console.error('Supabase environment variables are not properly configured');
+        return false;
+    }
 
     // Check URL format
     const url = supabase?.supabaseUrl;
