@@ -40,7 +40,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
             )}
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="mixer-name" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>Truck #{mixer.truckNumber || 'N/A'}</h3>
+                    <h3 className="mixer-name" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>Truck #{mixer.truckNumber || 'Not Assigned'}</h3>
                 </div>
                 <div className="card-details">
                     <div className="detail-row">

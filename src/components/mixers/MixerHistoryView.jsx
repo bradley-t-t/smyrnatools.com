@@ -75,7 +75,7 @@ function MixerHistoryView({mixer, onClose}) {
 
     // Format date for display
     const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
+        if (!dateString) return 'Not Assigned';
         const date = new Date(dateString);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
     };
@@ -116,7 +116,7 @@ function MixerHistoryView({mixer, onClose}) {
 
     // Format old and new values for display
     const formatValue = (fieldName, value) => {
-        if (value === null || value === undefined || value === '') return 'N/A';
+        if (value === null || value === undefined || value === '') return 'Not Assigned';
 
         // For operators, show name and ID
         if (fieldName === 'assigned_operator') {
@@ -128,7 +128,7 @@ function MixerHistoryView({mixer, onClose}) {
         }
 
         if (fieldName === 'last_service_date' || fieldName === 'last_chip_date') {
-            return value ? new Date(value).toLocaleDateString() : 'N/A';
+            return value ? new Date(value).toLocaleDateString() : 'Not Assigned';
         }
 
         return value;

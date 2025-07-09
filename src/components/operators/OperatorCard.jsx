@@ -35,7 +35,7 @@ function OperatorCard({ operator, plantName, onSelect, onDelete }) {
                 <div className="card-details">
                     <div className="detail-row">
                         <div className="detail-label">Employee ID</div>
-                        <div className="detail-value">{operator.employeeId || 'N/A'}</div>
+                        <div className="detail-value">{operator.employeeId || 'Not Assigned'}</div>
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Plant</div>

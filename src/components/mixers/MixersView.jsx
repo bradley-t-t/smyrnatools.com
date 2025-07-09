@@ -190,7 +190,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     // Calculate average cleanliness rating
     const averageCleanliness = () => {
         const ratings = mixers.filter(m => m.cleanlinessRating).map(m => m.cleanlinessRating);
-        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'N/A';
+        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'Not Assigned';
     };
 
     // Overview popup component

@@ -16,12 +16,13 @@ import './MixerOverview.css';
 //     display: inline-block;
 // }
 
-    const MixerOverview = ({ filteredMixers = null, selectedPlant = '' }) => {
+    const MixerOverview = ({ filteredMixers = null, selectedPlant = '', unverifiedCount = 0, neverVerifiedCount = 0 }) => {
     const [mixers, setMixers] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusCounts, setStatusCounts] = useState({});
     const [plantCounts, setPlantCounts] = useState({});
+    const [plantDistributionByStatus, setPlantDistributionByStatus] = useState({});
     const [cleanlinessAvg, setCleanlinessAvg] = useState(0);
     const [needServiceCount, setNeedServiceCount] = useState(0);
 
@@ -42,6 +43,46 @@ import './MixerOverview.css';
         setPlantCounts(MixerUtils.getPlantCounts(mixersData));
         setCleanlinessAvg(MixerUtils.getCleanlinessAverage(mixersData));
         setNeedServiceCount(MixerUtils.getNeedServiceCount(mixersData));
+
+        // Calculate plant distribution by status
+        calculatePlantDistributionByStatus(mixersData);
+    };
+
+    const calculatePlantDistributionByStatus = (mixersData) => {
+        const distribution = {};
+
+        // Get unique plants
+        const uniquePlants = [...new Set(mixersData.map(mixer => mixer.assignedPlant || 'Unassigned'))];
+
+        // Initialize structure
+        uniquePlants.forEach(plant => {
+            distribution[plant] = {
+                Total: 0,
+                Active: 0,
+                Spare: 0,
+                'In Shop': 0,
+                Retired: 0
+            };
+        });
+
+        // Count mixers by plant and status
+        mixersData.forEach(mixer => {
+            const plant = mixer.assignedPlant || 'Unassigned';
+            const status = mixer.status || 'Unknown';
+
+            // Increment total count
+            distribution[plant].Total++;
+
+            // Increment status-specific count
+            if (['Active', 'Spare', 'In Shop', 'Retired'].includes(status)) {
+                distribution[plant][status]++;
+            } else {
+                // Default to active if status is not recognized
+                distribution[plant].Active++;
+            }
+        });
+
+        setPlantDistributionByStatus(distribution);
     };
 
     const fetchData = async () => {
@@ -150,13 +191,31 @@ import './MixerOverview.css';
                 {(!selectedPlant || Object.keys(plantCounts).length > 1) && (
                     <div className="overview-card plant-card">
                         <h2>Plant Distribution</h2>
-                        <div className="plant-list">
-                            {Object.entries(plantCounts).map(([plantCode, count]) => (
-                                <div key={plantCode} className="plant-item">
-                                    <div className="plant-name">{getPlantName(plantCode)}</div>
-                                    <div className="plant-count">{count}</div>
-                                </div>
-                            ))}
+                        <div className="plant-distribution-table">
+                            <table className="distribution-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Total</th>
+                                        <th>Active</th>
+                                        <th>Spare</th>
+                                        <th>In Shop</th>
+                                        <th>Retired</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
+                                        <tr key={plantCode}>
+                                            <td className="plant-name">{getPlantName(plantCode)}</td>
+                                            <td>{counts.Total}</td>
+                                            <td>{counts.Active}</td>
+                                            <td>{counts.Spare}</td>
+                                            <td>{counts['In Shop']}</td>
+                                            <td>{counts.Retired}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}

@@ -518,7 +518,7 @@ function MixerDetailView({mixerId, onClose}) {
                         <span>Back</span>
                     </button>
                 </div>
-                <h1>Truck #{mixer.truckNumber || 'N/A'}</h1>
+                <h1>Truck #{mixer.truckNumber || 'Not Assigned'}</h1>
                 <div className="header-actions">
                     <button className="comments-button" onClick={() => setShowComments(true)}>
                         <i className="fas fa-comments"></i> Comments
@@ -579,7 +579,7 @@ function MixerDetailView({mixerId, onClose}) {
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Created</span>
-                                    <span className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'N/A'}</span>
+                                    <span className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
 

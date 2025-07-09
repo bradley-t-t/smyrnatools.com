@@ -307,11 +307,11 @@ function OperatorDetailView({operatorId, onClose}) {
                     <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
                             <span className="metadata-label">Created:</span>
-                            <span className="metadata-value">{operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'N/A'}</span>
+                            <span className="metadata-value">{operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         <div className="metadata-row">
                             <span className="metadata-label">Last Updated:</span>
-                            <span className="metadata-value">{operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'N/A'}</span>
+                            <span className="metadata-value">{operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         {operator.updatedBy && (
                             <div className="metadata-row">

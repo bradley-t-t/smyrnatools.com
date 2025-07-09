@@ -100,8 +100,8 @@ class SendGridService {
 
       // Always log detailed error info
       console.error('Error message:', error.message);
-      console.error('Error code:', errorDetails.code || error.code || 'N/A');
-      console.error('Error status:', error.status || error.statusCode || 'N/A');
+      console.error('Error code:', errorDetails.code || error.code || 'Not Assigned');
+      console.error('Error status:', error.status || error.statusCode || 'Not Assigned');
 
       // Rethrow with more information
       throw new Error(`Failed to send email: ${error.message}`);
