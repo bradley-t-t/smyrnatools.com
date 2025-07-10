@@ -1,5 +1,5 @@
 /**
- * Serverless function to send emails via SendGrid
+ * Serverless function to send email via SendGrid
  * This file should be deployed as a serverless function
  * or integrated with your backend API
  */
@@ -9,7 +9,7 @@
 const sgMail = require('@sendgrid/mail');
 
 /**
- * Handler for SendGrid emails requests
+ * Handler for SendGrid email requests
  * @param {Object} req Request object
  * @param {Object} res Response object
  */
@@ -47,7 +47,7 @@ exports.handler = async (req, res) => {
     // Set API key
     sgMail.setApiKey(apiKey);
 
-    // Send emails
+    // Send email
     const response = await sgMail.send(payload);
 
     // Return success response
@@ -57,7 +57,7 @@ exports.handler = async (req, res) => {
       response
     });
   } catch (error) {
-    console.error('Error sending emails:', error);
+    console.error('Error sending email:', error);
 
     // Return error response
     return res.status(500).json({

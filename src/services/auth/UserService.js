@@ -65,7 +65,7 @@ class UserServiceImpl {
             // Get from the users table
             const {data, error} = await supabase
                 .from('users')
-                .select('id, name, emails')
+                .select('id, name, email')
                 .eq('id', userId)
                 .single();
 
@@ -137,10 +137,10 @@ class UserServiceImpl {
                 return `${user.firstName || ''} ${user.lastName || ''}`.trim();
             }
 
-            // If user has emails, extract name part before @ symbol
+            // If user has email, extract name part before @ symbol
             if (user && user.email) {
                 const emailName = user.email.split('@')[0];
-                // Convert emails username to title case (e.g., john.doe -> John Doe)
+                // Convert email username to title case (e.g., john.doe -> John Doe)
                 return emailName
                     .replace(/\./g, ' ')
                     .split(' ')

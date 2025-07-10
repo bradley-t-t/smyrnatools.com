@@ -1,8 +1,8 @@
 import sgMail from '@sendgrid/mail';
 
 /**
- * Simple, unified emails client for the application
- * Handles all emails sending operations through SendGrid
+ * Simple, unified email client for the application
+ * Handles all email sending operations through SendGrid
  */
 const EmailClient = {
   // Debug flag to enable detailed logging
@@ -30,12 +30,12 @@ const EmailClient = {
   },
 
   /**
-   * Check if emails sending is properly configured
+   * Check if email sending is properly configured
    * @returns {Object} Configuration status details
    */
   checkEmailConfiguration() {
     return {
-      canSendEmails: true, 
+      canSendemail: true, 
       status: 'Email configuration appears valid',
       sendGridApiKey: true,
       isDevelopment: this.isDevelopment(),
@@ -71,7 +71,7 @@ const EmailClient = {
   initialize(apiKey = null) {
     const key = apiKey || process.env.REACT_APP_SENDGRID_API_KEY || process.env.SENDGRID_API_KEY;
     if (!key) {
-      console.warn('SendGrid API key is not configured - emails sending will be mocked');
+      console.warn('SendGrid API key is not configured - email sending will be mocked');
       // Set a placeholder API key to prevent SendGrid from throwing errors
       // This won't actually work for sending, but allows the code to continue
       try {
@@ -98,13 +98,13 @@ const EmailClient = {
 
 
   /**
-   * Send an emails using SendGrid
+   * Send an email using SendGrid
    * @param {Object} options Email options
-   * @param {string} options.to Recipient emails address
-   * @param {string} options.from Sender emails address
+   * @param {string} options.to Recipient email address
+   * @param {string} options.from Sender email address
    * @param {string} options.subject Email subject
-   * @param {string} options.text Plain text emails content
-   * @param {string} [options.html] HTML emails content
+   * @param {string} options.text Plain text email content
+   * @param {string} [options.html] HTML email content
    * @returns {Promise<Object>} Response from SendGrid API
    */
   async sendEmail({ to, from, subject, text, html }) {
@@ -113,7 +113,7 @@ const EmailClient = {
 
       // Validate required parameters
       if (!to || !from || !subject || (!text && !html)) {
-        throw new Error('Missing required emails parameters');
+        throw new Error('Missing required email parameters');
       }
 
       // Ensure API is initialized
@@ -126,7 +126,7 @@ const EmailClient = {
         this.log(`Formatted sender to: ${formattedFrom}`);
       }
 
-      // Create emails message
+      // Create email message
       const msg = {
         to,
         from: formattedFrom,
@@ -148,10 +148,10 @@ const EmailClient = {
         }
       };
 
-      // Log emails payload for debugging
-      this.log('Sending emails with payload:', msg);
+      // Log email payload for debugging
+      this.log('Sending email with payload:', msg);
 
-      // Send the emails
+      // Send the email
       const [response] = await sgMail.send(msg);
       this.log(`Email sent successfully with status code: ${response?.statusCode}`);
 
@@ -162,7 +162,7 @@ const EmailClient = {
       };
     } catch (error) {
       // Log detailed error information
-      console.error('Error sending emails:', error.message);
+      console.error('Error sending email:', error.message);
 
       if (error.response) {
         console.error('SendGrid API error:');
@@ -176,10 +176,10 @@ const EmailClient = {
   },
 
   /**
-   * Send a notification emails with standard formatting
+   * Send a notification email with standard formatting
    * @param {Object} options Email notification options
-   * @param {string} options.to Recipient emails address
-   * @param {string} options.from Sender emails address
+   * @param {string} options.to Recipient email address
+   * @param {string} options.from Sender email address
    * @param {string} options.subject Email subject
    * @param {string} options.message Email message body
    * @param {string} [options.actionUrl] Optional action URL
@@ -206,15 +206,15 @@ const EmailClient = {
   },
 
   /**
-   * Send a verification code emails for password recovery
-   * @param {string} toEmail Recipient emails address
+   * Send a verification code email for password recovery
+   * @param {string} toEmail Recipient email address
    * @param {string} code Verification code
-   * @param {string} [fromEmail="no-reply@smyrnatools.com"] Sender emails address
+   * @param {string} [fromEmail="no-reply@smyrnatools.com"] Sender email address
    * @returns {Promise<Object>} Email send result
    */
   async sendVerificationCodeEmail(toEmail, code, fromEmail = 'no-reply@smyrnatools.com') {
     if (!this.validateEmail(toEmail)) {
-      throw new Error('Invalid emails address');
+      throw new Error('Invalid email address');
     }
 
     this.log(`Sending verification code ${code} to ${toEmail}`);
@@ -233,13 +233,13 @@ const EmailClient = {
     // Check if we should use mock sending in development mode
     if (this.mockSendingInDev && process.env.NODE_ENV === 'development') {
       this.log('Mock sending enabled in development mode');
-      return { success: true, mock: true, message: 'Mock emails sent (development mode)' };
+      return { success: true, mock: true, message: 'Mock email sent (development mode)' };
     }
 
     // Check if SendGrid is configured
     if (!this.isConfigured()) {
-      console.warn('SendGrid is not configured. Using mock emails in any environment.');
-      return { success: true, mock: true, message: 'Mock emails sent (SendGrid not configured)' };
+      console.warn('SendGrid is not configured. Using mock email in any environment.');
+      return { success: true, mock: true, message: 'Mock email sent (SendGrid not configured)' };
     }
 
     const text = `Your password recovery verification code is: ${code}\n\nThis code will expire in 30 minutes. If you did not request this code, please ignore this email.`;
@@ -260,7 +260,7 @@ const EmailClient = {
     `;
 
     try {
-      // Send the emails with clear code formatting
+      // Send the email with clear code formatting
       this.log(`Attempting to send real verification email to: ${toEmail}`);
       const result = await this.sendEmail({
         to: toEmail,
@@ -270,7 +270,7 @@ const EmailClient = {
         html
       });
 
-      this.log('Verification code emails sent successfully', result);
+      this.log('Verification code email sent successfully', result);
       return result;
     } catch (error) {
       this.log(`Error sending verification email: ${error.message}`);
@@ -288,9 +288,9 @@ const EmailClient = {
 
 
   /**
-   * Validates an emails address format
-   * @param {string} email The emails to validate
-   * @returns {boolean} True if the emails is valid, false otherwise
+   * Validates an email address format
+   * @param {string} email The email to validate
+   * @returns {boolean} True if the email is valid, false otherwise
    */
   validateEmail(email) {
     if (!email) return false;

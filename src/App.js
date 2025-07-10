@@ -188,7 +188,7 @@ function AppContent() {
                     if (data && (data.first_name || data.last_name)) {
                         setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim());
                     } else {
-                        // Fallback to emails or user ID if name not available
+                        // Fallback to email or user ID if name not available
                         setUserDisplayName(userId.substring(0, 8));
                     }
                 } catch (error) {

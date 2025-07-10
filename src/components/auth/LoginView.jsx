@@ -126,7 +126,7 @@ function LoginView() {
             } else {
                 // Sign-in flow
                 if (!email || !password) {
-                    setErrorMessage('Please enter both emails and password');
+                    setErrorMessage('Please enter both email and password');
                     setIsSubmitting(false);
                     return;
                 }
@@ -153,8 +153,8 @@ function LoginView() {
                         throw new Error('Connection to the database failed. Please check your internet connection and try again.');
                     } else if (signInError.message && signInError.message.includes('timeout')) {
                         throw new Error('The login process timed out. Please try again.');
-                    } else if (signInError.message && signInError.message.includes('Invalid emails or password')) {
-                        throw new Error('The emails or password you entered is incorrect. Please try again.');
+                    } else if (signInError.message && signInError.message.includes('Invalid email or password')) {
+                        throw new Error('The email or password you entered is incorrect. Please try again.');
                     } else {
                         throw signInError;
                     }

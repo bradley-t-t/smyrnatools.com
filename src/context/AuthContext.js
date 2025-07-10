@@ -118,7 +118,7 @@ export function AuthProvider({children}) {
         try {
             // Simple direct approach
             const trimmedEmail = email.trim().toLowerCase();
-            console.log('Attempting to sign in with emails:', trimmedEmail);
+            console.log('Attempting to sign in with email:', trimmedEmail);
 
             // Add small delay to ensure UI updates happen (prevents freezing)
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -126,7 +126,7 @@ export function AuthProvider({children}) {
             // Use a simple query to get just the essential user data
             const {data: users, error} = await supabase
                 .from('users')
-                .select('id, emails, password_hash, salt')
+                .select('id, email, password_hash, salt')
                 .eq('email', trimmedEmail);
 
             if (error) {
@@ -135,8 +135,8 @@ export function AuthProvider({children}) {
             }
 
             if (!users || users.length === 0) {
-                console.warn('No user found with emails:', trimmedEmail);
-                throw new Error('Invalid emails or password');
+                console.warn('No user found with email:', trimmedEmail);
+                throw new Error('Invalid email or password');
             }
 
             const user = users[0];
@@ -174,7 +174,7 @@ export function AuthProvider({children}) {
             // If no method worked, authentication fails
             if (!passwordMatched) {
                 console.warn('Password verification failed with all methods');
-                throw new Error('Invalid emails or password');
+                throw new Error('Invalid email or password');
             }
 
             console.log('Password verified successfully');
@@ -272,7 +272,7 @@ export function AuthProvider({children}) {
             setLoading(true);
 
             if (!AuthUtils.emailIsValid(email)) {
-                throw new Error('Please enter a valid emails address');
+                throw new Error('Please enter a valid email address');
             }
 
             const passwordStrength = AuthUtils.passwordStrength(password);
@@ -399,7 +399,7 @@ export function AuthProvider({children}) {
             const credentials = KeychainHelper.shared.retrieveCredentials();
 
             if (!credentials) {
-                throw new Error('No stored credentials found. Please sign in with emails and password first.');
+                throw new Error('No stored credentials found. Please sign in with email and password first.');
             }
 
             await signIn(credentials.email, credentials.password);

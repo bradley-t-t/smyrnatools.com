@@ -45,12 +45,12 @@ function MyAccountView({userId}) {
 
             setIsAuthenticated(true);
 
-            // Set emails from session if available
+            // Set email from session if available
             if (session?.user?.email) {
                 setEmail(session.user.email);
             }
 
-            // If emails is still not set, try to get it from users table
+            // If email is still not set, try to get it from users table
             if (!email) {
                 try {
                     const {data: userData, error: userError} = await supabase
@@ -63,7 +63,7 @@ function MyAccountView({userId}) {
                         setEmail(userData.email);
                     }
                 } catch (err) {
-                    console.log('Could not fetch emails from users table', err);
+                    console.log('Could not fetch email from users table', err);
                 }
             }
 
@@ -71,13 +71,13 @@ function MyAccountView({userId}) {
 
             const {data: profileData, error: profileError} = await supabase
                 .from('profiles')
-                .select('first_name, last_name, plant_code, emails')
+                .select('first_name, last_name, plant_code, email')
                 .eq('id', userIdToUse)
                 .single();
 
             console.log('Profile data received:', profileData, 'Error:', profileError);
 
-            // If profiles has emails and we don't have it from session, use from profiles
+            // If profiles has email and we don't have it from session, use from profiles
             if (profileData?.email && !email) {
                 setEmail(profileData.email);
             }
@@ -222,7 +222,7 @@ function MyAccountView({userId}) {
             // Get user data from database first
             const { data: userData, error: userError } = await supabase
                 .from('users')
-                .select('id, emails, password_hash, salt')
+                .select('id, email, password_hash, salt')
                 .eq('email', email)
                 .single();
 
@@ -353,7 +353,7 @@ function MyAccountView({userId}) {
                                     </span>
                                 </td>
                                 <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                    {email || 'No emails available'}
+                                    {email || 'No email available'}
                                 </td>
                             </tr>
                             {userRole && (

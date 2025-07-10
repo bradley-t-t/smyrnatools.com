@@ -1,14 +1,14 @@
 import { supabase } from '../../core/clients/SupabaseClient';
-import emailService from '../emails/EmailService';
+import emailervice from '../email/emailervice';
 import EmailClient from '../../core/clients/EmailClient';
 
 /**
- * Service for handling emails verification operations
+ * Service for handling email verification operations
  */
 class EmailVerificationService {
   /**
-   * Send a verification emails to a user
-   * @param {string} email User's emails address
+   * Send a verification email to a user
+   * @param {string} email User's email address
    * @param {string} userId User's ID
    * @returns {Promise<boolean>} Success status
    */
@@ -18,7 +18,7 @@ class EmailVerificationService {
       const SendGridService = (await import('../../utils/./SendGridServiceUtils')).SendGridServiceUtils;
 
       if (!SendGridService.validateEmail(email)) {
-        throw new Error('Invalid emails address');
+        throw new Error('Invalid email address');
       }
 
       if (!userId) {
@@ -48,26 +48,26 @@ class EmailVerificationService {
       // Create verification link
       const verificationLink = `${window.location.origin}/verify-email?token=${token}`;
 
-      // Send verification emails using the new SendGridServiceUtils
+      // Send verification email using the new SendGridServiceUtils
       await SendGridService.sendNotification({
         to: email,
         from: 'no-reply@smyrnatools.com',
         subject: 'Verify Your Email Address',
-        message: 'Please verify your emails address by clicking the button below. If you did not create an account, you can ignore this emails.',
+        message: 'Please verify your email address by clicking the button below. If you did not create an account, you can ignore this email.',
         actionUrl: verificationLink,
         actionText: 'Verify Email'
       });
 
-      console.log('Verification emails sent successfully to:', email);
+      console.log('Verification email sent successfully to:', email);
       return true;
     } catch (error) {
-      console.error('Error sending verification emails:', error);
+      console.error('Error sending verification email:', error);
       throw error;
     }
   }
 
   /**
-   * Verify a user's emails using a token
+   * Verify a user's email using a token
    * @param {string} token Verification token
    * @returns {Promise<Object>} Verification result
    */
@@ -96,7 +96,7 @@ class EmailVerificationService {
         throw new Error('Verification token has expired');
       }
 
-      // Update user's emails verification status
+      // Update user's email verification status
       const { error: updateError } = await supabase
         .from('users')
         .update({ email_verified: true })
@@ -117,7 +117,7 @@ class EmailVerificationService {
         email: data.email
       };
     } catch (error) {
-      console.error('Error verifying emails:', error);
+      console.error('Error verifying email:', error);
       throw error;
     }
   }

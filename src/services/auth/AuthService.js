@@ -48,23 +48,23 @@ class AuthServiceImpl {
     }
 
     /**
-     * Sign in a user with emails and password
+     * Sign in a user with email and password
      */
     async signIn(email, password) {
         try {
             const trimmedEmail = email.trim().toLowerCase();
 
-            // Get user record with emails - only select necessary fields to optimize query
+            // Get user record with email - only select necessary fields to optimize query
             const {data: users, error} = await supabase
                 .from('users')
-                .select('id, emails, password_hash, salt')
+                .select('id, email, password_hash, salt')
                 .eq('email', trimmedEmail)
                 .limit(1); // Limit to 1 record for performance
 
             if (error) throw error;
 
             if (!users || users.length === 0) {
-                throw new Error('Invalid emails or password');
+                throw new Error('Invalid email or password');
             }
 
             const user = users[0];
@@ -73,7 +73,7 @@ class AuthServiceImpl {
             const computedHash = AuthUtils.hashPassword(password, user.salt);
 
             if (computedHash !== user.password_hash) {
-                throw new Error('Invalid emails or password');
+                throw new Error('Invalid email or password');
             }
 
             // Successful login
@@ -103,7 +103,7 @@ class AuthServiceImpl {
     async signUp(email, password, firstName, lastName) {
         try {
             if (!AuthUtils.emailIsValid(email)) {
-                throw new Error('Please enter a valid emails address');
+                throw new Error('Please enter a valid email address');
             }
 
             const passwordStrength = AuthUtils.passwordStrength(password);
@@ -113,7 +113,7 @@ class AuthServiceImpl {
 
             const trimmedEmail = email.trim().toLowerCase();
 
-            // Check if emails already exists
+            // Check if email already exists
             const {data: existingUsers} = await supabase
                 .from('users')
                 .select('id')
@@ -219,7 +219,7 @@ class AuthServiceImpl {
     }
 
     /**
-     * Update user emails
+     * Update user email
      */
     async updateEmail(newEmail) {
         try {
@@ -228,12 +228,12 @@ class AuthServiceImpl {
             }
 
             if (!AuthUtils.emailIsValid(newEmail)) {
-                throw new Error('Please enter a valid emails address');
+                throw new Error('Please enter a valid email address');
             }
 
             const trimmedEmail = newEmail.trim().toLowerCase();
 
-            // Check if emails already exists (except for current user)
+            // Check if email already exists (except for current user)
             const {data: existingUsers} = await supabase
                 .from('users')
                 .select('id')
@@ -244,7 +244,7 @@ class AuthServiceImpl {
                 throw new Error('Email is already registered');
             }
 
-            // Update emails
+            // Update email
             const {error} = await supabase
                 .from('users')
                 .update({
@@ -263,7 +263,7 @@ class AuthServiceImpl {
 
             return true;
         } catch (error) {
-            console.error('Update emails error:', error);
+            console.error('Update email error:', error);
             throw error;
         }
     }
@@ -317,7 +317,7 @@ class AuthServiceImpl {
             // Get user record - only select necessary fields with timeout
             const {data: users, error} = await supabase
                 .from('users')
-                .select('id, emails')
+                .select('id, email')
                 .eq('id', userId)
                 .limit(1)
                 .abortSignal(AbortSignal.timeout(3000)); // Add 3s timeout

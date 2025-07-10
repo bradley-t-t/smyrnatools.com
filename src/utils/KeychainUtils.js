@@ -12,7 +12,7 @@ class KeychainUtils {
 
     /**
      * Store user credentials to localStorage (obscured for demo)
-     * @param {string} email - User emails
+     * @param {string} email - User email
      * @param {string} password - User password (obscured in this demo)
      * @returns {boolean} - True if saved successfully, false otherwise
      */
