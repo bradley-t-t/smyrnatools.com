@@ -12,7 +12,6 @@ const DebugConsole = ({onClose}) => {
     const [tableData, setTableData] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Load cache keys
     useEffect(() => {
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -21,12 +20,10 @@ const DebugConsole = ({onClose}) => {
         setCacheKeys(keys);
     }, []);
 
-    // Load debug logs
     useEffect(() => {
         setDebugLog(window.appDebugLog || []);
     }, []);
 
-    // Load Supabase tables
     useEffect(() => {
         const loadTables = async () => {
             try {
@@ -58,7 +55,6 @@ const DebugConsole = ({onClose}) => {
     const clearCache = (key) => {
         if (window.confirm(`Are you sure you want to clear the cache for ${key}?`)) {
             localStorage.removeItem(key);
-            // Refresh cache keys
             const keys = [];
             for (let i = 0; i < localStorage.length; i++) {
                 keys.push(localStorage.key(i));

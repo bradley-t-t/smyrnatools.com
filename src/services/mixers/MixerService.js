@@ -367,13 +367,13 @@ export class MixerService {
                 apiData.assigned_operator = null;
             }
 
-            // Set the updated_by field to the current user and update updated_at timestamp
-            // Note: We intentionally don't update updated_last here as that should only
-            // happen with the verify button
-            apiData.updated_by = userId;
+            // Update the updated_at timestamp
+            // Note: We intentionally don't update updated_last or updated_by here as those should only
+            // be updated with the verify button
             apiData.updated_at = new Date().toISOString();
-            // Remove updated_last from the apiData if it exists
+            // Remove updated_last and updated_by from the apiData if they exist
             delete apiData.updated_last;
+            delete apiData.updated_by;
 
             const {data, error} = await supabase
                 .from('mixers')

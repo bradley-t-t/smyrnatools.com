@@ -226,9 +226,9 @@ function MixerDetailView({mixerId, onClose}) {
                 cleanlinessRating: cleanlinessRating || null,
                 lastServiceDate: formatDate(lastServiceDate),
                 lastChipDate: formatDate(lastChipDate),
-                updatedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
                 // Don't update updatedLast as that should only be updated by verify button
-                updatedBy: userId || mixer.updatedBy
+                // Don't update updatedBy either - it should only be updated by verify button
             };
 
             console.log('Saving mixer:', updatedMixer);
