@@ -9,7 +9,7 @@
 const sgMail = require('@sendgrid/mail');
 
 /**
- * Handler for SendGrid email requests
+ * Handler for SendGrid emails requests
  * @param {Object} req Request object
  * @param {Object} res Response object
  */
@@ -47,7 +47,7 @@ exports.handler = async (req, res) => {
     // Set API key
     sgMail.setApiKey(apiKey);
 
-    // Send email
+    // Send emails
     const response = await sgMail.send(payload);
 
     // Return success response
@@ -57,7 +57,7 @@ exports.handler = async (req, res) => {
       response
     });
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error sending emails:', error);
 
     // Return error response
     return res.status(500).json({

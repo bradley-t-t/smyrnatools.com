@@ -108,7 +108,7 @@
     font-weight: 500;
 }
 
-/* Theme Selector */
+/* ThemeUtils Selector */
 .theme-selector {
     display: flex;
     gap: 1.5rem;

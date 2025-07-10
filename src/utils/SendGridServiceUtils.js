@@ -4,7 +4,7 @@ import sgMail from '@sendgrid/mail';
  * Unified SendGrid Service that combines all functionality
  * from EmailUtil, SendGridClient, and sendgrid-debug
  */
-class SendGridService {
+class SendGridServiceUtils {
   /**
    * Initialize the SendGrid client with API key
    * @param {string} apiKey - Optional API key (will use environment variable if not provided)
@@ -23,13 +23,13 @@ class SendGridService {
   }
 
   /**
-   * Send an email using SendGrid
+   * Send an emails using SendGrid
    * @param {Object} options Email options
-   * @param {string} options.to Recipient email address
-   * @param {string} options.from Sender email address (no-reply@smyrnatools.com recommended)
+   * @param {string} options.to Recipient emails address
+   * @param {string} options.from Sender emails address (no-reply@smyrnatools.com recommended)
    * @param {string} options.subject Email subject
-   * @param {string} options.text Plain text email content
-   * @param {string} [options.html] HTML email content
+   * @param {string} options.text Plain text emails content
+   * @param {string} [options.html] HTML emails content
    * @param {Array} [options.attachments] Optional array of attachments
    * @returns {Promise<Object>} SendGrid response
    */
@@ -40,16 +40,16 @@ class SendGridService {
 
       // Validate required parameters
       if (!to || !from || !subject || (!text && !html)) {
-        throw new Error('Missing required email parameters');
+        throw new Error('Missing required emails parameters');
       }
 
-      // Format the from address properly with name and email
+      // Format the from address properly with name and emails
       let formattedFrom = from;
       if (from.indexOf('@smyrnatools.com') > -1 && from.indexOf('<') === -1) {
         formattedFrom = `Smyrna Tools <${from}>`;
       }
 
-      // Create email message with proper structure for browser environment
+      // Create emails message with proper structure for browser environment
       const msg = {
         to,
         from: formattedFrom,
@@ -73,9 +73,9 @@ class SendGridService {
         }
       };
 
-      console.log('Sending email with payload:', JSON.stringify(msg, null, 2));
+      console.log('Sending emails with payload:', JSON.stringify(msg, null, 2));
 
-      // Send the email directly using SendGrid
+      // Send the emails directly using SendGrid
       const [response] = await sgMail.send(msg);
 
       console.log('Email sent successfully, status code:', response?.statusCode);
@@ -85,7 +85,7 @@ class SendGridService {
         statusCode: response?.statusCode 
       };
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error sending emails:', error);
 
       // Extract and log detailed error information
       let errorDetails = {};
@@ -109,10 +109,10 @@ class SendGridService {
   }
 
   /**
-   * Send a notification email with standard formatting
+   * Send a notification emails with standard formatting
    * @param {Object} options Email notification options
-   * @param {string} options.to Recipient email address
-   * @param {string} options.from Sender email address
+   * @param {string} options.to Recipient emails address
+   * @param {string} options.from Sender emails address
    * @param {string} options.subject Email subject
    * @param {string} options.message Email message body
    * @param {string} [options.actionUrl] Optional action URL
@@ -143,15 +143,15 @@ class SendGridService {
   }
 
   /**
-   * Send a verification code email for password recovery
-   * @param {string} toEmail Recipient email address
+   * Send a verification code emails for password recovery
+   * @param {string} toEmail Recipient emails address
    * @param {string} code Verification code
-   * @param {string} [fromEmail="no-reply@smyrnatools.com"] Sender email address
+   * @param {string} [fromEmail="no-reply@smyrnatools.com"] Sender emails address
    * @returns {Promise<Object>} Email send result
    */
   static async sendVerificationCodeEmail(toEmail, code, fromEmail = 'no-reply@smyrnatools.com') {
     if (!this.validateEmail(toEmail)) {
-      throw new Error('Invalid email address');
+      throw new Error('Invalid emails address');
     }
 
     const message = `Your password recovery verification code is: ${code}\n\nThis code will expire in 30 minutes. If you did not request this code, please ignore this email.`;
@@ -183,18 +183,18 @@ class SendGridService {
         html: html
       });
 
-      console.log('Verification code email sent successfully');
+      console.log('Verification code emails sent successfully');
       return result;
     } catch (error) {
-      console.error('Failed to send verification code email:', error);
+      console.error('Failed to send verification code emails:', error);
       throw error;
     }
   }
 
   /**
-   * Validates an email address format
-   * @param {string} email The email to validate
-   * @returns {boolean} True if the email is valid, false otherwise
+   * Validates an emails address format
+   * @param {string} email The emails to validate
+   * @returns {boolean} True if the emails is valid, false otherwise
    */
   static validateEmail(email) {
     if (!email) return false;
@@ -246,7 +246,7 @@ class SendGridService {
         };
       } catch (fetchError) {
         // Try a simpler method if fetch fails
-        // This is a minimal sgMail operation that won't send an email
+        // This is a minimal sgMail operation that won't send an emails
         // but will validate the API key
         await sgMail.setApiKey(apiKey);
 
@@ -266,9 +266,9 @@ class SendGridService {
   }
 
   /**
-   * Send a test email to verify functionality
-   * @param {string} toEmail - Recipient email
-   * @param {string} fromEmail - Sender email (defaults to no-reply@smyrnatools.com)
+   * Send a test emails to verify functionality
+   * @param {string} toEmail - Recipient emails
+   * @param {string} fromEmail - Sender emails (defaults to no-reply@smyrnatools.com)
    * @param {string} apiKey - Optional API key to use
    * @returns {Promise<Object>} Result of the test
    */
@@ -282,11 +282,11 @@ class SendGridService {
       }
 
       if (!this.validateEmail(toEmail)) {
-        throw new Error('Invalid recipient email address');
+        throw new Error('Invalid recipient emails address');
       }
 
       if (!this.validateEmail(fromEmail)) {
-        throw new Error('Invalid sender email address');
+        throw new Error('Invalid sender emails address');
       }
 
       const timestamp = new Date().toLocaleString();
@@ -309,18 +309,18 @@ class SendGridService {
 
       return {
         success: true,
-        message: 'Test email sent successfully',
+        message: 'Test emails sent successfully',
         details: result
       };
     } catch (error) {
-      console.error('Test email failed:', error);
+      console.error('Test emails failed:', error);
       return {
         success: false,
-        message: 'Failed to send test email',
+        message: 'Failed to send test emails',
         error: error.message
       };
     }
   }
 }
 
-export default SendGridService;
+export default SendGridServiceUtils;

@@ -1,6 +1,6 @@
-import supabase from '../core/Supabase';
-import {AuthService} from './auth/AuthService';
-import {AccountManager} from '../core/managers/AccountManager';
+import supabase from '../../core/Supabase';
+import {AuthService} from '../auth/AuthService';
+import {AccountManager} from '../../core/managers/AccountManager';
 
 class ProfileServiceImpl {
     constructor() {
@@ -10,7 +10,7 @@ class ProfileServiceImpl {
     }
 
     /**
-     * Update user profile
+     * Update user profiles
      */
     async updateProfile(firstName, lastName, plantCode) {
         try {
@@ -40,7 +40,7 @@ class ProfileServiceImpl {
 
             return true;
         } catch (error) {
-            console.error('Update profile error:', error);
+            console.error('Update profiles error:', error);
             throw error;
         }
     }
@@ -71,7 +71,7 @@ class ProfileServiceImpl {
                 throw new Error(`Failed to assign role '${roleName}' to user`);
             }
 
-            // Update profile plant code
+            // Update profiles plant code
             const {error: profileError} = await supabase
                 .from('profiles')
                 .update({
@@ -82,7 +82,7 @@ class ProfileServiceImpl {
 
             if (profileError) throw profileError;
 
-            // If this is the current user, refresh their profile
+            // If this is the current user, refresh their profiles
             if (AuthService.currentUser && userId === AuthService.currentUser.id) {
                 await this.fetchUserProfile();
                 await this.fetchUserRole();
@@ -96,11 +96,11 @@ class ProfileServiceImpl {
     }
 
     /**
-     * Delete a user profile
+     * Delete a user profiles
      */
     async deleteProfile(userId) {
         try {
-            // Delete profile
+            // Delete profiles
             const {error: profileError} = await supabase
                 .from('profiles')
                 .delete()
@@ -131,13 +131,13 @@ class ProfileServiceImpl {
 
             return true;
         } catch (error) {
-            console.error('Delete profile error:', error);
+            console.error('Delete profiles error:', error);
             throw error;
         }
     }
 
     /**
-     * Fetch current user profile
+     * Fetch current user profiles
      */
     async fetchUserProfile() {
         try {
@@ -163,7 +163,7 @@ class ProfileServiceImpl {
             this.currentProfile = profiles[0];
             return this.currentProfile;
         } catch (error) {
-            console.error('Fetch user profile error:', error);
+            console.error('Fetch user profiles error:', error);
             this.currentProfile = null;
             return null;
         }

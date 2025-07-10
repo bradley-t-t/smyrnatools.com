@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import reportWebVitals from './utils/ReportWebVitals';
+import reportWebVitalsUtils from './utils/ReportWebVitalsUtils';
 
 // Import the PreferencesProvider
 import { PreferencesProvider } from './context/PreferencesContext';
@@ -47,4 +47,4 @@ root.render(
     </React.StrictMode>
 );
 
-reportWebVitals();
+reportWebVitalsUtils();

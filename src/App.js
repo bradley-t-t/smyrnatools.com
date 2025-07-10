@@ -119,7 +119,7 @@ function AppContent() {
         };
     }, []);
 
-    // Function to fetch user profile - defined before any conditional returns
+    // Function to fetch user profiles - defined before any conditional returns
     const fetchUserProfile = async (user) => {
         try {
             const {data, error} = await supabase
@@ -129,7 +129,7 @@ function AppContent() {
                 .single();
 
             if (error) {
-                console.error('Error fetching profile:', error);
+                console.error('Error fetching profiles:', error);
                 return;
             }
 
@@ -141,7 +141,7 @@ function AppContent() {
         }
     };
 
-    // Effect to fetch user profile when userId changes
+    // Effect to fetch user profiles when userId changes
     useEffect(() => {
         if (userId) {
             fetchUserProfile(userId);
@@ -169,7 +169,7 @@ function AppContent() {
     // Format user name for display
     const [userDisplayName, setUserDisplayName] = useState('');
 
-    // Update user display name when profile is fetched
+    // Update user display name when profiles is fetched
     useEffect(() => {
         if (userId) {
             const getUserData = async () => {
@@ -181,18 +181,18 @@ function AppContent() {
                         .single();
 
                     if (error) {
-                        console.error('Error fetching user profile:', error);
+                        console.error('Error fetching user profiles:', error);
                         return;
                     }
 
                     if (data && (data.first_name || data.last_name)) {
                         setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim());
                     } else {
-                        // Fallback to email or user ID if name not available
+                        // Fallback to emails or user ID if name not available
                         setUserDisplayName(userId.substring(0, 8));
                     }
                 } catch (error) {
-                    console.error('Error fetching user profile:', error);
+                    console.error('Error fetching user profiles:', error);
                 }
             };
 

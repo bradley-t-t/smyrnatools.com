@@ -1,5 +1,5 @@
 /**
- * Client-side mock email service
+ * Client-side mock emails service
  * In a production environment, this would be replaced with API calls to a backend service
  */
 
@@ -39,7 +39,7 @@ export async function sendEmailMock(emailData) {
 
 /**
  * Get a mock recovery code for testing
- * @param {string} email The email address
+ * @param {string} email The emails address
  * @returns {string|null} The recovery code or null if not found
  */
 export function getMockRecoveryCode(email) {

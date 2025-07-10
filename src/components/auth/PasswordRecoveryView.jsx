@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../core/clients/SupabaseClient';
-import EmailClient from '../../utils/EmailClient';
+import EmailClient from '../../core/clients/EmailClient';
 import { sendEmailMock } from '../../api/EmailService'; // Only import what we use
 import './LoginView.css';
 import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
 
 function PasswordRecoveryView({ onBackToLogin }) {
-  const [stage, setStage] = useState('email'); // email, verification, reset
+  const [stage, setStage] = useState('email'); // emails, verification, reset
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -21,9 +21,9 @@ function PasswordRecoveryView({ onBackToLogin }) {
     setError('');
   }, [stage]);
 
-  // Check email configuration on mount
+  // Check emails configuration on mount
   useEffect(() => {
-    // Check and log email configuration status
+    // Check and log emails configuration status
     const configStatus = EmailClient.checkEmailConfiguration();
     console.log('Email configuration status:', configStatus);
 
@@ -51,25 +51,25 @@ function PasswordRecoveryView({ onBackToLogin }) {
     setIsSubmitting(true);
 
     if (!email) {
-      setError('Please enter your email address');
+      setError('Please enter your emails address');
       setIsSubmitting(false);
       return;
     }
 
       if (!EmailClient.validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError('Please enter a valid emails address');
       setIsSubmitting(false);
       return;
     }
 
-    // Normalize email format to match what's in the database
+    // Normalize emails format to match what's in the database
     const normalizedEmail = email.trim().toLowerCase();
     setEmail(normalizedEmail);
 
-    // Use normalized email for the database query
+    // Use normalized emails for the database query
 
     try {
-      console.log('Searching for user with email:', email);
+      console.log('Searching for user with emails:', email);
 
       // Check if user exists
       const { data: userData, error: userError } = await supabase
@@ -80,12 +80,12 @@ function PasswordRecoveryView({ onBackToLogin }) {
 
       if (userError) {
         console.error('Error searching for user:', userError);
-        throw new Error('No account found with this email address');
+        throw new Error('No account found with this emails address');
       }
 
       if (!userData) {
-        console.warn('No user found with email:', email);
-        throw new Error('No account found with this email address');
+        console.warn('No user found with emails:', email);
+        throw new Error('No account found with this emails address');
       }
 
       console.log('User found:', userData.id);
@@ -134,7 +134,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
         }
       }
 
-      // Send verification code via email (using mock service for client-side development)
+      // Send verification code via emails (using mock service for client-side development)
       try {
         await sendEmailMock({
           to: email,
@@ -142,9 +142,9 @@ function PasswordRecoveryView({ onBackToLogin }) {
           subject: 'Password Recovery Code',
           message: `Your password recovery code is: ${verificationCode}\n\nThis code will expire in 30 minutes.`,
         });
-        console.log('Mock email sent successfully');
+        console.log('Mock emails sent successfully');
       } catch (emailError) {
-        console.error('Error sending mock email:', emailError);
+        console.error('Error sending mock emails:', emailError);
         // Continue anyway since we're storing the code in localStorage
       }
 
@@ -152,7 +152,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
       if (process.env.NODE_ENV === 'development') {
         setMessage(`Recovery code sent! For testing, use code: ${verificationCode}`);
       } else {
-        setMessage('Recovery code sent! Please check your email.');
+        setMessage('Recovery code sent! Please check your emails.');
       }
       setStage('verification');
     } catch (err) {

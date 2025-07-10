@@ -38,7 +38,7 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
                     // If we have multiple parts (first and last name), use first letter of first and last
                     setInitials(`${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase());
                 } else if (displayName.includes('@')) {
-                    // If it's an email address
+                    // If it's an emails address
                     setInitials(displayName.substring(0, 2).toUpperCase());
                 } else if (displayName.startsWith('User ')) {
                     // If it's a fallback user ID format

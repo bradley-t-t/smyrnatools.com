@@ -118,7 +118,7 @@ export function AuthProvider({children}) {
         try {
             // Simple direct approach
             const trimmedEmail = email.trim().toLowerCase();
-            console.log('Attempting to sign in with email:', trimmedEmail);
+            console.log('Attempting to sign in with emails:', trimmedEmail);
 
             // Add small delay to ensure UI updates happen (prevents freezing)
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -126,7 +126,7 @@ export function AuthProvider({children}) {
             // Use a simple query to get just the essential user data
             const {data: users, error} = await supabase
                 .from('users')
-                .select('id, email, password_hash, salt')
+                .select('id, emails, password_hash, salt')
                 .eq('email', trimmedEmail);
 
             if (error) {
@@ -135,8 +135,8 @@ export function AuthProvider({children}) {
             }
 
             if (!users || users.length === 0) {
-                console.warn('No user found with email:', trimmedEmail);
-                throw new Error('Invalid email or password');
+                console.warn('No user found with emails:', trimmedEmail);
+                throw new Error('Invalid emails or password');
             }
 
             const user = users[0];
@@ -174,7 +174,7 @@ export function AuthProvider({children}) {
             // If no method worked, authentication fails
             if (!passwordMatched) {
                 console.warn('Password verification failed with all methods');
-                throw new Error('Invalid email or password');
+                throw new Error('Invalid emails or password');
             }
 
             console.log('Password verified successfully');
@@ -197,10 +197,10 @@ export function AuthProvider({children}) {
             window.dispatchEvent(authEvent);
             console.log('Auth success event dispatched');
 
-            // After successful authentication, try to load profile in background
+            // After successful authentication, try to load profiles in background
             setTimeout(() => {
                 loadUserProfile(user.id).catch(e => {
-                    console.warn('Background profile load failed:', e);
+                    console.warn('Background profiles load failed:', e);
                 });
             }, 100);
 
@@ -236,12 +236,12 @@ export function AuthProvider({children}) {
         }
     }
 
-    // Separate function to load user profile
+    // Separate function to load user profiles
     async function loadUserProfile(userId) {
         if (!userId) return;
 
         try {
-            console.log('Loading profile for user:', userId);
+            console.log('Loading profiles for user:', userId);
 
             const {data: profileData, error: profileError} = await supabase
                 .from('profiles')
@@ -250,11 +250,11 @@ export function AuthProvider({children}) {
                 .single();
 
             if (profileError) {
-                console.warn('Error fetching profile:', profileError);
+                console.warn('Error fetching profiles:', profileError);
                 return;
             }
 
-            // Update user with profile data
+            // Update user with profiles data
             setUser(currentUser => ({
                 ...currentUser,
                 profile: profileData
@@ -272,7 +272,7 @@ export function AuthProvider({children}) {
             setLoading(true);
 
             if (!AuthUtils.emailIsValid(email)) {
-                throw new Error('Please enter a valid email address');
+                throw new Error('Please enter a valid emails address');
             }
 
             const passwordStrength = AuthUtils.passwordStrength(password);
@@ -295,7 +295,7 @@ export function AuthProvider({children}) {
             const passwordHash = await AuthUtils.hashPassword(password, salt);
 
             // Generate UUID using our improved helper function that works across all environments
-            const { generateUUID } = await import('../utils/UUIDHelper');
+            const { generateUUID } = await import('../utils/UUIDUtils');
             const userId = generateUUID();
             const now = new Date().toISOString();
 
@@ -395,11 +395,11 @@ export function AuthProvider({children}) {
                 throw new Error('Biometric authentication is not supported on this device');
             }
 
-            const KeychainHelper = (await import('../utils/KeychainHelper')).default;
+            const KeychainHelper = (await import('../utils/KeychainUtils')).KeychainUtl;
             const credentials = KeychainHelper.shared.retrieveCredentials();
 
             if (!credentials) {
-                throw new Error('No stored credentials found. Please sign in with email and password first.');
+                throw new Error('No stored credentials found. Please sign in with emails and password first.');
             }
 
             await signIn(credentials.email, credentials.password);

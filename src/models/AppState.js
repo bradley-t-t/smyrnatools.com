@@ -1,8 +1,8 @@
 import {AuthService} from '../services/auth/AuthService';
-import {ProfileService} from '../services/ProfileService';
-import {PlantService} from '../services/PlantService';
+import {ProfileService} from '../services/profiles/ProfileService';
+import {PlantService} from '../services/plants/PlantService';
 import {OperatorService} from '../services/operators/OperatorService';
-import {TaskService} from '../services/TaskService';
+import {TaskService} from '../services/tasks/TaskService';
 import {NetworkUtils} from '../utils/NetworkUtils';
 
 /**
@@ -30,7 +30,7 @@ export class AppState {
         this.passwordsMatch = true;
         this.passwordStrength = {value: '', color: ''};
 
-        // User and profile state
+        // User and profiles state
         this.currentUser = null;
         this.userProfile = null;
         this.currentUserRole = '';
@@ -212,7 +212,7 @@ export class AppState {
     }
 
     /**
-     * User profile methods
+     * User profiles methods
      */
     async fetchUserProfile() {
         try {
@@ -227,7 +227,7 @@ export class AppState {
 
             return profile;
         } catch (error) {
-            console.error('Fetch user profile error:', error);
+            console.error('Fetch user profiles error:', error);
             return null;
         }
     }
@@ -271,7 +271,7 @@ export class AppState {
             this.isLoading = false;
             return true;
         } catch (error) {
-            this.errorMessage = error.message || 'Failed to update profile';
+            this.errorMessage = error.message || 'Failed to update profiles';
             this.isLoading = false;
             return false;
         }
@@ -312,7 +312,7 @@ export class AppState {
             this.isLoading = false;
             return true;
         } catch (error) {
-            this.errorMessage = error.message || 'Failed to delete profile';
+            this.errorMessage = error.message || 'Failed to delete profiles';
             this.isLoading = false;
             return false;
         }

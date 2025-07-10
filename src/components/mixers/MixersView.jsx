@@ -2,13 +2,13 @@ import React, {useEffect, useState} from 'react';
 import MixerAddView from './MixerAddView';
 import {MixerUtils} from '../../models/Mixer';
 import {MixerService} from '../../services/mixers/MixerService';
-import {PlantService} from '../../services/PlantService';
+import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
 import MixerOverview from './MixerOverview';
-// Theme is not used directly in this component
+// ThemeUtils is not used directly in this component
 import './MixersView.css';
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {

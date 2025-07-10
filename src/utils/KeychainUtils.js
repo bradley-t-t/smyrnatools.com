@@ -1,10 +1,10 @@
 /**
- * KeychainHelper - a browser localStorage based implementation
- * Simulates iOS KeychainHelper for credential storage
+ * KeychainUtils - a browser localStorage based implementation
+ * Simulates iOS KeychainUtils for credential storage
  */
-class KeychainHelper {
+class KeychainUtils {
     // Singleton instance
-    static shared = new KeychainHelper();
+    static shared = new KeychainUtils();
 
     constructor() {
         this.storageKey = 'smyrna_secure_credentials';
@@ -12,7 +12,7 @@ class KeychainHelper {
 
     /**
      * Store user credentials to localStorage (obscured for demo)
-     * @param {string} email - User email
+     * @param {string} email - User emails
      * @param {string} password - User password (obscured in this demo)
      * @returns {boolean} - True if saved successfully, false otherwise
      */
@@ -82,4 +82,4 @@ class KeychainHelper {
     }
 }
 
-export default KeychainHelper;
+export default KeychainUtils;

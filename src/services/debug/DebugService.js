@@ -76,7 +76,7 @@ export class DebugService {
         try {
             const services = {
                 // Add all services you want to check
-                UserService: require('./auth/UserService').UserService !== undefined,
+                UserService: require('../auth/UserService').UserService !== undefined,
                 UserServiceSingleton: require('./UserServiceSingleton').UserService !== undefined,
             };
 

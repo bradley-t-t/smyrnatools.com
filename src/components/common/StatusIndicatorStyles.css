@@ -67,4 +67,4 @@
     border-color: var(--accent-light);
 }
 
-/* Status colors are handled by the Theme utility in the application */
+/* Status colors are handled by the ThemeUtils utility in the application */

@@ -65,7 +65,7 @@ class UserServiceImpl {
             // Get from the users table
             const {data, error} = await supabase
                 .from('users')
-                .select('id, name, email')
+                .select('id, name, emails')
                 .eq('id', userId)
                 .single();
 
@@ -110,7 +110,7 @@ class UserServiceImpl {
                 return opData.name;
             }
 
-            // Next try to get user profile that might have first/last name
+            // Next try to get user profiles that might have first/last name
             const { data: profileData } = await supabase
                 .from('profiles')
                 .select('first_name, last_name')
@@ -124,7 +124,7 @@ class UserServiceImpl {
                 if (fullName) return fullName;
             }
 
-            // If no profile with name, try to get the user from auth
+            // If no profiles with name, try to get the user from auth
             const user = await this.getUserById(userId);
 
             // If user has name property, use it (but remove any 'User' prefix)
@@ -137,10 +137,10 @@ class UserServiceImpl {
                 return `${user.firstName || ''} ${user.lastName || ''}`.trim();
             }
 
-            // If user has email, extract name part before @ symbol
+            // If user has emails, extract name part before @ symbol
             if (user && user.email) {
                 const emailName = user.email.split('@')[0];
-                // Convert email username to title case (e.g., john.doe -> John Doe)
+                // Convert emails username to title case (e.g., john.doe -> John Doe)
                 return emailName
                     .replace(/\./g, ' ')
                     .split(' ')

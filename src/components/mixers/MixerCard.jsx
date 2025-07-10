@@ -1,6 +1,6 @@
 import React from 'react';
 import {MixerUtils} from '../../models/Mixer';
-import Theme from '../../utils/Theme';
+import ThemeUtils from '../../utils/ThemeUtils';
 import {usePreferences} from '../../context/PreferencesContext';
 import './MixerCard.css';
 
@@ -8,7 +8,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
     const isVerified = mixer.isVerified();
-    const statusColor = Theme.statusColors[mixer.status] || Theme.statusColors.default;
+    const statusColor = ThemeUtils.statusColors[mixer.status] || ThemeUtils.statusColors.default;
     const {preferences} = usePreferences();
 
     const handleCardClick = () => {

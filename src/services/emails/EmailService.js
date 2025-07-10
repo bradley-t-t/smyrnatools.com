@@ -2,32 +2,32 @@ import EmailUtil from '../utils/EmailUtil';
 
 import { sendNotification, validateEmail } from '../utils/SendGridClient';
 
-import SendGridService from '../utils/SendGridService';
+import SendGridServiceUtils from '../../utils/SendGridServiceUtils';
 
 /**
- * Service for handling email functionality throughout the application
+ * Service for handling emails functionality throughout the application
  */
 class EmailService {
   constructor() {
-    // Default sender email for smyrnatools.com with proper formatting
+    // Default sender emails for smyrnatools.com with proper formatting
     this.defaultSender = 'Smyrna Tools <no-reply@smyrnatools.com>';
 
     // Initialize SendGrid service
-    SendGridService.initialize();
+    SendGridServiceUtils.initialize();
   }
 
   /**
-   * Send a welcome email to a new user
-   * @param {string} toEmail Recipient email address
+   * Send a welcome emails to a new user
+   * @param {string} toEmail Recipient emails address
    * @param {string} userName User's name
    * @returns {Promise<Object>} Email send result
    */
   async sendWelcomeEmail(toEmail, userName) {
-    if (!SendGridService.validateEmail(toEmail)) {
-      throw new Error('Invalid email address');
+    if (!SendGridServiceUtils.validateEmail(toEmail)) {
+      throw new Error('Invalid emails address');
     }
 
-    return SendGridService.sendNotification({
+    return SendGridServiceUtils.sendNotification({
       to: toEmail,
       from: this.defaultSender,
       subject: 'Welcome to Our Application',
@@ -38,46 +38,46 @@ class EmailService {
   }
 
   /**
-   * Send a password reset email
-   * @param {string} toEmail Recipient email address
+   * Send a password reset emails
+   * @param {string} toEmail Recipient emails address
    * @param {string} resetLink Password reset link
    * @returns {Promise<Object>} Email send result
    */
   async sendPasswordResetEmail(toEmail, resetLink) {
-    if (!SendGridService.validateEmail(toEmail)) {
-      throw new Error('Invalid email address');
+    if (!SendGridServiceUtils.validateEmail(toEmail)) {
+      throw new Error('Invalid emails address');
     }
 
-    console.log('Sending password reset email to:', toEmail);
-    return SendGridService.sendNotification({
+    console.log('Sending password reset emails to:', toEmail);
+    return SendGridServiceUtils.sendNotification({
       to: toEmail,
       from: this.defaultSender,
       subject: 'Password Reset Request',
-      message: 'You requested a password reset. Click the button below to reset your password. If you did not request this change, you can ignore this email.',
+      message: 'You requested a password reset. Click the button below to reset your password. If you did not request this change, you can ignore this emails.',
       actionUrl: resetLink,
       actionText: 'Reset Password'
     });
   }
 
   /**
-   * Send a verification code email for password recovery
-   * @param {string} toEmail Recipient email address
+   * Send a verification code emails for password recovery
+   * @param {string} toEmail Recipient emails address
    * @param {string} code Verification code
    * @returns {Promise<Object>} Email send result
    */
   async sendVerificationCodeEmail(toEmail, code) {
-    if (!SendGridService.validateEmail(toEmail)) {
-      throw new Error('Invalid email address');
+    if (!SendGridServiceUtils.validateEmail(toEmail)) {
+      throw new Error('Invalid emails address');
     }
 
-    // Use the specialized verification code email method
-    console.log('Sending verification code email to:', toEmail, 'with code:', code);
-    return SendGridService.sendVerificationCodeEmail(toEmail, code, this.defaultSender);
+    // Use the specialized verification code emails method
+    console.log('Sending verification code emails to:', toEmail, 'with code:', code);
+    return SendGridServiceUtils.sendVerificationCodeEmail(toEmail, code, this.defaultSender);
   }
 
   /**
    * Send a notification about an operator status change
-   * @param {string} toEmail Recipient email address
+   * @param {string} toEmail Recipient emails address
    * @param {Object} operator Operator data
    * @param {string} oldStatus Previous status
    * @param {string} newStatus New status
@@ -85,7 +85,7 @@ class EmailService {
    */
   async sendOperatorStatusChangeNotification(toEmail, operator, oldStatus, newStatus) {
       if (!EmailClient.validateEmail(toEmail)) {
-        throw new Error('Invalid email address');
+        throw new Error('Invalid emails address');
       }
 
       return EmailClient.sendNotification({
@@ -100,14 +100,14 @@ class EmailService {
 
   /**
    * Send a mixer maintenance notification
-   * @param {string} toEmail Recipient email address
+   * @param {string} toEmail Recipient emails address
    * @param {Object} mixer Mixer data
    * @param {string} maintenanceType Type of maintenance needed
    * @returns {Promise<Object>} Email send result
    */
   async sendMixerMaintenanceNotification(toEmail, mixer, maintenanceType) {
       if (!EmailClient.validateEmail(toEmail)) {
-        throw new Error('Invalid email address');
+        throw new Error('Invalid emails address');
       }
 
       return EmailClient.sendNotification({
@@ -121,8 +121,8 @@ class EmailService {
   }
 
   /**
-   * Send a custom notification email
-   * @param {string} toEmail Recipient email address
+   * Send a custom notification emails
+   * @param {string} toEmail Recipient emails address
    * @param {string} subject Email subject
    * @param {string} message Email message
    * @param {string} [actionUrl] Optional action URL
@@ -130,12 +130,12 @@ class EmailService {
    * @returns {Promise<Object>} Email send result
    */
   async sendCustomNotification(toEmail, subject, message, actionUrl = null, actionText = null) {
-    if (!SendGridService.validateEmail(toEmail)) {
-      throw new Error('Invalid email address');
+    if (!SendGridServiceUtils.validateEmail(toEmail)) {
+      throw new Error('Invalid emails address');
     }
 
-    console.log('Sending custom notification email to:', toEmail, 'with subject:', subject);
-    return SendGridService.sendNotification({
+    console.log('Sending custom notification emails to:', toEmail, 'with subject:', subject);
+    return SendGridServiceUtils.sendNotification({
       to: toEmail,
       from: this.defaultSender,
       subject,
@@ -146,22 +146,22 @@ class EmailService {
   }
 
   /**
-   * Update the default sender email
-   * @param {string} senderEmail New sender email address
+   * Update the default sender emails
+   * @param {string} senderEmail New sender emails address
    */
   setDefaultSender(senderEmail) {
-    if (!SendGridService.validateEmail(senderEmail)) {
-      throw new Error('Invalid sender email address');
+    if (!SendGridServiceUtils.validateEmail(senderEmail)) {
+      throw new Error('Invalid sender emails address');
     }
 
-    // Format the sender email if needed
+    // Format the sender emails if needed
     if (senderEmail.indexOf('@smyrnatools.com') > -1 && senderEmail.indexOf('<') === -1) {
       this.defaultSender = `Smyrna Tools <${senderEmail}>`;
     } else {
       this.defaultSender = senderEmail;
     }
 
-    console.log('Default sender email updated to:', this.defaultSender);
+    console.log('Default sender emails updated to:', this.defaultSender);
   }
 }
 

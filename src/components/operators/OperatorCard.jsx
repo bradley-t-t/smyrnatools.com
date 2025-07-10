@@ -1,11 +1,11 @@
 import React from 'react';
 import './OperatorCard.css';
-import Theme from '../../utils/Theme';
+import ThemeUtils from '../../utils/ThemeUtils';
 import {usePreferences} from '../../context/PreferencesContext';
 
 function OperatorCard({ operator, plantName, onSelect, onDelete }) {
     const {preferences} = usePreferences();
-    const statusColor = Theme.operatorStatusColors[operator.status] || Theme.operatorStatusColors.default;
+    const statusColor = ThemeUtils.operatorStatusColors[operator.status] || ThemeUtils.operatorStatusColors.default;
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {

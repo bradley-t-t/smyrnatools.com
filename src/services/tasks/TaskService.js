@@ -1,6 +1,6 @@
-import supabase from '../core/Supabase';
-import {AuthService} from './auth/AuthService';
-import {ProfileService} from './ProfileService';
+import supabase from '../../core/Supabase';
+import {AuthService} from '../auth/AuthService';
+import {ProfileService} from '../profiles/ProfileService';
 
 class TaskServiceImpl {
     constructor() {
@@ -12,7 +12,7 @@ class TaskServiceImpl {
      */
     async fetchListItems() {
         try {
-            // Make sure we have profile data
+            // Make sure we have profiles data
             await ProfileService.fetchUserProfile();
             await ProfileService.fetchUserRole();
 

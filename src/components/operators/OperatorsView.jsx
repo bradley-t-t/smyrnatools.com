@@ -3,7 +3,7 @@ import './OperatorsView.css';
 import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
-import Theme from '../../utils/Theme';
+import ThemeUtils from '../../utils/ThemeUtils';
 import OperatorCard from './OperatorCard';
 import {usePreferences} from '../../context/PreferencesContext';
 

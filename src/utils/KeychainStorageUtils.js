@@ -1,6 +1,6 @@
 /**
  * A secure storage utility for browser environments
- * This is a simplified version of the Swift KeychainHelper
+ * This is a simplified version of the Swift KeychainUtils
  */
 class KeychainStorageImpl {
     /**
@@ -81,4 +81,4 @@ class KeychainStorageImpl {
 
 // Create singleton instance
 const singleton = new KeychainStorageImpl();
-export const KeychainStorage = singleton;
+export const KeychainStorageUtils = singleton;

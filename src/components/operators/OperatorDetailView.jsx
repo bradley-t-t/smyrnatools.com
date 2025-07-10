@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {PlantService} from '../../services/PlantService';
+import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
-import Theme from '../../utils/Theme';
+import ThemeUtils from '../../utils/ThemeUtils';
 import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';

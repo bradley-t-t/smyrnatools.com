@@ -1,5 +1,5 @@
-// Theme configuration based on company colors
-const Theme = {
+// ThemeUtils configuration based on company colors
+const ThemeUtils = {
     // Main colors using company branding
     colors: {
         background: '#f4f6f4', // Light scheme background
@@ -90,12 +90,12 @@ const Theme = {
 
     // Get status color
     statusColor: (status) => {
-        return Theme.statusColors[status] || '#8e8e93';
+        return ThemeUtils.statusColors[status] || '#8e8e93';
     },
 
     // Get theme based on mode
     getTheme: (mode = 'light') => {
-        return mode === 'dark' ? Theme.dark : Theme.light;
+        return mode === 'dark' ? ThemeUtils.dark : ThemeUtils.light;
     },
     operatorStatusColors: {
         'Active': '#38a169',      // green
@@ -107,4 +107,4 @@ const Theme = {
     }
 };
 
-export default Theme;
+export default ThemeUtils;

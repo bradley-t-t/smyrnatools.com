@@ -1,12 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import {Mixer, MixerUtils} from '../../models/Mixer';
 import {MixerService} from '../../services/mixers/MixerService';
-import {PlantService} from '../../services/PlantService';
+import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
 import SimpleLoading from '../common/SimpleLoading';
 import LoadingText from '../common/LoadingText';
-import Theme from '../../utils/Theme';
+import ThemeUtils from '../../utils/ThemeUtils';
 import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';

@@ -45,12 +45,12 @@ function MyAccountView({userId}) {
 
             setIsAuthenticated(true);
 
-            // Set email from session if available
+            // Set emails from session if available
             if (session?.user?.email) {
                 setEmail(session.user.email);
             }
 
-            // If email is still not set, try to get it from users table
+            // If emails is still not set, try to get it from users table
             if (!email) {
                 try {
                     const {data: userData, error: userError} = await supabase
@@ -63,26 +63,26 @@ function MyAccountView({userId}) {
                         setEmail(userData.email);
                     }
                 } catch (err) {
-                    console.log('Could not fetch email from users table', err);
+                    console.log('Could not fetch emails from users table', err);
                 }
             }
 
-            console.log('Fetching profile for user ID:', userIdToUse);
+            console.log('Fetching profiles for user ID:', userIdToUse);
 
             const {data: profileData, error: profileError} = await supabase
                 .from('profiles')
-                .select('first_name, last_name, plant_code, email')
+                .select('first_name, last_name, plant_code, emails')
                 .eq('id', userIdToUse)
                 .single();
 
             console.log('Profile data received:', profileData, 'Error:', profileError);
 
-            // If profile has email and we don't have it from session, use from profile
+            // If profiles has emails and we don't have it from session, use from profiles
             if (profileData?.email && !email) {
                 setEmail(profileData.email);
             }
 
-            // Store profile data
+            // Store profiles data
             if (profileData) {
                 // Ensure we set the user data
                 setUser({...profileData});
@@ -139,11 +139,11 @@ function MyAccountView({userId}) {
                         console.log('Set name from users join');
                     }
                 } catch (err) {
-                    console.error('Error getting user with profile:', err);
+                    console.error('Error getting user with profiles:', err);
                 }
             }
         } catch (error) {
-            console.error('Error fetching profile:', error.message);
+            console.error('Error fetching profiles:', error.message);
             setMessage(`Error: ${error.message}`);
         } finally {
             setLoading(false);
@@ -193,7 +193,7 @@ function MyAccountView({userId}) {
 
             setMessage('Profile updated successfully!');
         } catch (error) {
-            console.error('Error updating profile:', error.message);
+            console.error('Error updating profiles:', error.message);
             setMessage(`Error: ${error.message}`);
         } finally {
             setLoading(false);
@@ -222,7 +222,7 @@ function MyAccountView({userId}) {
             // Get user data from database first
             const { data: userData, error: userError } = await supabase
                 .from('users')
-                .select('id, email, password_hash, salt')
+                .select('id, emails, password_hash, salt')
                 .eq('email', email)
                 .single();
 
@@ -353,7 +353,7 @@ function MyAccountView({userId}) {
                                     </span>
                                 </td>
                                 <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                    {email || 'No email available'}
+                                    {email || 'No emails available'}
                                 </td>
                             </tr>
                             {userRole && (

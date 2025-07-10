@@ -1,5 +1,5 @@
-import supabase from '../core/clients/SupabaseClient';
-import {Plant} from '../models/Plant';
+import supabase from '../../core/clients/SupabaseClient';
+import {Plant} from '../../models/Plant';
 
 class PlantServiceImpl {
     constructor() {

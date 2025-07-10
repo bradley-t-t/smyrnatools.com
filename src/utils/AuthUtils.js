@@ -1,13 +1,13 @@
 /**
  * Utility functions for authentication
  */
-import {generateUUID, sha256Hash} from './Crypto';
+import {generateUUID, sha256Hash} from './CryptoUtil';
 
 export class AuthUtils {
     /**
-     * Validates an email address format
-     * @param {string} email - The email to validate
-     * @returns {boolean} - True if the email is valid, false otherwise
+     * Validates an emails address format
+     * @param {string} email - The emails to validate
+     * @returns {boolean} - True if the emails is valid, false otherwise
      */
     static emailIsValid(email) {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
