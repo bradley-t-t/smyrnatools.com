@@ -336,7 +336,7 @@ export function AuthProvider({children}) {
             if (profileError) throw new Error(`Profile creation error: ${profileError.message}`);
 
             const {error: roleError} = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .insert(userRole);
 
             if (roleError) throw new Error(`Role assignment error: ${roleError.message}`);

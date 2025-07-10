@@ -60,7 +60,7 @@ class ProfileServiceImpl {
 
             // Update user role
             const {error: roleError} = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .upsert(userRole, {onConflict: 'user_id'});
 
             if (roleError) throw roleError;
@@ -104,7 +104,7 @@ class ProfileServiceImpl {
 
             // Delete user role
             const {error: roleError} = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .delete()
                 .eq('user_id', userId);
 
@@ -176,7 +176,7 @@ class ProfileServiceImpl {
             const userId = AuthService.currentUser.id;
 
             const {data: roles, error} = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .select()
                 .eq('user_id', userId);
 

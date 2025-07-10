@@ -9,7 +9,7 @@ export class UserPreferencesService {
     static async getUserPreferences(userId) {
         try {
             const { data, error } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .select('*')
                 .eq('user_id', userId)
                 .single();
@@ -32,14 +32,14 @@ export class UserPreferencesService {
         try {
             // Check if user preferences exist
             const { data } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .select('id')
                 .eq('user_id', userId);
 
             if (!data || data.length === 0) {
                 // Create user preferences if they don't exist
                 await supabase
-                    .from('user_preferences')
+                    .from('users_preferences')
                     .insert([{
                         user_id: userId,
                         mixer_filters: filters
@@ -47,7 +47,7 @@ export class UserPreferencesService {
             } else {
                 // Update existing preferences
                 await supabase
-                    .from('user_preferences')
+                    .from('users_preferences')
                     .update({
                         mixer_filters: filters,
                         updated_at: new Date().toISOString()
@@ -71,7 +71,7 @@ export class UserPreferencesService {
     static async saveLastViewedFilters(userId, filters) {
         try {
             const { error } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .update({
                     last_viewed_filters: filters,
                     updated_at: new Date().toISOString()

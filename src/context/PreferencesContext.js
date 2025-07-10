@@ -109,7 +109,7 @@ export const PreferencesProvider = ({ children }) => {
         try {
             setLoading(true);
             const { data, error } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .select('*')
                 .eq('user_id', uid)
                 .single();
@@ -117,7 +117,7 @@ export const PreferencesProvider = ({ children }) => {
             if (error && error.code === 'PGRST116') {
                 await createUserPreferences(uid);
                 const { data: newData, error: newError } = await supabase
-                    .from('user_preferences')
+                    .from('users_preferences')
                     .select('*')
                     .eq('user_id', uid)
                     .single();
@@ -180,14 +180,14 @@ export const PreferencesProvider = ({ children }) => {
             if (data?.user?.id) {
                 // Check if user preferences exist
                 const { data: existingPrefs } = await supabase
-                    .from('user_preferences')
+                    .from('users_preferences')
                     .select('id')
                     .eq('user_id', data.user.id);
 
                 if (!existingPrefs || existingPrefs.length === 0) {
                     // Create user preferences if they don't exist
                     await supabase
-                        .from('user_preferences')
+                        .from('users_preferences')
                         .insert([{
                             user_id: data.user.id,
                             operator_filters: filters,
@@ -198,7 +198,7 @@ export const PreferencesProvider = ({ children }) => {
                 } else {
                     // Update existing preferences
                     await supabase
-                        .from('user_preferences')
+                        .from('users_preferences')
                         .update({ 
                             operator_filters: filters,
                             updated_at: new Date().toISOString()
@@ -227,14 +227,14 @@ export const PreferencesProvider = ({ children }) => {
             if (data?.user?.id) {
                 // Check if user preferences exist
                 const { data: existingPrefs } = await supabase
-                    .from('user_preferences')
+                    .from('users_preferences')
                     .select('id')
                     .eq('user_id', data.user.id);
 
                 if (!existingPrefs || existingPrefs.length === 0) {
                     // Create user preferences if they don't exist
                     await supabase
-                        .from('user_preferences')
+                        .from('users_preferences')
                         .insert([{
                             user_id: data.user.id,
                             mixer_filters: filters,
@@ -245,7 +245,7 @@ export const PreferencesProvider = ({ children }) => {
                 } else {
                     // Update existing preferences
                     await supabase
-                        .from('user_preferences')
+                        .from('users_preferences')
                         .update({ 
                             mixer_filters: filters,
                             updated_at: new Date().toISOString()
@@ -276,14 +276,14 @@ export const PreferencesProvider = ({ children }) => {
             if (data?.user?.id) {
                 // Check if user preferences exist
                 const { data: existingPrefs } = await supabase
-                    .from('user_preferences')
+                    .from('users_preferences')
                     .select('id')
                     .eq('user_id', data.user.id);
 
                 if (!existingPrefs || existingPrefs.length === 0) {
                     // Create user preferences if they don't exist
                     await supabase
-                        .from('user_preferences')
+                        .from('users_preferences')
                         .insert([{
                             user_id: data.user.id,
                             last_viewed_filters: lastFilters,
@@ -295,7 +295,7 @@ export const PreferencesProvider = ({ children }) => {
                 } else {
                     // Update existing preferences
                     await supabase
-                        .from('user_preferences')
+                        .from('users_preferences')
                         .update({ 
                             last_viewed_filters: lastFilters,
                             updated_at: new Date().toISOString() 
@@ -365,7 +365,7 @@ export const PreferencesProvider = ({ children }) => {
     const createUserPreferences = async (uid) => {
         try {
             const { data: existingData, error: checkError } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .select('id')
                 .eq('user_id', uid);
 
@@ -373,7 +373,7 @@ export const PreferencesProvider = ({ children }) => {
             if (existingData?.length > 0) return await updateDatabasePreferences(uid, preferences);
 
             const { error } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .insert([{
                     user_id: uid,
                     navbar_minimized: preferences.navbarMinimized,
@@ -415,7 +415,7 @@ export const PreferencesProvider = ({ children }) => {
             };
 
             const { error } = await supabase
-                .from('user_preferences')
+                .from('users_preferences')
                 .update(updateData)
                 .eq('user_id', uid);
 
@@ -485,7 +485,7 @@ export const debugForceCreatePreferences = async (userId) => {
 
     try {
         const { error } = await supabase
-            .from('user_preferences')
+            .from('users_preferences')
             .insert([{
                 user_id: userId,
                 navbar_minimized: false,

@@ -153,7 +153,7 @@ function AppContent() {
     const fetchUserRole = async (userId) => {
         try {
             const { data, error } = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .select('role_name')
                 .eq('user_id', userId)
                 .single();

@@ -113,7 +113,7 @@ function MyAccountView({userId}) {
 
             // Fetch user role using userIdToUse
             const {data: roleData, error: roleError} = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .select('role_name')
                 .eq('user_id', userIdToUse)
                 .single();

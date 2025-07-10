@@ -183,7 +183,7 @@ class AuthServiceImpl {
 
             // Insert user role
             const {error: roleError} = await supabase
-                .from('user_roles')
+                .from('users_roles')
                 .insert(userRole);
 
             if (roleError) throw roleError;
