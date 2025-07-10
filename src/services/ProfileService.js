@@ -1,5 +1,6 @@
 import supabase from '../core/Supabase';
 import {AuthService} from './auth/AuthService';
+import {AccountManager} from '../core/managers/AccountManager';
 
 class ProfileServiceImpl {
     constructor() {
@@ -51,19 +52,24 @@ class ProfileServiceImpl {
         try {
             const now = new Date().toISOString();
 
-            const userRole = {
-                user_id: userId,
-                role_name: roleName || 'Guest',
-                created_at: now,
-                updated_at: now
-            };
+            // First, get the role ID from the role name
+            const role = await AccountManager.getRoleByName(roleName || 'Guest');
+            if (!role) {
+                throw new Error(`Role '${roleName || 'Guest'}' not found`);
+            }
 
-            // Update user role
-            const {error: roleError} = await supabase
-                .from('users_roles')
-                .upsert(userRole, {onConflict: 'user_id'});
+            // Clear any existing roles for this user
+            // This replicates the previous behavior where a user could only have one role
+            const existingRoles = await AccountManager.getUserRoles(userId);
+            for (const existingRole of existingRoles) {
+                await AccountManager.removeRole(userId, existingRole.id);
+            }
 
-            if (roleError) throw roleError;
+            // Assign the new role to the user
+            const roleAssigned = await AccountManager.assignRole(userId, role.id);
+            if (!roleAssigned) {
+                throw new Error(`Failed to assign role '${roleName}' to user`);
+            }
 
             // Update profile plant code
             const {error: profileError} = await supabase
@@ -102,13 +108,13 @@ class ProfileServiceImpl {
 
             if (profileError) throw profileError;
 
-            // Delete user role
-            const {error: roleError} = await supabase
-                .from('users_roles')
-                .delete()
-                .eq('user_id', userId);
+            // Get user roles
+            const roles = await AccountManager.getUserRoles(userId);
 
-            if (roleError) throw roleError;
+            // Remove all roles from the user
+            for (const role of roles) {
+                await AccountManager.removeRole(userId, role.id);
+            }
 
             // Delete user
             const {error: userError} = await supabase
@@ -175,19 +181,15 @@ class ProfileServiceImpl {
 
             const userId = AuthService.currentUser.id;
 
-            const {data: roles, error} = await supabase
-                .from('users_roles')
-                .select()
-                .eq('user_id', userId);
+            // Use AccountManager to get the highest weighted role
+            const highestRole = await AccountManager.getHighestRole(userId);
 
-            if (error) throw error;
-
-            if (!roles || roles.length === 0) {
+            if (!highestRole) {
                 this.currentUserRole = '';
                 return '';
             }
 
-            this.currentUserRole = roles[0].role_name;
+            this.currentUserRole = highestRole.name;
             return this.currentUserRole;
         } catch (error) {
             console.error('Fetch user role error:', error);

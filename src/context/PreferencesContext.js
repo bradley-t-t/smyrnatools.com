@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase, logSupabaseError } from '../core/SupabaseClient';
+import { supabase, logSupabaseError } from '../core/clients/SupabaseClient';
 
 // Create context
 const PreferencesContext = createContext();

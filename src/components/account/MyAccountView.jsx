@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {supabase} from '../../core/SupabaseClient';
+import {supabase} from '../../core/clients/SupabaseClient';
 import {AuthService} from '../../services/auth/AuthService';
 import SimpleLoading from '../common/SimpleLoading';
 import {usePreferences} from '../../context/PreferencesContext';
@@ -111,15 +111,15 @@ function MyAccountView({userId}) {
                 }
             }
 
-            // Fetch user role using userIdToUse
-            const {data: roleData, error: roleError} = await supabase
-                .from('users_roles')
-                .select('role_name')
-                .eq('user_id', userIdToUse)
-                .single();
-
-            if (!roleError && roleData) {
-                setUserRole(roleData.role_name);
+            // Fetch user role using AccountManager
+            try {
+                const { AccountManager } = await import('../../core/managers/AccountManager');
+                const highestRole = await AccountManager.getHighestRole(userIdToUse);
+                if (highestRole) {
+                    setUserRole(highestRole.name);
+                }
+            } catch (roleErr) {
+                console.error('Error fetching user role:', roleErr);
             }
 
             // If we still don't have first/last name, try one more source

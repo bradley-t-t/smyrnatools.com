@@ -1,5 +1,6 @@
-import supabase from '../../core/SupabaseClient';
+import supabase from '../../core/clients/SupabaseClient';
 import {AuthUtils} from '../../utils/AuthUtils';
+import {AccountManager} from '../../core/managers/AccountManager';
 
 class AuthServiceImpl {
     constructor() {
@@ -149,14 +150,6 @@ class AuthServiceImpl {
                 updated_at: now
             };
 
-            // Create user role record
-            const userRole = {
-                user_id: userId,
-                role_name: 'Guest',
-                created_at: now,
-                updated_at: now
-            };
-
             // Insert user
             const {error: userError} = await supabase
                 .from('users')
@@ -181,12 +174,17 @@ class AuthServiceImpl {
 
             if (profileError) throw profileError;
 
-            // Insert user role
-            const {error: roleError} = await supabase
-                .from('users_roles')
-                .insert(userRole);
+            // Get the Guest role
+            const guestRole = await AccountManager.getRoleByName('Guest');
+            if (!guestRole) {
+                throw new Error('Could not find Guest role for new user');
+            }
 
-            if (roleError) throw roleError;
+            // Assign Guest role to the new user
+            const roleAssigned = await AccountManager.assignRole(userId, guestRole.id);
+            if (!roleAssigned) {
+                throw new Error('Role assignment failed');
+            }
 
             // Set as current user
             this.currentUser = user;

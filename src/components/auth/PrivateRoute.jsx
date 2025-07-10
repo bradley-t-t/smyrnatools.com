@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '../../core/SupabaseClient';
+import { supabase } from '../../core/clients/SupabaseClient';
 
 /**
  * PrivateRoute component that checks if user is authenticated

@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
-import {isSupabaseConfigured, supabase} from '../core/SupabaseClient';
+import {isSupabaseConfigured, supabase} from '../core/clients/SupabaseClient';
 import {AuthUtils} from '../utils/AuthUtils';
+import {AccountManager} from '../core/managers/AccountManager';
 
 const AuthContext = createContext();
 
@@ -316,13 +317,6 @@ export function AuthProvider({children}) {
                 updated_at: now
             };
 
-            const userRole = {
-                user_id: userId,
-                role_name: 'Guest',
-                created_at: now,
-                updated_at: now
-            };
-
             const {error: userError} = await supabase
                 .from('users')
                 .insert(user);
@@ -335,11 +329,17 @@ export function AuthProvider({children}) {
 
             if (profileError) throw new Error(`Profile creation error: ${profileError.message}`);
 
-            const {error: roleError} = await supabase
-                .from('users_roles')
-                .insert(userRole);
+            // Get the Guest role
+            const guestRole = await AccountManager.getRoleByName('Guest');
+            if (!guestRole) {
+                throw new Error('Could not find Guest role for new user');
+            }
 
-            if (roleError) throw new Error(`Role assignment error: ${roleError.message}`);
+            // Assign Guest role to the new user
+            const roleAssigned = await AccountManager.assignRole(userId, guestRole.id);
+            if (!roleAssigned) {
+                throw new Error('Role assignment failed');
+            }
 
             setUser({...user, profile});
             sessionStorage.setItem('userId', userId);

@@ -7,7 +7,7 @@ import {UserService} from '../../services/auth/UserService';
 import SimpleLoading from '../common/SimpleLoading';
 import LoadingText from '../common/LoadingText';
 import Theme from '../../utils/Theme';
-import supabase from '../../core/SupabaseClient';
+import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';

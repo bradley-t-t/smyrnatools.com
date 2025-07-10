@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import './OperatorsView.css';
-import {supabase} from '../../core/SupabaseClient';
+import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
 import Theme from '../../utils/Theme';

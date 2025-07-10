@@ -14,9 +14,9 @@ import MyAccountView from './components/account/MyAccountView';
 import SimpleNavbar from "./components/common/SimpleNavbar";
 import GuestView from './components/auth/GuestView';
 import {AuthProvider} from './context/AuthContext';
-import {supabase} from './core/SupabaseClient';
+import {supabase} from './core/clients/SupabaseClient';
 import {PreferencesProvider} from './context/PreferencesContext';
-import {UserRoleType} from './utils/RoleManager';
+import {AccountManager} from './core/managers/AccountManager';
 import './styles/Theme.css';
 import './styles/Global.css';
 
@@ -152,20 +152,11 @@ function AppContent() {
     // Function to fetch user role
     const fetchUserRole = async (userId) => {
         try {
-            const { data, error } = await supabase
-                .from('users_roles')
-                .select('role_name')
-                .eq('user_id', userId)
-                .single();
+            // Get the highest weighted role using AccountManager
+            const highestRole = await AccountManager.getHighestRole(userId);
 
-            if (error) {
-                console.error('Error fetching user role:', error);
-                setUserRole('');
-                return;
-            }
-
-            if (data && data.role_name) {
-                setUserRole(data.role_name);
+            if (highestRole && highestRole.name) {
+                setUserRole(highestRole.name.toLowerCase()); // Keep lowercase for consistency with existing checks
             } else {
                 setUserRole('');
             }
@@ -220,7 +211,7 @@ function AppContent() {
     }
 
     // If user has Guest role, show restricted access view
-    if (userRole === UserRoleType.guest) {
+    if (userRole.toLowerCase() === 'guest') {
         return <GuestView />;
     }
 
@@ -359,6 +350,7 @@ function AppContent() {
                 onExternalLink={handleExternalLink}
                 userName={userDisplayName}
                 userDisplayName={userDisplayName}
+                userId={userId}
             >
                 {renderCurrentView()}
             </SimpleNavbar>

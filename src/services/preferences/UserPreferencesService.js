@@ -1,4 +1,4 @@
-import { supabase } from '../../core/SupabaseClient';
+import { supabase } from '../../core/clients/SupabaseClient';
 
 export class UserPreferencesService {
     /**

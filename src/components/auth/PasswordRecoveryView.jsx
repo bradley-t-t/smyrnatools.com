@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../core/SupabaseClient';
+import { supabase } from '../../core/clients/SupabaseClient';
 import EmailClient from '../../utils/EmailClient';
 import { sendEmailMock } from '../../api/EmailService'; // Only import what we use
 import './LoginView.css';

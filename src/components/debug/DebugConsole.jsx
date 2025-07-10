@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import supabase from '../../core/SupabaseClient';
+import supabase from '../../core/clients/SupabaseClient';
 
 const DebugConsole = ({onClose}) => {
     const [activeTab, setActiveTab] = useState('cache');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MixerCommentModal.css';
 import { MixerCommentService } from '../../services/mixers/MixerCommentService';
-import { supabase } from '../../core/SupabaseClient';
+import { supabase } from '../../core/clients/SupabaseClient';
 import { UserService } from '../../services/auth/UserService';
 import SimpleLoading from '../common/SimpleLoading';
 

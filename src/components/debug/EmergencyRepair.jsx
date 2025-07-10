@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import supabase from '../../core/SupabaseClient';
+import supabase from '../../core/clients/SupabaseClient';
 
 const EmergencyRepair = () => {
     const [tractorId, setTractorId] = useState('');

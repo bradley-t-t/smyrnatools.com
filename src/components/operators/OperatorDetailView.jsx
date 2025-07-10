@@ -3,7 +3,7 @@ import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
 import Theme from '../../utils/Theme';
-import supabase from '../../core/SupabaseClient';
+import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';
 import './OperatorDetailView.css';

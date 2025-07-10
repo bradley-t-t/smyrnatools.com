@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import supabase from '../../core/SupabaseClient';
+import supabase from '../../core/clients/SupabaseClient';
 
 /**
  * Service for user-related operations with robust error handling
