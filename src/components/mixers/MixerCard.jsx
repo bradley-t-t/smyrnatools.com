@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {MixerUtils} from '../../models/Mixer';
 import ThemeUtils from '../../utils/ThemeUtils';
 import {usePreferences} from '../../context/PreferencesContext';
+import {MixerMaintenanceService} from '../../services/mixers/MixerMaintenanceService';
 import './MixerCard.css';
 
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
@@ -10,6 +11,24 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const isVerified = mixer.isVerified();
     const statusColor = ThemeUtils.statusColors[mixer.status] || ThemeUtils.statusColors.default;
     const {preferences} = usePreferences();
+    const [openIssuesCount, setOpenIssuesCount] = useState(0);
+
+    useEffect(() => {
+        const fetchOpenIssues = async () => {
+            try {
+                const issues = await MixerMaintenanceService.fetchIssues(mixer.id);
+                const openIssues = issues.filter(issue => !issue.time_completed);
+                setOpenIssuesCount(openIssues.length);
+            } catch (error) {
+                console.error('Error fetching open issues count:', error);
+                setOpenIssuesCount(0);
+            }
+        };
+
+        if (mixer?.id) {
+            fetchOpenIssues();
+        }
+    }, [mixer?.id]);
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {
@@ -46,6 +65,12 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                     <h3 className="mixer-name"
                         style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Truck
                         #{mixer.truckNumber || 'Not Assigned'}</h3>
+                    {openIssuesCount > 0 && (
+                        <div className="issues-badge" title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
+                            <i className="fas fa-tools"></i>
+                            <span>{openIssuesCount}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="card-details">
                     <div className="detail-row">

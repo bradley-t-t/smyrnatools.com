@@ -129,6 +129,24 @@
     max-width: 600px;
 }
 
+.issues-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.issues-badge i {
+    margin-right: 4px;
+    font-size: 0.7rem;
+}
+
 .mixer-card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
     transform: translateY(-3px);
