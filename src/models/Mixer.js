@@ -16,6 +16,10 @@ export class Mixer {
         this.updatedAt = data.updated_at || new Date().toISOString();
         this.updatedLast = data.updated_last || new Date().toISOString();
         this.updatedBy = data.updated_by || null;
+        this.vin = data.vin || '';
+        this.make = data.make || '';
+        this.model = data.model || '';
+        this.year = data.year || '';
     }
 
     /**
@@ -36,7 +40,11 @@ export class Mixer {
             created_at: data.created_at,
             updated_at: data.updated_at,
             updated_last: data.updated_last,
-            updated_by: data.updated_by
+            updated_by: data.updated_by,
+            vin: data.vin,
+            make: data.make,
+            model: data.model,
+            year: data.year
         });
     }
 
@@ -81,7 +89,11 @@ export class Mixer {
             created_at: this.createdAt ? formatDateForDb(this.createdAt) : now,
             updated_at: now,
             updated_last: now,
-            updated_by: this.updatedBy
+            updated_by: this.updatedBy,
+            vin: this.vin,
+            make: this.make,
+            model: this.model,
+            year: this.year
         };
 
         // Only include id if it exists to avoid setting null IDs

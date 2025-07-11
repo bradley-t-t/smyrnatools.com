@@ -1,22 +1,22 @@
-import React, {useEffect, useState} from 'react';
-import {Mixer, MixerUtils} from '../../models/Mixer';
-import {MixerService} from '../../services/mixers/MixerService';
-import {PlantService} from '../../services/plants/PlantService';
-import {OperatorService} from '../../services/operators/OperatorService';
-import {UserService} from '../../services/auth/UserService';
+import React, { useEffect, useState } from 'react';
+import { Mixer, MixerUtils } from '../../models/Mixer';
+import { MixerService } from '../../services/mixers/MixerService';
+import { PlantService } from '../../services/plants/PlantService';
+import { OperatorService } from '../../services/operators/OperatorService';
+import { UserService } from '../../services/auth/UserService';
 import SimpleLoading from '../common/SimpleLoading';
 import LoadingText from '../common/LoadingText';
 import ThemeUtils from '../../utils/ThemeUtils';
 import supabase from '../../core/clients/SupabaseClient';
-import {usePreferences} from '../../context/PreferencesContext';
+import { usePreferences } from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
 import MixerCard from './MixerCard';
 import '../common/LoadingText.css';
 import './MixerDetailView.css';
 
-function MixerDetailView({mixerId, onClose}) {
-    const {preferences} = usePreferences();
+function MixerDetailView({ mixerId, onClose }) {
+    const { preferences } = usePreferences();
     const [mixer, setMixer] = useState(null);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -30,34 +30,30 @@ function MixerDetailView({mixerId, onClose}) {
     const [updatedByEmail, setUpdatedByEmail] = useState(null);
     const [message, setMessage] = useState('');
 
-    // Original values for detecting changes
     const [originalValues, setOriginalValues] = useState({});
-
-    // Editable fields
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedOperator, setAssignedOperator] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('');
-
-    // Cleanliness rating with CSS variable update
     const [cleanlinessRating, setRating] = useState(0);
+    const [lastServiceDate, setLastServiceDate] = useState(null);
+    const [lastChipDate, setLastChipDate] = useState(null);
+    const [vin, setVin] = useState('');
+    const [make, setMake] = useState('');
+    const [model, setModel] = useState('');
+    const [year, setYear] = useState('');
+
     const setCleanlinessRating = (value) => {
         setRating(value);
         document.documentElement.style.setProperty('--rating-value', value);
     };
-    const [lastServiceDate, setLastServiceDate] = useState(null);
-    const [lastChipDate, setLastChipDate] = useState(null);
 
-    // Load data
     useEffect(() => {
         fetchData();
     }, [mixerId]);
 
-    // Track changes to detect unsaved changes
     useEffect(() => {
         if (!originalValues.truckNumber && !isLoading) return;
-
-        // Skip during initial load
         if (isLoading) return;
 
         const formatDateForComparison = (date) => {
@@ -72,7 +68,11 @@ function MixerDetailView({mixerId, onClose}) {
             status !== originalValues.status ||
             cleanlinessRating !== originalValues.cleanlinessRating ||
             formatDateForComparison(lastServiceDate) !== formatDateForComparison(originalValues.lastServiceDate) ||
-            formatDateForComparison(lastChipDate) !== formatDateForComparison(originalValues.lastChipDate);
+            formatDateForComparison(lastChipDate) !== formatDateForComparison(originalValues.lastChipDate) ||
+            vin !== originalValues.vin ||
+            make !== originalValues.make ||
+            model !== originalValues.model ||
+            year !== originalValues.year;
 
         setHasUnsavedChanges(hasChanges);
     }, [
@@ -83,6 +83,10 @@ function MixerDetailView({mixerId, onClose}) {
         cleanlinessRating,
         lastServiceDate,
         lastChipDate,
+        vin,
+        make,
+        model,
+        year,
         originalValues,
         isLoading
     ]);
@@ -90,11 +94,9 @@ function MixerDetailView({mixerId, onClose}) {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            // Fetch mixer details
             const mixerData = await MixerService.fetchMixerById(mixerId);
             setMixer(mixerData);
 
-            // Set form field values
             const truckNum = mixerData.truckNumber || '';
             const operator = mixerData.assignedOperator || '';
             const plant = mixerData.assignedPlant || '';
@@ -102,8 +104,11 @@ function MixerDetailView({mixerId, onClose}) {
             const rating = mixerData.cleanlinessRating || 0;
             const serviceDate = mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null;
             const chipDate = mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null;
+            const vinVal = mixerData.vin || '';
+            const makeVal = mixerData.make || '';
+            const modelVal = mixerData.model || '';
+            const yearVal = mixerData.year || '';
 
-            // Set current values
             setTruckNumber(truckNum);
             setAssignedOperator(operator);
             setAssignedPlant(plant);
@@ -111,8 +116,11 @@ function MixerDetailView({mixerId, onClose}) {
             setCleanlinessRating(rating);
             setLastServiceDate(serviceDate);
             setLastChipDate(chipDate);
+            setVin(vinVal);
+            setMake(makeVal);
+            setModel(modelVal);
+            setYear(yearVal);
 
-            // Store original values for change detection
             setOriginalValues({
                 truckNumber: truckNum,
                 assignedOperator: operator,
@@ -120,26 +128,24 @@ function MixerDetailView({mixerId, onClose}) {
                 status: statusVal,
                 cleanlinessRating: rating,
                 lastServiceDate: serviceDate,
-                lastChipDate: chipDate
+                lastChipDate: chipDate,
+                vin: vinVal,
+                make: makeVal,
+                model: modelVal,
+                year: yearVal
             });
 
-            // Reset unsaved changes flag
             setHasUnsavedChanges(false);
-
-            // Update CSS variable for the rating slider
             document.documentElement.style.setProperty('--rating-value', mixerData.cleanlinessRating || 0);
 
-            // Fetch operators and plants
             const operatorsData = await OperatorService.fetchOperators();
             setOperators(operatorsData);
 
             const plantsData = await PlantService.fetchPlants();
             setPlants(plantsData);
 
-            // Try to get user name if we have updatedBy
             if (mixerData.updatedBy) {
                 try {
-                    // Get user display name from UserService - we've enhanced this to prioritize full name
                     const userName = await UserService.getUserDisplayName(mixerData.updatedBy);
                     setUpdatedByEmail(userName);
                 } catch (error) {
@@ -155,146 +161,111 @@ function MixerDetailView({mixerId, onClose}) {
         }
     };
 
-    // Save changes
     const handleSave = async () => {
         return new Promise(async (resolve, reject) => {
-        if (!mixer || !mixer.id) {
-            alert('Error: Cannot save mixer with undefined ID');
-            return;
-        }
+            if (!mixer || !mixer.id) {
+                alert('Error: Cannot save mixer with undefined ID');
+                return;
+            }
 
-        setIsSaving(true);
+            setIsSaving(true);
 
-        try {
-            // Store original mixer for history comparison
-            const originalMixer = {...mixer};
-
-            // Try multiple methods to get the current user ID
-            let userId = null;
-
-            // Method 1: Get from sessionStorage (most reliable)
-            userId = sessionStorage.getItem('userId');
-
-            // Method 2: If not in sessionStorage, try supabase auth
-            if (!userId) {
-                try {
-                    const {data: {user}} = await supabase.auth.getUser();
+            try {
+                let userId = sessionStorage.getItem('userId');
+                if (!userId) {
+                    const { data: { user } } = await supabase.auth.getUser();
                     userId = user?.id;
-                } catch (authError) {
-                    console.error('Error getting user from Supabase auth:', authError);
                 }
-            }
 
-            // Strong authentication check
-            if (!userId) {
-                // This shouldn't happen in normal flow, as app should redirect to login
-                console.error('No authenticated user found');
-                alert('Your session has expired. Please refresh the page and log in again.');
-                throw new Error('Authentication required: You must be logged in to update mixers');
-            }
-
-            // Format dates properly to avoid any issues with specific format: YYYY-MM-DD HH:MM:SS+00
-            const formatDate = (date) => {
-                if (!date) return null;
-                try {
-                    const parsedDate = date instanceof Date ? date : new Date(date);
-                    if (isNaN(parsedDate.getTime())) return null;
-
-                    // Format to YYYY-MM-DD HH:MM:SS+00 format
-                    const year = parsedDate.getFullYear();
-                    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-                    const day = String(parsedDate.getDate()).padStart(2, '0');
-                    const hours = String(parsedDate.getHours()).padStart(2, '0');
-                    const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
-                    const seconds = String(parsedDate.getSeconds()).padStart(2, '0');
-
-                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
-                } catch (e) {
-                    console.error('Date parsing error:', e);
-                    return null;
+                if (!userId) {
+                    console.error('No authenticated user found');
+                    alert('Your session has expired. Please refresh the page and log in again.');
+                    throw new Error('Authentication required: You must be logged in to update mixers');
                 }
-            };
 
-            // Create updated mixer object
-            const updatedMixer = {
-                ...mixer,
-                id: mixer.id, // Ensure ID is explicitly included
-                truckNumber,
-                assignedOperator,
-                assignedPlant,
-                status,
-                cleanlinessRating: cleanlinessRating || null,
-                lastServiceDate: formatDate(lastServiceDate),
-                lastChipDate: formatDate(lastChipDate),
-                updatedAt: new Date().toISOString()
-                // Don't update updatedLast as that should only be updated by verify button
-                // Don't update updatedBy either - it should only be updated by verify button
-            };
+                const formatDate = (date) => {
+                    if (!date) return null;
+                    try {
+                        const parsedDate = date instanceof Date ? date : new Date(date);
+                        if (isNaN(parsedDate.getTime())) return null;
+                        const year = parsedDate.getFullYear();
+                        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(parsedDate.getDate()).padStart(2, '0');
+                        const hours = String(parsedDate.getHours()).padStart(2, '0');
+                        const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+                        const seconds = String(parsedDate.getSeconds()).padStart(2, '0');
+                        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
+                    } catch (e) {
+                        console.error('Date parsing error:', e);
+                        return null;
+                    }
+                };
 
-            console.log('Saving mixer:', updatedMixer);
+                const updatedMixer = {
+                    ...mixer,
+                    id: mixer.id,
+                    truckNumber,
+                    assignedOperator,
+                    assignedPlant,
+                    status,
+                    cleanlinessRating: cleanlinessRating || null,
+                    lastServiceDate: formatDate(lastServiceDate),
+                    lastChipDate: formatDate(lastChipDate),
+                    vin,
+                    make,
+                    model,
+                    year,
+                    updatedAt: new Date().toISOString()
+                };
 
-            // Update the mixer
-            await MixerService.updateMixer(updatedMixer.id, updatedMixer);
+                await MixerService.updateMixer(updatedMixer.id, updatedMixer);
 
-            // We already have userId from above
+                setMixer(updatedMixer);
+                fetchData();
 
-            // Make sure we have a valid userId for history entries
-            const historyUserId = userId || sessionStorage.getItem('userId') || '00000000-0000-0000-0000-000000000000';
-            console.log('Using history userId:', historyUserId);
+                setMessage('Changes saved successfully!');
+                setTimeout(() => setMessage(''), 3000);
 
-            // History entries are now automatically created in the MixerService.updateMixer method
-            // We removed the manual history entry creation here to prevent duplicate entries
+                setOriginalValues({
+                    truckNumber,
+                    assignedOperator,
+                    assignedPlant,
+                    status,
+                    cleanlinessRating,
+                    lastServiceDate,
+                    lastChipDate,
+                    vin,
+                    make,
+                    model,
+                    year
+                });
 
-            // Update local state
-            setMixer(updatedMixer);
-
-            // Refresh data to update MixerCard
-            fetchData();
-
-            // Set a success message that will clear itself after a few seconds
-            setMessage('Changes saved successfully!');
-            setTimeout(() => setMessage(''), 3000);
-
-            // Update original values to match current values
-            setOriginalValues({
-                truckNumber,
-                assignedOperator,
-                assignedPlant,
-                status,
-                cleanlinessRating,
-                lastServiceDate,
-                lastChipDate
-            });
-
-            // Reset unsaved changes flag
-            setHasUnsavedChanges(false);
-
-        } catch (error) {
-            console.error('Error saving mixer:', error);
-            // Show more detailed error message to help troubleshoot
-            const errorMessage = error.message || 'Unknown error';
-
-            // Log additional debugging information
-            console.error('Error details:', {
-                mixerId: mixer?.id,
-                truckNumber,
-                assignedPlant,
-                assignedOperator,
-                status,
-                cleanlinessRating,
-                lastServiceDate: lastServiceDate ? safeFormatDate(lastServiceDate) : null,
-                lastChipDate: lastChipDate ? safeFormatDate(lastChipDate) : null,
-            });
-
-            alert(`Error saving changes: ${errorMessage}`);
-        } finally {
-            setIsSaving(false);
-            resolve(); // Resolve the promise when save is complete
-        }
+                setHasUnsavedChanges(false);
+            } catch (error) {
+                console.error('Error saving mixer:', error);
+                const errorMessage = error.message || 'Unknown error';
+                console.error('Error details:', {
+                    mixerId: mixer?.id,
+                    truckNumber,
+                    assignedPlant,
+                    assignedOperator,
+                    status,
+                    cleanlinessRating,
+                    lastServiceDate: lastServiceDate ? formatDate(lastServiceDate) : null,
+                    lastChipDate: lastChipDate ? formatDate(lastChipDate) : null,
+                    vin,
+                    make,
+                    model,
+                    year
+                });
+                alert(`Error saving changes: ${errorMessage}`);
+            } finally {
+                setIsSaving(false);
+                resolve();
+            }
         });
     };
 
-    // Delete mixer
     const handleDelete = async () => {
         if (!mixer) return;
 
@@ -310,7 +281,7 @@ function MixerDetailView({mixerId, onClose}) {
                 .eq('id', mixer.id);
 
             alert('Mixer deleted successfully');
-            onClose(); // Return to mixers list
+            onClose();
         } catch (error) {
             console.error('Error deleting mixer:', error);
             alert('Error deleting mixer');
@@ -319,14 +290,12 @@ function MixerDetailView({mixerId, onClose}) {
         }
     };
 
-    // Verify mixer
     const handleVerifyMixer = async () => {
         if (!mixer) return;
 
         setIsSaving(true);
 
         try {
-            // First, check if there are unsaved changes and save them
             if (hasUnsavedChanges) {
                 try {
                     await handleSave();
@@ -337,32 +306,19 @@ function MixerDetailView({mixerId, onClose}) {
                 }
             }
 
-            // Try multiple methods to get the current user ID
-            let userId = null;
-
-            // Method 1: Get from sessionStorage (most reliable)
-            userId = sessionStorage.getItem('userId');
-
-            // Method 2: If not in sessionStorage, try supabase auth
+            let userId = sessionStorage.getItem('userId');
             if (!userId) {
-                try {
-                    const {data: {user}} = await supabase.auth.getUser();
-                    userId = user?.id;
-                } catch (authError) {
-                    console.error('Error getting user from Supabase auth:', authError);
-                }
+                const { data: { user } } = await supabase.auth.getUser();
+                userId = user?.id;
             }
 
-            // Strong authentication check
             if (!userId) {
                 console.error('No authenticated user found');
                 alert('Your session has expired. Please refresh the page and log in again.');
                 throw new Error('Authentication required: You must be logged in to verify mixers');
             }
 
-            // Update only the updated_last field to mark it as verified
-            // We intentionally don't update updated_at here
-            const {data, error} = await supabase
+            const { data, error } = await supabase
                 .from('mixers')
                 .update({
                     updated_last: new Date().toISOString(),
@@ -376,16 +332,13 @@ function MixerDetailView({mixerId, onClose}) {
                 throw new Error(`Failed to verify mixer: ${error.message}`);
             }
 
-            // Update local state
             if (data && data.length > 0) {
                 setMixer(Mixer.fromApiFormat(data[0]));
                 setMessage('Mixer verified successfully!');
                 setTimeout(() => setMessage(''), 3000);
             }
 
-            // Refresh data
             fetchData();
-
         } catch (error) {
             console.error('Error verifying mixer:', error);
             alert(`Error verifying mixer: ${error.message}`);
@@ -394,7 +347,6 @@ function MixerDetailView({mixerId, onClose}) {
         }
     };
 
-    // Handle back button click with unsaved changes check
     const handleBackClick = () => {
         if (hasUnsavedChanges) {
             setShowUnsavedChangesModal(true);
@@ -403,11 +355,9 @@ function MixerDetailView({mixerId, onClose}) {
         }
     };
 
-    // Add event listener for browser back button
     useEffect(() => {
         const handleBeforeUnload = (e) => {
             if (hasUnsavedChanges) {
-                // Standard way to show a confirmation dialog before leaving
                 e.preventDefault();
                 e.returnValue = '';
                 return '';
@@ -415,26 +365,13 @@ function MixerDetailView({mixerId, onClose}) {
         };
 
         window.addEventListener('beforeunload', handleBeforeUnload);
-
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [hasUnsavedChanges]);
 
-    // Helper functions
     const getOperatorName = (operatorId) => {
         if (!operatorId || operatorId === '0') return 'None';
         const operator = operators.find(op => op.employeeId === operatorId);
-
-        if (operator) {
-            // Include position if available
-            if (operator.position) {
-                return `${operator.name} (${operator.position})`;
-            }
-            return operator.name;
-        }
-
-        return 'Unknown';
+        return operator ? (operator.position ? `${operator.name} (${operator.position})` : operator.name) : 'Unknown';
     };
 
     const getPlantName = (plantCode) => {
@@ -447,7 +384,6 @@ function MixerDetailView({mixerId, onClose}) {
         return date instanceof Date ? date.toISOString().split('T')[0] : date;
     };
 
-    // Safe date formatter for logging/debugging
     const safeFormatDate = (date) => {
         if (!date) return null;
         try {
@@ -504,8 +440,6 @@ function MixerDetailView({mixerId, onClose}) {
                     <div className="saving-indicator"></div>
                 </div>
             )}
-
-            {/* Header */}
             <div className="detail-header">
                 <div className="header-left">
                     <button
@@ -533,16 +467,12 @@ function MixerDetailView({mixerId, onClose}) {
                     </button>
                 </div>
             </div>
-
-            {/* Content */}
             <div className="detail-content" style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
                         {message}
                     </div>
                 )}
-
-                {/* Display MixerCard at the top */}
                 <div className="mixer-card-preview">
                     <MixerCard
                         mixer={mixer}
@@ -571,7 +501,6 @@ function MixerDetailView({mixerId, onClose}) {
                                 </div>
                             )}
                         </div>
-
                         <div className="verification-details">
                             <div className="verification-item">
                                 <div className="verification-icon">
@@ -582,7 +511,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     <span className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
-
                             <div className="verification-item">
                                 <div className="verification-icon" style={{ color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : '#f59e0b') : '#ef4444' }}>
                                     <i className="fas fa-calendar-check"></i>
@@ -594,7 +522,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     </span>
                                 </div>
                             </div>
-
                             <div className="verification-item">
                                 <div className="verification-icon" style={{ color: mixer.updatedBy ? '#10b981' : '#ef4444' }}>
                                     <i className="fas fa-user-check"></i>
@@ -607,7 +534,6 @@ function MixerDetailView({mixerId, onClose}) {
                                 </div>
                             </div>
                         </div>
-
                         <button
                             className="verify-now-button"
                             onClick={handleVerifyMixer}
@@ -616,12 +542,11 @@ function MixerDetailView({mixerId, onClose}) {
                             <i className="fas fa-check-circle"></i>
                             Verify Now
                         </button>
-
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
                             <p>
                                 Assets require verification after any changes are made and/or at the start of each work week.
-                                <strong>  Due: Every Friday at 10:00 AM.</strong>
+                                <strong> Due: Every Friday at 10:00 AM.</strong>
                             </p>
                         </div>
                     </div>
@@ -631,7 +556,6 @@ function MixerDetailView({mixerId, onClose}) {
                         <h2>Mixer Information</h2>
                     </div>
                     <p className="edit-instructions">You can make changes below. Remember to save your changes.</p>
-
                     <div className="form-sections">
                         <div className="form-section basic-info">
                             <h3>Basic Information</h3>
@@ -644,7 +568,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     className="form-control"
                                 />
                             </div>
-
                             <div className="form-group">
                                 <label>Status</label>
                                 <select
@@ -659,7 +582,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     <option value="Retired">Retired</option>
                                 </select>
                             </div>
-
                             <div className="form-group">
                                 <label>Assigned Plant</label>
                                 <select
@@ -675,7 +597,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     ))}
                                 </select>
                             </div>
-
                             <div className="form-group">
                                 <label>Assigned Operator</label>
                                 <select
@@ -692,7 +613,6 @@ function MixerDetailView({mixerId, onClose}) {
                                 </select>
                             </div>
                         </div>
-
                         <div className="form-section maintenance-info">
                             <h3>Maintenance Information</h3>
                             <div className="form-group">
@@ -707,7 +627,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     <div className="warning-text">Service overdue</div>
                                 )}
                             </div>
-
                             <div className="form-group">
                                 <label>Last Chip Date</label>
                                 <input
@@ -720,7 +639,6 @@ function MixerDetailView({mixerId, onClose}) {
                                     <div className="warning-text">Chip overdue</div>
                                 )}
                             </div>
-
                             <div className="form-group">
                                 <label>Cleanliness Rating</label>
                                 <div className="cleanliness-rating-editor">
@@ -754,8 +672,48 @@ function MixerDetailView({mixerId, onClose}) {
                             </div>
                         </div>
                     </div>
+                    <div className="form-sections">
+                        <div className="form-section vehicle-info">
+                            <h3>Asset Details</h3>
+                            <div className="form-group">
+                                <label>VIN</label>
+                                <input
+                                    type="text"
+                                    value={vin}
+                                    onChange={(e) => setVin(e.target.value)}
+                                    className="form-control"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Make</label>
+                                <input
+                                    type="text"
+                                    value={make}
+                                    onChange={(e) => setMake(e.target.value)}
+                                    className="form-control"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Model</label>
+                                <input
+                                    type="text"
+                                    value={model}
+                                    onChange={(e) => setModel(e.target.value)}
+                                    className="form-control"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Year</label>
+                                <input
+                                    type="text"
+                                    value={year}
+                                    onChange={(e) => setYear(e.target.value)}
+                                    className="form-control"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
                 <div className="form-actions">
                     <button
                         className="primary-button save-button"
@@ -765,7 +723,6 @@ function MixerDetailView({mixerId, onClose}) {
                     >
                         {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
-
                     <button
                         className="danger-button"
                         onClick={() => setShowDeleteConfirmation(true)}
@@ -775,19 +732,14 @@ function MixerDetailView({mixerId, onClose}) {
                     </button>
                 </div>
             </div>
-
-            {/* History modal */}
             {showHistory && (
-                <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)}/>
+                <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)} />
             )}
-
-            {/* Delete confirmation */}
             {showDeleteConfirmation && (
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Confirm Delete</h2>
                         <p>Are you sure you want to delete Truck #{mixer.truckNumber}? This action cannot be undone.</p>
-
                         <div className="confirmation-actions">
                             <button
                                 className="cancel-button"
@@ -795,7 +747,6 @@ function MixerDetailView({mixerId, onClose}) {
                             >
                                 Cancel
                             </button>
-
                             <button
                                 className="danger-button"
                                 onClick={handleDelete}
@@ -806,14 +757,11 @@ function MixerDetailView({mixerId, onClose}) {
                     </div>
                 </div>
             )}
-
-            {/* Unsaved changes confirmation */}
             {showUnsavedChangesModal && (
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Unsaved Changes</h2>
                         <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-
                         <div className="confirmation-actions">
                             <button
                                 className="cancel-button"
@@ -821,16 +769,13 @@ function MixerDetailView({mixerId, onClose}) {
                             >
                                 Continue Editing
                             </button>
-
                             <button
                                 className="primary-button"
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
                                     try {
                                         await handleSave();
-                                        // Show brief success message
                                         setMessage('Changes saved successfully!');
-                                        // After saving is complete, navigate back
                                         setTimeout(() => onClose(), 800);
                                     } catch (error) {
                                         console.error('Error saving before navigation:', error);
@@ -842,12 +787,10 @@ function MixerDetailView({mixerId, onClose}) {
                             >
                                 Save & Leave
                             </button>
-
                             <button
                                 className="danger-button"
                                 onClick={() => {
                                     setShowUnsavedChangesModal(false);
-                                    // Reset form to original values to prevent unsaved changes warning
                                     setHasUnsavedChanges(false);
                                     onClose();
                                 }}

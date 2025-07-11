@@ -1,11 +1,10 @@
-import React, {useState, useEffect} from 'react';
-import {MixerService} from '../../services/mixers/MixerService';
-import {Mixer} from '../../models/Mixer';
-import {AuthService} from '../../services/auth/AuthService';
+import React, { useState } from 'react';
+import { MixerService } from '../../services/mixers/MixerService';
+import { Mixer } from '../../models/Mixer';
+import { AuthService } from '../../services/auth/AuthService';
 import './MixerAddView.css';
 
-function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
-    // Check if we have operators
+function MixerAddView({ plants, operators = [], onClose, onMixerAdded }) {
     const hasOperators = Array.isArray(operators) && operators.length > 0;
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
@@ -14,18 +13,16 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
     const [status, setStatus] = useState('Active');
     const [lastServiceDate, setLastServiceDate] = useState('');
     const [lastChipDate, setLastChipDate] = useState('');
+    const [vin, setVin] = useState('');
+    const [make, setMake] = useState('');
+    const [model, setModel] = useState('');
+    const [year, setYear] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-
-        console.log('AuthState:', {
-            isAuthenticated: AuthService.isAuthenticated,
-            currentUser: AuthService.currentUser,
-            userId: AuthService.currentUser?.id || sessionStorage.getItem('userId') || 'not available'
-        });
 
         if (!truckNumber) {
             setError('Truck number is required');
@@ -40,41 +37,28 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
         setIsSaving(true);
 
         try {
-            // Get current user ID - try multiple approaches to ensure we get a valid ID
-            let userId = AuthService.currentUser?.id;
-
-            // If not available directly from AuthService, try sessionStorage
-            if (!userId) {
-                userId = sessionStorage.getItem('userId');
-            }
-
-            // Final check - if we still don't have a userId, we can't proceed
+            let userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
             if (!userId) {
                 throw new Error('User ID not available. Please log in again.');
             }
 
-            // If status is not Active, operators should be unassigned
             const operatorToSave = status !== 'Active' ? '0' : assignedOperator;
 
-            // Format date to YYYY-MM-DD HH:MM:SS+00 format
             const formatDateForDb = (date) => {
                 if (!date) return null;
                 const d = new Date(date);
                 if (isNaN(d.getTime())) return null;
-
                 const year = d.getFullYear();
                 const month = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
                 const hours = String(d.getHours()).padStart(2, '0');
                 const minutes = String(d.getMinutes()).padStart(2, '0');
                 const seconds = String(d.getSeconds()).padStart(2, '0');
-
                 return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
             };
 
             const now = formatDateForDb(new Date());
 
-            // Create a new Mixer object
             const newMixer = new Mixer({
                 truck_number: truckNumber,
                 assigned_plant: assignedPlant,
@@ -83,17 +67,18 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                 status: status,
                 last_service_date: lastServiceDate ? formatDateForDb(new Date(lastServiceDate)) : null,
                 last_chip_date: lastChipDate ? formatDateForDb(new Date(lastChipDate)) : null,
+                vin: vin,
+                make: make,
+                model: model,
+                year: year,
                 created_at: now,
                 updated_at: now,
                 updated_by: userId,
                 updated_last: now
             });
 
-            // Save the new mixer
             const savedMixer = await MixerService.createMixer(newMixer, userId);
-
             if (savedMixer) {
-                // Notify parent component
                 onMixerAdded(savedMixer);
                 onClose();
             } else {
@@ -114,10 +99,8 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                     <h2>Add New Mixer</h2>
                     <button className="ios-button" onClick={onClose}>Cancel</button>
                 </div>
-
                 <div className="add-mixer-content">
                     {error && <div className="error-message">{error}</div>}
-
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="truckNumber">Truck Number*</label>
@@ -131,7 +114,50 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 required
                             />
                         </div>
-
+                        <div className="form-group">
+                            <label htmlFor="vin">VIN</label>
+                            <input
+                                id="vin"
+                                type="text"
+                                className="ios-input"
+                                value={vin}
+                                onChange={(e) => setVin(e.target.value)}
+                                placeholder="Enter VIN"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="make">Make</label>
+                            <input
+                                id="make"
+                                type="text"
+                                className="ios-input"
+                                value={make}
+                                onChange={(e) => setMake(e.target.value)}
+                                placeholder="Enter make"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="model">Model</label>
+                            <input
+                                id="model"
+                                type="text"
+                                className="ios-input"
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                placeholder="Enter model"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="year">Year</label>
+                            <input
+                                id="year"
+                                type="text"
+                                className="ios-input"
+                                value={year}
+                                onChange={(e) => setYear(e.target.value)}
+                                placeholder="Enter year"
+                            />
+                        </div>
                         <div className="form-group">
                             <label htmlFor="assignedPlant">Assigned Plant*</label>
                             <select
@@ -149,7 +175,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 ))}
                             </select>
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="status">Status</label>
                             <select
@@ -158,7 +183,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 value={status}
                                 onChange={(e) => {
                                     setStatus(e.target.value);
-                                    // If new status is not Active, unassign operators
                                     if (e.target.value !== 'Active') {
                                         setAssignedOperator('0');
                                     }
@@ -170,7 +194,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 <option value="Retired">Retired</option>
                             </select>
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="assignedOperator">Assigned Operator</label>
                             <select
@@ -182,29 +205,23 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                             >
                                 <option value="0">Unassigned</option>
                                 {operators
-                                  .filter(operator => {
-                                    // Debug operators to see what positions are available
-                                    if (!hasOperators) {
-                                      console.log('No operators available');
-                                    }
-                                    // Handle case where position might not be set
-                                    return operator.position === "Mixer Operator" || 
-                                           operator.position?.toLowerCase().includes('mixer') ||
-                                           operator.position?.toLowerCase().includes('driver');
-                                  })
-                                  .map(operator => (
-                                    <option key={operator.employeeId} value={operator.employeeId}>
-                                        {operator.name}
-                                    </option>
-                                ))}
+                                    .filter(operator =>
+                                        operator.position === "Mixer Operator" ||
+                                        operator.position?.toLowerCase().includes('mixer') ||
+                                        operator.position?.toLowerCase().includes('driver')
+                                    )
+                                    .map(operator => (
+                                        <option key={operator.employeeId} value={operator.employeeId}>
+                                            {operator.name}
+                                        </option>
+                                    ))}
                             </select>
                             {operators.length === 0 && (
-                              <div className="warning-message" style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
-                                No operators available
-                              </div>
+                                <div className="warning-message" style={{ marginTop: '5px', fontSize: '12px', color: '#FF9500' }}>
+                                    No operators available
+                                </div>
                             )}
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="cleanlinessRating">Cleanliness Rating</label>
                             <div className="rating-container">
@@ -224,7 +241,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 {cleanlinessRating ? `${cleanlinessRating} star${cleanlinessRating !== 1 ? 's' : ''}` : 'Not Rated'}
                             </div>
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="lastServiceDate">Last Service Date</label>
                             <input
@@ -235,7 +251,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 onChange={(e) => setLastServiceDate(e.target.value)}
                             />
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="lastChipDate">Last Chip Date</label>
                             <input
@@ -246,7 +261,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 onChange={(e) => setLastChipDate(e.target.value)}
                             />
                         </div>
-
                         <button
                             type="submit"
                             className="ios-button-primary"
