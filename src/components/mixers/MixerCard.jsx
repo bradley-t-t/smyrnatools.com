@@ -66,7 +66,8 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Truck
                         #{mixer.truckNumber || 'Not Assigned'}</h3>
                     {openIssuesCount > 0 && (
-                        <div className="issues-badge" title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
+                        <div className={`issues-badge ${!isVerified ? 'with-verification-flag' : ''}`} 
+                             title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                             <i className="fas fa-tools"></i>
                             <span>{openIssuesCount}</span>
                         </div>

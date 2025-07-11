@@ -140,6 +140,11 @@
     font-size: 0.75rem;
     font-weight: bold;
     margin-left: 8px;
+    position: relative;
+}
+
+.issues-badge.with-verification-flag {
+    right: 30px;
 }
 
 .issues-badge i {
