@@ -8,6 +8,7 @@ import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
+import MixerIssueModal from './MixerIssueModal';
 import MixerCard from './MixerCard';
 import '../common/LoadingText.css';
 import './MixerDetailView.css';
@@ -21,6 +22,7 @@ function MixerDetailView({mixerId, onClose}) {
     const [isSaving, setIsSaving] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showComments, setShowComments] = useState(false);
+    const [showIssues, setShowIssues] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -432,6 +434,13 @@ function MixerDetailView({mixerId, onClose}) {
                     onClose={() => setShowComments(false)}
                 />
             )}
+            {showIssues && (
+                <MixerIssueModal
+                    mixerId={mixerId}
+                    mixerNumber={mixer?.truckNumber}
+                    onClose={() => setShowIssues(false)}
+                />
+            )}
             {isSaving && (
                 <div className="saving-overlay">
                     <div className="saving-indicator"></div>
@@ -451,6 +460,9 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'Not Assigned'}</h1>
                 <div className="header-actions">
+                    <button className="issues-button" onClick={() => setShowIssues(true)} style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                        <i className="fas fa-tools"></i> Issues
+                    </button>
                     <button className="comments-button" onClick={() => setShowComments(true)}>
                         <i className="fas fa-comments"></i> Comments
                     </button>

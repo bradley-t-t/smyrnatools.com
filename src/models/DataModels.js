@@ -179,3 +179,32 @@ export class Message {
         return new Date(this.createdAt).toLocaleString();
     }
 }
+
+// Mixer Maintenance Model
+export class MixerMaintenance {
+    constructor(data = {}) {
+        this.id = data.id || '';
+        this.mixerId = data.mixer_id || '';
+        this.issue = data.issue || '';
+        this.severity = data.severity || 'Low';
+        this.timeCreated = data.time_created || '';
+        this.timeCompleted = data.time_completed || null;
+    }
+
+    // Get formatted creation date
+    get formattedTimeCreated() {
+        if (!this.timeCreated) return '';
+        return new Date(this.timeCreated).toLocaleString();
+    }
+
+    // Get formatted completion date
+    get formattedTimeCompleted() {
+        if (!this.timeCompleted) return '';
+        return new Date(this.timeCompleted).toLocaleString();
+    }
+
+    // Check if maintenance issue is completed
+    get isCompleted() {
+        return !!this.timeCompleted;
+    }
+}
