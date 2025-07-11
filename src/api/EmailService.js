@@ -10,31 +10,31 @@
  * @returns {Promise<Object>} Mock response
  */
 export async function sendEmailMock(emailData) {
-  return new Promise((resolve) => {
-    console.log('MOCK: Email would be sent with data:', emailData);
+    return new Promise((resolve) => {
+        console.log('MOCK: Email would be sent with data:', emailData);
 
-    // Store the verification code in localStorage for testing
-    if (emailData.subject && emailData.subject.includes('Recovery Code')) {
-      const codeMatch = emailData.message.match(/code is: (\d+)/);
-      if (codeMatch && codeMatch[1]) {
-        const code = codeMatch[1];
-        const email = emailData.to;
+        // Store the verification code in localStorage for testing
+        if (emailData.subject && emailData.subject.includes('Recovery Code')) {
+            const codeMatch = emailData.message.match(/code is: (\d+)/);
+            if (codeMatch && codeMatch[1]) {
+                const code = codeMatch[1];
+                const email = emailData.to;
 
-        // Store the code for verification later
-        localStorage.setItem(`recovery_code_${email}`, JSON.stringify({
-          code: code,
-          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
-        }));
+                // Store the code for verification later
+                localStorage.setItem(`recovery_code_${email}`, JSON.stringify({
+                    code: code,
+                    expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+                }));
 
-        console.log(`MOCK: Stored recovery code ${code} for ${email}`);
-      }
-    }
+                console.log(`MOCK: Stored recovery code ${code} for ${email}`);
+            }
+        }
 
-    // Simulate network delay
-    setTimeout(() => {
-      resolve({ success: true, mockSent: true });
-    }, 800);
-  });
+        // Simulate network delay
+        setTimeout(() => {
+            resolve({success: true, mockSent: true});
+        }, 800);
+    });
 }
 
 /**
@@ -43,14 +43,14 @@ export async function sendEmailMock(emailData) {
  * @returns {string|null} The recovery code or null if not found
  */
 export function getMockRecoveryCode(email) {
-  const storedData = localStorage.getItem(`recovery_code_${email}`);
-  if (storedData) {
-    try {
-      const data = JSON.parse(storedData);
-      return data.code;
-    } catch (error) {
-      console.error('Error parsing mock recovery code:', error);
+    const storedData = localStorage.getItem(`recovery_code_${email}`);
+    if (storedData) {
+        try {
+            const data = JSON.parse(storedData);
+            return data.code;
+        } catch (error) {
+            console.error('Error parsing mock recovery code:', error);
+        }
     }
-  }
-  return null;
+    return null;
 }

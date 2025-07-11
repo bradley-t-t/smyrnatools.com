@@ -212,7 +212,7 @@ function AppContent() {
 
     // If user has Guest role, show restricted access view
     if (userRole.toLowerCase() === 'guest') {
-        return <GuestView />;
+        return <GuestView/>;
     }
 
     // Handle view selection
@@ -309,12 +309,13 @@ function AppContent() {
                         }}
                     />
                 );
-                            case 'Managers':
+            case 'Managers':
                 return (
                     <ManagersView
                         title={title}
                         showSidebar={false}
-                        setShowSidebar={() => {}}
+                        setShowSidebar={() => {
+                        }}
                     />
                 );
             case 'MyAccount':
@@ -328,8 +329,8 @@ function AppContent() {
 
                 console.log('No userId available, redirecting to login');
                 return <LoginView/>;
-                case 'Settings':
-                  return <SettingsView />;
+            case 'Settings':
+                return <SettingsView/>;
             default:
                 return (
                     <div className="coming-soon">
@@ -342,7 +343,7 @@ function AppContent() {
 
     return (
         <div className="App">
-            {isMobile && <MobileNavToggle />}
+            {isMobile && <MobileNavToggle/>}
             <SimpleNavbar
                 selectedView={selectedView}
                 onSelectView={handleViewSelection}
@@ -359,17 +360,17 @@ function AppContent() {
 }
 
 function App() {
-  // Apply overflow protection to prevent horizontal scrolling
-  React.useEffect(() => {
-    document.documentElement.style.overflowX = 'hidden';
-    document.body.style.overflowX = 'hidden';
+    // Apply overflow protection to prevent horizontal scrolling
+    React.useEffect(() => {
+        document.documentElement.style.overflowX = 'hidden';
+        document.body.style.overflowX = 'hidden';
 
-    // Clean up on unmount
-    return () => {
-      document.documentElement.style.overflowX = '';
-      document.body.style.overflowX = '';
-    };
-  }, []);
+        // Clean up on unmount
+        return () => {
+            document.documentElement.style.overflowX = '';
+            document.body.style.overflowX = '';
+        };
+    }, []);
 
     return (
         <AuthProvider>

@@ -6,7 +6,7 @@ import {usePreferences} from '../../context/PreferencesContext';
 import './MyAccountView.css';
 
 function MyAccountView({userId}) {
-    const { preferences } = usePreferences();
+    const {preferences} = usePreferences();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [firstName, setFirstName] = useState('');
@@ -113,7 +113,7 @@ function MyAccountView({userId}) {
 
             // Fetch user role using AccountManager
             try {
-                const { AccountManager } = await import('../../core/managers/AccountManager');
+                const {AccountManager} = await import('../../core/managers/AccountManager');
                 const highestRole = await AccountManager.getHighestRole(userIdToUse);
                 if (highestRole) {
                     setUserRole(highestRole.name);
@@ -220,7 +220,7 @@ function MyAccountView({userId}) {
             }
 
             // Get user data from database first
-            const { data: userData, error: userError } = await supabase
+            const {data: userData, error: userError} = await supabase
                 .from('users')
                 .select('id, email, password_hash, salt')
                 .eq('email', email)
@@ -231,7 +231,7 @@ function MyAccountView({userId}) {
             }
 
             // Verify current password using AuthUtils
-            const { AuthUtils } = await import('../../utils/AuthUtils');
+            const {AuthUtils} = await import('../../utils/AuthUtils');
             const computedHash = await AuthUtils.hashPassword(currentPassword, userData.salt);
 
             if (computedHash !== userData.password_hash) {
@@ -245,7 +245,7 @@ function MyAccountView({userId}) {
 
             // Update password directly in the database instead of using AuthService
             // This ensures compatibility with Swift client
-            const { error: updateError } = await supabase
+            const {error: updateError} = await supabase
                 .from('users')
                 .update({
                     password_hash: newPasswordHash,
@@ -318,7 +318,7 @@ function MyAccountView({userId}) {
                 <p>Manage your personal information and security settings</p>
             </div>
 
-            {loading && <SimpleLoading />}
+            {loading && <SimpleLoading/>}
 
             <div className="account-content">
                 {message && (
@@ -328,68 +328,77 @@ function MyAccountView({userId}) {
                 )}
 
                 {/* Account Information */}
-                <div className="account-card" style={{ textAlign: 'left', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <div className="account-card-header" style={{ textAlign: 'left' }}>
-                        <h2 style={{ textAlign: 'left' }}><i className="fas fa-user-circle" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i> Account Information</h2>
+                <div className="account-card"
+                     style={{textAlign: 'left', height: '100%', display: 'flex', flexDirection: 'column'}}>
+                    <div className="account-card-header" style={{textAlign: 'left'}}>
+                        <h2 style={{textAlign: 'left'}}><i className="fas fa-user-circle"
+                                                           style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i> Account
+                            Information</h2>
                     </div>
-                    <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', flex: '1' }}>
+                    <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse', flex: '1'}}>
                         <tbody>
-                            <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                                <td style={{ padding: '10px 0', width: '140px', textAlign: 'left' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <i className="fas fa-user" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                        <tr style={{borderBottom: '1px solid var(--border-light)', textAlign: 'left'}}>
+                            <td style={{padding: '10px 0', width: '140px', textAlign: 'left'}}>
+                                    <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <i className="fas fa-user"
+                                           style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                                         <strong>Name:</strong>
                                     </span>
-                                </td>
-                                <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                    {(firstName || lastName) ? `${firstName || ''} ${lastName || ''}`.trim() : 'Name not available'}
-                                </td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                                <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <i className="fas fa-envelope" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                            </td>
+                            <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                {(firstName || lastName) ? `${firstName || ''} ${lastName || ''}`.trim() : 'Name not available'}
+                            </td>
+                        </tr>
+                        <tr style={{borderBottom: '1px solid var(--border-light)', textAlign: 'left'}}>
+                            <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                    <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <i className="fas fa-envelope"
+                                           style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                                         <strong>Email:</strong>
                                     </span>
-                                </td>
-                                <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                    {email || 'No email available'}
-                                </td>
-                            </tr>
-                            {userRole && (
-                                <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                                    <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <i className="fas fa-user-tag" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                            </td>
+                            <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                {email || 'No email available'}
+                            </td>
+                        </tr>
+                        {userRole && (
+                            <tr style={{borderBottom: '1px solid var(--border-light)', textAlign: 'left'}}>
+                                <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                        <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                            <i className="fas fa-user-tag"
+                                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                                             <strong>Role:</strong>
                                         </span>
-                                    </td>
-                                    <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                        {userRole}
-                                    </td>
-                                </tr>
-                            )}
-                            {plantCode && (
-                                <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                                    <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <i className="fas fa-building" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                                </td>
+                                <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                    {userRole}
+                                </td>
+                            </tr>
+                        )}
+                        {plantCode && (
+                            <tr style={{borderBottom: '1px solid var(--border-light)', textAlign: 'left'}}>
+                                <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                        <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                            <i className="fas fa-building"
+                                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                                             <strong>Plant Code:</strong>
                                         </span>
-                                    </td>
-                                    <td style={{ padding: '10px 0', textAlign: 'left' }}>
-                                        {plantCode}
-                                    </td>
-                                </tr>
-                            )}
+                                </td>
+                                <td style={{padding: '10px 0', textAlign: 'left'}}>
+                                    {plantCode}
+                                </td>
+                            </tr>
+                        )}
                         </tbody>
                     </table>
                 </div>
 
                 {/* Profile Information */}
-                <div className="account-card" style={{ textAlign: 'left' }}>
+                <div className="account-card" style={{textAlign: 'left'}}>
                     <div className="account-card-header">
-                        <h2><i className="fas fa-id-card" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i> Personal Information</h2>
+                        <h2><i className="fas fa-id-card"
+                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i> Personal
+                            Information</h2>
                         <p>Update your personal details</p>
                     </div>
                     <form onSubmit={updateProfile} className="account-form">
@@ -419,11 +428,11 @@ function MyAccountView({userId}) {
                         </div>
                         {/* Phone field removed as it doesn't exist in the database schema */}
                         <div className="form-actions">
-                            <button 
-                                type="submit" 
-                                className="save-button" 
+                            <button
+                                type="submit"
+                                className="save-button"
                                 disabled={loading}
-                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                             >
                                 Save Changes
                             </button>
@@ -432,41 +441,49 @@ function MyAccountView({userId}) {
                 </div>
 
                 {/* Security Settings */}
-                <div className="account-card" style={{ textAlign: 'left', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div className="account-card"
+                     style={{textAlign: 'left', height: '100%', display: 'flex', flexDirection: 'column'}}>
                     <div className="account-card-header">
-                        <h2><i className="fas fa-shield-alt" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i> Security</h2>
+                        <h2><i className="fas fa-shield-alt"
+                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i> Security
+                        </h2>
                         <p>Manage your password and security settings</p>
                     </div>
 
-                    <button 
-                        className="password-button" 
+                    <button
+                        className="password-button"
                         onClick={() => setShowPasswordModal(true)}
-                        style={{ 
-                            backgroundColor: 'var(--bg-primary)', 
+                        style={{
+                            backgroundColor: 'var(--bg-primary)',
                             color: 'var(--text-primary)',
                             borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'
                         }}
                     >
                         <span className="password-button-text">
-                            <i className="fas fa-lock" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                            <i className="fas fa-lock"
+                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                             Change Password
                         </span>
-                        <i className="fas fa-chevron-right" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                        <i className="fas fa-chevron-right"
+                           style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                     </button>
 
                     <div className="sign-out-divider"></div>
 
-                    <button 
-                        className="sign-out-button" 
-                        onClick={handleSignOut} 
+                    <button
+                        className="sign-out-button"
+                        onClick={handleSignOut}
                         disabled={loading}
-                        style={{ backgroundColor: 'var(--bg-primary)' }}
+                        style={{backgroundColor: 'var(--bg-primary)'}}
                     >
-                        <span className="sign-out-button-text" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
-                            <i className="fas fa-sign-out-alt" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                        <span className="sign-out-button-text"
+                              style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                            <i className="fas fa-sign-out-alt"
+                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                             Sign Out
                         </span>
-                        <i className="fas fa-chevron-right" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i>
+                        <i className="fas fa-chevron-right"
+                           style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i>
                     </button>
                 </div>
             </div>
@@ -477,8 +494,8 @@ function MyAccountView({userId}) {
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Change Password</h3>
-                            <button 
-                                className="modal-close-btn" 
+                            <button
+                                className="modal-close-btn"
                                 onClick={() => !loading && setShowPasswordModal(false)}
                                 disabled={loading}
                             >
@@ -531,8 +548,8 @@ function MyAccountView({userId}) {
                             </div>
 
                             <div className="modal-actions">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="modal-cancel-btn"
                                     onClick={() => setShowPasswordModal(false)}
                                     disabled={loading}
@@ -543,7 +560,7 @@ function MyAccountView({userId}) {
                                     type="submit"
                                     className="modal-submit-btn"
                                     disabled={loading || !currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8}
-                                    style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                                    style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                                 >
                                     Update Password
                                 </button>

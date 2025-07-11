@@ -255,6 +255,7 @@
     background-color: #cccccc;
     cursor: not-allowed;
 }
+
 .my-account-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -645,6 +646,7 @@ button.save-button:disabled {
         padding: 1.5rem;
     }
 }
+
 .loading-indicator {
     text-align: center;
     padding: 20px;
@@ -768,6 +770,7 @@ button.save-button:disabled {
     z-index: 1000;
     backdrop-filter: blur(4px);
 }
+
 /* Sign out button styling */
 .sign-out-button {
     background-color: var(--danger, #b80017);
@@ -788,6 +791,7 @@ button.save-button:disabled {
 .sign-out-button i {
     margin-right: 8px;
 }
+
 .modal-content {
     background-color: white;
     border-radius: var(--radius-lg);

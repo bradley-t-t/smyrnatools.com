@@ -128,50 +128,50 @@
 
 .mixer-card-preview {
     max-width: 100%;
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid var(--border-light);
-    }
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+}
 
-    /* History table styles */
-    .history-table {
+/* History table styles */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.history-table th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.history-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+.history-table tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* For small screens, make the table responsive */
+@media (max-width: 768px) {
+    .history-table-container {
+        overflow-x: auto;
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        overflow: hidden;
     }
-
-    .history-table th {
-        background-color: var(--bg-tertiary);
-        color: var(--text-primary);
-        font-weight: 600;
-        padding: 12px 16px;
-        text-align: left;
-    }
-
-    .history-table td {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border-light);
-        color: var(--text-primary);
-    }
-
-    .history-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .history-table tr:hover {
-        background-color: var(--bg-hover);
-    }
-
-    /* For small screens, make the table responsive */
-    @media (max-width: 768px) {
-        .history-table-container {
-            overflow-x: auto;
-            width: 100%;
-        }
-    }
+}
 
 .history-table-container {
     margin-bottom: 24px;
@@ -818,8 +818,12 @@ input[type="date"].form-control {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .empty-history {

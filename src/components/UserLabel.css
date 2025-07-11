@@ -255,6 +255,7 @@
         background-position: -200% 0;
     }
 }
+
 .user-label {
     display: inline-flex;
     align-items: center;
@@ -300,12 +301,24 @@
 }
 
 @keyframes loading-dots {
-    0% { width: 0; }
-    20% { width: 0.25em; }
-    40% { width: 0.5em; }
-    60% { width: 0.75em; }
-    80% { width: 1em; }
-    100% { width: 0; }
+    0% {
+        width: 0;
+    }
+    20% {
+        width: 0.25em;
+    }
+    40% {
+        width: 0.5em;
+    }
+    60% {
+        width: 0.75em;
+    }
+    80% {
+        width: 1em;
+    }
+    100% {
+        width: 0;
+    }
 }
 
 .user-label .user-initials.loading {

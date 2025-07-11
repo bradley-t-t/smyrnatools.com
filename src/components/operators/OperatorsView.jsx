@@ -3,12 +3,11 @@ import './OperatorsView.css';
 import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
-import ThemeUtils from '../../utils/ThemeUtils';
 import OperatorCard from './OperatorCard';
 import {usePreferences} from '../../context/PreferencesContext';
 
 function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator}) {
-    const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences();
+    const {preferences, updateOperatorFilter, resetOperatorFilters} = usePreferences();
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -537,7 +536,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                         </div>
                     )}
 
-                    {showOverview && <OverviewPopup />}
+                    {showOverview && <OverviewPopup/>}
                 </>
             )}
         </div>

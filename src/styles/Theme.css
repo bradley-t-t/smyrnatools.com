@@ -174,7 +174,7 @@ button.primary:hover {
     color: var(--text-primary);
 }
 
-.dark-mode th, 
+.dark-mode th,
 .dark-mode td {
     border-color: var(--divider);
 }

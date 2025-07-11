@@ -1,22 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Mixer, MixerUtils } from '../../models/Mixer';
-import { MixerService } from '../../services/mixers/MixerService';
-import { PlantService } from '../../services/plants/PlantService';
-import { OperatorService } from '../../services/operators/OperatorService';
-import { UserService } from '../../services/auth/UserService';
-import SimpleLoading from '../common/SimpleLoading';
-import LoadingText from '../common/LoadingText';
-import ThemeUtils from '../../utils/ThemeUtils';
+import React, {useEffect, useState} from 'react';
+import {Mixer, MixerUtils} from '../../models/Mixer';
+import {MixerService} from '../../services/mixers/MixerService';
+import {PlantService} from '../../services/plants/PlantService';
+import {OperatorService} from '../../services/operators/OperatorService';
+import {UserService} from '../../services/auth/UserService';
 import supabase from '../../core/clients/SupabaseClient';
-import { usePreferences } from '../../context/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
 import MixerCard from './MixerCard';
 import '../common/LoadingText.css';
 import './MixerDetailView.css';
 
-function MixerDetailView({ mixerId, onClose }) {
-    const { preferences } = usePreferences();
+function MixerDetailView({mixerId, onClose}) {
+    const {preferences} = usePreferences();
     const [mixer, setMixer] = useState(null);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -173,7 +170,7 @@ function MixerDetailView({ mixerId, onClose }) {
             try {
                 let userId = sessionStorage.getItem('userId');
                 if (!userId) {
-                    const { data: { user } } = await supabase.auth.getUser();
+                    const {data: {user}} = await supabase.auth.getUser();
                     userId = user?.id;
                 }
 
@@ -308,7 +305,7 @@ function MixerDetailView({ mixerId, onClose }) {
 
             let userId = sessionStorage.getItem('userId');
             if (!userId) {
-                const { data: { user } } = await supabase.auth.getUser();
+                const {data: {user}} = await supabase.auth.getUser();
                 userId = user?.id;
             }
 
@@ -318,7 +315,7 @@ function MixerDetailView({ mixerId, onClose }) {
                 throw new Error('Authentication required: You must be logged in to verify mixers');
             }
 
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .update({
                     updated_last: new Date().toISOString(),
@@ -446,7 +443,7 @@ function MixerDetailView({ mixerId, onClose }) {
                         className="back-button"
                         onClick={handleBackClick}
                         aria-label="Back to mixers"
-                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                     >
                         <i className="fas fa-arrow-left"></i>
                         <span>Back</span>
@@ -460,14 +457,14 @@ function MixerDetailView({ mixerId, onClose }) {
                     <button
                         className="history-button"
                         onClick={() => setShowHistory(true)}
-                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                     >
                         <i className="fas fa-history"></i>
                         <span>History</span>
                     </button>
                 </div>
             </div>
-            <div className="detail-content" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div className="detail-content" style={{maxWidth: '1000px', margin: '0 auto'}}>
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
                         {message}
@@ -508,27 +505,32 @@ function MixerDetailView({ mixerId, onClose }) {
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Created</span>
-                                    <span className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
+                                    <span
+                                        className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
                             <div className="verification-item">
-                                <div className="verification-icon" style={{ color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : '#f59e0b') : '#ef4444' }}>
+                                <div className="verification-icon"
+                                     style={{color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : '#f59e0b') : '#ef4444'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
-                                    <span className="verification-value" style={{ color: mixer.updatedLast ? (mixer.isVerified() ? 'inherit' : '#f59e0b') : '#ef4444' }}>
+                                    <span className="verification-value"
+                                          style={{color: mixer.updatedLast ? (mixer.isVerified() ? 'inherit' : '#f59e0b') : '#ef4444'}}>
                                         {mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'Never verified'}
                                     </span>
                                 </div>
                             </div>
                             <div className="verification-item">
-                                <div className="verification-icon" style={{ color: mixer.updatedBy ? '#10b981' : '#ef4444' }}>
+                                <div className="verification-icon"
+                                     style={{color: mixer.updatedBy ? '#10b981' : '#ef4444'}}>
                                     <i className="fas fa-user-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Verified By</span>
-                                    <span className="verification-value" style={{ color: mixer.updatedBy ? 'inherit' : '#ef4444' }}>
+                                    <span className="verification-value"
+                                          style={{color: mixer.updatedBy ? 'inherit' : '#ef4444'}}>
                                         {mixer.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}
                                     </span>
                                 </div>
@@ -537,7 +539,7 @@ function MixerDetailView({ mixerId, onClose }) {
                         <button
                             className="verify-now-button"
                             onClick={handleVerifyMixer}
-                            style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                            style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                         >
                             <i className="fas fa-check-circle"></i>
                             Verify Now
@@ -545,7 +547,8 @@ function MixerDetailView({ mixerId, onClose }) {
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
                             <p>
-                                Assets require verification after any changes are made and/or at the start of each work week.
+                                Assets require verification after any changes are made and/or at the start of each work
+                                week.
                                 <strong> Due: Every Friday at 10:00 AM.</strong>
                             </p>
                         </div>
@@ -652,7 +655,7 @@ function MixerDetailView({ mixerId, onClose }) {
                                                 aria-label={`Rate ${star} of 5 stars`}
                                             >
                                                 <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
-                                                   style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
+                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}
                                                 ></i>
                                             </button>
                                         ))}
@@ -719,7 +722,7 @@ function MixerDetailView({ mixerId, onClose }) {
                         className="primary-button save-button"
                         onClick={handleSave}
                         disabled={isSaving}
-                        style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                        style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                     >
                         {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -733,7 +736,7 @@ function MixerDetailView({ mixerId, onClose }) {
                 </div>
             </div>
             {showHistory && (
-                <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)} />
+                <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)}/>
             )}
             {showDeleteConfirmation && (
                 <div className="confirmation-modal">
@@ -761,7 +764,8 @@ function MixerDetailView({ mixerId, onClose }) {
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
+                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to
+                            do?</p>
                         <div className="confirmation-actions">
                             <button
                                 className="cancel-button"
@@ -783,7 +787,7 @@ function MixerDetailView({ mixerId, onClose }) {
                                         setTimeout(() => setMessage(''), 3000);
                                     }
                                 }}
-                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                             >
                                 Save & Leave
                             </button>

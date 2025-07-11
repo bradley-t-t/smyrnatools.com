@@ -1,6 +1,6 @@
 import supabase from '../../core/clients/SupabaseClient';
-import { Mixer, MixerUtils } from '../../models/Mixer';
-import { MixerHistory } from '../../models/MixerHistory';
+import {Mixer, MixerUtils} from '../../models/Mixer';
+import {MixerHistory} from '../../models/MixerHistory';
 
 const formatDateForSupabase = (date) => {
     if (!date) return null;
@@ -31,10 +31,10 @@ const formatDate = (date) => {
 export class MixerService {
     static async getAllMixers() {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
-                .order('truck_number', { ascending: true });
+                .order('truck_number', {ascending: true});
 
             if (error) throw error;
             return data.map(mixer => Mixer.fromApiFormat(mixer));
@@ -55,7 +55,7 @@ export class MixerService {
                 return null;
             }
 
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
                 .eq('id', id)
@@ -96,7 +96,7 @@ export class MixerService {
             }
 
             try {
-                const { data, error } = await supabase
+                const {data, error} = await supabase
                     .from('mixers')
                     .select('*')
                     .eq('id', id)
@@ -105,7 +105,7 @@ export class MixerService {
                 if (!error && data) {
                     const mixer = Mixer.fromApiFormat(data);
                     if (typeof mixer.isVerified !== 'function') {
-                        mixer.isVerified = function() {
+                        mixer.isVerified = function () {
                             return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy);
                         };
                     }
@@ -120,9 +120,9 @@ export class MixerService {
             const result = await this.getMixerById(id);
             if (!result) {
                 try {
-                    const { count, error } = await supabase
+                    const {count, error} = await supabase
                         .from('mixers')
-                        .select('id', { count: 'exact', head: true })
+                        .select('id', {count: 'exact', head: true})
                         .eq('id', id);
                     if (!error) {
                         console.log(`ID existence check: count = ${count}`);
@@ -141,11 +141,11 @@ export class MixerService {
 
     static async getActiveMixers() {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
                 .eq('status', 'Active')
-                .order('truck_number', { ascending: true });
+                .order('truck_number', {ascending: true});
 
             if (error) throw error;
             return data.map(mixer => Mixer.fromApiFormat(mixer));
@@ -180,7 +180,7 @@ export class MixerService {
                 updated_by: userId
             };
 
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .insert([apiData])
                 .select();
@@ -206,7 +206,7 @@ export class MixerService {
             userId = sessionStorage.getItem('userId');
             if (!userId) {
                 try {
-                    const { data } = await supabase.auth.getUser();
+                    const {data} = await supabase.auth.getUser();
                     userId = data?.user?.id;
                 } catch (error) {
                     console.error('Error getting current user from auth:', error);
@@ -244,7 +244,7 @@ export class MixerService {
                     userId = sessionUserId;
                 } else {
                     try {
-                        const { data } = await supabase.auth.getUser();
+                        const {data} = await supabase.auth.getUser();
                         userId = data?.user?.id;
                     } catch (authError) {
                         console.error('Error getting user from Supabase auth:', authError);
@@ -290,7 +290,7 @@ export class MixerService {
             delete apiData.updated_last;
             delete apiData.updated_by;
 
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .update(apiData)
                 .eq('id', id)
@@ -303,20 +303,20 @@ export class MixerService {
 
             const historyEntries = [];
             const fieldsToTrack = [
-                { field: 'truckNumber', dbField: 'truck_number' },
-                { field: 'assignedPlant', dbField: 'assigned_plant' },
-                { field: 'assignedOperator', dbField: 'assigned_operator' },
-                { field: 'lastServiceDate', dbField: 'last_service_date' },
-                { field: 'lastChipDate', dbField: 'last_chip_date' },
-                { field: 'cleanlinessRating', dbField: 'cleanliness_rating' },
-                { field: 'vin', dbField: 'vin' },
-                { field: 'make', dbField: 'make' },
-                { field: 'model', dbField: 'model' },
-                { field: 'year', dbField: 'year' },
-                { field: 'status', dbField: 'status' }
+                {field: 'truckNumber', dbField: 'truck_number'},
+                {field: 'assignedPlant', dbField: 'assigned_plant'},
+                {field: 'assignedOperator', dbField: 'assigned_operator'},
+                {field: 'lastServiceDate', dbField: 'last_service_date'},
+                {field: 'lastChipDate', dbField: 'last_chip_date'},
+                {field: 'cleanlinessRating', dbField: 'cleanliness_rating'},
+                {field: 'vin', dbField: 'vin'},
+                {field: 'make', dbField: 'make'},
+                {field: 'model', dbField: 'model'},
+                {field: 'year', dbField: 'year'},
+                {field: 'status', dbField: 'status'}
             ];
 
-            for (const { field, dbField } of fieldsToTrack) {
+            for (const {field, dbField} of fieldsToTrack) {
                 let hasChanged = false;
                 let oldValue = currentMixer[field];
                 let newValue = mixer[field];
@@ -364,7 +364,7 @@ export class MixerService {
             }
 
             if (historyEntries.length > 0) {
-                const { error: historyError } = await supabase
+                const {error: historyError} = await supabase
                     .from('mixer_history')
                     .insert(historyEntries);
                 if (historyError) {
@@ -382,7 +382,7 @@ export class MixerService {
 
     static async deleteMixer(id) {
         try {
-            const { error: historyError } = await supabase
+            const {error: historyError} = await supabase
                 .from('mixer_history')
                 .delete()
                 .eq('mixer_id', id);
@@ -391,7 +391,7 @@ export class MixerService {
                 console.error(`Error deleting history for mixer with ID ${id}:`, historyError);
             }
 
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('mixers')
                 .delete()
                 .eq('id', id);
@@ -411,7 +411,7 @@ export class MixerService {
                 userId = sessionStorage.getItem('userId');
                 if (!userId) {
                     try {
-                        const { data } = await supabase.auth.getUser();
+                        const {data} = await supabase.auth.getUser();
                         userId = data.user?.id;
                     } catch (authError) {
                         console.error('Error in supabase auth:', authError);
@@ -425,7 +425,7 @@ export class MixerService {
             const oldValueStr = oldValue?.toString() || null;
             const newValueStr = newValue?.toString() || null;
 
-            const { error: insertError, data: insertData } = await supabase
+            const {error: insertError, data: insertData} = await supabase
                 .from('mixer_history')
                 .insert({
                     mixer_id: mixerId,
@@ -451,11 +451,11 @@ export class MixerService {
 
     static async getMixerHistory(id) {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixer_history')
                 .select('*')
                 .eq('mixer_id', id)
-                .order('changed_at', { ascending: false });
+                .order('changed_at', {ascending: false});
 
             if (error) throw error;
             return data.map(history => MixerHistory.fromApiFormat(history));
@@ -475,17 +475,17 @@ export class MixerService {
                 .select('mixer_id, field_name, old_value, new_value, changed_at, changed_by')
                 .eq('field_name', 'cleanliness_rating')
                 .gte('changed_at', threshold.toISOString())
-                .order('changed_at', { ascending: true })
+                .order('changed_at', {ascending: true})
                 .abortSignal(AbortSignal.timeout(5000));
 
             if (mixerId) {
                 query = query.eq('mixer_id', mixerId);
             }
 
-            query = query.select('*', { cache: 'default' });
+            query = query.select('*', {cache: 'default'});
             query = query.limit(200);
 
-            const { data, error } = await query;
+            const {data, error} = await query;
             if (error) throw error;
             return data;
         } catch (error) {
@@ -496,11 +496,11 @@ export class MixerService {
 
     static async getMixersByOperator(operatorId) {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
                 .eq('assigned_operator', operatorId)
-                .order('truck_number', { ascending: true });
+                .order('truck_number', {ascending: true});
 
             if (error) throw error;
             return data.map(mixer => Mixer.fromApiFormat(mixer));
@@ -512,11 +512,11 @@ export class MixerService {
 
     static async getMixersByStatus(status) {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
                 .eq('status', status)
-                .order('truck_number', { ascending: true });
+                .order('truck_number', {ascending: true});
 
             if (error) throw error;
             return data.map(mixer => Mixer.fromApiFormat(mixer));
@@ -528,11 +528,11 @@ export class MixerService {
 
     static async searchMixersByTruckNumber(query) {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
                 .ilike('truck_number', `%${query}%`)
-                .order('truck_number', { ascending: true });
+                .order('truck_number', {ascending: true});
 
             if (error) throw error;
             return data.map(mixer => Mixer.fromApiFormat(mixer));
@@ -544,10 +544,10 @@ export class MixerService {
 
     static async getMixersNeedingService(dayThreshold = 30) {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('mixers')
                 .select('*')
-                .order('truck_number', { ascending: true });
+                .order('truck_number', {ascending: true});
 
             if (error) throw error;
 

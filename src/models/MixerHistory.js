@@ -13,6 +13,40 @@ class MixerHistory {
     }
 
     /**
+     * Convert database format (snake_case) to model instance (camelCase)
+     */
+    static fromApiFormat(data) {
+        // Clean date strings if they exist
+        let oldValue = data.old_value;
+        let newValue = data.new_value;
+
+        // For date fields, ensure consistent formatting
+        if (data.field_name === 'last_service_date' || data.field_name === 'last_chip_date') {
+            // Try to parse as date and get just the date part (no time)
+            try {
+                if (oldValue && oldValue.includes('T')) {
+                    oldValue = oldValue.split('T')[0];
+                }
+                if (newValue && newValue.includes('T')) {
+                    newValue = newValue.split('T')[0];
+                }
+            } catch (e) {
+                console.error('Error formatting date in history:', e);
+            }
+        }
+
+        return new MixerHistory(
+            data.id,
+            data.mixer_id,
+            data.field_name,
+            oldValue,
+            newValue,
+            data.changed_at,
+            data.changed_by
+        );
+    }
+
+    /**
      * Get formatted old value based on field type
      */
     getFormattedOldValue() {
@@ -66,40 +100,6 @@ class MixerHistory {
         }
 
         return value;
-    }
-
-    /**
-     * Convert database format (snake_case) to model instance (camelCase)
-     */
-    static fromApiFormat(data) {
-        // Clean date strings if they exist
-        let oldValue = data.old_value;
-        let newValue = data.new_value;
-
-        // For date fields, ensure consistent formatting
-        if (data.field_name === 'last_service_date' || data.field_name === 'last_chip_date') {
-            // Try to parse as date and get just the date part (no time)
-            try {
-                if (oldValue && oldValue.includes('T')) {
-                    oldValue = oldValue.split('T')[0];
-                }
-                if (newValue && newValue.includes('T')) {
-                    newValue = newValue.split('T')[0];
-                }
-            } catch (e) {
-                console.error('Error formatting date in history:', e);
-            }
-        }
-
-        return new MixerHistory(
-            data.id,
-            data.mixer_id,
-            data.field_name,
-            oldValue,
-            newValue,
-            data.changed_at,
-            data.changed_by
-        );
     }
 
     /**

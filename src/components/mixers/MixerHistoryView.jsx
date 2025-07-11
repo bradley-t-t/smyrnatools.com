@@ -3,7 +3,6 @@ import {usePreferences} from '../../context/PreferencesContext';
 import {MixerService} from '../../services/mixers/MixerService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import UserLabel from '../UserLabel';
-import SimpleLoading from '../common/SimpleLoading';
 import '../common/LoadingText.css';
 import './MixerHistoryView.css';
 
@@ -176,13 +175,14 @@ function MixerHistoryView({mixer, onClose}) {
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
             direction = 'descending';
         }
-        setSortConfig({ key, direction });
+        setSortConfig({key, direction});
     };
 
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
-                <div className="history-modal-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                <div className="history-modal-header"
+                     style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                     <h2>History for Truck #{mixer.truckNumber}</h2>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>
@@ -207,7 +207,7 @@ function MixerHistoryView({mixer, onClose}) {
                         </div>
                     ) : (
                         <div className="history-timeline">
-                                                            {sortedHistory.map((entry, index) => (
+                            {sortedHistory.map((entry, index) => (
                                 <div
                                     key={entry.id || index}
                                     className="history-item"

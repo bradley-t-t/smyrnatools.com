@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
-import ThemeUtils from '../../utils/ThemeUtils';
 import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';
@@ -307,11 +306,13 @@ function OperatorDetailView({operatorId, onClose}) {
                     <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
                             <span className="metadata-label">Created:</span>
-                            <span className="metadata-value">{operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'Not Assigned'}</span>
+                            <span
+                                className="metadata-value">{operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         <div className="metadata-row">
                             <span className="metadata-label">Last Updated:</span>
-                            <span className="metadata-value">{operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'Not Assigned'}</span>
+                            <span
+                                className="metadata-value">{operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         {operator.updatedBy && (
                             <div className="metadata-row">
@@ -471,13 +472,14 @@ function OperatorDetailView({operatorId, onClose}) {
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
+                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to
+                            do?</p>
                         <div className="confirmation-actions">
                             <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>
                                 Continue Editing
                             </button>
                             <button
-                                    className="primary-button save-button"
+                                className="primary-button save-button"
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
                                     try {

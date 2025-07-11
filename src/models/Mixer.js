@@ -369,12 +369,12 @@ export class MixerUtils {
     /**
      * Check if mixer is verified (updated_last after the last Sunday at noon)
      * and has not been modified since the last verification
-     * 
+     *
      * This method returns false in these cases:
      * 1. If updated_last or updated_by is null/undefined
      * 2. If the last verification (updated_last) was before the last Sunday at noon
      * 3. If there have been changes (updated_at) since the last verification (updated_last)
-     * 
+     *
      * @param {string} updatedLastTimestamp - The timestamp when the mixer was last verified
      * @param {string} updatedAtTimestamp - The timestamp when the mixer was last modified
      * @param {string} updatedBy - The user who last verified the mixer (optional)

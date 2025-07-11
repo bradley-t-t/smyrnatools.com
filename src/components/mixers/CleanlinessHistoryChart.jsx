@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { MixerService } from '../../services/mixers/MixerService';
-import SimpleLoading from '../common/SimpleLoading';
+import React, {useEffect, useState} from 'react';
+import {MixerService} from '../../services/mixers/MixerService';
 import './CleanlinessHistoryChart.css';
 
-const CleanlinessHistoryChart = ({ mixers }) => {
+const CleanlinessHistoryChart = ({mixers}) => {
     const [cleanlinessHistory, setCleanlinessHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -32,17 +31,17 @@ const CleanlinessHistoryChart = ({ mixers }) => {
 
         try {
             // Get months based on selected period
-            const months = selectedPeriod === '1m' ? 1 : 
-                           selectedPeriod === '3m' ? 3 : 
-                           selectedPeriod === '1y' ? 12 : 6;
+            const months = selectedPeriod === '1m' ? 1 :
+                selectedPeriod === '3m' ? 3 :
+                    selectedPeriod === '1y' ? 12 : 6;
 
             // Get cleanliness history directly from optimized service method
             // This avoids fetching full history for each mixer individually
             const cleanlinessData = await MixerService.getCleanlinessHistory(null, months);
 
             // Filter for only the selected mixers if any are provided
-            const filteredData = mixers.length > 0 
-                ? cleanlinessData.filter(entry => 
+            const filteredData = mixers.length > 0
+                ? cleanlinessData.filter(entry =>
                     mixers.some(mixer => mixer.id === entry.mixerId || mixer.id === entry.mixer_id))
                 : cleanlinessData;
 
@@ -89,7 +88,7 @@ const CleanlinessHistoryChart = ({ mixers }) => {
     // Format date for display
     const formatDate = (dateStr) => {
         const date = new Date(dateStr);
-        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
     };
 
     // Calculate chart dimensions
@@ -145,25 +144,25 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                 <div className="chart-header">
                     <h2>Cleanliness Trend</h2>
                     <div className="period-selector">
-                        <button 
+                        <button
                             className={selectedPeriod === '1m' ? 'active' : ''}
                             onClick={() => setSelectedPeriod('1m')}
                         >
                             1M
                         </button>
-                        <button 
+                        <button
                             className={selectedPeriod === '3m' ? 'active' : ''}
                             onClick={() => setSelectedPeriod('3m')}
                         >
                             3M
                         </button>
-                        <button 
+                        <button
                             className={selectedPeriod === '6m' ? 'active' : ''}
                             onClick={() => setSelectedPeriod('6m')}
                         >
                             6M
                         </button>
-                        <button 
+                        <button
                             className={selectedPeriod === '1y' ? 'active' : ''}
                             onClick={() => setSelectedPeriod('1y')}
                         >
@@ -184,25 +183,25 @@ const CleanlinessHistoryChart = ({ mixers }) => {
             <div className="chart-header">
                 <h2>Cleanliness Trend</h2>
                 <div className="period-selector">
-                    <button 
+                    <button
                         className={selectedPeriod === '1m' ? 'active' : ''}
                         onClick={() => setSelectedPeriod('1m')}
                     >
                         1M
                     </button>
-                    <button 
+                    <button
                         className={selectedPeriod === '3m' ? 'active' : ''}
                         onClick={() => setSelectedPeriod('3m')}
                     >
                         3M
                     </button>
-                    <button 
+                    <button
                         className={selectedPeriod === '6m' ? 'active' : ''}
                         onClick={() => setSelectedPeriod('6m')}
                     >
                         6M
                     </button>
-                    <button 
+                    <button
                         className={selectedPeriod === '1y' ? 'active' : ''}
                         onClick={() => setSelectedPeriod('1y')}
                     >
@@ -211,7 +210,7 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                 </div>
             </div>
 
-            <div className="chart-container" style={{ height: chartHeight }}>
+            <div className="chart-container" style={{height: chartHeight}}>
                 {/* Y-axis labels */}
                 <div className="y-axis">
                     <div className="y-label">0</div>
@@ -227,7 +226,8 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                     {/* Grid lines */}
                     <div className="grid-lines">
                         {[0, 1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="grid-line" style={{ bottom: `${((maxRating - i) / maxRating) * 100}%` }}></div>
+                            <div key={i} className="grid-line"
+                                 style={{bottom: `${((maxRating - i) / maxRating) * 100}%`}}></div>
                         ))}
                     </div>
 
@@ -265,31 +265,31 @@ const CleanlinessHistoryChart = ({ mixers }) => {
                     {/* X-axis labels (only show max 4 dates to avoid crowding) */}
                     <div className="x-axis">
                         {cleanlinessHistory
-                        .filter((_, i, arr) => {
-                            // Always show first and last, and at most 2 points in between
-                            // for a maximum of 4 points total
-                            if (arr.length <= 4) return true;
-                            if (i === 0 || i === arr.length - 1) return true;
-                            return i % Math.ceil(arr.length / 3) === 0 && i < arr.length - 1;
-                        })
-                        .map((point, i, filteredArr) => (
-                            <div key={i} className="x-label" style={{ 
-                                left: `${(cleanlinessHistory.indexOf(point) / (cleanlinessHistory.length - 1)) * 100}%`,
-                                width: '40px',
-                                marginLeft: '-20px',
-                                textAlign: 'center',
-                                fontSize: '0.75rem'
-                            }}>
-                                {formatDate(point.date)}
-                            </div>
-                        ))}
+                            .filter((_, i, arr) => {
+                                // Always show first and last, and at most 2 points in between
+                                // for a maximum of 4 points total
+                                if (arr.length <= 4) return true;
+                                if (i === 0 || i === arr.length - 1) return true;
+                                return i % Math.ceil(arr.length / 3) === 0 && i < arr.length - 1;
+                            })
+                            .map((point, i, filteredArr) => (
+                                <div key={i} className="x-label" style={{
+                                    left: `${(cleanlinessHistory.indexOf(point) / (cleanlinessHistory.length - 1)) * 100}%`,
+                                    width: '40px',
+                                    marginLeft: '-20px',
+                                    textAlign: 'center',
+                                    fontSize: '0.75rem'
+                                }}>
+                                    {formatDate(point.date)}
+                                </div>
+                            ))}
                     </div>
                 </div>
             </div>
 
             <div className="chart-legend">
                 <div className="legend-item">
-                    <div className="legend-color" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
+                    <div className="legend-color" style={{backgroundColor: 'var(--accent-primary)'}}></div>
                     <div className="legend-label">Avg. Rating</div>
                 </div>
                 <div className="chart-summary">

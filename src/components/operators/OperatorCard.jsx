@@ -3,7 +3,7 @@ import './OperatorCard.css';
 import ThemeUtils from '../../utils/ThemeUtils';
 import {usePreferences} from '../../context/PreferencesContext';
 
-function OperatorCard({ operator, plantName, onSelect, onDelete }) {
+function OperatorCard({operator, plantName, onSelect, onDelete}) {
     const {preferences} = usePreferences();
     const statusColor = ThemeUtils.operatorStatusColors[operator.status] || ThemeUtils.operatorStatusColors.default;
 
@@ -13,7 +13,7 @@ function OperatorCard({ operator, plantName, onSelect, onDelete }) {
         }
     };
 
-    const cardProps = onSelect ? { onClick: handleCardClick } : {};
+    const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
     const trainerName = operator.assignedTrainer && operator.assignedTrainer !== '0'
         ? 'View details to see trainer'
@@ -28,7 +28,7 @@ function OperatorCard({ operator, plantName, onSelect, onDelete }) {
             <div className="card-content">
                 <div className="card-header">
                     <h3 className="operator-name"
-                        style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
+                        style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                         {operator.name}
                     </h3>
                 </div>

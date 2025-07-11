@@ -2,35 +2,47 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
-        position: relative;
-    }
+    position: relative;
+}
 
-    .settings-feedback {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background-color: var(--success, #38a169);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        animation: fadeInOut 2s ease-in-out;
-        z-index: 1000;
-    }
+.settings-feedback {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--success, #38a169);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeInOut 2s ease-in-out;
+    z-index: 1000;
+}
 
-    @keyframes fadeInOut {
-        0% { opacity: 0; transform: translateY(-10px); }
-        10% { opacity: 1; transform: translateY(0); }
-        90% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(-10px); }
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
     }
+    10% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    90% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
 
-    .settings-container {
-        color: var(--text-primary);
-    }
+.settings-container {
+    color: var(--text-primary);
+}
 
 .settings-header {
     margin-bottom: 2rem;

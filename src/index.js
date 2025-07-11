@@ -5,7 +5,7 @@ import App from './App';
 import reportWebVitalsUtils from './utils/ReportWebVitalsUtils';
 
 // Import the PreferencesProvider
-import { PreferencesProvider } from './context/PreferencesContext';
+import {PreferencesProvider} from './context/PreferencesContext';
 
 const meta = document.createElement('meta');
 meta.name = 'viewport';
@@ -14,25 +14,25 @@ document.getElementsByTagName('head')[0].appendChild(meta);
 
 // Apply theme from localStorage before React renders anything
 const applyInitialTheme = () => {
-  try {
-    const savedPrefs = localStorage.getItem('userPreferences');
-    if (savedPrefs) {
-      const prefs = JSON.parse(savedPrefs);
+    try {
+        const savedPrefs = localStorage.getItem('userPreferences');
+        if (savedPrefs) {
+            const prefs = JSON.parse(savedPrefs);
 
-      // Apply theme mode
-      if (prefs.themeMode === 'dark') {
-        document.documentElement.classList.add('dark-mode');
-      } else {
-        document.documentElement.classList.remove('dark-mode');
-      }
+            // Apply theme mode
+            if (prefs.themeMode === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+            }
 
-      // Apply accent color
-      document.documentElement.classList.remove('accent-blue', 'accent-red');
-      document.documentElement.classList.add(`accent-${prefs.accentColor}`);
+            // Apply accent color
+            document.documentElement.classList.remove('accent-blue', 'accent-red');
+            document.documentElement.classList.add(`accent-${prefs.accentColor}`);
+        }
+    } catch (error) {
+        console.error('Error applying initial theme:', error);
     }
-  } catch (error) {
-    console.error('Error applying initial theme:', error);
-  }
 };
 
 // Apply theme before any rendering

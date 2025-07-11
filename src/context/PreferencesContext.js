@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase, logSupabaseError } from '../core/clients/SupabaseClient';
+import React, {createContext, useContext, useEffect, useState} from 'react';
+import {logSupabaseError, supabase} from '../core/clients/SupabaseClient';
 
 // Create context
 const PreferencesContext = createContext();
@@ -23,7 +23,7 @@ const defaultPreferences = {
     lastViewedFilters: null
 };
 
-export const PreferencesProvider = ({ children }) => {
+export const PreferencesProvider = ({children}) => {
     const [preferences, setPreferences] = useState(defaultPreferences);
     const [loading, setLoading] = useState(true);
     const [userId, setUserId] = useState(null);
@@ -61,7 +61,7 @@ export const PreferencesProvider = ({ children }) => {
     useEffect(() => {
         const initializeUser = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const {data: {session}} = await supabase.auth.getSession();
                 const sessionUserId = session?.user?.id || sessionStorage.getItem('userId');
                 if (sessionUserId) {
                     setUserId(sessionUserId);
@@ -77,7 +77,7 @@ export const PreferencesProvider = ({ children }) => {
 
         initializeUser();
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        const {data: authListener} = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN' && session?.user?.id) {
                 setUserId(session.user.id);
                 setTimeout(() => fetchUserPreferences(session.user.id), 500);
@@ -108,7 +108,7 @@ export const PreferencesProvider = ({ children }) => {
     const fetchUserPreferences = async (uid) => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('users_preferences')
                 .select('*')
                 .eq('user_id', uid)
@@ -116,7 +116,7 @@ export const PreferencesProvider = ({ children }) => {
 
             if (error && error.code === 'PGRST116') {
                 await createUserPreferences(uid);
-                const { data: newData, error: newError } = await supabase
+                const {data: newData, error: newError} = await supabase
                     .from('users_preferences')
                     .select('*')
                     .eq('user_id', uid)
@@ -163,23 +163,20 @@ export const PreferencesProvider = ({ children }) => {
     };
 
 
-
-
-
     // Update operator filters and save to database
     const updateOperatorFilters = async (filters) => {
         try {
             setPreferences(prev => {
-                const newPrefs = { ...prev, operatorFilters: filters };
+                const newPrefs = {...prev, operatorFilters: filters};
                 localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
                 return newPrefs;
             });
 
             // If user is authenticated, save to database
-            const { data } = await supabase.auth.getUser();
+            const {data} = await supabase.auth.getUser();
             if (data?.user?.id) {
                 // Check if user preferences exist
-                const { data: existingPrefs } = await supabase
+                const {data: existingPrefs} = await supabase
                     .from('users_preferences')
                     .select('id')
                     .eq('user_id', data.user.id);
@@ -199,7 +196,7 @@ export const PreferencesProvider = ({ children }) => {
                     // Update existing preferences
                     await supabase
                         .from('users_preferences')
-                        .update({ 
+                        .update({
                             operator_filters: filters,
                             updated_at: new Date().toISOString()
                         })
@@ -217,16 +214,16 @@ export const PreferencesProvider = ({ children }) => {
     const updateMixerFilters = async (filters) => {
         try {
             setPreferences(prev => {
-                const newPrefs = { ...prev, mixerFilters: filters };
+                const newPrefs = {...prev, mixerFilters: filters};
                 localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
                 return newPrefs;
             });
 
             // If user is authenticated, save to database
-            const { data } = await supabase.auth.getUser();
+            const {data} = await supabase.auth.getUser();
             if (data?.user?.id) {
                 // Check if user preferences exist
-                const { data: existingPrefs } = await supabase
+                const {data: existingPrefs} = await supabase
                     .from('users_preferences')
                     .select('id')
                     .eq('user_id', data.user.id);
@@ -246,7 +243,7 @@ export const PreferencesProvider = ({ children }) => {
                     // Update existing preferences
                     await supabase
                         .from('users_preferences')
-                        .update({ 
+                        .update({
                             mixer_filters: filters,
                             updated_at: new Date().toISOString()
                         })
@@ -263,19 +260,19 @@ export const PreferencesProvider = ({ children }) => {
     // Save the current filters before navigating to detail view
     const saveLastViewedFilters = async () => {
         try {
-            const lastFilters = { ...preferences.mixerFilters };
+            const lastFilters = {...preferences.mixerFilters};
 
             setPreferences(prev => {
-                const newPrefs = { ...prev, lastViewedFilters: lastFilters };
+                const newPrefs = {...prev, lastViewedFilters: lastFilters};
                 localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
                 return newPrefs;
             });
 
             // If user is authenticated, save to database
-            const { data } = await supabase.auth.getUser();
+            const {data} = await supabase.auth.getUser();
             if (data?.user?.id) {
                 // Check if user preferences exist
-                const { data: existingPrefs } = await supabase
+                const {data: existingPrefs} = await supabase
                     .from('users_preferences')
                     .select('id')
                     .eq('user_id', data.user.id);
@@ -296,9 +293,9 @@ export const PreferencesProvider = ({ children }) => {
                     // Update existing preferences
                     await supabase
                         .from('users_preferences')
-                        .update({ 
+                        .update({
                             last_viewed_filters: lastFilters,
-                            updated_at: new Date().toISOString() 
+                            updated_at: new Date().toISOString()
                         })
                         .eq('user_id', data.user.id);
                 }
@@ -364,7 +361,7 @@ export const PreferencesProvider = ({ children }) => {
     // Create default user preferences
     const createUserPreferences = async (uid) => {
         try {
-            const { data: existingData, error: checkError } = await supabase
+            const {data: existingData, error: checkError} = await supabase
                 .from('users_preferences')
                 .select('id')
                 .eq('user_id', uid);
@@ -372,25 +369,25 @@ export const PreferencesProvider = ({ children }) => {
             if (checkError) throw checkError;
             if (existingData?.length > 0) return await updateDatabasePreferences(uid, preferences);
 
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('users_preferences')
                 .insert([{
                     user_id: uid,
                     navbar_minimized: preferences.navbarMinimized,
                     theme_mode: preferences.themeMode,
                     accent_color: preferences.accentColor,
-                        mixer_filters: preferences.mixerFilters || {
-                            searchText: '',
-                            selectedPlant: '',
-                            statusFilter: ''
-                        },
-                        operator_filters: preferences.operatorFilters || {
-                            searchText: '',
-                            selectedPlant: '',
-                            statusFilter: '',
-                            trainerFilter: ''
-                        },
-                        last_viewed_filters: preferences.lastViewedFilters
+                    mixer_filters: preferences.mixerFilters || {
+                        searchText: '',
+                        selectedPlant: '',
+                        statusFilter: ''
+                    },
+                    operator_filters: preferences.operatorFilters || {
+                        searchText: '',
+                        selectedPlant: '',
+                        statusFilter: '',
+                        trainerFilter: ''
+                    },
+                    last_viewed_filters: preferences.lastViewedFilters
                 }]);
 
             if (error) throw error;
@@ -408,13 +405,13 @@ export const PreferencesProvider = ({ children }) => {
                 navbar_minimized: prefsToUpdate.navbarMinimized,
                 theme_mode: prefsToUpdate.themeMode,
                 accent_color: prefsToUpdate.accentColor,
-                    mixer_filters: prefsToUpdate.mixerFilters,
-                    operator_filters: prefsToUpdate.operatorFilters,
-                    last_viewed_filters: prefsToUpdate.lastViewedFilters,
+                mixer_filters: prefsToUpdate.mixerFilters,
+                operator_filters: prefsToUpdate.operatorFilters,
+                last_viewed_filters: prefsToUpdate.lastViewedFilters,
                 updated_at: new Date().toISOString(),
             };
 
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('users_preferences')
                 .update(updateData)
                 .eq('user_id', uid);
@@ -432,9 +429,9 @@ export const PreferencesProvider = ({ children }) => {
         try {
             let updatedPreferences;
             if (typeof keyOrObject === 'string') {
-                updatedPreferences = { ...preferences, [keyOrObject]: value };
+                updatedPreferences = {...preferences, [keyOrObject]: value};
             } else {
-                updatedPreferences = { ...preferences, ...keyOrObject };
+                updatedPreferences = {...preferences, ...keyOrObject};
             }
 
             setPreferences(updatedPreferences);
@@ -484,7 +481,7 @@ export const debugForceCreatePreferences = async (userId) => {
     if (!userId) return false;
 
     try {
-        const { error } = await supabase
+        const {error} = await supabase
             .from('users_preferences')
             .insert([{
                 user_id: userId,

@@ -13,7 +13,7 @@ import './MixersView.css';
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     // Access preferences context
-    const { preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters } = usePreferences();
+    const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
 
     // State variables
     const [mixers, setMixers] = useState([]);
@@ -76,7 +76,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const data = await OperatorService.fetchOperators();
             if (Array.isArray(data)) {
                 setOperators(data);
-                console.log(`Loaded ${data.length} operators`, 
+                console.log(`Loaded ${data.length} operators`,
                     data.filter(op => op.position === 'Mixer Operator').length + ' are Mixer Operators');
             } else {
                 console.error('Error: operators data is not an array', data);
@@ -204,9 +204,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </button>
                 </div>
                 <div className="modal-body">
-                    <MixerOverview 
-                        filteredMixers={filteredMixers} 
-                        selectedPlant={selectedPlant} 
+                    <MixerOverview
+                        filteredMixers={filteredMixers}
+                        selectedPlant={selectedPlant}
                         unverifiedCount={unverifiedCount}
                         neverVerifiedCount={neverVerifiedCount}
                     />

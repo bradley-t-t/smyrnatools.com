@@ -1,28 +1,28 @@
 .simple-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.5rem;
-  color: #666;
-  font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    color: #666;
+    font-size: 1rem;
     background: none;
     animation: none;
-  /* Ensure no animation is applied */
-  animation: none;
+    /* Ensure no animation is applied */
+    animation: none;
 }
 
 .simple-loading.small {
-  padding: 0.75rem;
-  font-size: 0.85rem;
+    padding: 0.75rem;
+    font-size: 0.85rem;
 }
 
 .simple-loading.large {
-  padding: 2rem;
-  font-size: 1.2rem;
+    padding: 2rem;
+    font-size: 1.2rem;
 }
 
 /* Explicitly disable any animations in children */
 .simple-loading *, .simple-loading *::before, .simple-loading *::after {
-  animation: none !important;
-  transition: none !important;
+    animation: none !important;
+    transition: none !important;
 }

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { usePreferences } from '../../context/PreferencesContext';
-import { supabase } from '../../core/clients/SupabaseClient';
+import React, {useEffect, useState} from 'react';
+import {usePreferences} from '../../context/PreferencesContext';
+import {supabase} from '../../core/clients/SupabaseClient';
 import './SettingsView.css';
 
 function SettingsView() {
-    const { preferences, toggleNavbarMinimized, setThemeMode, setAccentColor } = usePreferences();
+    const {preferences, toggleNavbarMinimized, setThemeMode, setAccentColor} = usePreferences();
     const [showFeedback, setShowFeedback] = useState(false);
     const [userId, setUserId] = useState(null);
 
@@ -13,7 +13,7 @@ function SettingsView() {
         const getCurrentUser = async () => {
             try {
                 // Try to get from auth session first
-                const { data } = await supabase.auth.getSession();
+                const {data} = await supabase.auth.getSession();
                 if (data?.session?.user?.id) {
                     setUserId(data.session.user.id);
                     console.log('User ID set from session:', data.session.user.id);
@@ -48,7 +48,8 @@ function SettingsView() {
     return (
         <div className="settings-container">
             {showFeedback && (
-                <div className="settings-feedback" style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
+                <div className="settings-feedback"
+                     style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                     <i className="fas fa-check-circle"></i> Settings saved successfully
                 </div>
             )}
@@ -62,14 +63,16 @@ function SettingsView() {
                 {/* Appearance Settings */}
                 <div className="settings-card">
                     <div className="settings-card-header">
-                        <h2><i className="fas fa-palette" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i> Appearance</h2>
+                        <h2><i className="fas fa-palette"
+                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i> Appearance
+                        </h2>
                         <p>Customize how the application looks</p>
                     </div>
 
                     <div className="settings-section">
                         <h3>Theme Mode</h3>
                         <div className="theme-selector">
-                            <div 
+                            <div
                                 className={`theme-option ${preferences.themeMode === 'light' ? 'active' : ''}`}
                                 onClick={() => handleSettingChange(setThemeMode, 'light')}
                             >
@@ -83,7 +86,7 @@ function SettingsView() {
                                 <span>Light</span>
                             </div>
 
-                            <div 
+                            <div
                                 className={`theme-option ${preferences.themeMode === 'dark' ? 'active' : ''}`}
                                 onClick={() => handleSettingChange(setThemeMode, 'dark')}
                             >
@@ -102,14 +105,14 @@ function SettingsView() {
                     <div className="settings-section">
                         <h3>Accent Color</h3>
                         <div className="color-selector">
-                            <div 
+                            <div
                                 className={`color-option red ${preferences.accentColor === 'red' ? 'active' : ''}`}
                                 onClick={() => handleSettingChange(setAccentColor, 'red')}
                             >
                                 <div className="color-preview"></div>
                                 <span>Red</span>
                             </div>
-                            <div 
+                            <div
                                 className={`color-option blue ${preferences.accentColor === 'blue' ? 'active' : ''}`}
                                 onClick={() => handleSettingChange(setAccentColor, 'blue')}
                             >
@@ -123,7 +126,9 @@ function SettingsView() {
                 {/* Navigation Settings */}
                 <div className="settings-card">
                     <div className="settings-card-header">
-                        <h2><i className="fas fa-bars" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}></i> Navigation</h2>
+                        <h2><i className="fas fa-bars"
+                               style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}></i> Navigation
+                        </h2>
                         <p>Customize the navigation experience</p>
                     </div>
 
@@ -132,14 +137,15 @@ function SettingsView() {
                         <div className="toggle-setting">
                             <span className="toggle-label">Minimize Navigation Bar</span>
                             <label className="switch">
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     checked={preferences.navbarMinimized}
                                     onChange={() => handleSettingChange(toggleNavbarMinimized)}
                                 />
                                 <span className="slider round"></span>
                             </label>
-                            <span className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
+                            <span
+                                className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
                         </div>
                     </div>
                 </div>

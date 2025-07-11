@@ -23,7 +23,7 @@ class AuthServiceImpl {
         }
 
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('operators')
                 .select('*')
                 .eq('employee_id', employeeId)

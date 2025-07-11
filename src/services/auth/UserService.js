@@ -100,7 +100,7 @@ class UserServiceImpl {
 
         try {
             // First check if it's an operator ID
-            const { data: opData } = await supabase
+            const {data: opData} = await supabase
                 .from('operators')
                 .select('name')
                 .eq('employee_id', userId)
@@ -111,7 +111,7 @@ class UserServiceImpl {
             }
 
             // Next try to get user profiles that might have first/last name
-            const { data: profileData } = await supabase
+            const {data: profileData} = await supabase
                 .from('profiles')
                 .select('first_name, last_name')
                 .eq('id', userId)

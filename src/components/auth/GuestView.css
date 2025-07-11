@@ -1,50 +1,50 @@
 .guest-view-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
 }
 
 .guest-view-content {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 40px;
-  text-align: center;
-  max-width: 500px;
-  width: 90%;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
 }
 
 .guest-logo {
-  width: 150px;
-  margin-bottom: 30px;
+    width: 150px;
+    margin-bottom: 30px;
 }
 
 .guest-view-content h1 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
 }
 
 .guest-message {
-  font-size: 18px;
-  line-height: 1.6;
-  color: #555;
-  margin-bottom: 30px;
+    font-size: 18px;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 30px;
 }
 
 .sign-out-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 12px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 .sign-out-button:hover {
-  background-color: #c82333;
+    background-color: #c82333;
 }

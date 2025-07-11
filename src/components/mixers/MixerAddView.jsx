@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { MixerService } from '../../services/mixers/MixerService';
-import { Mixer } from '../../models/Mixer';
-import { AuthService } from '../../services/auth/AuthService';
+import React, {useState} from 'react';
+import {MixerService} from '../../services/mixers/MixerService';
+import {Mixer} from '../../models/Mixer';
+import {AuthService} from '../../services/auth/AuthService';
 import './MixerAddView.css';
 
-function MixerAddView({ plants, operators = [], onClose, onMixerAdded }) {
+function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
     const hasOperators = Array.isArray(operators) && operators.length > 0;
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
@@ -217,7 +217,8 @@ function MixerAddView({ plants, operators = [], onClose, onMixerAdded }) {
                                     ))}
                             </select>
                             {operators.length === 0 && (
-                                <div className="warning-message" style={{ marginTop: '5px', fontSize: '12px', color: '#FF9500' }}>
+                                <div className="warning-message"
+                                     style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
                                     No operators available
                                 </div>
                             )}

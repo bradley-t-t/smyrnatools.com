@@ -293,9 +293,9 @@
 .content-wrapper {
     width: 100%;
     max-width: 100%;
-        border: none;
-        outline: none;
-        box-shadow: none;
+    border: none;
+    outline: none;
+    box-shadow: none;
     box-sizing: border-box;
     margin: 0 auto;
 }
@@ -579,12 +579,12 @@
     background-color: rgba(244, 246, 248, 0.6);
     width: 100%;
     box-sizing: border-box;
-        transition: all 0.3s ease;
-    }
+    transition: all 0.3s ease;
+}
 
-    /* Adaptive grid for search results */
-    .mixers-grid.search-results {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+/* Adaptive grid for search results */
+.mixers-grid.search-results {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     border-radius: var(--border-radius);
     max-height: none;
     position: relative;

@@ -26,8 +26,8 @@ function LoginView() {
     const timeoutRef = useRef(null);
 
     // Clear timeout on component unmount and set up auth success listener
-            // Ensure scrolling works on mobile devices
-            useEffect(() => {
+    // Ensure scrolling works on mobile devices
+    useEffect(() => {
         const loginContainer = document.getElementById('login-scroll-container');
         if (loginContainer) {
             // Enable momentum scrolling for iOS
@@ -43,7 +43,7 @@ function LoginView() {
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
         };
-            }, []);
+    }, []);
 
     useEffect(() => {
         // Set up listener for auth success events
@@ -176,7 +176,7 @@ function LoginView() {
     return (
         <>
             {showRecovery ? (
-                <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)} />
+                <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)}/>
             ) : (
                 <div className="login-container" id="login-scroll-container">
                     <div className="login-box">
@@ -185,131 +185,131 @@ function LoginView() {
                             <h1>{isSignUp ? 'Create Account' : 'Sign In'}</h1>
                         </div>
 
-                <div className="auth-mode-selector">
-                    <button
-                        className={!isSignUp ? 'active' : ''}
-                        onClick={() => setIsSignUp(false)}
-                    >
-                        Sign In
-                    </button>
-                    <button
-                        className={isSignUp ? 'active' : ''}
-                        onClick={() => setIsSignUp(true)}
-                    >
-                        Sign Up
-                    </button>
-                </div>
+                        <div className="auth-mode-selector">
+                            <button
+                                className={!isSignUp ? 'active' : ''}
+                                onClick={() => setIsSignUp(false)}
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                className={isSignUp ? 'active' : ''}
+                                onClick={() => setIsSignUp(true)}
+                            >
+                                Sign Up
+                            </button>
+                        </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="email">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                        />
-                        {!isSignUp && (
-                            <div className="forgot-password">
-                                <button
-                                    type="button"
-                                    className="text-button"
-                                    onClick={() => setShowRecovery(true)}
-                                >
-                                    Forgot Password?
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {isSignUp && (
-                        <>
+                        <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label htmlFor="confirmPassword">Confirm Password</label>
+                                <label htmlFor="email">Email</label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="password">Password</label>
                                 <input
                                     type="password"
-                                    id="confirmPassword"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Confirm your password"
+                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter your password"
                                 />
+                                {!isSignUp && (
+                                    <div className="forgot-password">
+                                        <button
+                                            type="button"
+                                            className="text-button"
+                                            onClick={() => setShowRecovery(true)}
+                                        >
+                                            Forgot Password?
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="firstName">First Name</label>
-                                <input
-                                    type="text"
-                                    id="firstName"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    placeholder="Enter your first name"
-                                />
-                            </div>
+                            {isSignUp && (
+                                <>
+                                    <div className="form-group">
+                                        <label htmlFor="confirmPassword">Confirm Password</label>
+                                        <input
+                                            type="password"
+                                            id="confirmPassword"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="Confirm your password"
+                                        />
+                                    </div>
 
-                            <div className="form-group">
-                                <label htmlFor="lastName">Last Name</label>
-                                <input
-                                    type="text"
-                                    id="lastName"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    placeholder="Enter your last name"
-                                />
-                            </div>
-                        </>
-                    )}
+                                    <div className="form-group">
+                                        <label htmlFor="firstName">First Name</label>
+                                        <input
+                                            type="text"
+                                            id="firstName"
+                                            value={firstName}
+                                            onChange={(e) => setFirstName(e.target.value)}
+                                            placeholder="Enter your first name"
+                                        />
+                                    </div>
 
-                    {(errorMessage || error) && (
-                        <div className="error-message">
-                            {errorMessage || error}
-                        </div>
-                    )}
+                                    <div className="form-group">
+                                        <label htmlFor="lastName">Last Name</label>
+                                        <input
+                                            type="text"
+                                            id="lastName"
+                                            value={lastName}
+                                            onChange={(e) => setLastName(e.target.value)}
+                                            placeholder="Enter your last name"
+                                        />
+                                    </div>
+                                </>
+                            )}
 
-                    {isSubmitting && (
-                        <div className="success-message"
-                             style={{color: 'green', marginBottom: '15px', textAlign: 'center'}}>
-                            {isSignUp ? 'Creating your account...' : 'Signing you in...'}
-                        </div>
-                    )}
+                            {(errorMessage || error) && (
+                                <div className="error-message">
+                                    {errorMessage || error}
+                                </div>
+                            )}
 
-                    <button
-                        type="submit"
-                        className="login-button"
-                        disabled={isSubmitting || loading}
-                    >
-                        {isSubmitting || loading ? (
-                            <span className="login-loading">
+                            {isSubmitting && (
+                                <div className="success-message"
+                                     style={{color: 'green', marginBottom: '15px', textAlign: 'center'}}>
+                                    {isSignUp ? 'Creating your account...' : 'Signing you in...'}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                className="login-button"
+                                disabled={isSubmitting || loading}
+                            >
+                                {isSubmitting || loading ? (
+                                    <span className="login-loading">
                 <span className="loading-dot"></span>
                 <span className="loading-dot"></span>
                 <span className="loading-dot"></span>
-                                {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                                        {isSignUp ? 'Creating Account...' : 'Signing In...'}
               </span>
-                        ) : (isSignUp ? 'Create Account' : 'Sign In')}
-                    </button>
-                </form>
+                                ) : (isSignUp ? 'Create Account' : 'Sign In')}
+                            </button>
+                        </form>
 
-                <div className="login-footer">
-                    <p>
-                        {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-                        <button
-                            className="text-button"
-                            onClick={() => setIsSignUp(!isSignUp)}
-                        >
-                            {isSignUp ? 'Sign In' : 'Sign Up'}
-                        </button>
-                    </p>
+                        <div className="login-footer">
+                            <p>
+                                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+                                <button
+                                    className="text-button"
+                                    onClick={() => setIsSignUp(!isSignUp)}
+                                >
+                                    {isSignUp ? 'Sign In' : 'Sign Up'}
+                                </button>
+                            </p>
                         </div>
                     </div>
                 </div>

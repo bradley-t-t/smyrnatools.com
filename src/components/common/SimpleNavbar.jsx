@@ -1,41 +1,57 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import './SimpleNavbar.css';
 import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
-import { usePreferences } from '../../context/PreferencesContext';
-import { AccountManager } from '../../core/managers/AccountManager';
+import {usePreferences} from '../../context/PreferencesContext';
+import {AccountManager} from '../../core/managers/AccountManager';
 
 // Add FontAwesome stylesheet dynamically if not already present
 const ensureFontAwesome = () => {
-  if (!document.getElementById('font-awesome-stylesheet')) {
-    const link = document.createElement('link');
-    link.id = 'font-awesome-stylesheet';
-    link.rel = 'stylesheet';
-    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
-    link.integrity = 'sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==';
-    link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
-  }
+    if (!document.getElementById('font-awesome-stylesheet')) {
+        const link = document.createElement('link');
+        link.id = 'font-awesome-stylesheet';
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+        link.integrity = 'sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==';
+        link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+    }
 };
 
 // Function to get appropriate icon for each menu item
 const getIconForMenuItem = (id) => {
-    switch(id) {
-        case 'Dashboard': return <i className="fas fa-tachometer-alt"></i>;
-        case 'Mixers': return <i className="fas fa-truck"></i>;
-        case 'Tractors': return <i className="fas fa-tractor"></i>;
-        case 'Trailers': return <i className="fas fa-trailer"></i>;
-        case 'Heavy Equipment': return <i className="fas fa-snowplow"></i>;
-        case 'Operators': return <i className="fas fa-users"></i>;
-        case 'Managers': return <i className="fas fa-user-tie"></i>;
-        case 'Plants': return <i className="fas fa-industry"></i>;
-        case 'Regions': return <i className="fas fa-map-marker-alt"></i>;
-        case 'List': return <i className="fas fa-list"></i>;
-        case 'Archive': return <i className="fas fa-archive"></i>;
-        case 'Reports': return <i className="fas fa-file-alt"></i>;
-        case 'Settings': return <i className="fas fa-cog"></i>;
-        case 'MyAccount': return <i className="fas fa-user"></i>;
-        case 'Logout': return <i className="fas fa-sign-out-alt"></i>;
-        default: return <i className="fas fa-clipboard-list"></i>;
+    switch (id) {
+        case 'Dashboard':
+            return <i className="fas fa-tachometer-alt"></i>;
+        case 'Mixers':
+            return <i className="fas fa-truck"></i>;
+        case 'Tractors':
+            return <i className="fas fa-tractor"></i>;
+        case 'Trailers':
+            return <i className="fas fa-trailer"></i>;
+        case 'Heavy Equipment':
+            return <i className="fas fa-snowplow"></i>;
+        case 'Operators':
+            return <i className="fas fa-users"></i>;
+        case 'Managers':
+            return <i className="fas fa-user-tie"></i>;
+        case 'Plants':
+            return <i className="fas fa-industry"></i>;
+        case 'Regions':
+            return <i className="fas fa-map-marker-alt"></i>;
+        case 'List':
+            return <i className="fas fa-list"></i>;
+        case 'Archive':
+            return <i className="fas fa-archive"></i>;
+        case 'Reports':
+            return <i className="fas fa-file-alt"></i>;
+        case 'Settings':
+            return <i className="fas fa-cog"></i>;
+        case 'MyAccount':
+            return <i className="fas fa-user"></i>;
+        case 'Logout':
+            return <i className="fas fa-sign-out-alt"></i>;
+        default:
+            return <i className="fas fa-clipboard-list"></i>;
     }
 };
 
@@ -65,7 +81,7 @@ export default function SimpleNavbar({
                                          onExternalLink,
                                          userId = null
                                      }) {
-    const { preferences, toggleNavbarMinimized } = usePreferences();
+    const {preferences, toggleNavbarMinimized} = usePreferences();
     const [collapsed, setCollapsed] = useState(preferences.navbarMinimized);
     const [userPermissions, setUserPermissions] = useState([]);
     const [visibleMenuItems, setVisibleMenuItems] = useState([]);

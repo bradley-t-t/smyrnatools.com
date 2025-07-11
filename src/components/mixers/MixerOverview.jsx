@@ -16,7 +16,7 @@ import './MixerOverview.css';
 //     display: inline-block;
 // }
 
-    const MixerOverview = ({ filteredMixers = null, selectedPlant = '', unverifiedCount = 0, neverVerifiedCount = 0 }) => {
+const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCount = 0, neverVerifiedCount = 0}) => {
     const [mixers, setMixers] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -194,26 +194,26 @@ import './MixerOverview.css';
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Total</th>
-                                        <th>Active</th>
-                                        <th>Spare</th>
-                                        <th>In Shop</th>
-                                        <th>Retired</th>
-                                    </tr>
+                                <tr>
+                                    <th>Plant</th>
+                                    <th>Total</th>
+                                    <th>Active</th>
+                                    <th>Spare</th>
+                                    <th>In Shop</th>
+                                    <th>Retired</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
-                                        <tr key={plantCode}>
-                                            <td className="plant-name">{getPlantName(plantCode)}</td>
-                                            <td>{counts.Total}</td>
-                                            <td>{counts.Active}</td>
-                                            <td>{counts.Spare}</td>
-                                            <td>{counts['In Shop']}</td>
-                                            <td>{counts.Retired}</td>
-                                        </tr>
-                                    ))}
+                                {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
+                                    <tr key={plantCode}>
+                                        <td className="plant-name">{getPlantName(plantCode)}</td>
+                                        <td>{counts.Total}</td>
+                                        <td>{counts.Active}</td>
+                                        <td>{counts.Spare}</td>
+                                        <td>{counts['In Shop']}</td>
+                                        <td>{counts.Retired}</td>
+                                    </tr>
+                                ))}
                                 </tbody>
                             </table>
                         </div>
@@ -222,7 +222,7 @@ import './MixerOverview.css';
 
                 {/* Cleanliness History Chart */}
                 <div className="overview-card cleanliness-card">
-                    <CleanlinessHistoryChart mixers={filteredMixers || mixers} />
+                    <CleanlinessHistoryChart mixers={filteredMixers || mixers}/>
                 </div>
             </div>
         </div>

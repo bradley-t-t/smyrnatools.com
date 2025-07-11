@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {AuthService} from '../../services/auth/AuthService';
 import './OperatorAddView.css';
@@ -220,7 +220,8 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                                     ))}
                             </select>
                             {operators.filter(op => op.isTrainer).length === 0 && (
-                                <div className="warning-message" style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
+                                <div className="warning-message"
+                                     style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
                                     No trainers available
                                 </div>
                             )}

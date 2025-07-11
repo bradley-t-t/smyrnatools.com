@@ -53,6 +53,7 @@ body {
     padding: 1.5rem;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
+
 /* Global resets and base styles */
 * {
     box-sizing: border-box;
@@ -170,9 +171,11 @@ a:hover {
     border-color: rgba(255, 255, 255, 0.1);
     border-top-color: var(--accent);
 }
+
 .dark-mode .card {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+
 /* Global styles to prevent content overflow */
 * {
     box-sizing: border-box;

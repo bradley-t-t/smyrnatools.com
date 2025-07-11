@@ -77,7 +77,7 @@ const ThemeUtils = {
     },
 
     // Helper functions
-        getAccentColor: (selection = 'red') => {
+    getAccentColor: (selection = 'red') => {
         const accentColors = {
             red: '#b80017',
             blue: '#003896',

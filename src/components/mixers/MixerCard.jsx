@@ -17,7 +17,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
         }
     };
 
-    const cardProps = onSelect ? { onClick: handleCardClick } : {};
+    const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
     const getDaysSince = (dateStr) => {
         if (!dateStr) return null;
@@ -32,15 +32,20 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
 
     return (
         <div className="mixer-card" {...cardProps}>
-            <div className="card-status-indicator" style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}} title={mixer.status || 'Unknown'}></div>
+            <div className="card-status-indicator"
+                 style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}}
+                 title={mixer.status || 'Unknown'}></div>
             {!isVerified && (
-                <div className="verification-flag" title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' : 'Mixer not verified since last Sunday'}>
+                <div className="verification-flag"
+                     title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' : 'Mixer not verified since last Sunday'}>
                     <i className="fas fa-flag" style={{color: '#e74c3c'}}></i>
                 </div>
             )}
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="mixer-name" style={{ color: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>Truck #{mixer.truckNumber || 'Not Assigned'}</h3>
+                    <h3 className="mixer-name"
+                        style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Truck
+                        #{mixer.truckNumber || 'Not Assigned'}</h3>
                 </div>
                 <div className="card-details">
                     <div className="detail-row">
@@ -88,9 +93,9 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                             {mixer.cleanlinessRating ? (
                                 <div className="stars-container">
                                     {[...Array(5)].map((_, i) => (
-                                        <i key={i} 
+                                        <i key={i}
                                            className={`fas fa-star ${i < mixer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
-                                           style={i < mixer.cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}
+                                           style={i < mixer.cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}
                                            aria-hidden="true"
                                         ></i>
                                     ))}

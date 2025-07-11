@@ -295,7 +295,7 @@ export function AuthProvider({children}) {
             const passwordHash = await AuthUtils.hashPassword(password, salt);
 
             // Generate UUID using our improved helper function that works across all environments
-            const { generateUUID } = await import('../utils/UUIDUtils');
+            const {generateUUID} = await import('../utils/UUIDUtils');
             const userId = generateUUID();
             const now = new Date().toISOString();
 

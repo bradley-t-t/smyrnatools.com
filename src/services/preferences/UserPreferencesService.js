@@ -1,4 +1,4 @@
-import { supabase } from '../../core/clients/SupabaseClient';
+import {supabase} from '../../core/clients/SupabaseClient';
 
 export class UserPreferencesService {
     /**
@@ -8,7 +8,7 @@ export class UserPreferencesService {
      */
     static async getUserPreferences(userId) {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('users_preferences')
                 .select('*')
                 .eq('user_id', userId)
@@ -31,7 +31,7 @@ export class UserPreferencesService {
     static async saveMixerFilters(userId, filters) {
         try {
             // Check if user preferences exist
-            const { data } = await supabase
+            const {data} = await supabase
                 .from('users_preferences')
                 .select('id')
                 .eq('user_id', userId);
@@ -70,7 +70,7 @@ export class UserPreferencesService {
      */
     static async saveLastViewedFilters(userId, filters) {
         try {
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('users_preferences')
                 .update({
                     last_viewed_filters: filters,
