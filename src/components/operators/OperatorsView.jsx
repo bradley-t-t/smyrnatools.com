@@ -281,9 +281,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                     <div className="dashboard-header">
                         <h1>
                             {title}
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') || (positionFilter && positionFilter !== 'All Positions')) && (
-                                <span className="filtered-indicator">(Filtered)</span>
-                            )}
                         </h1>
                         <div className="dashboard-actions">
                             <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
