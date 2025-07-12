@@ -1,6 +1,3 @@
-// This file serves as a convenience alias for SupabaseClient.js
-// to maintain backward compatibility with existing imports
-
 import supabase, {
   createPartialTextFilter,
   extractSupabaseErrorMessage,

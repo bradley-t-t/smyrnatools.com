@@ -1,6 +1,6 @@
 import supabase from '../../core/database/Supabase';
 import {AuthService} from '../auth/AuthService';
-import {AccountManager} from '../../core/managers/AccountManager';
+import {AccountManager} from '../../core/accounts/AccountManager';
 
 class ProfileServiceImpl {
     constructor() {

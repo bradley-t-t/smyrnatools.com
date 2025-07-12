@@ -1,7 +1,7 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 import {isSupabaseConfigured, supabase} from '../../core/clients/SupabaseClient';
 import {AuthUtils} from '../../utils/AuthUtils';
-import {AccountManager} from '../../core/managers/AccountManager';
+import {AccountManager} from '../../core/accounts/AccountManager';
 
 const AuthContext = createContext();
 

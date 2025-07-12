@@ -113,7 +113,7 @@ function MyAccountView({userId}) {
 
             // Fetch user role using AccountManager
             try {
-                const {AccountManager} = await import('../../core/managers/AccountManager');
+                const {AccountManager} = await import('../../core/accounts/AccountManager');
                 const highestRole = await AccountManager.getHighestRole(userIdToUse);
                 if (highestRole) {
                     setUserRole(highestRole.name);

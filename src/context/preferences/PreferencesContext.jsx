@@ -1,3 +1,5 @@
+import {useState} from "react";
+
 function PreferencesProvider({children}) {
     const [preferences, setPreferences] = useState(() => {
         const savedPrefs = localStorage.getItem('userPreferences');
@@ -15,3 +17,4 @@ function PreferencesProvider({children}) {
             },
         };
     });
+}

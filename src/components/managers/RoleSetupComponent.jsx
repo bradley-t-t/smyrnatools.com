@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { supabase } from '../../core/clients/SupabaseClient';
 import { RoleService } from '../../services/auth/RoleService';
-import { AccountManager } from '../../core/managers/AccountManager';
+import { AccountManager } from '../../core/accounts/AccountManager';
 
 /**
  * Component that runs on app start to perform role diagnostics

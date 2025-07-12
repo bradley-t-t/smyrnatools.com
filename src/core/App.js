@@ -16,7 +16,7 @@ import GuestView from '../components/auth/GuestView';
 import {AuthProvider} from '../context/auth/AuthContext';
 import {supabase} from './clients/SupabaseClient';
 import {PreferencesProvider} from '../context/preferences/PreferencesContext';
-import {AccountManager} from './managers/AccountManager';
+import {AccountManager} from './accounts/AccountManager';
 import '../styles/Theme.css';
 import '../styles/Global.css';
 
