@@ -424,3 +424,16 @@ body.in-detail-view .managers-list-container {
   background-color: rgba(229, 62, 62, 0.2);
   color: var(--danger);
 }
+
+.message.warning {
+  background-color: rgba(236, 201, 75, 0.2);
+  color: #d97706;
+  display: flex;
+  align-items: center;
+}
+
+.disabled-field {
+  background-color: var(--bg-tertiary) !important;
+  cursor: not-allowed !important;
+  opacity: 0.75;
+}

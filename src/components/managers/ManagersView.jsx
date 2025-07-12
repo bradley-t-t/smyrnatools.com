@@ -4,6 +4,7 @@ import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import {DatabaseService} from '../../core/services/DatabaseService';
 import ManagerDetailView from './ManagerDetailView';
+import MultiSelect from '../common/MultiSelect';
 import ManagerCard from './ManagerCard';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 
@@ -15,21 +16,12 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
     const [searchText, setSearchText] = useState(preferences.managerFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.managerFilters?.selectedPlant || '');
     const [roleFilter, setRoleFilter] = useState(preferences.managerFilters?.roleFilter || '');
-    const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [showDetailView, setShowDetailView] = useState(false);
     const [selectedManager, setSelectedManager] = useState(null);
     // eslint-disable-next-line no-unused-vars
     const [currentUserId, setCurrentUserId] = useState(null);
     const [availableRoles, setAvailableRoles] = useState([]);
-
-    // New manager form state
-    const [newFirstName, setNewFirstName] = useState('');
-    const [newLastName, setNewLastName] = useState('');
-    const [newEmail, setNewEmail] = useState('');
-    const [newPlantCode, setNewPlantCode] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [newRole, setNewRole] = useState('');
 
     // Keep this for backward compatibility with any other references
     const filterOptions = ['All Roles'];
@@ -54,32 +46,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
         console.log('Available roles updated:', availableRoles);
     }, [availableRoles]);
 
-    // Helper function to get an icon for a role
-    const getRoleIcon = (roleName) => {
-        // Map the first letter of the role name to an icon class
-        const firstLetter = (roleName || 'U').charAt(0).toLowerCase();
-
-        switch(firstLetter) {
-            case 'a': return 'fa-user-shield';
-            case 'm': return 'fa-user-cog';
-            case 's': return 'fa-user-tie';
-            case 'g': return 'fa-user-clock';
-            case 't': return 'fa-chalkboard-teacher';
-            default: return 'fa-user';
-        }
-    };
-
-    // Helper function to get a description for a role
-    const getRoleDescription = (roleName) => {
-        const weight = availableRoles.find(r => r.name === roleName)?.weight || 0;
-
-        // Determine description based on weight
-        if (weight >= 4) return 'Full system access';
-        if (weight >= 3) return 'Full management';
-        if (weight >= 2) return 'View only';
-        if (weight >= 1) return 'Basic access';
-        return 'Custom role';
-    };
 
     const fetchRoles = async () => {
         try {
@@ -94,11 +60,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                 if (rolesData && rolesData.length > 0) {
                     console.log('MANAGERS VIEW: Using roles from DatabaseService');
                     setAvailableRoles(rolesData);
-
-                    // Set default role if none is selected
-                    if (!newRole && rolesData.length > 0) {
-                        setNewRole(rolesData[0].name);
-                    }
                     return; // Exit if this approach worked
                 }
             } catch (dbServiceError) {
@@ -122,11 +83,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
             if (data && Array.isArray(data) && data.length > 0) {
                 console.log('MANAGERS VIEW: Using roles from Supabase query');
                 setAvailableRoles(data);
-
-                // Set default role if none is selected
-                if (!newRole && data.length > 0) {
-                    setNewRole(data[0].name);
-                }
             } else {
                 console.warn('MANAGERS VIEW: No roles found in database');
                 setAvailableRoles([]);
@@ -187,7 +143,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
             // Get all available roles
             const {data: rolesList, error: rolesError} = await supabase
                 .from('accounts_roles')
-                .select('id, name');
+                .select('id, name, weight');
 
             if (rolesError) throw rolesError;
 
@@ -196,12 +152,15 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                 const profile = profiles.find(p => p.id === user.id) || {};
                 const permission = permissions.find(p => p.user_id === user.id) || {};
 
-                // Find the role name from the role_id
+                // Find the role name and weight from the role_id
                 let roleName = 'User'; // Default role
+                let roleWeight = 0; // Default weight
+
                 if (permission.role_id) {
                     const role = rolesList.find(r => r.id === permission.role_id);
                     if (role) {
                         roleName = role.name;
+                        roleWeight = role.weight || 0;
                     }
                 }
 
@@ -212,6 +171,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                     lastName: profile.last_name || '',
                     plantCode: profile.plant_code || '',
                     roleName: roleName,
+                    roleWeight: roleWeight,
                     createdAt: user.created_at,
                     updatedAt: user.updated_at
                 };
@@ -247,110 +207,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
         }
     };
 
-    const addManager = async () => {
-        try {
-            setIsLoading(true);
-
-            // Validate form
-            if (!newFirstName || !newLastName || !newEmail || !newPassword) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            // Generate a UUID for the user
-            const userId = crypto.randomUUID();
-
-            // Generate a salt for password hashing
-            const { AuthUtils } = await import('../../utils/AuthUtils');
-            const salt = AuthUtils.generateSalt();
-            const passwordHash = await AuthUtils.hashPassword(newPassword, salt);
-
-            // Create the user
-            const { error: userError } = await supabase
-                .from('users')
-                .insert({
-                    id: userId,
-                    email: newEmail,
-                    password_hash: passwordHash,
-                    salt: salt,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                });
-
-            if (userError) throw userError;
-
-            // Create the profile
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert({
-                    id: userId,
-                    first_name: newFirstName,
-                    last_name: newLastName,
-                    plant_code: newPlantCode || '',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                });
-
-            if (profileError) throw profileError;
-
-            // Find the role ID from selected role name
-            let roleId;
-
-            // First try to find role in available roles
-            const selectedRole = availableRoles.find(r => r.name === newRole);
-            if (selectedRole) {
-                roleId = selectedRole.id;
-            } else {
-                // If not found, try to fetch from database
-                try {
-                    const { data: roleData, error: roleError } = await supabase
-                        .from('accounts_roles')
-                        .select('id')
-                        .eq('name', newRole)
-                        .single();
-
-                    if (roleError) {
-                        throw new Error(`Role '${newRole}' not found in database`);
-                    }
-
-                    roleId = roleData.id;
-                } catch (err) {
-                    console.error('Error finding role:', err);
-                    throw new Error(`Could not find role: ${err.message}`);
-                }
-            }
-
-            // Set the role in accounts_permissions
-            const { error: roleError } = await supabase
-                .from('accounts_permissions')
-                .insert({
-                    user_id: userId,
-                    role_id: roleId,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                });
-
-            if (roleError) throw roleError;
-
-            // Reset form
-            setNewFirstName('');
-            setNewLastName('');
-            setNewEmail('');
-            setNewPlantCode('');
-            setNewPassword('');
-            setNewRole('User');
-            setShowAddSheet(false);
-
-            // Refresh data
-            fetchManagers();
-
-        } catch (error) {
-            console.error('Error adding manager:', error);
-            alert('Failed to add manager. ' + error.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const filteredManagers = managers
         .filter(manager => {
@@ -358,7 +214,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                 `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchText.toLowerCase()) ||
                 manager.email.toLowerCase().includes(searchText.toLowerCase());
 
-            const matchesPlant = selectedPlant === '' || manager.plantCode === selectedPlant;
+                const matchesPlant = selectedPlant === '' || manager.plantCode === selectedPlant;
 
             // Role filter logic
             let matchesRole = true;
@@ -466,10 +322,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                             )}
                         </h1>
                         <div className="dashboard-actions">
-                            <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
-                                <i className="fas fa-plus"></i>
-                                Add Manager
-                            </button>
                         </div>
                     </div>
 
@@ -528,23 +380,37 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setRoleFilter(value);
-                                        updateManagerFilter('roleFilter', value);
+                                        if (updateManagerFilter) {
+                                            updateManagerFilter('roleFilter', value);
+                                        } else {
+                                            console.warn('updateManagerFilter is not available');
+                                        }
                                     }}
                                 >
-                                    {filterOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
+                                    <option value="">All Roles</option>
+                                    {availableRoles.map(role => (
+                                        <option key={role.id} value={role.name}>
+                                            {role.name}
+                                        </option>
                                     ))}
                                 </select>
+                                <div className="debug-info" style={{display: 'none'}}>
+                                    Available roles: {JSON.stringify(availableRoles.map(r => r.name))}
+                                </div>
                             </div>
 
-                            {(searchText || selectedPlant || (roleFilter && roleFilter !== 'All Roles')) && (
+                                {(searchText || selectedPlant || (roleFilter && roleFilter !== 'All Roles')) && (
                                 <button
                                     className="filter-reset-button"
                                     onClick={() => {
                                         setSearchText('');
                                         setSelectedPlant('');
                                         setRoleFilter('');
-                                        resetManagerFilters();
+                                        if (resetManagerFilters) {
+                                            resetManagerFilters();
+                                        } else {
+                                            console.warn('resetManagerFilters is not available');
+                                        }
                                     }}
                                 >
                                     <i className="fas fa-undo"></i>
@@ -576,9 +442,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                                         ? "No managers match your search criteria."
                                         : "There are no managers in the system yet."}
                                 </p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>
-                                    Add Manager
-                                </button>
                             </div>
                         ) : (
                             <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
@@ -594,131 +457,6 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                         )}
                     </div>
 
-                    {showAddSheet && (
-                        <div className="modal-backdrop">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <h2>Add New Manager</h2>
-                                    <button className="close-button" onClick={() => setShowAddSheet(false)}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="modal-body">
-                                    <div className="form-row">
-                                        <div className="form-group">
-                                            <label>First Name</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                value={newFirstName}
-                                                onChange={(e) => setNewFirstName(e.target.value)}
-                                                placeholder="Enter first name"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Last Name</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                value={newLastName}
-                                                onChange={(e) => setNewLastName(e.target.value)}
-                                                placeholder="Enter last name"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-control"
-                                            value={newEmail}
-                                            onChange={(e) => setNewEmail(e.target.value)}
-                                            placeholder="Enter email address"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Password</label>
-                                        <input
-                                            type="password"
-                                            className="form-control"
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            placeholder="Enter password"
-                                            required
-                                        />
-                                        <small>Password must be at least 8 characters</small>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Plant</label>
-                                        <select
-                                            className="form-control"
-                                            value={newPlantCode}
-                                            onChange={(e) => setNewPlantCode(e.target.value)}
-                                        >
-                                            <option value="">Select a plant</option>
-                                            {plants.map(plant => (
-                                                <option key={plant.plant_code} value={plant.plant_code}>
-                                                    {plant.plant_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group role-selection">
-                                        <label>Role</label>
-                                        <div className="role-options">
-                                            <div 
-                                                className={`role-option ${newRole === 'User' ? 'selected' : ''}`}
-                                                onClick={() => setNewRole('User')}
-                                            >
-                                                <i className="fas fa-user role-icon"></i>
-                                                <span className="role-name">User</span>
-                                                <span className="role-description">Basic access only</span>
-                                            </div>
-                                            <div 
-                                                className={`role-option ${newRole === 'Supervisor' ? 'selected' : ''}`}
-                                                onClick={() => setNewRole('Supervisor')}
-                                            >
-                                                <i className="fas fa-user-tie role-icon"></i>
-                                                <span className="role-name">Supervisor</span>
-                                                <span className="role-description">Plant oversight</span>
-                                            </div>
-                                            <div 
-                                                className={`role-option ${newRole === 'Manager' ? 'selected' : ''}`}
-                                                onClick={() => setNewRole('Manager')}
-                                            >
-                                                <i className="fas fa-user-cog role-icon"></i>
-                                                <span className="role-name">Manager</span>
-                                                <span className="role-description">Full management</span>
-                                            </div>
-                                            <div 
-                                                className={`role-option ${newRole === 'Admin' ? 'selected' : ''}`}
-                                                onClick={() => setNewRole('Admin')}
-                                            >
-                                                <i className="fas fa-user-shield role-icon"></i>
-                                                <span className="role-name">Admin</span>
-                                                <span className="role-description">Full system access</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer">
-                                    <button className="cancel-button" onClick={() => setShowAddSheet(false)}>
-                                        Cancel
-                                    </button>
-                                    <button
-                                        className="primary-button"
-                                        onClick={addManager}
-                                        disabled={!newFirstName || !newLastName || !newEmail || !newPassword || newPassword.length < 8}
-                                    >
-                                        Add Manager
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {showOverview && <OverviewPopup/>}
                 </>

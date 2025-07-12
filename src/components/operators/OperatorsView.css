@@ -131,11 +131,11 @@
     border: 1px solid rgba(0, 0, 0, 0.04);
     border-radius: 8px;
     display: flex;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
     z-index: 99;
     transition: all 0.3s ease;
     position: relative;
@@ -145,8 +145,9 @@
 
 .search-bar {
     position: relative;
-    flex: 1;
-    min-width: 250px;
+    flex: 0 1 250px;
+    max-width: 350px;
+    min-width: 200px;
 }
 
 .ios-search-input {
@@ -222,8 +223,10 @@
 
 .filters {
     display: flex;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     align-items: center;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 
 .ios-select {
@@ -240,11 +243,15 @@
     padding-right: 36px;
     transition: all 0.25s ease;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-    min-width: 160px;
+    min-width: 130px;
+    max-width: 180px;
     cursor: pointer;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     font-weight: 500;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .ios-select:hover {
@@ -375,7 +382,34 @@
         opacity: 1;
     }
 }
+@media screen and (max-width: 768px) {
+    .search-filters {
+        flex-wrap: wrap;
+    }
 
+    .search-bar {
+        flex: 1 1 100%;
+        max-width: 100%;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .filters {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+        justify-content: flex-start;
+    }
+
+    .ios-select {
+        flex: 1 1 auto;
+        min-width: 110px;
+    }
+
+    .filter-reset-button {
+        margin-top: var(--spacing-sm);
+        width: 100%;
+        justify-content: center;
+    }
+}
 @keyframes spin {
     to {
         transform: rotate(360deg);

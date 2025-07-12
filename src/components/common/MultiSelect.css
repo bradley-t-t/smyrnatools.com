@@ -1,0 +1,181 @@
+.multi-select-container {
+  position: relative;
+  width: 100%;
+  user-select: none;
+  font-size: 14px;
+}
+
+.multi-select-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  cursor: pointer;
+  min-height: 40px;
+  transition: all 0.2s ease;
+}
+
+.multi-select-header.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.multi-select-selected {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.multi-select-actions {
+  display: flex;
+  align-items: center;
+}
+
+.multi-select-clear {
+  margin-right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.multi-select-clear:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--danger);
+}
+
+.multi-select-arrow {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.multi-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.multi-select-search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.multi-select-search input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  font-size: 14px;
+  outline: none;
+}
+
+.multi-select-search input:focus {
+  border-color: var(--primary);
+}
+
+.multi-select-options {
+  overflow-y: auto;
+  max-height: 200px;
+  padding: 8px 0;
+}
+
+.multi-select-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.multi-select-option:hover {
+  background-color: var(--bg-hover);
+}
+
+.multi-select-option.selected {
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.multi-select-option input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.multi-select-no-results {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.multi-select-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.multi-select-clear-all {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.multi-select-clear-all:hover {
+  background-color: rgba(var(--danger-rgb), 0.1);
+}
+
+.multi-select-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Dark mode adjustments */
+.dark-mode .multi-select-option.selected {
+  background-color: rgba(var(--primary-rgb), 0.2);
+}
+
+.dark-mode .multi-select-clear:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .multi-select-header {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color-dark);
+}
+
+.dark-mode .multi-select-dropdown {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}

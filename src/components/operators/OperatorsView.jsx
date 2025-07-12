@@ -4,6 +4,7 @@ import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';
+import MultiSelect from '../common/MultiSelect';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 
 function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator}) {
@@ -361,7 +362,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 </select>
                             </div>
 
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                                                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
                                 <button
                                     className="filter-reset-button"
                                     onClick={() => {

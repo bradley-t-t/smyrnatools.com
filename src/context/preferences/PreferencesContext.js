@@ -11,14 +11,19 @@ const defaultPreferences = {
     accentColor: 'red',
     mixerFilters: {
         searchText: '',
-        selectedPlant: '',
+        selectedPlants: [],
         statusFilter: ''
     },
     operatorFilters: {
         searchText: '',
-        selectedPlant: '',
+        selectedPlants: [],
         statusFilter: '',
         trainerFilter: ''
+    },
+    managerFilters: {
+        searchText: '',
+        selectedPlants: [],
+        roleFilter: ''
     },
     lastViewedFilters: null
 };
@@ -151,6 +156,11 @@ export const PreferencesProvider = ({children}) => {
                 selectedPlant: '',
                 statusFilter: '',
                 trainerFilter: ''
+            },
+            managerFilters: data.manager_filters || {
+                searchText: '',
+                selectedPlant: '',
+                roleFilter: ''
             },
             lastViewedFilters: data.last_viewed_filters
         };
@@ -358,6 +368,78 @@ export const PreferencesProvider = ({children}) => {
         await updateMixerFilters(emptyFilters);
     };
 
+    // Update manager filters and save to database
+    const updateManagerFilters = async (filters) => {
+        try {
+            setPreferences(prev => {
+                const newPrefs = {...prev, managerFilters: filters};
+                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+                return newPrefs;
+            });
+
+            // If user is authenticated, save to database
+            const {data} = await supabase.auth.getUser();
+            if (data?.user?.id) {
+                // Check if user preferences exist
+                const {data: existingPrefs} = await supabase
+                    .from('users_preferences')
+                    .select('id')
+                    .eq('user_id', data.user.id);
+
+                if (!existingPrefs || existingPrefs.length === 0) {
+                    // Create user preferences if they don't exist
+                    await supabase
+                        .from('users_preferences')
+                        .insert([{
+                            user_id: data.user.id,
+                            manager_filters: filters,
+                            theme_mode: preferences.themeMode,
+                            accent_color: preferences.accentColor,
+                            navbar_minimized: preferences.navbarMinimized
+                        }]);
+                } else {
+                    // Update existing preferences
+                    await supabase
+                        .from('users_preferences')
+                        .update({
+                            manager_filters: filters,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', data.user.id);
+                }
+
+                console.log('Saved manager filters to database:', filters);
+            }
+        } catch (error) {
+            console.error('Error updating manager filters:', error);
+        }
+    };
+
+    // Update a single manager filter field
+    const updateManagerFilter = async (key, value) => {
+        try {
+            const updatedFilters = {
+                ...preferences.managerFilters,
+                [key]: value
+            };
+
+            await updateManagerFilters(updatedFilters);
+        } catch (error) {
+            console.error(`Error updating manager filter ${key}:`, error);
+        }
+    };
+
+    // Reset all manager filters
+    const resetManagerFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            roleFilter: ''
+        };
+
+        await updateManagerFilters(emptyFilters);
+    };
+
     // Create default user preferences
     const createUserPreferences = async (uid) => {
         try {
@@ -465,6 +547,9 @@ export const PreferencesProvider = ({children}) => {
                 updateMixerFilters,
                 updateMixerFilter,
                 resetMixerFilters,
+                    updateManagerFilters,
+                    updateManagerFilter,
+                    resetManagerFilters,
                 updateOperatorFilters,
                 updateOperatorFilter,
                 resetOperatorFilters,

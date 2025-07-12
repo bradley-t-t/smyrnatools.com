@@ -3,11 +3,15 @@ import { supabase } from '../../core/clients/SupabaseClient';
 import { usePreferences } from '../../context/preferences/PreferencesContext';
 import { DatabaseService } from '../../core/services/DatabaseService';
 import ManagerCard from './ManagerCard';
+import ThemeUtils from '../../utils/ThemeUtils';
+import { useAuth } from '../../context/auth/AuthContext';
+import { AccountManager } from '../../core/accounts/AccountManager';
 import './ManagerDetailView.css';
 
 function ManagerDetailView({ managerId, onClose }) {
     // eslint-disable-next-line no-unused-vars
     const { preferences } = usePreferences();
+    const { user } = useAuth();
     const [manager, setManager] = useState(null);
     const [plants, setPlants] = useState([]);
     const [availableRoles, setAvailableRoles] = useState([]);
@@ -18,6 +22,8 @@ function ManagerDetailView({ managerId, onClose }) {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [message, setMessage] = useState('');
     const [originalValues, setOriginalValues] = useState({});
+    const [isReadOnly, setIsReadOnly] = useState(false);
+    const [currentUserRoleWeight, setCurrentUserRoleWeight] = useState(0);
 
     // Form state
     const [firstName, setFirstName] = useState('');
@@ -40,9 +46,44 @@ function ManagerDetailView({ managerId, onClose }) {
             fetchManagerDetails();
             fetchPlants();
             fetchRoles();
+            fetchCurrentUserRole();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [managerId]);
+
+    // Fetch the current user's highest role weight
+    const fetchCurrentUserRole = async () => {
+        try {
+            if (!user || !user.id) {
+                console.warn('No authenticated user found for role check');
+                return;
+            }
+
+            const highestRole = await AccountManager.getHighestRole(user.id);
+            if (highestRole) {
+                setCurrentUserRoleWeight(highestRole.weight || 0);
+                console.log(`Current user has role ${highestRole.name} with weight ${highestRole.weight}`);
+            } else {
+                console.warn('No role found for current user');
+                setCurrentUserRoleWeight(0);
+            }
+        } catch (error) {
+            console.error('Error fetching current user role:', error);
+            setCurrentUserRoleWeight(0);
+        }
+    };
+
+    // Check if view should be read-only based on role weights
+    useEffect(() => {
+        if (!manager) return;
+
+        const managerRoleWeight = manager.roleWeight || 0;
+        const canEdit = currentUserRoleWeight > managerRoleWeight;
+
+        setIsReadOnly(!canEdit);
+        console.log(`Manager role weight: ${managerRoleWeight}, Current user role weight: ${currentUserRoleWeight}`);
+        console.log(`Manager detail view is ${!canEdit ? 'read-only' : 'editable'}`);
+    }, [manager, currentUserRoleWeight]);
 
     const fetchRoles = async () => {
         try {
@@ -156,17 +197,19 @@ function ManagerDetailView({ managerId, onClose }) {
             // Get role name if role_id exists
             let roleName = 'User';
             let roleId = null;
+            let roleWeight = 0;
 
             if (permissionData?.role_id) {
                 const { data: roleData, error: roleError } = await supabase
                     .from('accounts_roles')
-                    .select('name, id')
+                    .select('name, id, weight')
                     .eq('id', permissionData.role_id)
                     .single();
 
                 if (!roleError && roleData) {
                     roleName = roleData.name;
                     roleId = roleData.id;
+                    roleWeight = roleData.weight || 0;
                 }
             }
 
@@ -179,6 +222,7 @@ function ManagerDetailView({ managerId, onClose }) {
                 plantCode: profileData.plant_code,
                 roleName: roleName,
                 roleId: roleId,
+                roleWeight: roleWeight,
                 createdAt: profileData.created_at,
                 updatedAt: profileData.updated_at,
             };
@@ -455,20 +499,24 @@ function ManagerDetailView({ managerId, onClose }) {
                     {manager.firstName} {manager.lastName || 'Manager Details'}
                 </h1>
                 <div className="header-actions">
-                    <button
-                        className="primary-button save-button"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                        className="danger-button"
-                        onClick={() => setShowDeleteConfirmation(true)}
-                        disabled={isSaving}
-                    >
-                        Delete Manager
-                    </button>
+                    {!isReadOnly && (
+                        <>
+                            <button
+                                className="primary-button save-button"
+                                onClick={handleSave}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button
+                                className="danger-button"
+                                onClick={() => setShowDeleteConfirmation(true)}
+                                disabled={isSaving}
+                            >
+                                Delete Manager
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -476,6 +524,13 @@ function ManagerDetailView({ managerId, onClose }) {
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
                         {message}
+                    </div>
+                )}
+
+                {isReadOnly && (
+                    <div className="message warning" style={{marginBottom: '16px'}}>
+                        <i className="fas fa-lock" style={{marginRight: '8px'}}></i>
+                        View-Only Mode | You can't edit this manager.
                     </div>
                 )}
 
@@ -525,7 +580,8 @@ function ManagerDetailView({ managerId, onClose }) {
                             type="text"
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
-                            className="form-control"
+                            className={`form-control ${isReadOnly ? 'disabled-field' : ''}`}
+                            readOnly={isReadOnly}
                         />
                     </div>
 
@@ -535,7 +591,8 @@ function ManagerDetailView({ managerId, onClose }) {
                             type="text"
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
-                            className="form-control"
+                            className={`form-control ${isReadOnly ? 'disabled-field' : ''}`}
+                            readOnly={isReadOnly}
                         />
                     </div>
 
@@ -545,7 +602,8 @@ function ManagerDetailView({ managerId, onClose }) {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="form-control"
+                            className={`form-control ${isReadOnly ? 'disabled-field' : ''}`}
+                            readOnly={isReadOnly}
                         />
                     </div>
 
@@ -554,7 +612,8 @@ function ManagerDetailView({ managerId, onClose }) {
                         <select
                             value={plantCode}
                             onChange={(e) => setPlantCode(e.target.value)}
-                            className="form-control"
+                            className={`form-control ${isReadOnly ? 'disabled-field' : ''}`}
+                            disabled={isReadOnly}
                         >
                             <option value="">Select Plant</option>
                             {plants
@@ -576,15 +635,35 @@ function ManagerDetailView({ managerId, onClose }) {
                         <select
                             value={roleName}
                             onChange={(e) => setRoleName(e.target.value)}
-                            className="form-control"
+                            className={`form-control ${isReadOnly ? 'disabled-field' : ''}`}
+                            disabled={isReadOnly}
                         >
+                            {availableRoles.length === 0 ? (
+                                <option value="">Loading roles...</option>
+                            ) : (
+                                availableRoles.map(role => (
+                                    <option key={role.id} value={role.name}>
+                                        {role.name}
+                                    </option>
+                                ))
+                            )}
                         </select>
+                        <div className="debug-info" style={{fontSize: '10px', color: '#888', marginTop: '4px'}}>
+                            {availableRoles.length > 0 ? 
+                                `Found ${availableRoles.length} roles in database` : 
+                                'No roles found. Click refresh button above.'}
+                            {isReadOnly && (
+                                <div style={{color: '#e53e3e', marginTop: '4px'}}>
+                                    You cannot edit this manager.
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="form-group">
                         <div className="password-header">
                             <label>Password</label>
-                            {!showPasswordField && (
+                            {!showPasswordField && !isReadOnly && (
                                 <button
                                     className="text-button"
                                     onClick={() => setShowPasswordField(true)}
@@ -616,22 +695,24 @@ function ManagerDetailView({ managerId, onClose }) {
                     </div>
                 </div>
 
-                <div className="form-actions">
-                    <button
-                        className="primary-button save-button"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                        className="danger-button"
-                        onClick={() => setShowDeleteConfirmation(true)}
-                        disabled={isSaving}
-                    >
-                        Delete Manager
-                    </button>
-                </div>
+                {!isReadOnly && (
+                    <div className="form-actions">
+                        <button
+                            className="primary-button save-button"
+                            onClick={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button
+                            className="danger-button"
+                            onClick={() => setShowDeleteConfirmation(true)}
+                            disabled={isSaving}
+                        >
+                            Delete Manager
+                        </button>
+                    </div>
+                )}
             </div>
 
             {showDeleteConfirmation && (
