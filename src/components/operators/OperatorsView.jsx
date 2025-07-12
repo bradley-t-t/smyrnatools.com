@@ -5,6 +5,7 @@ import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';
+import OperatorsOverview from './OperatorsOverview';
 import MultiSelect from '../common/MultiSelect';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 
@@ -192,9 +193,9 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                 if (statuses.includes(statusFilter)) {
                     matchesStatus = operator.status === statusFilter;
                 } else if (statusFilter === 'Trainer') {
-                    matchesStatus = operator.isTrainer === true;
+                    matchesStatus = operator.isTrainer === true || String(operator.isTrainer).toLowerCase() === 'true';
                 } else if (statusFilter === 'Not Trainer') {
-                    matchesStatus = operator.isTrainer === false;
+                    matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true';
                 }
             }
 
@@ -238,12 +239,8 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
     const trainerCount = operators.filter(op => op.isTrainer).length;
 
-            const OverviewPopup = () => {
-        const mixerOperatorCount = operators.filter(op => op.position === 'Mixer Operator').length;
-        const tractorOperatorCount = operators.filter(op => op.position === 'Tractor Operator').length;
-        const otherPositionCount = operators.length - mixerOperatorCount - tractorOperatorCount;
-
-        return (
+    // Overview Popup component that uses the new OperatorsOverview component
+    const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
@@ -253,45 +250,10 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                     </button>
                 </div>
                 <div className="modal-body">
-                    <div className="overview-metrics">
-                        <h3>Status Breakdown</h3>
-                        <div className="metrics-row">
-                            {statusCounts.map(({status, count}) => (
-                                <div className="metric-card" key={status}>
-                                    <div className="metric-title">{status}</div>
-                                    <div className="metric-value">{count}</div>
-                                </div>
-                            ))}
-                        </div>
-                        <h3 className="section-title">Roles</h3>
-                        <div className="metrics-row">
-                            <div className="metric-card">
-                                <div className="metric-title">Trainers</div>
-                                <div className="metric-value">{trainerCount}</div>
-                            </div>
-                            <div className="metric-card">
-                                <div className="metric-title">Operators</div>
-                                <div className="metric-value">{operators.length - trainerCount}</div>
-                            </div>
-                        </div>
-                        <h3 className="section-title">Positions</h3>
-                        <div className="metrics-row">
-                            <div className="metric-card">
-                                <div className="metric-title">Mixer Operators</div>
-                                <div className="metric-value">{mixerOperatorCount}</div>
-                            </div>
-                            <div className="metric-card">
-                                <div className="metric-title">Tractor Operators</div>
-                                <div className="metric-value">{tractorOperatorCount}</div>
-                            </div>
-                            {otherPositionCount > 0 && (
-                                <div className="metric-card">
-                                    <div className="metric-title">Other Positions</div>
-                                    <div className="metric-value">{otherPositionCount}</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <OperatorsOverview 
+                        filteredOperators={filteredOperators}
+                        selectedPlant={selectedPlant}
+                    />
                 </div>
                 <div className="modal-footer">
                     <button className="primary-button" onClick={() => setShowOverview(false)}>
@@ -300,8 +262,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                 </div>
             </div>
         </div>
-        );
-    };
+    );
 
     return (
         <div className="dashboard-container operators-view">

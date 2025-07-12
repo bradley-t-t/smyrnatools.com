@@ -117,6 +117,8 @@ export class MixerUtils {
       Spare: 0,
       'In Shop': 0,
       Retired: 0
+      // 'Training' is removed from here as it will be calculated separately
+      // based on operators with Training status assigned to mixers
     };
 
     mixers.forEach(mixer => {

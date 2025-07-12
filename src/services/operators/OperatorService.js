@@ -374,6 +374,7 @@ export class OperatorService {
      */
     static async fetchOperators() {
         try {
+            console.log('Fetching operators with OperatorService.fetchOperators');
             // First get all active operators
             const {data: activeData, error: activeError} = await supabase
                 .from('operators')
@@ -391,6 +392,14 @@ export class OperatorService {
                 .order('name');
 
             if (otherError) throw otherError;
+
+            // Log the trainer data to help debug issues with isTrainer field
+            const allOperators = [...activeData, ...otherData];
+            const trainers = allOperators.filter(op => op.is_trainer === true || String(op.is_trainer).toLowerCase() === 'true');
+            console.log(`Fetched ${trainers.length} trainers out of ${allOperators.length} operators`);
+            trainers.forEach(trainer => {
+                console.log(`Trainer: ${trainer.name}, isTrainer value: ${trainer.is_trainer} (type: ${typeof trainer.is_trainer})`);
+            });
 
             // Combine the results with active operators first
             const operatorsData = [...(activeData || []), ...(otherData || [])];

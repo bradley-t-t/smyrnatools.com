@@ -2,49 +2,72 @@ import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
 import {MixerUtils} from '../../utils/MixerUtils';
 import {PlantService} from '../../services/plants/PlantService';
+import {OperatorService} from '../../services/operators/OperatorService';
 import CleanlinessHistoryChart from './CleanlinessHistoryChart';
+import {supabase} from '../../core/clients/SupabaseClient';
 import './MixerOverview.css';
-
-// Add CSS for filter indicator - this will be inserted into MixerOverview.css
-// .filter-indicator {
-//     font-size: 0.9rem;
-//     color: #666;
-//     margin-bottom: 15px;
-//     padding: 5px 10px;
-//     background-color: #f5f5f5;
-//     border-radius: 4px;
-//     display: inline-block;
-// }
 
 const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCount = 0, neverVerifiedCount = 0}) => {
     const [mixers, setMixers] = useState([]);
     const [plants, setPlants] = useState([]);
+    const [operators, setOperators] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusCounts, setStatusCounts] = useState({});
     const [plantCounts, setPlantCounts] = useState({});
     const [plantDistributionByStatus, setPlantDistributionByStatus] = useState({});
+    const [trainingCount, setTrainingCount] = useState(0);
+    const [trainersCount, setTrainersCount] = useState(0);
     const [cleanlinessAvg, setCleanlinessAvg] = useState(0);
     const [needServiceCount, setNeedServiceCount] = useState(0);
+    const [openMaintenanceIssues, setOpenMaintenanceIssues] = useState(0);
+    const [verifiedCount, setVerifiedCount] = useState(0);
+    const [notVerifiedCount, setNotVerifiedCount] = useState(0);
 
     useEffect(() => {
         fetchData();
     }, [filteredMixers]);
 
-    // Recalculate statistics when filtered mixers change
+    // Recalculate statistics when filtered mixers or operators change
     useEffect(() => {
-        if (filteredMixers) {
+        if (filteredMixers && operators.length > 0) {
             updateStatistics(filteredMixers);
         }
-    }, [filteredMixers]);
+    }, [filteredMixers, operators]);
 
     const updateStatistics = (mixersData) => {
-        // Calculate statistics based on provided mixers data
-        setStatusCounts(MixerUtils.getStatusCounts(mixersData));
+        const statusCounts = MixerUtils.getStatusCounts(mixersData);
+        setStatusCounts(statusCounts);
         setPlantCounts(MixerUtils.getPlantCounts(mixersData));
         setCleanlinessAvg(MixerUtils.getCleanlinessAverage(mixersData));
         setNeedServiceCount(MixerUtils.getNeedServiceCount(mixersData));
 
-        // Calculate plant distribution by status
+        // Calculate verification counts
+        const verified = mixersData.filter(mixer => {
+            return MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
+        }).length;
+        const notVerified = mixersData.length - verified;
+        setVerifiedCount(verified);
+        setNotVerifiedCount(notVerified);
+
+        // Get all unique operators assigned to mixers
+        const assignedOperatorIds = new Set();
+        mixersData
+            .filter(mixer => mixer.assignedOperator && mixer.assignedOperator !== '0')
+            .forEach(mixer => assignedOperatorIds.add(mixer.assignedOperator));
+
+        // Find all assigned operators
+        const assignedOperators = operators.filter(op => assignedOperatorIds.has(op.employeeId));
+
+        // Count operators in training (those with an assigned trainer that isn't '0')
+        const trainingCount = assignedOperators.filter(op => op.assignedTrainer && op.assignedTrainer !== '0').length;
+        // Count trainers (operators with isTrainer === true)
+        const trainersCount = assignedOperators.filter(op => op.isTrainer === true).length;
+
+        // Set the counts
+        setTrainingCount(trainingCount);
+        setTrainersCount(trainersCount);
+
+        // Update plant distribution
         calculatePlantDistributionByStatus(mixersData);
     };
 
@@ -82,6 +105,8 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
             }
         });
 
+        // No longer counting operators by training status and trainer role
+
         setPlantDistributionByStatus(distribution);
     };
 
@@ -90,10 +115,53 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         try {
             // Fetch mixers and plants
             const mixersData = await MixerService.getAllMixers();
+            console.log('MixerOverview: Fetched mixers:', mixersData?.length || 0);
+
+            // Fetch maintenance issues count
+            try {
+                const { data, error } = await supabase
+                    .from('mixers_maintenance')
+                    .select('id')
+                    .is('time_completed', null);
+
+                if (!error) {
+                    setOpenMaintenanceIssues(data?.length || 0);
+                }
+            } catch (maintenanceError) {
+                console.error('Error fetching maintenance issues:', maintenanceError);
+            }
+
             setMixers(mixersData);
 
             const plantsData = await PlantService.fetchPlants();
             setPlants(plantsData);
+
+            // Fetch operators directly from database for more reliable data
+            try {
+                // Get all operators from database
+                const { data: operatorsRawData, error: operatorsError } = await supabase
+                    .from('operators')
+                    .select('*');
+
+                if (operatorsError) throw operatorsError;
+
+                // Map raw data to operator objects
+                const operatorsData = operatorsRawData.map(op => ({
+                    employeeId: op.employee_id,
+                    smyrnaId: op.smyrna_id || '',
+                    name: op.name,
+                    plantCode: op.plant_code,
+                    status: op.status,
+                    isTrainer: op.is_trainer === true, // Ensure boolean
+                    assignedTrainer: op.assigned_trainer,
+                    position: op.position
+                }));
+
+                // Simply store the operators - updateStatistics will handle the counting
+                setOperators(operatorsData || []);
+            } catch (operatorsError) {
+                console.error('Error fetching operators:', operatorsError);
+            }
 
             // If no filtered mixers are provided, use all mixers for statistics
             if (!filteredMixers) {
@@ -124,13 +192,17 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         <div className="mixer-overview">
             <h1>
                 Mixer Fleet Overview
-                {filteredMixers && mixers.length !== filteredMixers.length && (
-                    <span className="filtered-indicator"> (Filtered: {filteredMixers.length}/{mixers.length})</span>
-                )}
             </h1>
+            {filteredMixers && mixers.length !== filteredMixers.length && (
+                <div style={{textAlign: 'center', marginBottom: '10px'}}>
+                    <span className="filtered-indicator">(Filtered: {filteredMixers.length}/{mixers.length})</span>
+                </div>
+            )}
             {filteredMixers && (
-                <div className="filter-indicator">
-                    Showing statistics for {filteredMixers.length} mixer{filteredMixers.length !== 1 ? 's' : ''}
+                <div style={{textAlign: 'center', marginBottom: '15px'}}>
+                    <div className="filter-indicator">
+                        Showing statistics for {filteredMixers.length} mixer{filteredMixers.length !== 1 ? 's' : ''}
+                    </div>
                 </div>
             )}
 
@@ -159,6 +231,14 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                             <div className="status-count">{statusCounts.Retired || 0}</div>
                             <div className="status-label">Retired</div>
                         </div>
+                        <div className="status-item">
+                            <div className="status-count">{verifiedCount}</div>
+                            <div className="status-label">Verified</div>
+                        </div>
+                        <div className="status-item">
+                            <div className="status-count">{notVerifiedCount}</div>
+                            <div className="status-label">Not Verified</div>
+                        </div>
                     </div>
                 </div>
 
@@ -184,6 +264,15 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                 <div className="stat-label">Avg. Cleanliness</div>
                             </div>
                         </div>
+                        <div className="maintenance-stat">
+                            <div className="stat-icon">
+                                <i className="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div className="stat-content">
+                                <div className="stat-value">{openMaintenanceIssues}</div>
+                                <div className="stat-label">Open Issues</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -207,11 +296,11 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                 {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
                                     <tr key={plantCode}>
                                         <td className="plant-name">{getPlantName(plantCode)}</td>
-                                        <td>{counts.Total}</td>
-                                        <td>{counts.Active}</td>
-                                        <td>{counts.Spare}</td>
-                                        <td>{counts['In Shop']}</td>
-                                        <td>{counts.Retired}</td>
+                                        <td>{counts.Total || 0}</td>
+                                        <td>{counts.Active || 0}</td>
+                                        <td>{counts.Spare || 0}</td>
+                                        <td>{counts['In Shop'] || 0}</td>
+                                        <td>{counts.Retired || 0}</td>
                                     </tr>
                                 ))}
                                 </tbody>

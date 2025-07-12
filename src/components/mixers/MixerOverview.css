@@ -5,20 +5,23 @@
 }
 
 .filtered-indicator {
-    font-size: 0.7em;
+    font-size: 0.85em;
     color: var(--text-secondary);
     font-weight: normal;
-    margin-left: 10px;
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
 }
 
 .filter-indicator {
     font-size: 0.9rem;
     color: var(--text-secondary);
-    margin-bottom: 15px;
     padding: 5px 10px;
     background-color: var(--bg-tertiary);
     border-radius: 4px;
     display: inline-block;
+    text-align: center;
 }
 
 .mixer-overview h1 {

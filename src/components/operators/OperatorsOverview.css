@@ -1,0 +1,199 @@
+.operators-overview {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.filtered-indicator {
+    font-size: 0.7em;
+    color: var(--text-secondary);
+    font-weight: normal;
+    margin-left: 10px;
+}
+
+.filter-indicator {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    padding: 5px 10px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.operators-overview h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.overview-card {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 1.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.overview-card h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.75rem;
+}
+
+/* Status Card */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.status-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+
+.status-item:hover {
+    transform: scale(1.05);
+}
+
+.status-count {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Positions Card */
+.positions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.position-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+
+.position-item:hover {
+    transform: scale(1.05);
+}
+
+.position-count {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.position-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Plant distribution table */
+.plant-distribution-table {
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.distribution-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.operators-overview {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.operators-overview h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.filtered-indicator {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-weight: normal;
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.filter-indicator {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    display: inline-block;
+    text-align: center;
+}
+/* Make plant/position distribution cards span two columns */
+.plant-card, .position-distribution-card {
+    grid-column: span 2;
+}
+
+.distribution-table th,
+.distribution-table td {
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.distribution-table th {
+    background-color: var(--bg-tertiary);
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.distribution-table td.plant-name {
+    text-align: left;
+    font-weight: 500;
+}
+
+.distribution-table tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .plant-card, .position-distribution-card {
+        grid-column: span 1;
+    }
+}

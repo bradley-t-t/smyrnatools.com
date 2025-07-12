@@ -10,7 +10,8 @@ export class Operator {
         this.name = data.name || '';
         this.plantCode = data.plant_code || null;
         this.status = data.status || 'Active';
-        this.isTrainer = data.is_trainer || false;
+        // Ensure isTrainer is always a boolean
+        this.isTrainer = data.is_trainer === true || String(data.is_trainer).toLowerCase() === 'true';
         this.assignedTrainer = data.assigned_trainer || '0';
         this.position = data.position || '';
         this.createdAt = data.created_at || new Date().toISOString();
