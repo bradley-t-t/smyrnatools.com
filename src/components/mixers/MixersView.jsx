@@ -8,6 +8,7 @@ import {usePreferences} from '../../context/preferences/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
 import MixerOverview from './MixerOverview';
+import '../../styles/FilterStyles.css';
 // ThemeUtils is not used directly in this component
 import './MixersView.css';
 
@@ -42,17 +43,17 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         'Past Due Service', 'Verified', 'Not Verified'
     ];
 
-    // Fetch data on component mount and load filters from preferences
+    // Fetch data on component mount
     useEffect(() => {
         fetchAllData();
 
         // Load filters from preferences
-        if (preferences.mixerFilters) {
+        if (preferences?.mixerFilters) {
             setSearchText(preferences.mixerFilters.searchText || '');
             setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
             setStatusFilter(preferences.mixerFilters.statusFilter || '');
         }
-    }, [preferences.mixerFilters]);
+    }, [preferences]);  // Re-run when preferences change
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -72,7 +73,29 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const fetchMixers = async () => {
         try {
             const data = await MixerService.fetchMixers();
-            setMixers(data);
+            // Make sure the data has isVerified function for each mixer
+            const processedData = await Promise.all(data.map(async mixer => {
+                // Fetch the latest history for this mixer to check against verification
+                let latestHistoryDate = null;
+                try {
+                    const history = await MixerService.getMixerHistory(mixer.id, 1);
+                    latestHistoryDate = history[0]?.changedAt || null;
+                } catch (historyError) {
+                    console.error(`Error fetching history for mixer ${mixer.id}:`, historyError);
+                }
+
+                // Ensure each mixer has an isVerified method that correctly evaluates verification status
+                if (typeof mixer.isVerified !== 'function') {
+                    mixer.isVerified = function(historyDate = latestHistoryDate) {
+                        return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, historyDate);
+                    };
+                }
+
+                // Store the latest history date on the mixer object for reference
+                mixer.latestHistoryDate = latestHistoryDate;
+                return mixer;
+            }));
+            setMixers(processedData);
         } catch (error) {
             console.error('Error fetching mixers:', error);
         }
@@ -288,6 +311,10 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 updateMixerFilter('selectedPlant', value);
                             }}
                             aria-label="Filter by plant"
+                            style={{
+                                '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                            }}
                         >
                             <option value="">All Plants</option>
                             {plants.sort((a, b) => {
@@ -310,6 +337,10 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 const value = e.target.value;
                                 setStatusFilter(value);
                                 updateMixerFilter('statusFilter', value);
+                            }}
+                            style={{
+                                '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
                             }}
                         >
                             {filterOptions.map(option => (

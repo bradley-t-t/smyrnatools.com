@@ -9,7 +9,10 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
     // Use MixerUtils directly instead of calling the method on the object
-    const isVerified = MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
+    // Make sure to account for verification status based on all necessary fields including history
+    const isVerified = typeof mixer.isVerified === 'function' 
+        ? mixer.isVerified(mixer.latestHistoryDate) 
+        : MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
     const statusColor = ThemeUtils.statusColors[mixer.status] || ThemeUtils.statusColors.default;
     const {preferences} = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
@@ -57,7 +60,9 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                  title={mixer.status || 'Unknown'}></div>
             {!isVerified && (
                 <div className="verification-flag"
-                     title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' : 'Mixer not verified since last Sunday'}>
+                     title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' : 
+                            mixer.latestHistoryDate && new Date(mixer.latestHistoryDate) > new Date(mixer.updatedLast) ? 'Changes recorded in history since last verification' :
+                            'Mixer not verified since last Sunday'}>
                     <i className="fas fa-flag" style={{color: '#e74c3c'}}></i>
                 </div>
             )}

@@ -1,14 +1,23 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
 import {Mixer} from '../../models/mixers/Mixer';
 import {AuthService} from '../../services/auth/AuthService';
+import OperatorSelectModal from './OperatorSelectModal';
 import './MixerAddView.css';
 
 function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
+    // Debug log for plants
+    console.log('MixerAddView plants:', plants);
     const hasOperators = Array.isArray(operators) && operators.length > 0;
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [assignedOperator, setAssignedOperator] = useState('0');
+    const [showOperatorModal, setShowOperatorModal] = useState(false);
+
+    // Reset operator when plant changes
+    useEffect(() => {
+        setAssignedOperator('0');
+    }, [assignedPlant]);
     const [cleanlinessRating, setCleanlinessRating] = useState(3);
     const [status, setStatus] = useState('Active');
     const [lastServiceDate, setLastServiceDate] = useState('');
@@ -168,11 +177,11 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 required
                             >
                                 <option value="">Select Plant</option>
-                                {plants.map(plant => (
+                                {plants && plants.length > 0 ? plants.map(plant => (
                                     <option key={plant.plantCode} value={plant.plantCode}>
-                                        {plant.plantName}
+                                        ({plant.plantCode}) {plant.plantName}
                                     </option>
-                                ))}
+                                )) : <option disabled>Loading plants...</option>}
                             </select>
                         </div>
                         <div className="form-group">
@@ -196,30 +205,60 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                         </div>
                         <div className="form-group">
                             <label htmlFor="assignedOperator">Assigned Operator</label>
-                            <select
+                            <button 
                                 id="assignedOperator"
-                                className="ios-select"
-                                value={assignedOperator}
-                                onChange={(e) => setAssignedOperator(e.target.value)}
-                                disabled={status !== 'Active'}
+                                className="ios-select operator-select-button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    if (status === 'Active') {
+                                        if (!assignedPlant) {
+                                            setError('Please select a plant first');
+                                            return;
+                                        }
+                                        setShowOperatorModal(true);
+                                    }
+                                }}
+                                type="button"
+                                disabled={status !== 'Active' || !assignedPlant}
+                                style={{ width: '100%', textAlign: 'left', padding: '8px 12px' }}
                             >
-                                <option value="0">Unassigned</option>
-                                {operators
-                                    .filter(operator =>
-                                        operator.position === "Mixer Operator" ||
-                                        operator.position?.toLowerCase().includes('mixer') ||
-                                        operator.position?.toLowerCase().includes('driver')
-                                    )
-                                    .map(operator => (
-                                        <option key={operator.employeeId} value={operator.employeeId}>
-                                            {operator.name}
-                                        </option>
-                                    ))}
-                            </select>
-                            {operators.length === 0 && (
+                                {assignedOperator && assignedOperator !== '0'
+                                    ? operators.find(op => op.employeeId === assignedOperator)?.name || 'Unknown Operator'
+                                    : assignedPlant ? 'Unassigned (Click to select)' : 'Select a plant first'}
+                            </button>
+                            {showOperatorModal && assignedPlant && (
+                                <OperatorSelectModal
+                                    isOpen={showOperatorModal}
+                                    onClose={() => setShowOperatorModal(false)}
+                                    onSelect={(operatorId) => {
+                                        setAssignedOperator(operatorId);
+                                        setShowOperatorModal(false);
+                                    }}
+                                    currentValue={assignedOperator}
+                                    mixers={[]}
+                                    assignedPlant={assignedPlant}
+                                />
+                            )}
+                                        {!assignedPlant && (
                                 <div className="warning-message"
                                      style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
-                                    No operators available
+                                    Please select a plant first to view available operators
+                                </div>
+                            )}
+                            {assignedPlant && operators.filter(op => op.plantCode === assignedPlant).length === 0 && (
+                                <div className="warning-message"
+                                     style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
+                                    No operators available for this plant
+                                    <div style={{marginTop: '4px'}}>
+                                        <a 
+                                            href="/operators/add" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            style={{color: '#007AFF', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px'}}
+                                        >
+                                            <i className="fas fa-plus-circle"></i> Add an operator
+                                        </a>
+                                    </div>
                                 </div>
                             )}
                         </div>

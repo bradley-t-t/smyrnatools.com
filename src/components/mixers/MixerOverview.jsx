@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
-import {MixerUtils} from '../../models/mixers/Mixer';
+import {MixerUtils} from '../../utils/MixerUtils';
 import {PlantService} from '../../services/plants/PlantService';
 import CleanlinessHistoryChart from './CleanlinessHistoryChart';
 import './MixerOverview.css';

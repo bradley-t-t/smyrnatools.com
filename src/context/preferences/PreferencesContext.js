@@ -11,14 +11,15 @@ const defaultPreferences = {
     accentColor: 'red',
     mixerFilters: {
         searchText: '',
-        selectedPlants: [],
+        selectedPlant: '',
         statusFilter: ''
     },
     operatorFilters: {
         searchText: '',
         selectedPlants: [],
         statusFilter: '',
-        trainerFilter: ''
+        trainerFilter: '',
+        positionFilter: ''
     },
     managerFilters: {
         searchText: '',
@@ -146,7 +147,11 @@ export const PreferencesProvider = ({children}) => {
             navbarMinimized: data.navbar_minimized,
             themeMode: data.theme_mode,
             accentColor: data.accent_color,
-            mixerFilters: data.mixer_filters || {
+            mixerFilters: data.mixer_filters ? {
+                searchText: data.mixer_filters.searchText || '',
+                selectedPlant: data.mixer_filters.selectedPlant || '',
+                statusFilter: data.mixer_filters.statusFilter || ''
+            } : {
                 searchText: '',
                 selectedPlant: '',
                 statusFilter: ''
@@ -351,7 +356,8 @@ export const PreferencesProvider = ({children}) => {
             searchText: '',
             selectedPlant: '',
             statusFilter: '',
-            trainerFilter: ''
+            trainerFilter: '',
+            positionFilter: ''
         };
 
         await updateOperatorFilters(emptyFilters);

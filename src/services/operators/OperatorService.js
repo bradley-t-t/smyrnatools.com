@@ -44,16 +44,72 @@ export class OperatorService {
      */
     static async fetchOperatorsByPlant(plantCode) {
         try {
+            if (!plantCode) {
+                console.error('No plant code provided to fetchOperatorsByPlant');
+                return [];
+            }
+
+            // First, check if any operators exist for this plant regardless of position
+            const {data: allPlantOps, error: checkError} = await supabase
+                .from('operators')
+                .select('position')
+                .eq('plant_code', plantCode);
+
+            if (checkError) {
+                console.error(`Error checking operators for plant ${plantCode}:`, checkError);
+            } else {
+                const totalOps = allPlantOps ? allPlantOps.length : 0;
+                const mixerOps = allPlantOps ? allPlantOps.filter(op => op.position === 'Mixer Operator').length : 0;
+                const tractorOps = allPlantOps ? allPlantOps.filter(op => op.position === 'Tractor Operator').length : 0;
+                console.log(`Plant ${plantCode} has ${totalOps} total operators, ${mixerOps} mixer operators, ${tractorOps} tractor operators`);
+            }
+
+            // Now fetch mixer operators for this plant
             const {data, error} = await supabase
                 .from('operators')
                 .select('*')
-                .eq('plant_code', plantCode);
+                .eq('plant_code', plantCode)
+                .eq('position', 'Mixer Operator');
+
+            if (error) throw error;
+
+            const operators = data ? data.map(op => Operator.fromApiFormat(op)) : [];
+            console.log(`Found ${operators.length} mixer operators for plant ${plantCode}`);
+
+            // If no mixer operators found, log all operators for this plant to help debugging
+            if (operators.length === 0) {
+                const {data: allOps, error: allError} = await supabase
+                    .from('operators')
+                    .select('employee_id, name, position, status')
+                    .eq('plant_code', plantCode);
+
+                if (!allError && allOps && allOps.length > 0) {
+                    console.log(`Other operators in plant ${plantCode}:`, allOps);
+                }
+            }
+
+            return operators;
+        } catch (error) {
+            console.error(`Error fetching operators for plant ${plantCode}:`, error);
+            return [];
+        }
+    }
+
+    /**
+     * Fetch tractor operators
+     */
+    static async fetchTractorOperators() {
+        try {
+            const {data, error} = await supabase
+                .from('operators')
+                .select('*')
+                .eq('position', 'Tractor Operator');
 
             if (error) throw error;
 
             return data ? data.map(op => Operator.fromApiFormat(op)) : [];
         } catch (error) {
-            console.error(`Error fetching operators for plant ${plantCode}:`, error);
+            console.error('Error fetching tractor operators:', error);
             throw error;
         }
     }
@@ -356,6 +412,47 @@ export class OperatorService {
             console.error('Error fetching operators:', error);
             return [];
         }
+    }
+
+    /**
+     * Fetch all operators and check their availability
+     * @param {Array} mixers - List of mixers to check for operator assignments
+     * @returns {Array} - Operators with availability information
+     */
+    static async fetchOperatorsWithAvailability(mixers = []) {
+        try {
+            const operators = await this.fetchOperators();
+
+            return operators.map(operator => {
+                const isAssigned = mixers.some(mixer => 
+                    mixer.assignedOperator === operator.employeeId && 
+                    mixer.status === 'Active'
+                );
+
+                return {
+                    ...operator,
+                    isAvailable: operator.status === 'Active' && !isAssigned
+                };
+            });
+        } catch (error) {
+            console.error('Error fetching operators with availability:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Check if an operator is assigned to any active mixer
+     * @param {string} operatorId - ID of the operator to check
+     * @param {Array} mixers - List of mixers to check
+     * @returns {boolean} - True if the operator is assigned to an active mixer
+     */
+    static isOperatorAssigned(operatorId, mixers = []) {
+        if (!operatorId || operatorId === '0') return false;
+
+        return mixers.some(mixer => 
+            mixer.assignedOperator === operatorId && 
+            mixer.status === 'Active'
+        );
     }
 
     /**

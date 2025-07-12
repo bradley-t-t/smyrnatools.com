@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {Mixer, MixerUtils} from '../../models/mixers/Mixer';
+import {Mixer} from '../../models/mixers/Mixer';
+import {MixerUtils} from '../../utils/MixerUtils';
 import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
@@ -10,8 +11,55 @@ import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
 import MixerIssueModal from './MixerIssueModal';
 import MixerCard from './MixerCard';
+import OperatorSelectModal from './OperatorSelectModal';
+import {AccountManager} from '../../core/accounts/AccountManager';
 import '../common/LoadingText.css';
 import './MixerDetailView.css';
+
+// Add CSS styling for plant restriction
+const plantRestrictionStyles = `
+.plant-restriction-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border: 1px solid #ffeeba;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.plant-restriction-warning i {
+    font-size: 20px;
+}
+
+.rating-stars .star.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.star-button.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.edit-instructions {
+    font-style: italic;
+    color: #666;
+}
+`;
+
+// Add styles to document head
+const styleElement = document.createElement('style');
+styleElement.textContent = plantRestrictionStyles;
+document.head.appendChild(styleElement);
 
 function MixerDetailView({mixerId, onClose}) {
     const {preferences} = usePreferences();
@@ -28,6 +76,10 @@ function MixerDetailView({mixerId, onClose}) {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [updatedByEmail, setUpdatedByEmail] = useState(null);
     const [message, setMessage] = useState('');
+    const [showOperatorModal, setShowOperatorModal] = useState(false);
+    const [userProfile, setUserProfile] = useState(null);
+    const [canEditMixer, setCanEditMixer] = useState(true);
+    const [plantRestrictionReason, setPlantRestrictionReason] = useState('');
 
     const [originalValues, setOriginalValues] = useState({});
     const [truckNumber, setTruckNumber] = useState('');
@@ -50,6 +102,60 @@ function MixerDetailView({mixerId, onClose}) {
     useEffect(() => {
         fetchData();
     }, [mixerId]);
+
+    // Check for plant restriction permission
+    useEffect(() => {
+        const checkPlantRestriction = async () => {
+            if (isLoading || !mixer) return;
+
+            try {
+                // Get current user ID
+                let userId = sessionStorage.getItem('userId');
+                if (!userId) {
+                    const {data} = await supabase.auth.getUser();
+                    userId = data?.user?.id;
+                }
+
+                if (!userId) {
+                    console.error('No authenticated user found');
+                    return;
+                }
+
+                // Check if user has bypass permission
+                const hasPermission = await AccountManager.hasPermission(userId, 'mixers.bypass.plantrestriction');
+                if (hasPermission) {
+                    setCanEditMixer(true);
+                    return;
+                }
+
+                // Get user profile to check plant_code
+                const {data: profileData} = await supabase
+                    .from('profiles')
+                    .select('plant_code')
+                    .eq('id', userId)
+                    .single();
+
+                setUserProfile(profileData);
+
+                // Check if mixer's plant matches user's plant
+                if (profileData && mixer) {
+                    const isSamePlant = profileData.plant_code === mixer.assignedPlant;
+                    setCanEditMixer(isSamePlant);
+
+                    if (!isSamePlant) {
+                        setPlantRestrictionReason(
+                            `You cannot edit or verify this mixer because it belongs to plant ${mixer.assignedPlant} ` +
+                            `and you are assigned to plant ${profileData.plant_code}.`
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking plant restriction:', error);
+            }
+        };
+
+        checkPlantRestriction();
+    }, [mixer, isLoading]);
 
     useEffect(() => {
         if (!originalValues.truckNumber && !isLoading) return;
@@ -214,16 +320,36 @@ function MixerDetailView({mixerId, onClose}) {
                     make,
                     model,
                     year,
-                    updatedAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString() // This will map to updated_at in the database
+                    // Do NOT reset the verification status (updatedLast) when making changes
+                    // updatedLast should only be changed when explicitly verifying
                 };
 
+                // Important: Keep the existing verification status (updatedLast) value
+                // Do NOT reset verification status when saving normal changes
+                // Make sure the updatedLast value from the original mixer is preserved
+                const preservedUpdatedLast = mixer.updatedLast;
+
+                console.log('Updating mixer with data:', {
+                    id: updatedMixer.id,
+                    updatedAt: updatedMixer.updatedAt,
+                    // Include only changed fields in log
+                    changes: Object.entries(updatedMixer).filter(([key, val]) => 
+                        mixer[key] !== val && key !== 'updatedAt'
+                    ).reduce((obj, [key, val]) => ({ ...obj, [key]: val }), {}),
+                    keepingVerificationStatus: preservedUpdatedLast ? 'Preserving existing verification' : 'Still unverified'
+                });
+
+                // Explicitly set updatedLast to its current value to ensure it's not changed
+                updatedMixer.updatedLast = preservedUpdatedLast;
                 await MixerService.updateMixer(updatedMixer.id, updatedMixer);
 
                 setMixer(updatedMixer);
                 fetchData();
 
-                setMessage('Changes saved successfully!');
-                setTimeout(() => setMessage(''), 3000);
+                setMessage('Changes saved successfully! Mixer needs verification.');
+                // Keep the message visible longer for the verification notice
+                setTimeout(() => setMessage(''), 5000);
 
                 setOriginalValues({
                     truckNumber,
@@ -272,6 +398,7 @@ function MixerDetailView({mixerId, onClose}) {
             setShowDeleteConfirmation(true);
             return;
         }
+        setShowOperatorModal(true);
 
         try {
             await supabase
@@ -317,10 +444,13 @@ function MixerDetailView({mixerId, onClose}) {
                 throw new Error('Authentication required: You must be logged in to verify mixers');
             }
 
-            const {data, error} = await supabase
+                            // Only modify the verification fields - DO NOT touch other fields
+                            const now = new Date().toISOString();
+                            console.log(`Verifying mixer ${mixer.id} at ${now} by user ${userId}`);
+                            const {data, error} = await supabase
                 .from('mixers')
                 .update({
-                    updated_last: new Date().toISOString(),
+                    updated_last: now,
                     updated_by: userId
                 })
                 .eq('id', mixer.id)
@@ -383,6 +513,22 @@ function MixerDetailView({mixerId, onClose}) {
         return date instanceof Date ? date.toISOString().split('T')[0] : date;
     };
 
+// State for all mixers (needed for checking multiple assignments)
+const [mixers, setMixers] = useState([]);
+
+// Fetch all mixers on component mount
+useEffect(() => {
+    async function fetchAllMixers() {
+        try {
+            const allMixers = await MixerService.getAllMixers();
+            setMixers(allMixers);
+        } catch (error) {
+            console.error('Error fetching all mixers:', error);
+        }
+    }
+
+    fetchAllMixers();
+}, []);
     const safeFormatDate = (date) => {
         if (!date) return null;
         try {
@@ -460,12 +606,16 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'Not Assigned'}</h1>
                 <div className="header-actions">
-                    <button className="issues-button" onClick={() => setShowIssues(true)} style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-                        <i className="fas fa-tools"></i> Issues
-                    </button>
-                    <button className="comments-button" onClick={() => setShowComments(true)}>
-                        <i className="fas fa-comments"></i> Comments
-                    </button>
+                    {canEditMixer && (
+                        <>
+                            <button className="issues-button" onClick={() => setShowIssues(true)} style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                                <i className="fas fa-tools"></i> Issues
+                            </button>
+                            <button className="comments-button" onClick={() => setShowComments(true)}>
+                                <i className="fas fa-comments"></i> Comments
+                            </button>
+                        </>
+                    )}
                     <button
                         className="history-button"
                         onClick={() => setShowHistory(true)}
@@ -476,6 +626,13 @@ function MixerDetailView({mixerId, onClose}) {
                     </button>
                 </div>
             </div>
+
+                {!canEditMixer && (
+                    <div className="plant-restriction-warning">
+                        <i className="fas fa-exclamation-triangle"></i>
+                        <span>{plantRestrictionReason}</span>
+                    </div>
+                )}
             <div className="detail-content" style={{maxWidth: '1000px', margin: '0 auto'}}>
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
@@ -523,18 +680,26 @@ function MixerDetailView({mixerId, onClose}) {
                             </div>
                             <div className="verification-item">
                                 <div className="verification-icon"
-                                     style={{color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : '#f59e0b') : '#ef4444'}}>
+                                     style={{color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : 
+                                            new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
                                     <span className="verification-value"
-                                          style={{color: mixer.updatedLast ? (mixer.isVerified() ? 'inherit' : '#f59e0b') : '#ef4444'}}>
-                                        {mixer.updatedLast ? new Date(mixer.updatedLast).toLocaleString() : 'Never verified'}
+                                          style={{color: mixer.updatedLast ? (mixer.isVerified() ? 'inherit' : 
+                                                 new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                        {mixer.updatedLast ? 
+                                            `${new Date(mixer.updatedLast).toLocaleString()}${!mixer.isVerified() ? 
+                                                (new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? 
+                                                    ' (Changes made since verification)' : 
+                                                    ' (Needs verification since Sunday)') : 
+                                                ''}` : 
+                                            'Never verified'}
                                     </span>
                                 </div>
                             </div>
-                            <div className="verification-item">
+                                                            <div className="verification-item" title={`Last Updated: ${new Date(mixer.updatedAt).toLocaleString()}`}>
                                 <div className="verification-icon"
                                      style={{color: mixer.updatedBy ? '#10b981' : '#ef4444'}}>
                                     <i className="fas fa-user-check"></i>
@@ -551,7 +716,12 @@ function MixerDetailView({mixerId, onClose}) {
                         <button
                             className="verify-now-button"
                             onClick={handleVerifyMixer}
-                            style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
+                            disabled={!canEditMixer}
+                            style={{
+                                backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                opacity: !canEditMixer ? '0.6' : '1',
+                                cursor: !canEditMixer ? 'not-allowed' : 'pointer'
+                            }}
                         >
                             <i className="fas fa-check-circle"></i>
                             Verify Now
@@ -559,8 +729,7 @@ function MixerDetailView({mixerId, onClose}) {
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
                             <p>
-                                Assets require verification after any changes are made and/or at the start of each work
-                                week.
+                                Assets require verification after any changes are made and are reset weekly.
                                 <strong> Due: Every Friday at 10:00 AM.</strong>
                             </p>
                         </div>
@@ -570,7 +739,11 @@ function MixerDetailView({mixerId, onClose}) {
                     <div className="card-header">
                         <h2>Mixer Information</h2>
                     </div>
-                    <p className="edit-instructions">You can make changes below. Remember to save your changes.</p>
+                    <p className="edit-instructions">
+                        {canEditMixer 
+                            ? "You can make changes below. Remember to save your changes." 
+                            : "You are in read-only mode and cannot make changes to this mixer."}
+                    </p>
                     <div className="form-sections">
                         <div className="form-section basic-info">
                             <h3>Basic Information</h3>
@@ -581,6 +754,7 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={truckNumber}
                                     onChange={(e) => setTruckNumber(e.target.value)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
                                 />
                             </div>
                             <div className="form-group">
@@ -588,6 +762,7 @@ function MixerDetailView({mixerId, onClose}) {
                                 <select
                                     value={status}
                                     onChange={(e) => setStatus(e.target.value)}
+                                        disabled={!canEditMixer}
                                     className="form-control"
                                 >
                                     <option value="">Select Status</option>
@@ -602,6 +777,7 @@ function MixerDetailView({mixerId, onClose}) {
                                 <select
                                     value={assignedPlant}
                                     onChange={(e) => setAssignedPlant(e.target.value)}
+                                        disabled={!canEditMixer}
                                     className="form-control"
                                 >
                                     <option value="">Select Plant</option>
@@ -614,18 +790,32 @@ function MixerDetailView({mixerId, onClose}) {
                             </div>
                             <div className="form-group">
                                 <label>Assigned Operator</label>
-                                <select
-                                    value={assignedOperator}
-                                    onChange={(e) => setAssignedOperator(e.target.value)}
-                                    className="form-control"
-                                >
-                                    <option value="0">None</option>
-                                    {operators.map(operator => (
-                                        <option key={operator.employeeId} value={operator.employeeId}>
-                                            {operator.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="operator-select-container">
+                                    <button 
+                                        className="operator-select-button form-control"
+                                        onClick={() => setShowOperatorModal(true)}
+                                        type="button"
+                                                disabled={!canEditMixer}
+                                    >
+                                        {assignedOperator && assignedOperator !== '0'
+                                            ? getOperatorName(assignedOperator)
+                                            : 'None (Click to select)'}
+                                    </button>
+                                </div>
+                                {showOperatorModal && (
+                                                                            <OperatorSelectModal
+                                        isOpen={showOperatorModal}
+                                        onClose={() => setShowOperatorModal(false)}
+                                        onSelect={(operatorId) => {
+                                            setAssignedOperator(operatorId);
+                                            setShowOperatorModal(false);
+                                        }}
+                                        currentValue={assignedOperator}
+                                        mixers={mixers || []}
+                                        assignedPlant={assignedPlant}
+                                                                                readOnly={!canEditMixer}
+                                                                            />
+                                )}
                             </div>
                         </div>
                         <div className="form-section maintenance-info">
@@ -637,6 +827,8 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={lastServiceDate ? formatDate(lastServiceDate) : ''}
                                     onChange={(e) => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
+                                    readOnly={!canEditMixer}
                                 />
                                 {lastServiceDate && MixerUtils.isServiceOverdue(lastServiceDate) && (
                                     <div className="warning-text">Service overdue</div>
@@ -649,6 +841,7 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={lastChipDate ? formatDate(lastChipDate) : ''}
                                     onChange={(e) => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
                                 />
                                 {lastChipDate && MixerUtils.isChipOverdue(lastChipDate) && (
                                     <div className="warning-text">Chip overdue</div>
@@ -662,9 +855,10 @@ function MixerDetailView({mixerId, onClose}) {
                                             <button
                                                 key={star}
                                                 type="button"
-                                                className={`star-button ${star <= cleanlinessRating ? 'active' : ''}`}
-                                                onClick={() => setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
+                                                className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''}`}
+                                                onClick={() => canEditMixer && setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
                                                 aria-label={`Rate ${star} of 5 stars`}
+                                                disabled={!canEditMixer}
                                             >
                                                 <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
                                                    style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}
@@ -697,6 +891,7 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={vin}
                                     onChange={(e) => setVin(e.target.value)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
                                 />
                             </div>
                             <div className="form-group">
@@ -706,6 +901,7 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={make}
                                     onChange={(e) => setMake(e.target.value)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
                                 />
                             </div>
                             <div className="form-group">
@@ -715,6 +911,7 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={model}
                                     onChange={(e) => setModel(e.target.value)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
                                 />
                             </div>
                             <div className="form-group">
@@ -724,27 +921,32 @@ function MixerDetailView({mixerId, onClose}) {
                                     value={year}
                                     onChange={(e) => setYear(e.target.value)}
                                     className="form-control"
+                                    readOnly={!canEditMixer}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="form-actions">
-                    <button
-                        className="primary-button save-button"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
-                    >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                        className="danger-button"
-                        onClick={() => setShowDeleteConfirmation(true)}
-                        disabled={isSaving}
-                    >
-                        Delete Mixer
-                    </button>
+                    {canEditMixer && (
+                        <>
+                            <button
+                                className="primary-button save-button"
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button
+                                className="danger-button"
+                                onClick={() => setShowDeleteConfirmation(true)}
+                                disabled={isSaving}
+                            >
+                                Delete Mixer
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
             {showHistory && (
@@ -768,6 +970,19 @@ function MixerDetailView({mixerId, onClose}) {
                             >
                                 Delete
                             </button>
+                                            {showOperatorModal && (
+                                                <OperatorSelectModal
+                                                    isOpen={showOperatorModal}
+                                                    onClose={() => setShowOperatorModal(false)}
+                                                    onSelect={(operatorId) => {
+                                                        setAssignedOperator(operatorId);
+                                                        setShowOperatorModal(false);
+                                                    }}
+                                                    currentValue={assignedOperator}
+                                                    mixers={mixers || []}
+                                                    assignedPlant={assignedPlant}
+                                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -799,7 +1014,12 @@ function MixerDetailView({mixerId, onClose}) {
                                         setTimeout(() => setMessage(''), 3000);
                                     }
                                 }}
-                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
+                                    disabled={!canEditMixer}
+                                    style={{
+                                        backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                        opacity: !canEditMixer ? '0.6' : '1',
+                                        cursor: !canEditMixer ? 'not-allowed' : 'pointer'
+                                    }}
                             >
                                 Save & Leave
                             </button>

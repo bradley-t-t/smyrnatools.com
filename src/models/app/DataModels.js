@@ -109,30 +109,8 @@ export class Operator {
 }
 
 // Mixer Model
-export class Mixer {
-    constructor(data = {}) {
-        this.id = data.id || '';
-        this.truckNumber = data.truck_number || '';
-        this.assignedPlant = data.assigned_plant || '';
-        this.assignedOperator = data.assigned_operator || '';
-        this.cleanlinessRating = data.cleanliness_rating || 0;
-        this.status = data.status || 'available';
-        this.lastServiceDate = data.last_service_date || '';
-        this.createdAt = data.created_at || '';
-        this.updatedAt = data.updated_at || '';
-        this.updatedLast = data.updated_last || '';
-        this.updatedBy = data.updated_by || '';
-    }
-
-    // Get days since last service
-    get daysSinceService() {
-        if (!this.lastServiceDate) return null;
-        const today = new Date();
-        const serviceDate = new Date(this.lastServiceDate);
-        const diffTime = today - serviceDate;
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-}
+// DataModels.js - Model classes for application data
+// Note: The Mixer class is now imported from '../../models/mixers/Mixer'
 
 // Tractor Model
 export class Tractor {

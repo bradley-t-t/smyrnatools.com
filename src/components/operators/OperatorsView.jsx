@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import './OperatorsView.css';
+import '../../styles/FilterStyles.css';
 import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
@@ -15,6 +16,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
     const [searchText, setSearchText] = useState(preferences.operatorFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.operatorFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.operatorFilters?.statusFilter || '');
+    const [positionFilter, setPositionFilter] = useState(preferences.operatorFilters?.positionFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
@@ -37,6 +39,8 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
         'Trainer', 'Not Trainer'
     ];
 
+    const positionOptions = ['All Positions', 'Mixer Operator', 'Tractor Operator'];
+
     useEffect(() => {
         const fetchCurrentUser = async () => {
             const user = await UserService.getCurrentUser();
@@ -57,6 +61,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
             setSearchText(preferences.operatorFilters.searchText || '');
             setSelectedPlant(preferences.operatorFilters.selectedPlant || '');
             setStatusFilter(preferences.operatorFilters.statusFilter || '');
+            setPositionFilter(preferences.operatorFilters.positionFilter || '');
         }
     }, [preferences.operatorFilters]);
 
@@ -84,7 +89,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
             const formattedOperators = data.map(op => ({
                 employeeId: op.employee_id,
-                    smyrnaId: op.smyrna_id || '',
                 smyrnaId: op.smyrna_id || '',
                 name: op.name,
                 plantCode: op.plant_code,
@@ -194,7 +198,12 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                 }
             }
 
-            return matchesSearch && matchesPlant && matchesStatus;
+            let matchesPosition = true;
+            if (positionFilter && positionFilter !== 'All Positions') {
+                matchesPosition = operator.position === positionFilter;
+            }
+
+            return matchesSearch && matchesPlant && matchesStatus && matchesPosition;
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
@@ -229,7 +238,12 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
     const trainerCount = operators.filter(op => op.isTrainer).length;
 
-    const OverviewPopup = () => (
+            const OverviewPopup = () => {
+        const mixerOperatorCount = operators.filter(op => op.position === 'Mixer Operator').length;
+        const tractorOperatorCount = operators.filter(op => op.position === 'Tractor Operator').length;
+        const otherPositionCount = operators.length - mixerOperatorCount - tractorOperatorCount;
+
+        return (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
@@ -260,6 +274,23 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 <div className="metric-value">{operators.length - trainerCount}</div>
                             </div>
                         </div>
+                        <h3 className="section-title">Positions</h3>
+                        <div className="metrics-row">
+                            <div className="metric-card">
+                                <div className="metric-title">Mixer Operators</div>
+                                <div className="metric-value">{mixerOperatorCount}</div>
+                            </div>
+                            <div className="metric-card">
+                                <div className="metric-title">Tractor Operators</div>
+                                <div className="metric-value">{tractorOperatorCount}</div>
+                            </div>
+                            {otherPositionCount > 0 && (
+                                <div className="metric-card">
+                                    <div className="metric-title">Other Positions</div>
+                                    <div className="metric-value">{otherPositionCount}</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="modal-footer">
@@ -269,7 +300,8 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                 </div>
             </div>
         </div>
-    );
+        );
+    };
 
     return (
         <div className="dashboard-container operators-view">
@@ -288,7 +320,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                     <div className="dashboard-header">
                         <h1>
                             {title}
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') || (positionFilter && positionFilter !== 'All Positions')) && (
                                 <span className="filtered-indicator">(Filtered)</span>
                             )}
                         </h1>
@@ -334,6 +366,10 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                         updateOperatorFilter('selectedPlant', value);
                                     }}
                                     aria-label="Filter by plant"
+                                    style={{
+                                        '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                        '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                    }}
                                 >
                                     <option value="">All Plants</option>
                                     {plants.sort((a, b) => {
@@ -357,6 +393,10 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                         setStatusFilter(value);
                                         updateOperatorFilter('statusFilter', value);
                                     }}
+                                    style={{
+                                        '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                        '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                    }}
                                 >
                                     {filterOptions.map(option => (
                                         <option key={option} value={option}>{option}</option>
@@ -364,13 +404,34 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                 </select>
                             </div>
 
-                                                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                            <div className="filter-wrapper">
+                                <select
+                                    className="ios-select"
+                                    value={positionFilter}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setPositionFilter(value);
+                                        updateOperatorFilter('positionFilter', value);
+                                    }}
+                                    style={{
+                                        '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                        '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                    }}
+                                >
+                                    {positionOptions.map(option => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') || (positionFilter && positionFilter !== 'All Positions')) && (
                                 <button
                                     className="filter-reset-button"
                                     onClick={() => {
                                         setSearchText('');
                                         setSelectedPlant('');
                                         setStatusFilter('');
+                                        setPositionFilter('');
                                         resetOperatorFilters();
                                     }}
                                 >
@@ -524,7 +585,11 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                     )}
                                 </div>
                                 <div className="modal-footer">
-                                    <button className="cancel-button" onClick={() => setShowAddSheet(false)}>
+                                    <button 
+                                        className="cancel-button" 
+                                        onClick={() => setShowAddSheet(false)}
+                                        style={{ borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                                    >
                                         Cancel
                                     </button>
                                     <button

@@ -1,4 +1,6 @@
 // Mixer model that matches your Swift app's Mixer model
+import { MixerUtils } from '../../utils/MixerUtils';
+
 /**
  * Mixer model class
  */
@@ -87,8 +89,8 @@ export class Mixer {
             cleanliness_rating: this.cleanlinessRating,
             status: this.status,
             created_at: this.createdAt ? formatDateForDb(this.createdAt) : now,
-            updated_at: now,
-            updated_last: now,
+            updated_at: now, // Always use current timestamp for updated_at
+            updated_last: this.updatedLast ? formatDateForDb(this.updatedLast) : null,
             updated_by: this.updatedBy,
             vin: this.vin,
             make: this.make,
@@ -200,211 +202,45 @@ export class Mixer {
      * Check if the mixer is verified
      * @returns {boolean} Whether the mixer is verified
      */
-    isVerified() {
-        return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy);
-    }
-}
+            isVerified(latestHistoryDate) {
+        // Import moved to the top of the file
+        try {
+            // This will use the MixerUtils.isVerified implementation with history date if provided
+            return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate);
+        } catch (e) {
+            console.error('Error checking verification status:', e);
+            // Basic fallback implementation
+            if (!this.updatedLast || !this.updatedBy) return false;
 
-/**
- * Mixer utilities class for static helper methods
- */
-export class MixerUtils {
-    /**
-     * Check if service is overdue (more than 90 days)
-     */
-    static isServiceOverdue(date) {
-        if (!date) return false; // No service date means it's unknown, not overdue
+            const lastVerified = new Date(this.updatedLast);
+            const today = new Date();
 
-        const serviceDate = new Date(date);
-        const today = new Date();
-        const diffTime = Math.abs(today - serviceDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            // Rule 1: Check if there has been a Sunday between verification and today
+            const checkForSunday = (startDate, endDate) => {
+                // Clone start date and increment by one day to start checking
+                const currentDate = new Date(startDate);
+                currentDate.setDate(currentDate.getDate() + 1);
 
-        return diffDays > 90; // Overdue if more than 90 days
-    }
+                while (currentDate <= endDate) {
+                    // Sunday is day 0 in JavaScript
+                    if (currentDate.getDay() === 0) {
+                        return true; // Found a Sunday
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                return false; // No Sunday found
+            };
 
-    /**
-     * Check if chip is overdue (more than 180 days)
-     */
-    static isChipOverdue(date) {
-        if (!date) return false; // No chip date means it's unknown, not overdue
+            // If there's been a Sunday since verification, the mixer is not verified
+            if (checkForSunday(lastVerified, today)) return false;
 
-        const chipDate = new Date(date);
-        const today = new Date();
-        const diffTime = Math.abs(today - chipDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays > 180; // Overdue if more than 180 days
-    }
-
-    /**
-     * Get a count of mixers by status
-     */
-    static getStatusCounts(mixers = []) {
-        const counts = {
-            Active: 0,
-            'In Shop': 0,
-            Spare: 0,
-            Retired: 0,
-            Total: 0
-        };
-
-        mixers.forEach(mixer => {
-            counts.Total++;
-            if (mixer.status in counts) {
-                counts[mixer.status]++;
-            } else {
-                counts.Active++; // Default to active if status is not recognized
+            // Rule 2: Check if there's history data that is newer than the verification date
+            if (latestHistoryDate) {
+                const historyDate = new Date(latestHistoryDate);
+                if (historyDate > lastVerified) return false;
             }
-        });
 
-        return counts;
-    }
-
-    /**
-     * Get a count of mixers by plant
-     */
-    static getPlantCounts(mixers = []) {
-        const counts = {};
-
-        mixers.forEach(mixer => {
-            const plant = mixer.assignedPlant || 'Unassigned';
-            if (plant in counts) {
-                counts[plant]++;
-            } else {
-                counts[plant] = 1;
-            }
-        });
-
-        return counts;
-    }
-
-    /**
-     * Calculate cleanliness average
-     */
-    static getCleanlinessAverage(mixers = []) {
-        if (!mixers.length) return 0;
-
-        const ratedMixers = mixers.filter(mixer => mixer.cleanlinessRating > 0);
-        if (!ratedMixers.length) return 0;
-
-        const sum = ratedMixers.reduce((total, mixer) => total + mixer.cleanlinessRating, 0);
-        return (sum / ratedMixers.length).toFixed(1);
-    }
-
-    /**
-     * Get count of mixers needing service
-     */
-    static getNeedServiceCount(mixers = []) {
-        return mixers.filter(mixer => this.isServiceOverdue(mixer.lastServiceDate)).length;
-    }
-
-    /**
-     * Get status display text
-     */
-    static getStatusDisplay(status) {
-        return status || 'Unknown';
-    }
-
-    /**
-     * Check if service is overdue (alternative implementation)
-     */
-    static isServiceOverdueAlt(lastServiceDateStr) {
-        if (!lastServiceDateStr) return false;
-
-        const lastServiceDate = new Date(lastServiceDateStr);
-        const now = new Date();
-        const threeMonthsAgo = new Date();
-        threeMonthsAgo.setMonth(now.getMonth() - 3);
-
-        return lastServiceDate < threeMonthsAgo;
-    }
-
-    /**
-     * Check if chip is overdue (alternative implementation)
-     */
-    static isChipOverdueAlt(lastChipDateStr) {
-        if (!lastChipDateStr) return false;
-
-        const lastChipDate = new Date(lastChipDateStr);
-        const now = new Date();
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(now.getMonth() - 6);
-
-        return lastChipDate < sixMonthsAgo;
-    }
-
-    /**
-     * Check if cleanliness rating is low
-     */
-    static isCleanlinessLow(rating) {
-        return rating !== null && rating !== undefined && rating < 3;
-    }
-
-    /**
-     * Format date for display
-     */
-    static formatDate(dateStr) {
-        if (!dateStr) return 'Unknown';
-        return new Date(dateStr).toLocaleDateString();
-    }
-
-    /**
-     * Format date with time for display
-     */
-    static formatLongDate(dateStr) {
-        if (!dateStr) return 'Unknown';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    }
-
-    /**
-     * Get star representation of cleanliness rating
-     */
-    static cleanlinessText(rating) {
-        if (rating === null || rating === undefined) return 'Unknown';
-        return '★'.repeat(rating);
-    }
-
-    /**
-     * Check if mixer is verified (updated_last after the last Sunday at noon)
-     * and has not been modified since the last verification
-     *
-     * This method returns false in these cases:
-     * 1. If updated_last or updated_by is null/undefined
-     * 2. If the last verification (updated_last) was before the last Sunday at noon
-     * 3. If there have been changes (updated_at) since the last verification (updated_last)
-     *
-     * @param {string} updatedLastTimestamp - The timestamp when the mixer was last verified
-     * @param {string} updatedAtTimestamp - The timestamp when the mixer was last modified
-     * @param {string} updatedBy - The user who last verified the mixer (optional)
-     * @returns {boolean} Whether the mixer is considered verified
-     */
-    static isVerified(updatedLastTimestamp, updatedAtTimestamp, updatedBy) {
-        // If updated_last or updated_by is null/undefined, mixer is not verified
-        if (!updatedLastTimestamp || !updatedBy) return false;
-
-        const updatedLastDate = new Date(updatedLastTimestamp);
-        const today = new Date();
-        const lastSunday = new Date();
-
-        // Set to last Sunday
-        lastSunday.setDate(today.getDate() - today.getDay());
-        // Set to noon
-        lastSunday.setHours(12, 0, 0, 0);
-
-        // Check if verified after last Sunday
-        const isAfterLastSunday = updatedLastDate > lastSunday;
-
-        // If there's an updated_at timestamp, check if changes have been made since verification
-        if (updatedAtTimestamp) {
-            const updatedAtDate = new Date(updatedAtTimestamp);
-            // Return false if changes have been made after verification
-            if (updatedAtDate > updatedLastDate) {
-                return false;
-            }
+            return true;
         }
-
-        return isAfterLastSunday;
     }
 }

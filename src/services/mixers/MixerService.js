@@ -1,5 +1,6 @@
 import supabase from '../../core/clients/SupabaseClient';
-import {Mixer, MixerUtils} from '../../models/mixers/Mixer';
+import {Mixer} from '../../models/mixers/Mixer';
+import {MixerUtils} from '../../utils/MixerUtils';
 import {MixerHistory} from '../../models/mixers/MixerHistory';
 
 const formatDateForSupabase = (date) => {
@@ -37,6 +38,33 @@ export class MixerService {
                 .order('truck_number', {ascending: true});
 
             if (error) throw error;
+
+            // Fetch latest history dates for all mixers
+            try {
+                const { data: historyData, error: historyError } = await supabase
+                    .from('mixer_history')
+                    .select('mixer_id, changed_at')
+                    .order('changed_at', { ascending: false });
+
+                if (!historyError && historyData) {
+                    // Group by mixer_id and take the first (latest) entry for each
+                    const historyDates = {};
+                    historyData.forEach(entry => {
+                        if (!historyDates[entry.mixer_id] || 
+                            new Date(entry.changed_at) > new Date(historyDates[entry.mixer_id])) {
+                            historyDates[entry.mixer_id] = entry.changed_at;
+                        }
+                    });
+
+                    // Add history dates to mixers
+                    data.forEach(mixer => {
+                        mixer.latestHistoryDate = historyDates[mixer.id] || null;
+                    });
+                }
+            } catch (historyErr) {
+                console.error('Error fetching history dates:', historyErr);
+            }
+
             return data.map(mixer => Mixer.fromApiFormat(mixer));
         } catch (error) {
             console.error('Error fetching mixers:', error);
@@ -75,6 +103,14 @@ export class MixerService {
                 return null;
             }
 
+            // Get latest history date for verification checks
+            try {
+                const latestHistory = await this.getLatestHistoryDate(id);
+                data.latestHistoryDate = latestHistory;
+            } catch (historyError) {
+                console.error(`Error fetching history date for mixer ${id}:`, historyError);
+            }
+
             return Mixer.fromApiFormat(data);
         } catch (error) {
             console.error(`Error fetching mixer with ID ${id}:`, error);
@@ -103,10 +139,18 @@ export class MixerService {
                     .single();
 
                 if (!error && data) {
+                    // Get latest history date for verification checks
+                    try {
+                        const latestHistory = await this.getLatestHistoryDate(id);
+                        data.latestHistoryDate = latestHistory;
+                    } catch (historyError) {
+                        console.error(`Error fetching history date for mixer ${id}:`, historyError);
+                    }
+
                     const mixer = Mixer.fromApiFormat(data);
                     if (typeof mixer.isVerified !== 'function') {
-                        mixer.isVerified = function () {
-                            return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy);
+                        mixer.isVerified = function (latestHistoryDate) {
+                            return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate || this.latestHistoryDate);
                         };
                     }
                     return mixer;
@@ -139,6 +183,31 @@ export class MixerService {
         }
     }
 
+    /**
+     * Get the date of the latest history entry for a mixer
+     * @param {string} mixerId - ID of the mixer
+     * @returns {Promise<string|null>} - ISO date string of the latest history entry or null
+     */
+    static async getLatestHistoryDate(mixerId) {
+        try {
+            if (!mixerId) return null;
+
+            const { data, error } = await supabase
+                .from('mixer_history')
+                .select('changed_at')
+                .eq('mixer_id', mixerId)
+                .order('changed_at', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            return data && data.length > 0 ? data[0].changed_at : null;
+        } catch (error) {
+            console.error(`Error fetching latest history date for mixer ${mixerId}:`, error);
+            return null;
+        }
+    }
+
     static async getActiveMixers() {
         try {
             const {data, error} = await supabase
@@ -155,7 +224,45 @@ export class MixerService {
         }
     }
 
-    static async addMixer(mixer, userId) {
+        /**
+             * Get mixer history entries
+             * @param {string} mixerId - ID of the mixer
+             * @param {number} limit - Optional limit for number of history entries to return
+             * @returns {Promise<Array>} Array of history entries
+             */
+            static async getMixerHistory(mixerId, limit = null) {
+        try {
+            let query = supabase
+                .from('mixer_history')
+                .select('*')
+                .eq('mixer_id', mixerId)
+                .order('changed_at', { ascending: false });
+
+            if (limit && Number.isInteger(limit) && limit > 0) {
+                query = query.limit(limit);
+            }
+
+            const { data, error } = await query.execute();
+
+            if (error) throw error;
+
+            // Convert to our model format
+            return data.map(entry => ({
+                id: entry.id,
+                mixerId: entry.mixer_id,
+                fieldName: entry.field_name,
+                oldValue: entry.old_value,
+                newValue: entry.new_value,
+                changedAt: entry.changed_at,
+                changedBy: entry.changed_by
+            }));
+        } catch (error) {
+            console.error(`Error fetching mixer history for mixer ${mixerId}:`, error);
+            return [];
+        }
+            }
+
+            static async addMixer(mixer, userId) {
         try {
             if (!userId) {
                 console.error('No user ID provided when adding mixer');
@@ -219,6 +326,8 @@ export class MixerService {
             }
         }
 
+        // We don't need to fetch history data here since this is a new mixer creation
+
         if (mixer.id !== null && mixer.id !== undefined) {
             console.log('Removing existing ID to ensure database generates a new one');
             delete mixer.id;
@@ -276,6 +385,17 @@ export class MixerService {
                 updated_at: new Date().toISOString()
             };
 
+            // CRITICAL: For normal updates, ensure we're NOT changing updated_last
+            // This field is ONLY for verification status
+            if (mixer.updatedLast !== null && mixer.updatedLast !== undefined) {
+                console.log('Preserving verification status:', mixer.updatedLast);
+                apiData.updated_last = mixer.updatedLast;
+            } else {
+                // If explicitly set to null, allow it to be nullified
+                console.log('Verification status explicitly nullified');
+                apiData.updated_last = null;
+            }
+
             if (apiData.assigned_operator && apiData.assigned_operator !== currentMixer.assignedOperator && apiData.status !== 'Active') {
                 console.log(`Automatically setting status to Active because operator ${apiData.assigned_operator} was assigned`);
                 apiData.status = 'Active';
@@ -287,8 +407,11 @@ export class MixerService {
             }
 
             apiData.updated_at = new Date().toISOString();
-            delete apiData.updated_last;
-            delete apiData.updated_by;
+
+            // CRITICAL: For normal updates, ensure we're NOT changing updated_last
+            // Do NOT include updated_last in API data unless explicitly set
+            // This prevents the field from being modified during regular updates
+            // The only time updated_last should change is during explicit verification
 
             const {data, error} = await supabase
                 .from('mixers')

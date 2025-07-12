@@ -10,6 +10,21 @@
     color: var(--text-primary);
 }
 
+/* Modal positioning fix */
+.modal-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1001;
+    pointer-events: none;
+}
+
+.modal-wrapper > * {
+    pointer-events: auto;
+}
+
 .detail-header {
     display: flex;
     align-items: center;
@@ -770,6 +785,26 @@ input[type="date"].form-control {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
+}
+
+.operator-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.operator-select-button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.operator-select-button:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 .metadata-label {

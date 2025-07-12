@@ -1,0 +1,48 @@
+/* Filter Styles with accent color support */
+
+:root {
+  --accent-red: #b80017;
+  --accent-blue: #003896;
+  --accent-color: var(--accent-red);
+  --select-active-border: var(--accent-color);
+  --select-focus-border: var(--accent-color);
+}
+
+.filter-wrapper .ios-select:focus,
+.filter-wrapper .ios-select:active {
+  border-color: var(--select-active-border);
+  box-shadow: 0 0 0 2px rgba(var(--select-focus-border-rgb, 184, 0, 23), 0.25);
+  outline: none;
+}
+
+.filter-wrapper .ios-select option:checked {
+  background-color: var(--select-active-border);
+  color: white;
+}
+
+.filter-button.active {
+  background-color: var(--select-active-border) !important;
+  border-color: var(--select-active-border) !important;
+  color: white !important;
+}
+
+/* Cancel button with accent color */
+.cancel-button:hover {
+  border-color: var(--select-active-border) !important;
+  color: var(--select-active-border) !important;
+}
+
+/* For JavaScript customization */
+.accent-red {
+  --accent-color: var(--accent-red);
+  --select-active-border: var(--accent-red);
+  --select-focus-border: var(--accent-red);
+  --select-focus-border-rgb: 184, 0, 23;
+}
+
+.accent-blue {
+  --accent-color: var(--accent-blue);
+  --select-active-border: var(--accent-blue);
+  --select-focus-border: var(--accent-blue);
+  --select-focus-border-rgb: 0, 56, 150;
+}
