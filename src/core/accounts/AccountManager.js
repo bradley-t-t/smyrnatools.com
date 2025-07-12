@@ -23,7 +23,7 @@ export class AccountManager {
     static async getAllRoles() {
         try {
             const {data, error} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*')
                 .order('weight', {ascending: false});
 
@@ -45,7 +45,7 @@ export class AccountManager {
 
         try {
             const {data, error} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*')
                 .eq('id', roleId)
                 .single();
@@ -68,7 +68,7 @@ export class AccountManager {
 
         try {
             const {data, error} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*')
                 .eq('name', roleName)
                 .single();
@@ -96,17 +96,17 @@ export class AccountManager {
 
         try {
             const {data, error} = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .select(`
           role_id,
-          accounts_roles(id, name, permissions, weight)
+          users_roles(id, name, permissions, weight)
         `)
                 .eq('user_id', userId);
 
             if (error) throw error;
 
             // Transform the data to a more usable format
-            const roles = (data || []).map(item => item.accounts_roles);
+            const roles = (data || []).map(item => item.users_roles);
 
             // Cache the result
             this.#userRolesCache.set(userId, roles);
@@ -269,7 +269,7 @@ export class AccountManager {
         try {
             // Check if the assignment already exists
             const {data: existing, error: checkError} = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .select('id')
                 .eq('user_id', userId)
                 .eq('role_id', roleId);
@@ -281,7 +281,7 @@ export class AccountManager {
 
             // Otherwise create the assignment
             const {error} = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .insert([{user_id: userId, role_id: roleId}]);
 
             if (error) throw error;
@@ -307,7 +307,7 @@ export class AccountManager {
 
         try {
             const {error} = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .delete()
                 .eq('user_id', userId)
                 .eq('role_id', roleId);
@@ -336,7 +336,7 @@ export class AccountManager {
 
         try {
             const {data, error} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .insert([{name, permissions, weight}])
                 .select()
                 .single();
@@ -364,7 +364,7 @@ export class AccountManager {
 
         try {
             const {error} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .update(updates)
                 .eq('id', roleId);
 
@@ -391,7 +391,7 @@ export class AccountManager {
         try {
             // The foreign key constraint with CASCADE will handle removing permissions
             const {error} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .delete()
                 .eq('id', roleId);
 

@@ -92,7 +92,7 @@ function ManagerDetailView({ managerId, onClose }) {
             // 1. Try DatabaseService first (raw SQL)
             try {
                 console.log('DETAIL VIEW: Using DatabaseService to get roles');
-                const rolesData = await DatabaseService.getAllRecords('accounts_roles');
+                const rolesData = await DatabaseService.getAllRecords('users_roles');
                 console.log('DETAIL VIEW: Roles from DatabaseService:', rolesData);
 
                 if (rolesData && rolesData.length > 0) {
@@ -115,7 +115,7 @@ function ManagerDetailView({ managerId, onClose }) {
             // 2. Try direct Supabase query as fallback
             console.log('DETAIL VIEW: Directly querying with Supabase');
             const { data, error } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*');
 
             if (error) {
@@ -179,9 +179,9 @@ function ManagerDetailView({ managerId, onClose }) {
 
             if (profileError) throw profileError;
 
-            // Get user's role from accounts_permissions
+            // Get user's role from users_permissions
             const { data: permissionData, error: permissionError } = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .select('role_id')
                 .eq('user_id', managerId)
                 .single();
@@ -201,7 +201,7 @@ function ManagerDetailView({ managerId, onClose }) {
 
             if (permissionData?.role_id) {
                 const { data: roleData, error: roleError } = await supabase
-                    .from('accounts_roles')
+                    .from('users_roles')
                     .select('name, id, weight')
                     .eq('id', permissionData.role_id)
                     .single();
@@ -320,7 +320,7 @@ function ManagerDetailView({ managerId, onClose }) {
 
                 // Check if user already has a role
                 const { data: existingPermission, error: permCheckError } = await supabase
-                    .from('accounts_permissions')
+                    .from('users_permissions')
                     .select('id')
                     .eq('user_id', managerId);
 
@@ -329,7 +329,7 @@ function ManagerDetailView({ managerId, onClose }) {
                 // Update or insert the role permission
                 if (existingPermission && existingPermission.length > 0) {
                     const { error: permUpdateError } = await supabase
-                        .from('accounts_permissions')
+                        .from('users_permissions')
                         .update({
                             role_id: roleId,
                             updated_at: new Date().toISOString()
@@ -339,7 +339,7 @@ function ManagerDetailView({ managerId, onClose }) {
                     if (permUpdateError) throw permUpdateError;
                 } else {
                     const { error: permInsertError } = await supabase
-                        .from('accounts_permissions')
+                        .from('users_permissions')
                         .insert({
                             user_id: managerId,
                             role_id: roleId,

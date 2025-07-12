@@ -9,7 +9,7 @@ export class RoleService {
     static async getAllRoles() {
         try {
             const { data, error } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*')
                 .order('weight', { ascending: false });
 
@@ -30,7 +30,7 @@ export class RoleService {
         try {
             // Get the user's role ID from permissions
             const { data: permData, error: permError } = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .select('role_id')
                 .eq('user_id', userId)
                 .single();
@@ -45,7 +45,7 @@ export class RoleService {
 
             // Get the role details
             const { data: roleData, error: roleError } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*')
                 .eq('id', permData.role_id)
                 .single();
@@ -68,7 +68,7 @@ export class RoleService {
         try {
             // Check if user already has a role
             const { data: existingRole, error: checkError } = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .select('id')
                 .eq('user_id', userId);
 
@@ -77,7 +77,7 @@ export class RoleService {
             if (existingRole && existingRole.length > 0) {
                 // Update existing role
                 const { error: updateError } = await supabase
-                    .from('accounts_permissions')
+                    .from('users_permissions')
                     .update({
                         role_id: roleId,
                         updated_at: new Date().toISOString()
@@ -88,7 +88,7 @@ export class RoleService {
             } else {
                 // Create new role assignment
                 const { error: insertError } = await supabase
-                    .from('accounts_permissions')
+                    .from('users_permissions')
                     .insert({
                         user_id: userId,
                         role_id: roleId,

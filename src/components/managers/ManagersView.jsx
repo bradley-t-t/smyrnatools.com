@@ -54,7 +54,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
             // 1. Try DatabaseService first (raw SQL)
             try {
                 console.log('MANAGERS VIEW: Using DatabaseService to get roles');
-                const rolesData = await DatabaseService.getAllRecords('accounts_roles');
+                const rolesData = await DatabaseService.getAllRecords('users_roles');
                 console.log('MANAGERS VIEW: Roles from DatabaseService:', rolesData);
 
                 if (rolesData && rolesData.length > 0) {
@@ -70,7 +70,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
             // 2. Try direct Supabase query as fallback
             console.log('MANAGERS VIEW: Directly querying with Supabase');
             const { data, error } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*');
 
             if (error) {
@@ -135,14 +135,14 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
 
             // Then get permissions and roles for those users
             const {data: permissions, error: permissionsError} = await supabase
-                .from('accounts_permissions')
+                .from('users_permissions')
                 .select('user_id, role_id');
 
             if (permissionsError) throw permissionsError;
 
             // Get all available roles
             const {data: rolesList, error: rolesError} = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('id, name, weight');
 
             if (rolesError) throw rolesError;

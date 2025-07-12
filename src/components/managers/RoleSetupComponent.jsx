@@ -17,7 +17,7 @@ function RoleSetupComponent() {
                 try {
                     console.log('Checking roles with direct database query...');
                     const { data, error } = await supabase
-                        .from('accounts_roles')
+                        .from('users_roles')
                         .select('*');
 
                     if (error) throw error;

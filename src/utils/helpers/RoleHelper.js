@@ -36,7 +36,7 @@ export class RoleHelper {
     }
 
     /**
-     * Create accounts_roles records in the database if they don't exist
+     * Create users_roles records in the database if they don't exist
      * @param {Object} supabase - Supabase client
      * @returns {Promise<boolean>} - Success status
      */
@@ -45,7 +45,7 @@ export class RoleHelper {
             console.log('Checking if roles exist in database...');
             // Check if roles exist
             const { data, error } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('name')
                 .limit(1);
 
@@ -64,7 +64,7 @@ export class RoleHelper {
             // Otherwise create default roles
             const defaultRoles = this.getDefaultRoles();
             const { error: insertError, data: insertData } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .insert(defaultRoles.map(role => ({
                     name: role.name,
                     permissions: role.permissions,

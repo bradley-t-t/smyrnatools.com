@@ -22,7 +22,7 @@ function RoleDebugComponent() {
 
             // Try with Supabase client first
             const { data, error } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .select('*');
 
             if (error) {
@@ -36,7 +36,7 @@ function RoleDebugComponent() {
             // Try with raw SQL query as well
             try {
                 console.log('RoleDebugComponent: Attempting raw SQL query');
-                const rawData = await DatabaseService.getAllRecords('accounts_roles');
+                const rawData = await DatabaseService.getAllRecords('users_roles');
                 console.log('RoleDebugComponent: Raw SQL query result:', rawData);
 
                 // If raw query worked but Supabase client didn't, use raw data
@@ -69,7 +69,7 @@ function RoleDebugComponent() {
             ];
 
             const { error } = await supabase
-                .from('accounts_roles')
+                .from('users_roles')
                 .insert(defaultRoles);
 
             if (error) {
