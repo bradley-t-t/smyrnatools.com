@@ -200,7 +200,6 @@ function MixerHistoryView({mixer, onClose}) {
                         </div>
                     ) : history.length === 0 ? (
                         <div className="empty-history">
-                            <div className="empty-icon">📜</div>
                             <p>No history records found for this mixer.</p>
                             <p className="empty-subtext">History entries will appear here when changes are made to this
                                 mixer.</p>
