@@ -254,7 +254,30 @@
 .history-table tr:last-child td {
     border-bottom: none;
 }
+.input-with-button {
+    display: flex;
+    gap: 8px;
+}
 
+.input-with-button .form-control {
+    flex: 1;
+}
+
+.input-with-button .secondary-button {
+    white-space: nowrap;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0 12px;
+    color: #333;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.input-with-button .secondary-button:hover {
+    background-color: #e4e4e4;
+}
 .disabled-field {
     background-color: #f0f0f0;
     cursor: not-allowed;

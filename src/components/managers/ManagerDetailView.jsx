@@ -269,11 +269,23 @@ function ManagerDetailView({ managerId, onClose }) {
         return new Promise(async (resolve, reject) => {
             if (!manager || !manager.id) {
                 alert('Error: Cannot save manager with undefined ID');
+                reject(new Error('Cannot save manager with undefined ID'));
                 return;
             }
 
             setIsSaving(true);
             try {
+                // Check if manager still exists before updating
+                const { data: checkManager, error: checkError } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', manager.id)
+                    .single();
+
+                if (checkError || !checkManager) {
+                    throw new Error(`Manager with ID ${manager.id} not found`);
+                }
+
                 // Update profiles
                 const { error: profileError } = await supabase
                     .from('profiles')
@@ -283,7 +295,7 @@ function ManagerDetailView({ managerId, onClose }) {
                         plant_code: plantCode,
                         updated_at: new Date().toISOString(),
                     })
-                    .eq('id', managerId);
+                    .eq('id', manager.id);
 
                 if (profileError) throw profileError;
 
@@ -294,7 +306,7 @@ function ManagerDetailView({ managerId, onClose }) {
                         email,
                         updated_at: new Date().toISOString(),
                     })
-                    .eq('id', managerId);
+                    .eq('id', manager.id);
 
                 if (userError) throw userError;
 
@@ -376,12 +388,28 @@ function ManagerDetailView({ managerId, onClose }) {
                 setShowPasswordField(false);
                 setPassword('');
                 await fetchManagerDetails();
-            } catch (error) {
-                console.error('Error saving manager:', error);
-                alert(`Error saving changes: ${error.message || 'Unknown error'}`);
-            } finally {
+                // Success message and state update
+                setMessage('Changes saved successfully!');
+                setTimeout(() => setMessage(''), 3000);
+
+                // Update the original values to match current values
+                setOriginalValues({
+                    firstName,
+                    lastName,
+                    email,
+                    plantCode,
+                    roleName
+                });
+
+                setHasUnsavedChanges(false);
                 setIsSaving(false);
                 resolve();
+            } catch (error) {
+                console.error('Error saving manager:', error);
+                setMessage(`Error saving changes: ${error.message || 'Unknown error'}`);
+                setTimeout(() => setMessage(''), 5000);
+                setIsSaving(false);
+                reject(error);
             }
         });
     };

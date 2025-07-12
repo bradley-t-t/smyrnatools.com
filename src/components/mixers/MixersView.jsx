@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import MixerAddView from './MixerAddView';
-import {MixerUtils} from '../../models/mixers/Mixer';
+import {MixerUtils} from '../../utils/MixerUtils';
 import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
@@ -19,6 +19,13 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [mixers, setMixers] = useState([]);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
+
+    // Get operator's smyrna_id by ID
+    const getOperatorSmyrnaId = (operatorId) => {
+        if (!operatorId || operatorId === '0') return '';
+        const operator = operators.find(op => op.employeeId === operatorId);
+        return operator && operator.smyrnaId ? operator.smyrnaId : '';
+    };
     const [isLoading, setIsLoading] = useState(true);
     const [searchText, setSearchText] = useState(preferences.mixerFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.mixerFilters?.selectedPlant || '');
@@ -149,6 +156,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         const operator = operators.find(op => op.employeeId === operatorId);
         return operator ? operator.name : 'Unknown';
     };
+
 
     // Get plant name by code
     const getPlantName = (plantCode) => {
@@ -363,18 +371,25 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </div>
                 ) : (
                     <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
-                        {filteredMixers.map(mixer => (
-                            <MixerCard
-                                key={mixer.id}
-                                mixer={mixer}
-                                operatorName={getOperatorName(mixer.assignedOperator)}
-                                plantName={getPlantName(mixer.assignedPlant)}
-                                showOperatorWarning={isOperatorAssignedToMultipleMixers(mixer.assignedOperator)}
-                                onSelect={handleSelectMixer}
-                                onDelete={() => {
-                                }}
-                            />
-                        ))}
+                                                    {filteredMixers.map(mixer => {
+                            // Add the operator's smyrna_id to the mixer object
+                            const mixerWithOperatorData = {
+                                ...mixer,
+                                operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)
+                            };
+                            return (
+                                <MixerCard
+                                    key={mixer.id}
+                                    mixer={mixerWithOperatorData}
+                                    operatorName={getOperatorName(mixer.assignedOperator)}
+                                    plantName={getPlantName(mixer.assignedPlant)}
+                                    showOperatorWarning={isOperatorAssignedToMultipleMixers(mixer.assignedOperator)}
+                                    onSelect={handleSelectMixer}
+                                    onDelete={() => {
+                                    }}
+                                />
+                            );
+                        })}
                     </div>
                 )}
             </div>

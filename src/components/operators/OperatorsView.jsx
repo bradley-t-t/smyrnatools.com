@@ -84,6 +84,8 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
             const formattedOperators = data.map(op => ({
                 employeeId: op.employee_id,
+                    smyrnaId: op.smyrna_id || '',
+                smyrnaId: op.smyrna_id || '',
                 name: op.name,
                 plantCode: op.plant_code,
                 status: op.status,

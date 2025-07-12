@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {MixerUtils} from '../../models/mixers/Mixer';
+import {MixerUtils} from '../../utils/MixerUtils';
 import ThemeUtils from '../../utils/ThemeUtils';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 import {MixerMaintenanceService} from '../../services/mixers/MixerMaintenanceService';
@@ -8,7 +8,8 @@ import './MixerCard.css';
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
     const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
-    const isVerified = mixer.isVerified();
+    // Use MixerUtils directly instead of calling the method on the object
+    const isVerified = MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
     const statusColor = ThemeUtils.statusColors[mixer.status] || ThemeUtils.statusColors.default;
     const {preferences} = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
@@ -88,6 +89,10 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                 </span>
                             )}
                         </div>
+                    </div>
+                    <div className="detail-row">
+                        <div className="detail-label">Employee ID</div>
+                        <div className="detail-value">{mixer.operatorSmyrnaId || 'Not Assigned'}</div>
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Last Service</div>

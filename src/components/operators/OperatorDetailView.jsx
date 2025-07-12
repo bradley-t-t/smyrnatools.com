@@ -5,6 +5,7 @@ import {UserService} from '../../services/auth/UserService';
 import supabase from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 import OperatorCard from './OperatorCard';
+import {generateEmployeeIdFromUUID, generateRandomEmployeeId} from '../../utils/IdUtils';
 import './OperatorDetailView.css';
 
 function OperatorDetailView({operatorId, onClose}) {
@@ -22,6 +23,7 @@ function OperatorDetailView({operatorId, onClose}) {
     const [originalValues, setOriginalValues] = useState({});
 
     const [employeeId, setEmployeeId] = useState('');
+    const [smyrnaId, setSmyrnaId] = useState('');
     const [name, setName] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('');
@@ -45,6 +47,7 @@ function OperatorDetailView({operatorId, onClose}) {
         if (isLoading) return;
 
         const hasChanges =
+            smyrnaId !== originalValues.smyrnaId ||
             name !== originalValues.name ||
             assignedPlant !== originalValues.assignedPlant ||
             status !== originalValues.status ||
@@ -53,15 +56,28 @@ function OperatorDetailView({operatorId, onClose}) {
             assignedTrainer !== originalValues.assignedTrainer;
 
         setHasUnsavedChanges(hasChanges);
-    }, [employeeId, name, assignedPlant, status, position, isTrainer, assignedTrainer, originalValues, isLoading]);
+    }, [employeeId, smyrnaId, name, assignedPlant, status, position, isTrainer, assignedTrainer, originalValues, isLoading]);
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
             const operatorData = await OperatorService.getOperatorByEmployeeId(operatorId);
+            console.log('Fetched operator data:', operatorData);
+
+            if (!operatorData) {
+                console.error(`No operator found with employee ID ${operatorId}`);
+                setIsLoading(false);
+                return;
+            }
+
+            if (!operatorData.employeeId) {
+                console.error('Operator data is missing employee ID', operatorData);
+            }
+
             setOperator(operatorData);
 
             const empId = operatorData.employeeId || '';
+            const opSmyrnaId = operatorData.smyrnaId || '';
             const operatorName = operatorData.name || '';
             const plant = operatorData.plantCode || '';
             const statusVal = operatorData.status || '';
@@ -70,6 +86,7 @@ function OperatorDetailView({operatorId, onClose}) {
             const trainer = operatorData.assignedTrainer || '0';
 
             setEmployeeId(empId);
+            setSmyrnaId(opSmyrnaId);
             setName(operatorName);
             setAssignedPlant(plant);
             setStatus(statusVal);
@@ -79,6 +96,7 @@ function OperatorDetailView({operatorId, onClose}) {
 
             setOriginalValues({
                 employeeId: empId,
+                smyrnaId: opSmyrnaId,
                 name: operatorName,
                 assignedPlant: plant,
                 status: statusVal,
@@ -133,9 +151,24 @@ function OperatorDetailView({operatorId, onClose}) {
                     throw new Error('Authentication required: You must be logged in to update operators');
                 }
 
+                // Log the current operator state
+                console.log('Current operator state before update:', operator);
+
+                if (!operator.employeeId) {
+                    console.error('Missing employee ID for operator before update:', operator);
+                    throw new Error('Cannot update operator: missing employee ID. Try refreshing the page.');
+                }
+
+                // We need to use the original employeeId to find the record
+                // Store it separately for the lookup
+                const originalEmployeeId = operator.employeeId;
+
                 const updatedOperator = {
                     ...operator,
+                    // This employeeId might be changing
+                    // Update with new form values
                     employeeId,
+                    smyrnaId,
                     name,
                     plantCode: assignedPlant,
                     status,
@@ -146,6 +179,8 @@ function OperatorDetailView({operatorId, onClose}) {
                     updatedBy: userId
                 };
 
+                console.log('Updated operator object with ID:', updatedOperator);
+
                 await OperatorService.updateOperator(updatedOperator, userId);
                 setOperator(updatedOperator);
                 fetchData();
@@ -155,6 +190,7 @@ function OperatorDetailView({operatorId, onClose}) {
 
                 setOriginalValues({
                     employeeId,
+                    smyrnaId,
                     name,
                     assignedPlant,
                     status,
@@ -166,7 +202,8 @@ function OperatorDetailView({operatorId, onClose}) {
                 setHasUnsavedChanges(false);
             } catch (error) {
                 console.error('Error saving operator:', error);
-                alert(`Error saving changes: ${error.message || 'Unknown error'}`);
+                setMessage(`Error saving changes: ${error.message || 'Unknown error'}`);
+                setTimeout(() => setMessage(''), 5000);
             } finally {
                 setIsSaving(false);
                 resolve();
@@ -323,12 +360,12 @@ function OperatorDetailView({operatorId, onClose}) {
                     </div>
 
                     <div className="form-group">
-                        <label>Employee ID</label>
+                        <label>Smyrna ID</label>
                         <input
                             type="text"
-                            value={employeeId}
-                            readOnly
-                            className="form-control disabled-field"
+                            value={smyrnaId}
+                            onChange={(e) => setSmyrnaId(e.target.value)}
+                            className="form-control"
                         />
                     </div>
 

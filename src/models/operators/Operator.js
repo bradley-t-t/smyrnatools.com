@@ -3,7 +3,10 @@
  */
 export class Operator {
     constructor(data = {}) {
+        // Note: In our database, employee_id is the primary key (UUID)
+        // There is no separate 'id' column
         this.employeeId = data.employee_id || '';
+        this.smyrnaId = data.smyrna_id || '';
         this.name = data.name || '';
         this.plantCode = data.plant_code || null;
         this.status = data.status || 'Active';
@@ -18,8 +21,15 @@ export class Operator {
      * Create an Operator instance from API data
      */
     static fromApiFormat(data) {
-        return new Operator({
+        if (!data) {
+            console.error('Attempted to create Operator from null or undefined data');
+            return null;
+        }
+
+        // The primary key in the database is employee_id (UUID)
+        const operator = new Operator({
             employee_id: data.employee_id,
+            smyrna_id: data.smyrna_id,
             name: data.name,
             plant_code: data.plant_code,
             status: data.status,
@@ -29,6 +39,13 @@ export class Operator {
             created_at: data.created_at,
             updated_at: data.updated_at
         });
+
+        // Debug validation for employeeId
+        if (!operator.employeeId) {
+            console.warn('employeeId not properly set in Operator model', { data });
+        }
+
+        return operator;
     }
 
     /**
@@ -44,6 +61,7 @@ export class Operator {
     toApiFormat() {
         return {
             employee_id: this.employeeId,
+            smyrna_id: this.smyrnaId,
             name: this.name,
             plant_code: this.plantCode,
             status: this.status,

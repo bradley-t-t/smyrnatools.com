@@ -71,6 +71,25 @@ export class OperatorService {
 
             if (error) throw error;
 
+            if (!data) {
+                console.error(`No operator found with employee ID ${employeeId}`);
+                return null;
+            }
+
+            if (!data.employee_id) {
+                console.error(`Found operator data but missing employee_id field:`, data);
+                // Try to use the passed employeeId as a fallback
+                data.employee_id = employeeId;
+            }
+
+            // Initialize smyrna_id if missing
+            if (!data.smyrna_id) {
+                console.log(`Operator ${employeeId} is missing smyrna_id, initializing an empty one`);
+                data.smyrna_id = '';
+            }
+
+            // Log the found operator data
+            console.log(`Found operator with employee ID ${employeeId}:`, data);
             return Operator.fromApiFormat(data);
         } catch (error) {
             console.error(`Error fetching operator with ID ${employeeId}:`, error);
@@ -88,6 +107,7 @@ export class OperatorService {
                 operator : 
                 new Operator({
                     employee_id: operator.employeeId,
+                    smyrna_id: operator.smyrnaId,
                     name: operator.name,
                     plant_code: operator.plantCode,
                     status: operator.status,
@@ -119,17 +139,34 @@ export class OperatorService {
      */
     static async updateOperator(operator, userId) {
         try {
-            // Get current operators data for history tracking
-            const currentOperator = await this.getOperatorByEmployeeId(operator.employeeId);
-            if (!currentOperator) {
-                throw new Error(`Operator with ID ${operator.employeeId} not found`);
+            // In this database, employee_id is the primary key (UUID)
+            if (!operator.employeeId) {
+                throw new Error('Cannot update operator: missing employee ID');
             }
+
+            // Get current data using the employee_id for lookup
+            const { data: currentData, error: lookupError } = await supabase
+                .from('operators')
+                .select('*')
+                .eq('employee_id', operator.employeeId)
+                .single();
+
+            if (lookupError || !currentData) {
+                throw new Error(`Operator with employee ID ${operator.employeeId} not found`);
+            }
+
+            const currentOperator = Operator.fromApiFormat(currentData);
+
+            console.log('Current operator data from DB:', currentData);
+            console.log('Operator object passed to update:', operator);
 
             // Ensure operator is an Operator instance
             const operatorInstance = operator instanceof Operator ? 
                 operator : 
                 new Operator({
+                    // employee_id is the primary key in the database
                     employee_id: operator.employeeId,
+                    smyrna_id: operator.smyrnaId,
                     name: operator.name,
                     plant_code: operator.plantCode,
                     status: operator.status,
@@ -140,8 +177,11 @@ export class OperatorService {
                     updated_at: operator.updatedAt
                 });
 
+            console.log('Final operator instance for update:', operatorInstance);
+
             // Update operators
             const apiData = operatorInstance.toApiFormat();
+            console.log('Updating operator with data:', apiData);
             const {error} = await supabase
                 .from('operators')
                 .update(apiData)
@@ -154,6 +194,7 @@ export class OperatorService {
 
             // Compare fields and create history entries
             const fieldsToTrack = [
+                {field: 'smyrnaId', dbField: 'smyrna_id'},
                 {field: 'name', dbField: 'name'},
                 {field: 'plantCode', dbField: 'plant_code'},
                 {field: 'status', dbField: 'status'},
@@ -301,6 +342,7 @@ export class OperatorService {
             // Convert to our model format, ensuring employee_id is properly mapped
             return operatorsData.map(op => ({
                 employeeId: op.employee_id,
+                smyrnaId: op.smyrna_id,
                 name: op.name,
                 plantCode: op.plant_code,
                 status: op.status,
