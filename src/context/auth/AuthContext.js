@@ -1,7 +1,7 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
-import {isSupabaseConfigured, supabase} from '../core/clients/SupabaseClient';
-import {AuthUtils} from '../utils/AuthUtils';
-import {AccountManager} from '../core/managers/AccountManager';
+import {isSupabaseConfigured, supabase} from '../../core/clients/SupabaseClient';
+import {AuthUtils} from '../../utils/AuthUtils';
+import {AccountManager} from '../../core/managers/AccountManager';
 
 const AuthContext = createContext();
 
@@ -295,7 +295,7 @@ export function AuthProvider({children}) {
             const passwordHash = await AuthUtils.hashPassword(password, salt);
 
             // Generate UUID using our improved helper function that works across all environments
-            const {generateUUID} = await import('../utils/UUIDUtils');
+            const {generateUUID} = await import('../../utils/UUIDUtils');
             const userId = generateUUID();
             const now = new Date().toISOString();
 
@@ -395,7 +395,7 @@ export function AuthProvider({children}) {
                 throw new Error('Biometric authentication is not supported on this device');
             }
 
-            const KeychainHelper = (await import('../utils/KeychainUtils')).KeychainUtl;
+            const KeychainHelper = (await import('../../utils/KeychainUtils')).KeychainUtl;
             const credentials = KeychainHelper.shared.retrieveCredentials();
 
             if (!credentials) {

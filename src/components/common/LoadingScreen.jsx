@@ -1,6 +1,6 @@
 import React from 'react';
 import './LoadingScreen.css';
-import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 
 function LoadingScreen({message = 'Loading...'}) {
     return (

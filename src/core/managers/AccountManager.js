@@ -1,4 +1,4 @@
-import supabase, {logSupabaseError} from '../Supabase';
+import supabase, {logSupabaseError} from '../database/Supabase';
 
 /**
  * AccountManager utility to handle user accounts and permissions

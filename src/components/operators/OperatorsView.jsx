@@ -4,7 +4,7 @@ import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/auth/UserService';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';
-import {usePreferences} from '../../context/PreferencesContext';
+import {usePreferences} from '../../context/preferences/PreferencesContext';
 
 function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator}) {
     const {preferences, updateOperatorFilter, resetOperatorFilters} = usePreferences();

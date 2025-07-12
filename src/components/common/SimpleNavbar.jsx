@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './SimpleNavbar.css';
-import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
-import {usePreferences} from '../../context/PreferencesContext';
+import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
+import {usePreferences} from '../../context/preferences/PreferencesContext';
 import {AccountManager} from '../../core/managers/AccountManager';
 
 // Add FontAwesome stylesheet dynamically if not already present

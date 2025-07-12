@@ -47,6 +47,16 @@ export class AuthUtils {
     }
 
     /**
+     * Generate a random salt for password hashing
+     * @returns {string} A random salt string
+     */
+    static generateSalt() {
+        const randomBytes = new Uint8Array(16);
+        window.crypto.getRandomValues(randomBytes);
+        return Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    /**
      * Generates a SHA-256 hash of the password with salt
      * This matches the Swift implementation that uses CryptoKit.SHA256
      * @param {string} password - The password to hash
@@ -100,11 +110,15 @@ export class AuthUtils {
     }
 
     /**
-     * Generates a cryptographically secure random salt
-     * @returns {string} - A unique salt
+     * Verify a password against a hash and salt
+     * @param {string} password - The plain text password to verify
+     * @param {string} hash - The stored hash
+     * @param {string} salt - The salt used for the hash
+     * @returns {Promise<boolean>} - True if the password matches, false otherwise
      */
-    static generateSalt() {
-        return generateUUID();
+    static async verifyPassword(password, hash, salt) {
+        const computedHash = await this.hashPassword(password, salt);
+        return computedHash === hash;
     }
 }
 

@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {Mixer, MixerUtils} from '../../models/Mixer';
+import {Mixer, MixerUtils} from '../../models/mixers/Mixer';
 import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
 import supabase from '../../core/clients/SupabaseClient';
-import {usePreferences} from '../../context/PreferencesContext';
+import {usePreferences} from '../../context/preferences/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
 import MixerIssueModal from './MixerIssueModal';

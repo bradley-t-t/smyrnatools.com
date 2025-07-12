@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {MixerUtils} from '../../models/Mixer';
+import {MixerUtils} from '../../models/mixers/Mixer';
 import ThemeUtils from '../../utils/ThemeUtils';
-import {usePreferences} from '../../context/PreferencesContext';
+import {usePreferences} from '../../context/preferences/PreferencesContext';
 import {MixerMaintenanceService} from '../../services/mixers/MixerMaintenanceService';
 import './MixerCard.css';
 

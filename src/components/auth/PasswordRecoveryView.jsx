@@ -3,7 +3,7 @@ import {supabase} from '../../core/clients/SupabaseClient';
 import EmailClient from '../../core/clients/EmailClient';
 import {sendEmailMock} from '../../api/EmailService'; // Only import what we use
 import './LoginView.css';
-import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 
 function PasswordRecoveryView({onBackToLogin}) {
     const [stage, setStage] = useState('email'); // email, verification, reset

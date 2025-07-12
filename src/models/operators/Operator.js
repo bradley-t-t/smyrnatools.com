@@ -3,7 +3,6 @@
  */
 export class Operator {
     constructor(data = {}) {
-        this.id = data.id || null;
         this.employeeId = data.employee_id || '';
         this.name = data.name || '';
         this.plantCode = data.plant_code || null;
@@ -20,7 +19,6 @@ export class Operator {
      */
     static fromApiFormat(data) {
         return new Operator({
-            id: data.id,
             employee_id: data.employee_id,
             name: data.name,
             plant_code: data.plant_code,
@@ -45,7 +43,6 @@ export class Operator {
      */
     toApiFormat() {
         return {
-            id: this.id,
             employee_id: this.employeeId,
             name: this.name,
             plant_code: this.plantCode,

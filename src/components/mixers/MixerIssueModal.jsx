@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { MixerMaintenanceService } from '../../services/mixers/MixerMaintenanceService';
-import { usePreferences } from '../../context/PreferencesContext';
+import { usePreferences } from '../../context/preferences/PreferencesContext';
 import ErrorBoundary from '../common/ErrorBoundary';
-import { ErrorLogger } from '../../utils/ErrorLogger';
+import { ErrorLogger } from '../../utils/loggers/ErrorLogger';
 import ErrorMessage from '../common/ErrorMessage';
 import './MixerIssueModal.css';
 

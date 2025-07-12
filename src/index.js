@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
+import './core/index.css';
+import App from './core/App';
 import reportWebVitalsUtils from './utils/ReportWebVitalsUtils';
 
 // Import the PreferencesProvider
-import {PreferencesProvider} from './context/PreferencesContext';
+import {PreferencesProvider} from './context/preferences/PreferencesContext';
 
 const meta = document.createElement('meta');
 meta.name = 'viewport';

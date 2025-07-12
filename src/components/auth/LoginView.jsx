@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {useAuth} from '../../context/AuthContext';
+import {useAuth} from '../../context/auth/AuthContext';
 import {AuthUtils} from '../../utils/AuthUtils';
-import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 import PasswordRecoveryView from './PasswordRecoveryView';
 import './LoginView.css';
 

@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {usePreferences} from '../../context/PreferencesContext';
+import {usePreferences} from '../../context/preferences/PreferencesContext';
 import {MixerService} from '../../services/mixers/MixerService';
 import {OperatorService} from '../../services/operators/OperatorService';
-import UserLabel from '../UserLabel';
+import UserLabel from '../users/UserLabel';
 import '../common/LoadingText.css';
 import './MixerHistoryView.css';
 

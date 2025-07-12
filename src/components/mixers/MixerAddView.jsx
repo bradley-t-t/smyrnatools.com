@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
-import {Mixer} from '../../models/Mixer';
+import {Mixer} from '../../models/mixers/Mixer';
 import {AuthService} from '../../services/auth/AuthService';
 import './MixerAddView.css';
 

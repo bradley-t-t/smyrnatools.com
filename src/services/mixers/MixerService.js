@@ -1,6 +1,6 @@
 import supabase from '../../core/clients/SupabaseClient';
-import {Mixer, MixerUtils} from '../../models/Mixer';
-import {MixerHistory} from '../../models/MixerHistory';
+import {Mixer, MixerUtils} from '../../models/mixers/Mixer';
+import {MixerHistory} from '../../models/mixers/MixerHistory';
 
 const formatDateForSupabase = (date) => {
     if (!date) return null;

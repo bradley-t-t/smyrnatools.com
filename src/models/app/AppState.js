@@ -1,9 +1,9 @@
-import {AuthService} from '../services/auth/AuthService';
-import {ProfileService} from '../services/profiles/ProfileService';
-import {PlantService} from '../services/plants/PlantService';
-import {OperatorService} from '../services/operators/OperatorService';
-import {TaskService} from '../services/tasks/TaskService';
-import {NetworkUtils} from '../utils/NetworkUtils';
+import {AuthService} from '../../services/auth/AuthService';
+import {ProfileService} from '../../services/profiles/ProfileService';
+import {PlantService} from '../../services/plants/PlantService';
+import {OperatorService} from '../../services/operators/OperatorService';
+import {TaskService} from '../../services/tasks/TaskService';
+import {NetworkUtils} from '../../utils/NetworkUtils';
 
 /**
  * Central app state that coordinates the application

@@ -1,4 +1,4 @@
-import supabase from '../../core/Supabase';
+import supabase from '../../core/database/Supabase';
 import {AuthService} from '../auth/AuthService';
 import {ProfileService} from '../profiles/ProfileService';
 

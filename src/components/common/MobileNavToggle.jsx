@@ -1,5 +1,5 @@
 import React from 'react';
-import {usePreferences} from '../../context/PreferencesContext';
+import {usePreferences} from '../../context/preferences/PreferencesContext';
 import './MobileNavToggle.css';
 
 function MobileNavToggle() {

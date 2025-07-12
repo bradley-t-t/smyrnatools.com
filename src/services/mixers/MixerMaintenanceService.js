@@ -1,5 +1,5 @@
 import supabase from '../../core/clients/SupabaseClient';
-import { DatabaseHelper } from '../../utils/DatabaseHelper';
+import { DatabaseHelper } from '../../utils/helpers/DatabaseHelper';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MixerMaintenanceService {

@@ -1,6 +1,6 @@
 import React from 'react';
-import {useAuth} from '../../context/AuthContext';
-import SmyrnaLogo from '../../assets/SmyrnaLogo.png';
+import {useAuth} from '../../context/auth/AuthContext';
+import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 import './GuestView.css';
 
 function GuestView() {

@@ -9,7 +9,7 @@ import supabase, {
   isSupabaseConfigured,
   logSupabaseError,
   SupabaseUtils
-} from './clients/SupabaseClient';
+} from '../clients/SupabaseClient';
 
 export default supabase;
 export {

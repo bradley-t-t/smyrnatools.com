@@ -245,7 +245,7 @@
 /* UserLabel component now handles its own styling */
 
 /* Import UserLabel.css for the styles */
-@import url('../UserLabel.css');
+@import url('../users/UserLabel.css');
 
 .value-label {
     font-weight: 500;
