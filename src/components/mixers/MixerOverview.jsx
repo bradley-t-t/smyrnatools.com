@@ -71,8 +71,7 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                 Total: 0,
                 Active: 0,
                 Spare: 0,
-                'In Shop': 0,
-                Retired: 0
+                'In Shop': 0
             };
         });
 
@@ -189,10 +188,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                         <div className="status-item">
                             <div className="status-count">{statusCounts.Spare || 0}</div>
                             <div className="status-label">Spare</div>
-                        </div>
-                        <div className="status-item">
-                            <div className="status-count">{statusCounts.Retired || 0}</div>
-                            <div className="status-label">Retired</div>
                         </div>
                         <div className="status-item">
                             <div className="status-count">{verifiedCount}</div>
