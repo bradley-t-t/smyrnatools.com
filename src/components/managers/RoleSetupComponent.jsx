@@ -3,17 +3,12 @@ import { supabase } from '../../core/clients/SupabaseClient';
 import { RoleService } from '../../services/auth/RoleService';
 import { AccountManager } from '../../core/accounts/AccountManager';
 
-/**
- * Component that runs on app start to perform role diagnostics
- * This is a hidden component that just runs logic on mount
- */
 function RoleSetupComponent() {
     useEffect(() => {
         const performDiagnostics = async () => {
             try {
                 console.log('========== ROLE DIAGNOSTIC CHECKS ==========');
 
-                // Direct database query - most reliable method
                 try {
                     console.log('Checking roles with direct database query...');
                     const { data, error } = await supabase
@@ -31,7 +26,6 @@ function RoleSetupComponent() {
                     console.error('❌ Direct query error:', e.message);
                 }
 
-                // Check via RoleService
                 try {
                     console.log('Checking roles with RoleService...');
                     const roles = await RoleService.getAllRoles();
@@ -45,7 +39,6 @@ function RoleSetupComponent() {
                     console.error('❌ RoleService error:', e.message);
                 }
 
-                // Check via AccountManager
                 try {
                     console.log('Checking roles with AccountManager...');
                     const roles = await AccountManager.getAllRoles();
@@ -59,10 +52,8 @@ function RoleSetupComponent() {
                     console.error('❌ AccountManager error:', e.message);
                 }
 
-                // Check for any caching issues
                 try {
                     console.log('Checking for potential caching issues...');
-                    // Make two consecutive calls to see if results are consistent
                     const roles1 = await AccountManager.getAllRoles();
                     const roles2 = await RoleService.getAllRoles();
 
@@ -87,7 +78,6 @@ function RoleSetupComponent() {
         performDiagnostics();
     }, []);
 
-    // This component doesn't render anything visible
     return null;
 }
 

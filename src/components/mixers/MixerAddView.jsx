@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
 import {Mixer} from '../../models/mixers/Mixer';
 import {AuthService} from '../../services/auth/AuthService';
@@ -6,15 +6,11 @@ import OperatorSelectModal from './OperatorSelectModal';
 import './MixerAddView.css';
 
 function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
-    // Debug log for plants
-    console.log('MixerAddView plants:', plants);
     const hasOperators = Array.isArray(operators) && operators.length > 0;
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [assignedOperator, setAssignedOperator] = useState('0');
     const [showOperatorModal, setShowOperatorModal] = useState(false);
-
-    // Reset operator when plant changes
     useEffect(() => {
         setAssignedOperator('0');
     }, [assignedPlant]);
@@ -32,27 +28,21 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-
         if (!truckNumber) {
             setError('Truck number is required');
             return;
         }
-
         if (!assignedPlant) {
             setError('Plant is required');
             return;
         }
-
         setIsSaving(true);
-
         try {
             let userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
             if (!userId) {
                 throw new Error('User ID not available. Please log in again.');
             }
-
             const operatorToSave = status !== 'Active' ? '0' : assignedOperator;
-
             const formatDateForDb = (date) => {
                 if (!date) return null;
                 const d = new Date(date);
@@ -65,9 +55,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                 const seconds = String(d.getSeconds()).padStart(2, '0');
                 return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
             };
-
             const now = formatDateForDb(new Date());
-
             const newMixer = new Mixer({
                 truck_number: truckNumber,
                 assigned_plant: assignedPlant,
@@ -85,7 +73,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                 updated_by: userId,
                 updated_last: now
             });
-
             const savedMixer = await MixerService.createMixer(newMixer, userId);
             if (savedMixer) {
                 onMixerAdded(savedMixer);
@@ -94,7 +81,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                 throw new Error('Failed to add mixer - no data returned from server');
             }
         } catch (error) {
-            console.error('Error adding mixer:', error);
             setError(`Failed to add mixer: ${error.message || 'Unknown error'}`);
         } finally {
             setIsSaving(false);
@@ -205,7 +191,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                         </div>
                         <div className="form-group">
                             <label htmlFor="assignedOperator">Assigned Operator</label>
-                            <button 
+                            <button
                                 id="assignedOperator"
                                 className="ios-select operator-select-button"
                                 onClick={(e) => {
@@ -239,7 +225,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                     assignedPlant={assignedPlant}
                                 />
                             )}
-                                        {!assignedPlant && (
+                            {!assignedPlant && (
                                 <div className="warning-message"
                                      style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
                                     Please select a plant first to view available operators
@@ -250,9 +236,9 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                      style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
                                     No operators available for this plant
                                     <div style={{marginTop: '4px'}}>
-                                        <a 
-                                            href="/operators/add" 
-                                            target="_blank" 
+                                        <a
+                                            href="/operators/add"
+                                            target="_blank"
                                             rel="noopener noreferrer"
                                             style={{color: '#007AFF', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px'}}
                                         >

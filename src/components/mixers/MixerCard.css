@@ -114,7 +114,6 @@
     color: #ff9900;
 }
 
-/* Status indicator styles now imported from StatusIndicatorStyles.css */
 .mixer-card {
     background-color: #ffffff;
     border-radius: 8px;
@@ -288,7 +287,7 @@
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    height: 100%; /* Ensure cards fill full height of grid cell */
+    height: 100%;
     display: flex;
 }
 

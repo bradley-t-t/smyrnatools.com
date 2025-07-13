@@ -130,7 +130,7 @@ function MixerDetailView({mixerId, onClose}) {
 
                 // Get user profile to check plant_code
                 const {data: profileData} = await supabase
-                    .from('profiles')
+                    .from('users_profiles')
                     .select('plant_code')
                     .eq('id', userId)
                     .single();

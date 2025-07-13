@@ -1,4 +1,3 @@
-/* MixerAddView.css */
 .add-mixer-modal-backdrop {
     position: fixed;
     top: 0;
@@ -24,7 +23,6 @@
     overflow: hidden;
 }
 
-/* Modal positioning fix */
 .modal-wrapper {
     position: fixed;
     top: 0;

@@ -14,12 +14,10 @@ function MultiSelect({
   const [searchText, setSearchText] = useState('');
   const containerRef = useRef(null);
 
-  // Filter options based on search text
-  const filteredOptions = options.filter(option => 
+  const filteredOptions = options.filter(option =>
     option[labelKey].toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Handle clicking outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -31,7 +29,6 @@ function MultiSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle toggling selection
   const toggleOption = (option) => {
     const value = option[valueKey];
     const isSelected = selectedValues.includes(value);
@@ -43,7 +40,6 @@ function MultiSelect({
     }
   };
 
-  // Clear all selections
   const clearSelections = (e) => {
     e.stopPropagation();
     onChange([]);
@@ -57,7 +53,6 @@ function MultiSelect({
       return displayFormat(selectedValues);
     }
 
-    // Default display format
     if (selectedValues.length === 1) {
       const selected = options.find(o => o[valueKey] === selectedValues[0]);
       return selected ? selected[labelKey] : placeholder;
@@ -116,7 +111,7 @@ function MultiSelect({
                     <input 
                       type="checkbox" 
                       checked={isSelected} 
-                      onChange={() => {}} // Handled by div click
+                      onChange={() => {}}
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span>{option[labelKey]}</span>

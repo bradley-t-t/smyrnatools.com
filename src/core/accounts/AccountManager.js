@@ -1,25 +1,14 @@
 import supabase, {logSupabaseError} from '../database/Supabase';
 
-/**
- * AccountManager utility to handle user accounts and permissions
- */
 export class AccountManager {
-    // Cache for user roles and permissions
     static #userRolesCache = new Map();
     static #rolesPermissionsCache = new Map();
 
-    /**
-     * Clear all cached data
-     */
     static clearCache() {
         this.#userRolesCache.clear();
         this.#rolesPermissionsCache.clear();
     }
 
-    /**
-     * Get all available roles
-     * @returns {Promise<Array>} - Array of role objects
-     */
     static async getAllRoles() {
         try {
             const {data, error} = await supabase
@@ -35,11 +24,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Get role by ID
-     * @param {string} roleId - The UUID of the role
-     * @returns {Promise<Object|null>} - Role object or null if not found
-     */
     static async getRoleById(roleId) {
         if (!roleId) return null;
 
@@ -58,11 +42,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Get role by name
-     * @param {string} roleName - The name of the role
-     * @returns {Promise<Object|null>} - Role object or null if not found
-     */
     static async getRoleByName(roleName) {
         if (!roleName) return null;
 
@@ -81,15 +60,9 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Get all roles assigned to a user
-     * @param {string} userId - The UUID of the user
-     * @returns {Promise<Array>} - Array of role objects
-     */
     static async getUserRoles(userId) {
         if (!userId) return [];
 
-        // Check cache first
         if (this.#userRolesCache.has(userId)) {
             return this.#userRolesCache.get(userId);
         }
@@ -105,10 +78,8 @@ export class AccountManager {
 
             if (error) throw error;
 
-            // Transform the data to a more usable format
             const roles = (data || []).map(item => item.users_roles);
 
-            // Cache the result
             this.#userRolesCache.set(userId, roles);
 
             return roles;
@@ -118,18 +89,12 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Get all permissions for a user across all their roles
-     * @param {string} userId - The UUID of the user
-     * @returns {Promise<Array<string>>} - Array of permission strings
-     */
     static async getUserPermissions(userId) {
         if (!userId) return [];
 
         try {
             const roles = await this.getUserRoles(userId);
 
-            // Combine all permissions from all roles
             const permissions = new Set();
             roles.forEach(role => {
                 if (role && role.permissions) {
@@ -144,16 +109,9 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Check if a user has a specific permission
-     * @param {string} userId - The UUID of the user
-     * @param {string} permission - The permission to check
-     * @returns {Promise<boolean>} - True if the user has the permission, false otherwise
-     */
     static async hasPermission(userId, permission) {
         if (!userId || !permission) return false;
 
-        // Always allow access to personal account
         if (permission === 'my_account.view') return true;
 
         try {
@@ -165,19 +123,12 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Check if a user has any of the specified permissions
-     * @param {string} userId - The UUID of the user
-     * @param {Array<string>} permissions - Array of permissions to check
-     * @returns {Promise<boolean>} - True if the user has any of the permissions, false otherwise
-     */
     static async hasAnyPermission(userId, permissions) {
         if (!userId || !permissions || !permissions.length) return false;
 
         try {
             const userPermissions = await this.getUserPermissions(userId);
 
-            // Check if any of the requested permissions match the user's permissions
             return permissions.some(perm => userPermissions.includes(perm));
         } catch (error) {
             logSupabaseError(`hasAnyPermission(${userId}, [${permissions.join(', ')}])`, error);
@@ -185,19 +136,12 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Check if a user has all of the specified permissions
-     * @param {string} userId - The UUID of the user
-     * @param {Array<string>} permissions - Array of permissions to check
-     * @returns {Promise<boolean>} - True if the user has all of the permissions, false otherwise
-     */
     static async hasAllPermissions(userId, permissions) {
         if (!userId || !permissions || !permissions.length) return false;
 
         try {
             const userPermissions = await this.getUserPermissions(userId);
 
-            // Check if all of the requested permissions are included in the user's permissions
             return permissions.every(perm => userPermissions.includes(perm));
         } catch (error) {
             logSupabaseError(`hasAllPermissions(${userId}, [${permissions.join(', ')}])`, error);
@@ -205,12 +149,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Check if user has required permissions for menu visibility
-     * @param {string} userId - The UUID of the user
-     * @param {Array<string>} requiredPermissions - List of required permission nodes
-     * @returns {Promise<Object>} - Object mapping menu items to visibility status
-     */
     static async getMenuVisibility(userId, requiredPermissions = {}) {
         if (!userId) return {};
 
@@ -218,15 +156,12 @@ export class AccountManager {
             const userPermissions = await this.getUserPermissions(userId);
             const result = {};
 
-            // Check each menu item permission
             Object.entries(requiredPermissions).forEach(([menuItem, permission]) => {
-                // If permission is null or empty, always visible
                 if (!permission) {
                     result[menuItem] = true;
                     return;
                 }
 
-                // Otherwise check if user has the required permission
                 result[menuItem] = userPermissions.includes(permission);
             });
 
@@ -237,11 +172,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Get the highest weighted role for a user
-     * @param {string} userId - The UUID of the user
-     * @returns {Promise<Object|null>} - The highest weighted role or null if none found
-     */
     static async getHighestRole(userId) {
         if (!userId) return null;
 
@@ -249,7 +179,6 @@ export class AccountManager {
             const roles = await this.getUserRoles(userId);
             if (!roles.length) return null;
 
-            // Sort by weight in descending order and take the first one
             return roles.sort((a, b) => b.weight - a.weight)[0];
         } catch (error) {
             logSupabaseError(`getHighestRole(${userId})`, error);
@@ -257,17 +186,10 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Assign a role to a user
-     * @param {string} userId - The UUID of the user
-     * @param {string} roleId - The UUID of the role
-     * @returns {Promise<boolean>} - True if successful, false otherwise
-     */
     static async assignRole(userId, roleId) {
         if (!userId || !roleId) return false;
 
         try {
-            // Check if the assignment already exists
             const {data: existing, error: checkError} = await supabase
                 .from('users_permissions')
                 .select('id')
@@ -276,17 +198,14 @@ export class AccountManager {
 
             if (checkError) throw checkError;
 
-            // If it already exists, we're done
             if (existing && existing.length > 0) return true;
 
-            // Otherwise create the assignment
             const {error} = await supabase
                 .from('users_permissions')
                 .insert([{user_id: userId, role_id: roleId}]);
 
             if (error) throw error;
 
-            // Clear the cache for this user
             this.#userRolesCache.delete(userId);
 
             return true;
@@ -296,12 +215,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Remove a role from a user
-     * @param {string} userId - The UUID of the user
-     * @param {string} roleId - The UUID of the role
-     * @returns {Promise<boolean>} - True if successful, false otherwise
-     */
     static async removeRole(userId, roleId) {
         if (!userId || !roleId) return false;
 
@@ -314,7 +227,6 @@ export class AccountManager {
 
             if (error) throw error;
 
-            // Clear the cache for this user
             this.#userRolesCache.delete(userId);
 
             return true;
@@ -324,13 +236,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Create a new role
-     * @param {string} name - The name of the role
-     * @param {Array<string>} permissions - Array of permissions for the role
-     * @param {number} weight - The weight of the role (higher = more important)
-     * @returns {Promise<Object|null>} - The created role object or null if failed
-     */
     static async createRole(name, permissions = [], weight = 0) {
         if (!name) return null;
 
@@ -343,7 +248,6 @@ export class AccountManager {
 
             if (error) throw error;
 
-            // Clear the roles cache
             this.#rolesPermissionsCache.clear();
 
             return data;
@@ -353,12 +257,6 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Update an existing role
-     * @param {string} roleId - The UUID of the role
-     * @param {Object} updates - The fields to update (name, permissions, weight)
-     * @returns {Promise<boolean>} - True if successful, false otherwise
-     */
     static async updateRole(roleId, updates) {
         if (!roleId || !updates) return false;
 
@@ -370,7 +268,6 @@ export class AccountManager {
 
             if (error) throw error;
 
-            // Clear all caches since role definitions changed
             this.clearCache();
 
             return true;
@@ -380,16 +277,10 @@ export class AccountManager {
         }
     }
 
-    /**
-     * Delete a role
-     * @param {string} roleId - The UUID of the role
-     * @returns {Promise<boolean>} - True if successful, false otherwise
-     */
     static async deleteRole(roleId) {
         if (!roleId) return false;
 
         try {
-            // The foreign key constraint with CASCADE will handle removing permissions
             const {error} = await supabase
                 .from('users_roles')
                 .delete()
@@ -397,7 +288,6 @@ export class AccountManager {
 
             if (error) throw error;
 
-            // Clear all caches
             this.clearCache();
 
             return true;

@@ -112,7 +112,7 @@ class UserServiceImpl {
 
             // Next try to get user profiles that might have first/last name
             const {data: profileData} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .select('first_name, last_name')
                 .eq('id', userId)
                 .single();

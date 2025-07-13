@@ -785,7 +785,7 @@ button.save-button:disabled {
 }
 
 .sign-out-button:hover {
-    background-color: var(--danger-dark, #8c0012);
+    background-color: var(--primary-color, #8c0012);
 }
 
 .sign-out-button i {

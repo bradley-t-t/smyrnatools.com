@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../core/clients/SupabaseClient';
 import { DatabaseService } from '../../core/services/DatabaseService';
 
-/**
- * Component for debugging roles in database
- */
 function RoleDebugComponent() {
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,7 +17,6 @@ function RoleDebugComponent() {
         try {
             console.log('RoleDebugComponent: Querying roles directly');
 
-            // Try with Supabase client first
             const { data, error } = await supabase
                 .from('users_roles')
                 .select('*');
@@ -33,13 +29,11 @@ function RoleDebugComponent() {
 
             console.log('RoleDebugComponent: Found roles with Supabase client:', data);
 
-            // Try with raw SQL query as well
             try {
                 console.log('RoleDebugComponent: Attempting raw SQL query');
                 const rawData = await DatabaseService.getAllRecords('users_roles');
                 console.log('RoleDebugComponent: Raw SQL query result:', rawData);
 
-                // If raw query worked but Supabase client didn't, use raw data
                 if ((data === null || data.length === 0) && rawData && rawData.length > 0) {
                     console.log('RoleDebugComponent: Using raw SQL results instead');
                     setRoles(rawData);

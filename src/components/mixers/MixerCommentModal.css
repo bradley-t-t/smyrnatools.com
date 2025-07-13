@@ -1,4 +1,3 @@
-/* Comment Modal Styles */
 .comment-modal-backdrop {
     position: fixed;
     top: 0;
@@ -119,7 +118,6 @@
     background-color: var(--bg-hover);
 }
 
-/* Add comment section */
 .add-comment-section {
     margin-bottom: 24px;
     background-color: var(--bg-secondary);
@@ -304,7 +302,6 @@
     border-left: 4px solid var(--danger);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .comment-modal {
         width: 95%;

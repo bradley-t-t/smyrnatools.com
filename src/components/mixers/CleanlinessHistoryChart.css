@@ -92,7 +92,6 @@
     width: 100%;
     height: 1px;
     background-color: var(--border-light);
-    /* Position grid lines from the bottom instead of from the top */
     top: auto;
 }
 
@@ -181,7 +180,6 @@
     opacity: 0.5;
 }
 
-/* Data point hover effect */
 .data-point {
     transition: r 0.2s ease;
 }
@@ -190,7 +188,6 @@
     r: 5;
 }
 
-/* Tooltip styles */
 .chart-tooltip {
     position: absolute;
     background: rgba(0, 0, 0, 0.8);
@@ -204,7 +201,6 @@
     margin-top: -10px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .chart-header {
         flex-direction: column;

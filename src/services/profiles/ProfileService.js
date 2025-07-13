@@ -31,7 +31,7 @@ class ProfileServiceImpl {
             };
 
             const {error} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .upsert(profile, {onConflict: 'id'});
 
             if (error) throw error;
@@ -73,7 +73,7 @@ class ProfileServiceImpl {
 
             // Update profiles plant code
             const {error: profileError} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .update({
                     plant_code: plantCode || '',
                     updated_at: now
@@ -102,7 +102,7 @@ class ProfileServiceImpl {
         try {
             // Delete profiles
             const {error: profileError} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .delete()
                 .eq('id', userId);
 
@@ -149,7 +149,7 @@ class ProfileServiceImpl {
             const userId = AuthService.currentUser.id;
 
             const {data: profiles, error} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .select()
                 .eq('id', userId);
 
@@ -204,7 +204,7 @@ class ProfileServiceImpl {
     async fetchAllProfiles() {
         try {
             const {data: profiles, error} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .select();
 
             if (error) throw error;

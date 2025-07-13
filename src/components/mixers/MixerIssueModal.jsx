@@ -2,13 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { MixerMaintenanceService } from '../../services/mixers/MixerMaintenanceService';
 import { usePreferences } from '../../context/preferences/PreferencesContext';
 import ErrorBoundary from '../common/ErrorBoundary';
-import { ErrorLogger } from '../../utils/loggers/ErrorLogger';
 import ErrorMessage from '../common/ErrorMessage';
 import './MixerIssueModal.css';
 
 function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
-    // For debugging
-    console.log('MixerIssueModal rendering with mixerId:', mixerId);
     const { preferences } = usePreferences();
     const [issues, setIssues] = useState([]);
     const [newIssue, setNewIssue] = useState('');
@@ -17,17 +14,14 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
-    // Load issues when component mounts
     useEffect(() => {
         fetchIssues();
     }, [mixerId]);
 
-    // Sort issues by creation date - newest first
     const sortedIssues = [...issues].sort((a, b) => {
         return new Date(b.time_created) - new Date(a.time_created);
     });
 
-    // Split issues into open and resolved
     const openIssues = sortedIssues.filter(issue => !issue.time_completed);
     const resolvedIssues = sortedIssues.filter(issue => issue.time_completed);
 
@@ -38,7 +32,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
             const fetchedIssues = await MixerMaintenanceService.fetchIssues(mixerId);
             setIssues(fetchedIssues);
         } catch (err) {
-            console.error('Error fetching maintenance issues:', err);
             setError('Failed to load maintenance issues. Please try again.');
         } finally {
             setIsLoading(false);
@@ -52,9 +45,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
 
         try {
             await MixerMaintenanceService.deleteIssue(issueId);
-            fetchIssues(); // Refresh issues after deletion
+            fetchIssues();
         } catch (err) {
-            console.error('Error deleting issue:', err);
             setError('Failed to delete issue. Please try again.');
         }
     };
@@ -62,9 +54,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
     const handleCompleteIssue = async (issueId) => {
         try {
             await MixerMaintenanceService.completeIssue(issueId);
-            fetchIssues(); // Refresh issues after completion
+            fetchIssues();
         } catch (err) {
-            console.error('Error completing issue:', err);
             setError('Failed to mark issue as completed. Please try again.');
         }
     };
@@ -81,49 +72,12 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         setError(null);
 
         try {
-            console.log('Adding issue for mixer ID:', mixerId);
-            console.log('Issue text:', newIssue);
-            console.log('Selected severity:', severity);
-
-            // Try to add the issue
             const result = await MixerMaintenanceService.addIssue(mixerId, newIssue, severity);
-
-            console.log('Issue successfully added:', result);
-
-            // Clear the input on success
             setNewIssue('');
             setSeverity('Medium');
-
-            // Refresh issues list
             await fetchIssues();
         } catch (err) {
-            // Detailed error logging
-            console.error('Error adding maintenance issue:', err);
-            console.error('Error details:', {
-                message: err.message,
-                stack: err.stack,
-                originalError: err.originalError
-            });
-
-            // Create a more detailed user-facing error message
             let errorMessage = 'Failed to add issue. ';
-
-            // Extract error message from local storage if available
-            const storedError = localStorage.getItem('mixer_maintenance_error');
-            let detailedError = '';
-
-            try {
-                if (storedError) {
-                    const errorData = JSON.parse(storedError);
-                    if (errorData.originalError && errorData.originalError.message) {
-                        detailedError = errorData.originalError.message;
-                    }
-                }
-            } catch (e) {
-                console.error('Error parsing stored error:', e);
-            }
-
-            // Extract specific database errors
             if (err.message.includes('violates foreign key constraint')) {
                 errorMessage += 'The mixer ID is invalid.';
             } else if (err.message.includes('violates check constraint')) {
@@ -131,20 +85,16 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
             } else if (err.message.includes('duplicate key')) {
                 errorMessage += 'A similar issue already exists.';
             } else if (err.message.includes('not-null constraint')) {
-                errorMessage += 'Missing required field: ' + 
-                    (err.message.includes('mixer_id') ? 'mixer ID' : 
-                    err.message.includes('issue') ? 'issue description' : 
-                    err.message.includes('severity') ? 'severity' : 
-                    err.message.includes('id') ? 'ID' : 'unknown field');
+                errorMessage += 'Missing required field: ' +
+                    (err.message.includes('mixer_id') ? 'mixer ID' :
+                        err.message.includes('issue') ? 'issue description' :
+                            err.message.includes('severity') ? 'severity' :
+                                err.message.includes('id') ? 'ID' : 'unknown field');
             } else if (err.message.includes('Could not find') && err.message.includes('column')) {
-                // Handle schema mismatch errors
                 errorMessage += 'Database schema mismatch. ' + err.message;
             } else {
-                // Always include the full error message for better debugging
-                errorMessage += detailedError || err.message;
+                errorMessage += err.message;
             }
-
-            // Store the error in localStorage for debugging
             try {
                 localStorage.setItem('mixer_issue_error', JSON.stringify({
                     timestamp: new Date().toISOString(),
@@ -157,9 +107,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                     }
                 }));
             } catch (e) {
-                console.error('Could not save error to localStorage:', e);
             }
-
             setError(errorMessage);
         } finally {
             setIsSubmitting(false);
@@ -181,7 +129,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         }
     };
 
-    // Close modal when clicking outside
     const handleBackdropClick = (e) => {
         if (e.target.classList.contains('issue-modal-backdrop')) {
             onClose();
@@ -199,9 +146,9 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                 </div>
 
                 <div className="issue-modal-content">
-                    <ErrorMessage 
-                        message={error} 
-                        onDismiss={() => setError(null)} 
+                    <ErrorMessage
+                        message={error}
+                        onDismiss={() => setError(null)}
                     />
 
                     <div className="add-issue-section">
@@ -217,8 +164,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
 
                             <div className="severity-selector">
                                 <label>Severity:</label>
-                                <select 
-                                    value={severity} 
+                                <select
+                                    value={severity}
                                     onChange={(e) => setSeverity(e.target.value)}
                                     disabled={isSubmitting}
                                 >
@@ -255,7 +202,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                             </div>
                         ) : (
                             <>
-                                {/* Group and display open issues */}
                                 <div className="issues-section">
                                     <h4 className="issues-group-title">Open Issues ({openIssues.length})</h4>
                                     {openIssues.length === 0 ? (
@@ -264,43 +210,41 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                         </div>
                                     ) : (
                                         openIssues.map(issue => (
-                                                <div key={issue.id} className="issue-item">
-                                                    <div className="issue-header">
-                                                        <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
-                                                            {issue.severity}
-                                                        </span>
-                                                        <span className="issue-date">
-                                                            Reported: {formatDate(issue.time_created)}
-                                                        </span>
-                                                        <div className="issue-actions">
-                                                            <button
-                                                                className="complete-issue-button"
-                                                                onClick={() => handleCompleteIssue(issue.id)}
-                                                                title="Mark as resolved"
-                                                            >
-                                                                <i className="fas fa-check"></i>
-                                                            </button>
-                                                            <button
-                                                                className="delete-issue-button"
-                                                                onClick={() => handleDeleteIssue(issue.id)}
-                                                                title="Delete issue"
-                                                            >
-                                                                <i className="fas fa-trash"></i>
-                                                            </button>
-                                                        </div>
+                                            <div key={issue.id} className="issue-item">
+                                                <div className="issue-header">
+                                                    <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
+                                                        {issue.severity}
+                                                    </span>
+                                                    <span className="issue-date">
+                                                        Reported: {formatDate(issue.time_created)}
+                                                    </span>
+                                                    <div className="issue-actions">
+                                                        <button
+                                                            className="complete-issue-button"
+                                                            onClick={() => handleCompleteIssue(issue.id)}
+                                                            title="Mark as resolved"
+                                                        >
+                                                            <i className="fas fa-check"></i>
+                                                        </button>
+                                                        <button
+                                                            className="delete-issue-button"
+                                                            onClick={() => handleDeleteIssue(issue.id)}
+                                                            title="Delete issue"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
                                                     </div>
-                                                    <div className="issue-text">{issue.issue}</div>
                                                 </div>
-                                            ))
+                                                <div className="issue-text">{issue.issue}</div>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
 
-                                {/* Divider between open and resolved issues if both sections have issues */}
                                 {openIssues.length > 0 && resolvedIssues.length > 0 && (
                                     <div className="issues-divider"></div>
                                 )}
 
-                                {/* Group and display resolved issues */}
                                 <div className="issues-section">
                                     <h4 className="issues-group-title">Resolved Issues ({resolvedIssues.length})</h4>
                                     {resolvedIssues.length === 0 ? (
@@ -309,30 +253,30 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                         </div>
                                     ) : (
                                         resolvedIssues.map(issue => (
-                                                <div key={issue.id} className="issue-item resolved-issue">
-                                                    <div className="issue-header">
-                                                        <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
-                                                            {issue.severity}
-                                                        </span>
-                                                        <span className="issue-date">
-                                                            Reported: {formatDate(issue.time_created)}
-                                                        </span>
-                                                        <div className="issue-actions">
-                                                            <button
-                                                                className="delete-issue-button"
-                                                                onClick={() => handleDeleteIssue(issue.id)}
-                                                                title="Delete issue"
-                                                            >
-                                                                <i className="fas fa-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="issue-text">{issue.issue}</div>
-                                                    <div className="issue-completed">
-                                                        <i className="fas fa-check-circle"></i> Resolved: {formatDate(issue.time_completed)}
+                                            <div key={issue.id} className="issue-item resolved-issue">
+                                                <div className="issue-header">
+                                                    <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
+                                                        {issue.severity}
+                                                    </span>
+                                                    <span className="issue-date">
+                                                        Reported: {formatDate(issue.time_created)}
+                                                    </span>
+                                                    <div className="issue-actions">
+                                                        <button
+                                                            className="delete-issue-button"
+                                                            onClick={() => handleDeleteIssue(issue.id)}
+                                                            title="Delete issue"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
                                                     </div>
                                                 </div>
-                                            ))
+                                                <div className="issue-text">{issue.issue}</div>
+                                                <div className="issue-completed">
+                                                    <i className="fas fa-check-circle"></i> Resolved: {formatDate(issue.time_completed)}
+                                                </div>
+                                            </div>
+                                        ))
                                     )}
                                 </div>
                             </>
@@ -348,7 +292,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
     );
 }
 
-// Wrap the component with the ErrorBoundary
 function MixerIssueModalWithErrorBoundary(props) {
     return (
         <ErrorBoundary>

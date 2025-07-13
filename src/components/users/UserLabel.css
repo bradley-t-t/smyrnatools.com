@@ -124,7 +124,6 @@
     color: var(--text-primary);
 }
 
-/* Sizes */
 .size-small .user-initials {
     width: 20px;
     height: 20px;
@@ -151,7 +150,6 @@
     font-size: 16px;
 }
 
-/* Loading state */
 .user-label.loading .loading-placeholder {
     background-color: #e0e0e0;
     border-radius: 4px;
@@ -180,7 +178,6 @@
     }
 }
 
-/* Error state */
 .user-label.error .user-name {
     color: #ff3b30;
 }
@@ -290,7 +287,6 @@
     font-weight: 500;
 }
 
-/* Loading styles */
 .user-label .loading-dots {
     display: inline-block;
     overflow: hidden;
@@ -332,11 +328,10 @@
     color: #666;
 }
 
-/* Error styles */
 .user-label.error .user-initials.error {
-    background-color: #E31837; /* Smyrna red */
+    background-color: #E31837;
 }
 
 .user-label.error .user-name {
-    color: #E31837; /* Smyrna red */
+    color: #E31837;
 }

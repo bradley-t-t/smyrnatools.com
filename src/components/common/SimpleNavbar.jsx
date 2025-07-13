@@ -4,7 +4,6 @@ import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 import {AccountManager} from '../../core/accounts/AccountManager';
 
-// Add FontAwesome stylesheet dynamically if not already present
 const ensureFontAwesome = () => {
     if (!document.getElementById('font-awesome-stylesheet')) {
         const link = document.createElement('link');
@@ -17,7 +16,6 @@ const ensureFontAwesome = () => {
     }
 };
 
-// Function to get appropriate icon for each menu item
 const getIconForMenuItem = (id) => {
     switch (id) {
         case 'Dashboard':
@@ -55,7 +53,6 @@ const getIconForMenuItem = (id) => {
     }
 };
 
-// Menu items that require specific permissions to be visible
 const menuItems = [
     {text: 'Dashboard', id: 'Dashboard', permission: null, alwaysVisible: false},
     {text: 'Mixers', id: 'Mixers', permission: 'mixers.view', alwaysVisible: false},
@@ -90,28 +87,13 @@ export default function SimpleNavbar({
         ensureFontAwesome();
     }, []);
 
-    // Fetch user permissions when userId changes
-    useEffect(() => {
-        async function fetchUserPermissions() {
-            if (userId) {
-                const permissions = await AccountManager.getUserPermissions(userId);
-                setUserPermissions(permissions);
-            }
-        }
-
-        fetchUserPermissions();
-    }, [userId]);
-
-    // Fetch user permissions when userId changes
     useEffect(() => {
         async function fetchUserPermissions() {
             if (userId) {
                 try {
                     const permissions = await AccountManager.getUserPermissions(userId);
-                    console.log('User permissions:', permissions);
                     setUserPermissions(permissions);
                 } catch (error) {
-                    console.error('Error fetching user permissions:', error);
                     setUserPermissions([]);
                 }
             } else {
@@ -122,34 +104,24 @@ export default function SimpleNavbar({
         fetchUserPermissions();
     }, [userId]);
 
-    // Filter menu items based on permissions
     useEffect(() => {
         async function filterMenuItems() {
             if (!userId) {
-                // If no user ID, show nothing
                 setVisibleMenuItems([]);
                 return;
             }
 
             try {
-                // Get user permissions directly from AccountManager
                 const permissions = await AccountManager.getUserPermissions(userId);
-
-                // Filter menu items based on permissions
                 const filtered = menuItems.filter(item => {
-                    // If permission is required, check if user has it
                     if (item.permission) {
                         return permissions.includes(item.permission);
                     }
-
-                    // If no permission specified, hide by default (Dashboard & Reports)
                     return false;
                 });
 
                 setVisibleMenuItems(filtered);
-
             } catch (error) {
-                console.error('Error filtering menu items:', error);
                 setVisibleMenuItems([]);
             }
         }
@@ -162,15 +134,9 @@ export default function SimpleNavbar({
         toggleNavbarMinimized();
     };
 
-    // Update collapsed state when preference changes
     useEffect(() => {
         setCollapsed(preferences.navbarMinimized);
     }, [preferences.navbarMinimized]);
-
-    // Debug: Log menu visibility whenever it changes
-    useEffect(() => {
-        console.log('Visible menu items:', visibleMenuItems.map(item => item.text));
-    }, [visibleMenuItems]);
 
     return (
         <div className="app-container">
@@ -186,7 +152,6 @@ export default function SimpleNavbar({
 
                 <nav className="navbar-menu">
                     <ul>
-                        {/* Main menu items with permission checks */}
                         {visibleMenuItems.map((item) => (
                             <li
                                 key={item.id}
@@ -200,7 +165,6 @@ export default function SimpleNavbar({
                                 {!collapsed && <span className="menu-text">{item.text}</span>}
                             </li>
                         ))}
-                        {/* Settings - Always visible */}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}
                             onClick={() => onSelectView('Settings')}
@@ -211,8 +175,6 @@ export default function SimpleNavbar({
                             </span>
                             {!collapsed && <span className="menu-text">Settings</span>}
                         </li>
-
-                        {/* My Account - Always at bottom below Settings */}
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''}`}
                             onClick={() => onSelectView('MyAccount')}
@@ -228,8 +190,6 @@ export default function SimpleNavbar({
                                 </div>
                             )}
                         </li>
-
-
                     </ul>
                 </nav>
             </div>

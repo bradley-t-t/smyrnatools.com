@@ -66,7 +66,7 @@ function OperatorCard({operator, plantName, onSelect, onDelete}) {
                         </div>
                     )}
                 </div>
-                {/* Delete button removed */}
+                {}
             </div>
         </div>
     );

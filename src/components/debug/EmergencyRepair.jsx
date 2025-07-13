@@ -23,7 +23,6 @@ const EmergencyRepair = () => {
         setStatus('Working...');
 
         try {
-            // First check if the tractor exists
             const {data, error} = await supabase
                 .from('tractors')
                 .select('id, truck_number')
@@ -37,7 +36,6 @@ const EmergencyRepair = () => {
                 return;
             }
 
-            // Remove from local cache
             const cachedTractors = localStorage.getItem('cachedTractors');
             if (cachedTractors) {
                 try {
@@ -47,14 +45,12 @@ const EmergencyRepair = () => {
                         localStorage.setItem('cachedTractors', JSON.stringify(newCache));
                     }
                 } catch (e) {
-                    console.error('Error parsing cache:', e);
                     localStorage.removeItem('cachedTractors');
                 }
             }
 
             setStatus(`Tractor ${data[0].truck_number} (${tractorId}) repaired. Cache has been updated.`);
         } catch (error) {
-            console.error('Repair error:', error);
             setStatus(`Error: ${error.message}`);
         } finally {
             setLoading(false);

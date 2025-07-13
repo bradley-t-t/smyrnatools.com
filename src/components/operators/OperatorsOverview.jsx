@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../core/clients/SupabaseClient';
+import React, {useEffect, useState} from 'react';
+import {supabase} from '../../core/clients/SupabaseClient';
 import './OperatorsOverview.css';
 
 const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => {
@@ -10,12 +10,10 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
     const [plantDistributionByStatus, setPlantDistributionByStatus] = useState({});
     const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch plants on component mount
     useEffect(() => {
         fetchPlants();
     }, []);
 
-    // Update statistics when filtered operators change
     useEffect(() => {
         if (filteredOperators) {
             updateStatistics(filteredOperators);
@@ -33,7 +31,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
             if (error) throw error;
             setPlants(data);
         } catch (error) {
-            console.error('Error fetching plants:', error);
         } finally {
             setIsLoading(false);
         }
@@ -45,7 +42,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
     };
 
     const updateStatistics = (operatorsData) => {
-        // Calculate status counts
         const counts = {
             Total: operatorsData.length,
             Active: operatorsData.filter(op => op.status === 'Active').length,
@@ -56,7 +52,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
         };
         setStatusCounts(counts);
 
-        // Calculate position counts
         const positions = {
             'Mixer Operator': operatorsData.filter(op => op.position === 'Mixer Operator').length,
             'Tractor Operator': operatorsData.filter(op => op.position === 'Tractor Operator').length,
@@ -65,17 +60,13 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
         };
         setPositionCounts(positions);
 
-        // Calculate plant distribution by status
         calculatePlantDistributionByStatus(operatorsData);
     };
 
     const calculatePlantDistributionByStatus = (operatorsData) => {
         const distribution = {};
-
-        // Get unique plants
         const uniquePlants = [...new Set(operatorsData.map(op => op.plantCode || 'Unassigned'))];
 
-        // Initialize structure
         uniquePlants.forEach(plant => {
             distribution[plant] = {
                 Total: 0,
@@ -90,26 +81,21 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
             };
         });
 
-        // Count operators by plant and status
         operatorsData.forEach(operator => {
             const plant = operator.plantCode || 'Unassigned';
             const status = operator.status || 'Unknown';
             const position = operator.position || 'Unknown';
 
-            // Increment total count
             distribution[plant].Total++;
 
-            // Increment status-specific count
             if (['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'].includes(status)) {
                 distribution[plant][status]++;
             }
 
-            // Increment position-specific count
             if (['Mixer Operator', 'Tractor Operator'].includes(position)) {
                 distribution[plant][position]++;
             }
 
-            // Increment trainer count
             if (operator.isTrainer === true) {
                 distribution[plant]['Trainers']++;
             }
@@ -135,7 +121,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
             )}
 
             <div className="overview-grid">
-                {/* Status Card */}
                 <div className="overview-card status-card">
                     <h2>Status Overview</h2>
                     <div className="status-grid">
@@ -166,7 +151,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                     </div>
                 </div>
 
-                {/* Positions Card */}
                 <div className="overview-card positions-card">
                     <h2>Positions Overview</h2>
                     <div className="positions-grid">
@@ -191,65 +175,63 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                     </div>
                 </div>
 
-                {/* Plant Distribution Card - only show if no specific plant is selected or multiple plants are present */}
                 {(!selectedPlant || Object.keys(plantDistributionByStatus).length > 1) && (
                     <div className="overview-card plant-card">
                         <h2>Plant Distribution</h2>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Total</th>
-                                        <th>Active</th>
-                                        <th>Light Duty</th>
-                                        <th>Training</th>
-                                        <th>Pending</th>
-                                        <th>Terminated</th>
-                                    </tr>
+                                <tr>
+                                    <th>Plant</th>
+                                    <th>Total</th>
+                                    <th>Active</th>
+                                    <th>Light Duty</th>
+                                    <th>Training</th>
+                                    <th>Pending</th>
+                                    <th>Terminated</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
-                                        <tr key={plantCode}>
-                                            <td className="plant-name">{getPlantName(plantCode)}</td>
-                                            <td>{counts.Total}</td>
-                                            <td>{counts.Active}</td>
-                                            <td>{counts['Light Duty']}</td>
-                                            <td>{counts.Training}</td>
-                                            <td>{counts['Pending Start']}</td>
-                                            <td>{counts.Terminated}</td>
-                                        </tr>
-                                    ))}
+                                {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
+                                    <tr key={plantCode}>
+                                        <td className="plant-name">{getPlantName(plantCode)}</td>
+                                        <td>{counts.Total}</td>
+                                        <td>{counts.Active}</td>
+                                        <td>{counts['Light Duty']}</td>
+                                        <td>{counts.Training}</td>
+                                        <td>{counts['Pending Start']}</td>
+                                        <td>{counts.Terminated}</td>
+                                    </tr>
+                                ))}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 )}
 
-                {/* Position Distribution Card */}
                 <div className="overview-card position-distribution-card">
                     <h2>Position Distribution by Plant</h2>
                     <div className="plant-distribution-table">
                         <table className="distribution-table">
                             <thead>
-                                <tr>
-                                    <th>Plant</th>
-                                    <th>Total</th>
-                                    <th>Mixer Operators</th>
-                                    <th>Tractor Operators</th>
-                                    <th>Trainers</th>
-                                </tr>
+                            <tr>
+                                <th>Plant</th>
+                                <th>Total</th>
+                                <th>Mixer Operators</th>
+                                <th>Tractor Operators</th>
+                                <th>Trainers</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
-                                    <tr key={plantCode}>
-                                        <td className="plant-name">{getPlantName(plantCode)}</td>
-                                        <td>{counts.Total}</td>
-                                        <td>{counts['Mixer Operator']}</td>
-                                        <td>{counts['Tractor Operator']}</td>
-                                        <td>{counts['Trainers']}</td>
-                                    </tr>
-                                ))}
+                            {Object.entries(plantDistributionByStatus).map(([plantCode, counts]) => (
+                                <tr key={plantCode}>
+                                    <td className="plant-name">{getPlantName(plantCode)}</td>
+                                    <td>{counts.Total}</td>
+                                    <td>{counts['Mixer Operator']}</td>
+                                    <td>{counts['Tractor Operator']}</td>
+                                    <td>{counts['Trainers']}</td>
+                                </tr>
+                            ))}
                             </tbody>
                         </table>
                     </div>

@@ -56,7 +56,6 @@
     padding-bottom: 0.75rem;
 }
 
-/* Status Card */
 .status-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -85,7 +84,6 @@
     color: var(--text-secondary);
 }
 
-/* Positions Card */
 .positions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -114,7 +112,6 @@
     color: var(--text-secondary);
 }
 
-/* Plant distribution table */
 .plant-distribution-table {
     overflow-x: auto;
     max-height: 300px;
@@ -126,6 +123,7 @@
     border-collapse: collapse;
     font-size: 0.9rem;
 }
+
 .operators-overview {
     padding: 1rem;
     max-width: 1200px;
@@ -158,7 +156,7 @@
     display: inline-block;
     text-align: center;
 }
-/* Make plant/position distribution cards span two columns */
+
 .plant-card, .position-distribution-card {
     grid-column: span 2;
 }
@@ -187,7 +185,6 @@
     background-color: var(--bg-hover);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .overview-grid {
         grid-template-columns: 1fr;

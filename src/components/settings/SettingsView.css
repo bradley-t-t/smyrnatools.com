@@ -120,7 +120,6 @@
     font-weight: 500;
 }
 
-/* ThemeUtils Selector */
 .theme-selector {
     display: flex;
     gap: 1.5rem;
@@ -209,7 +208,6 @@
     background-color: #242526;
 }
 
-/* Color Selector */
 .color-selector {
     display: flex;
     gap: 1.5rem;
@@ -265,14 +263,12 @@
     background-color: #b80017;
 }
 
-/* Toggle Switch */
 .toggle-setting {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
-/* Debug Panel Styles */
 .settings-debug-section {
     margin-top: 30px;
     border-top: 1px solid var(--border-light);
@@ -386,7 +382,6 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* Media Queries */
 @media (max-width: 768px) {
     .settings-container {
         padding: 1rem;

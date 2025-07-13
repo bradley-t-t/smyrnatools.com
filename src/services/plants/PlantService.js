@@ -136,7 +136,7 @@ class PlantServiceImpl {
 
             // Update profiles to remove this plant code
             const {error: profilesError} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .update({
                     plant_code: '',
                     updated_at: new Date().toISOString()

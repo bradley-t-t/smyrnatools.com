@@ -6,7 +6,7 @@ export class MixerCommentService {
     static async fetchComments(mixerId) {
         try {
             const {data, error} = await supabase
-                .from('mixer_comments')
+                .from('mixers_comments')
                 .select('*')
                 .eq('mixer_id', mixerId)
                 .order('created_at', {ascending: false});
@@ -31,7 +31,7 @@ export class MixerCommentService {
             });
 
             const {data, error} = await supabase
-                .from('mixer_comments')
+                .from('mixers_comments')
                 .insert([comment.toRow()])
                 .select();
 
@@ -48,7 +48,7 @@ export class MixerCommentService {
     static async deleteComment(commentId) {
         try {
             const {error} = await supabase
-                .from('mixer_comments')
+                .from('mixers_comments')
                 .delete()
                 .eq('id', commentId);
 

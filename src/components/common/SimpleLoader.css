@@ -38,7 +38,6 @@
     color: var(--text-secondary, #718096);
 }
 
-/* Sizes */
 .simple-loader.small .loader-spinner {
     width: 24px;
     height: 24px;
@@ -57,14 +56,12 @@
     font-size: 1rem;
 }
 
-/* Animation */
 @keyframes spin {
     to {
         transform: rotate(360deg);
     }
 }
 
-/* Dark mode compatibility */
 .dark-mode .loader-spinner:before {
     border-color: rgba(255, 255, 255, 0.1);
 }

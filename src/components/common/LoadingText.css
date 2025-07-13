@@ -21,15 +21,11 @@
     animation: loading-dots 1.5s steps(4, end) infinite;
 }
 
-/* No animations - static text only */
-
-/* Small size */
 .loading-text-container.small {
     padding: 0.75rem;
     font-size: 0.85rem;
 }
 
-/* Large size */
 .loading-text-container.large {
     padding: 2rem;
     font-size: 1.2rem;

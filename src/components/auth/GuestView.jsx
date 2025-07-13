@@ -9,10 +9,8 @@ function GuestView() {
     const handleSignOut = async () => {
         try {
             await signOut();
-            // Force reload the page to ensure complete reset of app state
             window.location.href = '/';
         } catch (error) {
-            console.error('Error signing out:', error);
         }
     };
 

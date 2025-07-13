@@ -8,7 +8,7 @@ export class MixerImageService {
     static async fetchMixerImages(mixerId) {
         try {
             const {data, error} = await supabase
-                .from('mixer_images')
+                .from('mixers_images')
                 .select('*')
                 .eq('mixer_id', mixerId);
 
@@ -25,7 +25,7 @@ export class MixerImageService {
     static async fetchLatestImageForPart(mixerId, partKey) {
         try {
             const {data, error} = await supabase
-                .from('mixer_images')
+                .from('mixers_images')
                 .select('*')
                 .eq('mixer_id', mixerId)
                 .eq('part_key', partKey)
@@ -67,7 +67,7 @@ export class MixerImageService {
             });
 
             const {error: dbError} = await supabase
-                .from('mixer_images')
+                .from('mixers_images')
                 .insert([mixerImage.toRow()]);
 
             if (dbError) throw dbError;

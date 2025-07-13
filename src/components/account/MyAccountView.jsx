@@ -57,7 +57,7 @@ function MyAccountView({userId}) {
             }
             console.log('Fetching profiles for user ID:', userIdToUse);
             const {data: profileData, error: profileError} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .select('first_name, last_name, plant_code, email')
                 .eq('id', userIdToUse)
                 .single();
@@ -130,7 +130,7 @@ function MyAccountView({userId}) {
                     throw new Error('No active session or user ID');
                 }
                 const {error: profileError} = await supabase
-                    .from('profiles')
+                    .from('users_profiles')
                     .update({
                         first_name: firstName,
                         last_name: lastName,
@@ -140,7 +140,7 @@ function MyAccountView({userId}) {
                 if (profileError) throw profileError;
             } else {
                 const {error: profileError} = await supabase
-                    .from('profiles')
+                    .from('users_profiles')
                     .update({
                         first_name: firstName,
                         last_name: lastName,

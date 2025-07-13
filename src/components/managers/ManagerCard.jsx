@@ -6,10 +6,8 @@ import { usePreferences } from '../../context/preferences/PreferencesContext';
 function ManagerCard({ manager, plantName, onSelect }) {
     const { preferences } = usePreferences();
 
-    // Add debug logging to see what role name we're getting
     console.log('Manager role:', manager.roleName, 'weight:', manager.roleWeight);
 
-    // Get color based on role name directly
     const roleColor = ThemeUtils.getRoleColor(manager.roleName, manager.roleWeight);
 
     const handleCardClick = () => {

@@ -12,7 +12,6 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
         let isMounted = true;
 
         async function fetchUserData() {
-            console.log(`[UserLabel] Fetching data for userId: ${userId}`);
             if (!userId) {
                 if (isMounted) {
                     setUserName('Unknown');
@@ -23,32 +22,23 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
             }
 
             try {
-                // Use the enhanced getUserDisplayName method which prioritizes full name
-                console.log(`[UserLabel] Calling UserService.getUserDisplayName(${userId})`);
                 const displayName = await UserService.getUserDisplayName(userId);
-                console.log(`[UserLabel] Got display name:`, displayName);
 
                 if (!isMounted) return;
 
                 setUserName(displayName);
 
-                // Generate initials from the display name
                 const nameParts = displayName.trim().split(' ').filter(part => part);
                 if (nameParts.length > 1) {
-                    // If we have multiple parts (first and last name), use first letter of first and last
                     setInitials(`${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase());
                 } else if (displayName.includes('@')) {
-                    // If it's an email address
                     setInitials(displayName.substring(0, 2).toUpperCase());
                 } else if (displayName.startsWith('User ')) {
-                    // If it's a fallback user ID format
                     setInitials(userId.substring(0, 2).toUpperCase());
                 } else {
-                    // Otherwise use first two letters
                     setInitials(displayName.substring(0, 2).toUpperCase());
                 }
             } catch (error) {
-                console.error('[UserLabel] Error fetching user:', error);
                 if (isMounted) {
                     setError(error.message);
                     setUserName(`User ${userId ? userId.substring(0, 8) : 'Unknown'}`);

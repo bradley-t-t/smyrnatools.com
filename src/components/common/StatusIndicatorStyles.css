@@ -1,6 +1,3 @@
-/* Status Indicator Styles - Used for both Mixers and Operators */
-
-/* Card Status Indicator - Now a horizontal bar on top of cards */
 .card-status-indicator {
     height: 4px;
     width: 100%;
@@ -10,7 +7,6 @@
     right: 0;
 }
 
-/* Status Indicator - Circular indicator */
 .status-indicator {
     width: 12px;
     height: 12px;
@@ -20,7 +16,6 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Status Dot - Same styling as status-indicator for consistency */
 .status-dot {
     width: 12px;
     height: 12px;
@@ -30,7 +25,6 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Status Badge - Pill-shaped status labels */
 .status-badge {
     font-size: 12px;
     padding: 4px 16px;
@@ -49,7 +43,6 @@
     box-shadow: none;
 }
 
-/* Status Count for overview pages */
 .status-count {
     display: flex;
     flex-direction: column;
@@ -66,5 +59,3 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     border-color: var(--accent-light);
 }
-
-/* Status colors are handled by the ThemeUtils utility in the application */

@@ -1,5 +1,3 @@
-/* MixerDetailView.css - with dark mode support */
-
 .mixer-detail-view {
     width: 100%;
     height: 100%;
@@ -10,7 +8,6 @@
     color: var(--text-primary);
 }
 
-/* Modal positioning fix */
 .modal-wrapper {
     position: fixed;
     top: 0;
@@ -157,7 +154,6 @@
     border-bottom: 1px solid var(--border-light);
 }
 
-/* History table styles */
 .history-table {
     width: 100%;
     border-collapse: collapse;
@@ -189,7 +185,6 @@
     background-color: var(--bg-hover);
 }
 
-/* For small screens, make the table responsive */
 @media (max-width: 768px) {
     .history-table-container {
         overflow-x: auto;
@@ -204,7 +199,6 @@
     overflow-x: auto;
 }
 
-/* Verification Card Styles */
 .verification-card {
     background-color: var(--bg-primary);
     border-radius: 12px;
@@ -414,7 +408,6 @@
     transition: color 0.2s ease;
 }
 
-/* New styles for improved form layout */
 .form-sections {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -509,13 +502,11 @@ input[type="date"].form-control {
     padding-right: 10px;
 }
 
-/* Style placeholders */
 .form-control::placeholder {
     color: var(--text-secondary);
     opacity: 0.6;
 }
 
-/* Custom field icon support */
 .form-group.with-icon {
     position: relative;
 }
@@ -823,7 +814,6 @@ input[type="date"].form-control {
     margin-bottom: 16px;
 }
 
-/* Rating value display */
 .rating-value-display {
     text-align: center;
     font-size: 16px;
@@ -836,7 +826,6 @@ input[type="date"].form-control {
     color: var(--accent);
 }
 
-/* Loading overlay */
 .saving-overlay {
     position: fixed;
     top: 0;
@@ -909,5 +898,3 @@ input[type="date"].form-control {
     padding: 32px;
     color: var(--danger);
 }
-
-/* Accent color variants handled by CSS variables now */

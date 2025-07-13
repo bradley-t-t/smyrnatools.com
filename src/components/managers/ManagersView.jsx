@@ -128,7 +128,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
 
             // Then get profiles for those users
             const {data: profiles, error: profilesError} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .select('id, first_name, last_name, plant_code, created_at, updated_at');
 
             if (profilesError) throw profilesError;

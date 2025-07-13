@@ -1,7 +1,5 @@
-/* Import shared status indicator styles */
 @import '../common/StatusIndicatorStyles.css';
 
-/* Dashboard modern styling */
 :root {
     --primary: #2d3748;
     --primary-dark: #1a202c;
@@ -42,7 +40,6 @@
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Dashboard Container */
 .dashboard-container {
     font-family: var(--font-family);
     width: 100%;
@@ -59,7 +56,6 @@
     letter-spacing: 0.01em;
 }
 
-/* Dashboard Header */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -171,7 +167,6 @@
     font-size: 16px;
 }
 
-/* Stats Cards */
 .stats-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -232,7 +227,6 @@
     color: var(--error);
 }
 
-/* iOS Button Style */
 .ios-button {
     background: var(--accent);
     border: none;
@@ -260,7 +254,6 @@
     box-shadow: 0 1px 3px rgba(49, 130, 206, 0.2);
 }
 
-/* Add Mixer button in filters */
 .add-mixer-button {
     margin-left: auto;
     height: 40px;
@@ -268,7 +261,6 @@
     white-space: nowrap;
 }
 
-/* Search and Filters */
 .search-filters {
     background-color: var(--card-bg);
     padding: var(--spacing-lg);
@@ -289,7 +281,6 @@
     box-sizing: border-box;
 }
 
-/* Content wrapper */
 .content-wrapper {
     width: 100%;
     max-width: 100%;
@@ -300,7 +291,6 @@
     margin: 0 auto;
 }
 
-/* Blue top bar removed */
 .search-filters::before {
     display: none !important;
     content: none !important;
@@ -328,7 +318,7 @@
 
 @media (max-width: 768px) {
     .fixed-header-section {
-        top: 55px; /* Adjust for smaller navbar on mobile */
+        top: 55px;
         padding: 12px 12px 8px;
         margin: -12px -12px 12px -12px;
     }
@@ -378,7 +368,6 @@
     }
 }
 
-/* Search Bar */
 .search-bar {
     position: relative;
     flex: 1;
@@ -456,7 +445,6 @@
     opacity: 1;
 }
 
-/* Filters */
 .filters {
     display: flex;
     gap: var(--spacing-md);
@@ -571,7 +559,6 @@
     border-color: var(--text-light);
 }
 
-/* Mixers content */
 .mixers-content {
     flex: 1;
     padding: var(--spacing-lg) 0 var(--spacing-xxl);
@@ -582,7 +569,6 @@
     transition: all 0.3s ease;
 }
 
-/* Adaptive grid for search results */
 .mixers-grid.search-results {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     border-radius: var(--border-radius);
@@ -612,12 +598,10 @@
     padding: var(--spacing-md);
 }
 
-/* Content Container */
 .content-container {
     flex: 1;
 }
 
-/* Mixers Grid */
 .mixers-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -627,7 +611,6 @@
     margin: 0 auto;
 }
 
-/* Mixer Card */
 .mixer-card {
     background-color: var(--card-bg);
     border-radius: var(--border-radius-lg);
@@ -647,8 +630,6 @@
     border-color: rgba(49, 130, 206, 0.2);
 }
 
-/* Status indicator styles moved to StatusIndicatorStyles.css */
-
 .card-content {
     flex: 1;
     padding: var(--spacing-lg);
@@ -657,7 +638,6 @@
     flex-direction: column;
 }
 
-/* Wider modal for overview */
 .modal-content.overview-modal {
     max-width: 1000px;
     width: 95%;
@@ -689,8 +669,6 @@
 .plant-icon {
     font-size: 14px;
 }
-
-/* Status badge styles moved to StatusIndicatorStyles.css */
 
 .card-body {
     flex: 1;
@@ -831,7 +809,6 @@
     text-decoration: underline;
 }
 
-/* Loading Indicator */
 .loading-container, .loading-indicator {
     display: flex;
     flex-direction: column;
@@ -875,7 +852,6 @@
     }
 }
 
-/* No Results */
 .no-results-container {
     display: flex;
     flex-direction: column;
@@ -952,7 +928,6 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Modal */
 .control-panel {
     position: fixed;
     top: 0;
@@ -1060,15 +1035,12 @@
     font-size: 15px;
 }
 
-/* Status summary in overview */
 .status-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-xl);
 }
-
-/* Status count styles moved to StatusIndicatorStyles.css */
 
 .status-badge {
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -1139,7 +1111,6 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Media queries for responsiveness */
 @media (max-width: 1500px) {
     .mixers-grid {
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -1156,7 +1127,6 @@
     }
 }
 
-/* Add padding to main content for fixed header space */
 .mixers-content {
     padding-top: 10px;
 }
@@ -1209,7 +1179,6 @@
     }
 }
 
-/* Mixers Grid Styles */
 .mixers-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

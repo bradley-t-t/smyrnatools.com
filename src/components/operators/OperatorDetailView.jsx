@@ -62,16 +62,13 @@ function OperatorDetailView({operatorId, onClose}) {
         setIsLoading(true);
         try {
             const operatorData = await OperatorService.getOperatorByEmployeeId(operatorId);
-            console.log('Fetched operator data:', operatorData);
 
             if (!operatorData) {
-                console.error(`No operator found with employee ID ${operatorId}`);
                 setIsLoading(false);
                 return;
             }
 
             if (!operatorData.employeeId) {
-                console.error('Operator data is missing employee ID', operatorData);
             }
 
             setOperator(operatorData);
@@ -118,12 +115,10 @@ function OperatorDetailView({operatorId, onClose}) {
                     const userName = await UserService.getUserDisplayName(operatorData.updatedBy);
                     setUpdatedByEmail(userName);
                 } catch (error) {
-                    console.log('Could not fetch user info:', error);
                     setUpdatedByEmail('Unknown User');
                 }
             }
         } catch (error) {
-            console.error('Error fetching operator details:', error);
         } finally {
             setIsLoading(false);
             setHasUnsavedChanges(false);
@@ -146,27 +141,18 @@ function OperatorDetailView({operatorId, onClose}) {
                 }
 
                 if (!userId) {
-                    console.error('No authenticated user found');
                     alert('Your session has expired. Please refresh the page and log in again.');
                     throw new Error('Authentication required: You must be logged in to update operators');
                 }
 
-                // Log the current operator state
-                console.log('Current operator state before update:', operator);
-
                 if (!operator.employeeId) {
-                    console.error('Missing employee ID for operator before update:', operator);
                     throw new Error('Cannot update operator: missing employee ID. Try refreshing the page.');
                 }
 
-                // We need to use the original employeeId to find the record
-                // Store it separately for the lookup
                 const originalEmployeeId = operator.employeeId;
 
                 const updatedOperator = {
                     ...operator,
-                    // This employeeId might be changing
-                    // Update with new form values
                     employeeId,
                     smyrnaId,
                     name,
@@ -178,8 +164,6 @@ function OperatorDetailView({operatorId, onClose}) {
                     updatedAt: new Date().toISOString(),
                     updatedBy: userId
                 };
-
-                console.log('Updated operator object with ID:', updatedOperator);
 
                 await OperatorService.updateOperator(updatedOperator, userId);
                 setOperator(updatedOperator);
@@ -201,7 +185,6 @@ function OperatorDetailView({operatorId, onClose}) {
 
                 setHasUnsavedChanges(false);
             } catch (error) {
-                console.error('Error saving operator:', error);
                 setMessage(`Error saving changes: ${error.message || 'Unknown error'}`);
                 setTimeout(() => setMessage(''), 5000);
             } finally {
@@ -224,7 +207,6 @@ function OperatorDetailView({operatorId, onClose}) {
             alert('Operator deleted successfully');
             onClose();
         } catch (error) {
-            console.error('Error deleting operator:', error);
             alert('Error deleting operator');
         } finally {
             setShowDeleteConfirmation(false);
@@ -524,7 +506,6 @@ function OperatorDetailView({operatorId, onClose}) {
                                         setMessage('Changes saved successfully!');
                                         setTimeout(() => onClose(), 800);
                                     } catch (error) {
-                                        console.error('Error saving before navigation:', error);
                                         setMessage('Error saving changes. Please try again.');
                                         setTimeout(() => setMessage(''), 3000);
                                     }

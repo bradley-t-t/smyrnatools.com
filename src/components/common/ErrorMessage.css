@@ -1,7 +1,6 @@
-/* Error message component that works in both light and dark modes */
 .error-message-component {
   background-color: rgba(220, 38, 38, 0.2);
-  color: #f87171; /* Light red that's visible in both light and dark modes */
+  color: #f87171;
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 16px;
@@ -37,7 +36,6 @@
   background-color: rgba(220, 38, 38, 0.3);
 }
 
-/* Dark mode specific adjustments */
 @media (prefers-color-scheme: dark) {
   .error-message-component {
     background-color: rgba(220, 38, 38, 0.15);

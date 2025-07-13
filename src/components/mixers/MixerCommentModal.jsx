@@ -12,7 +12,6 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
     const [userNames, setUserNames] = useState({});
     const [error, setError] = useState(null);
 
-    // Load comments when component mounts
     useEffect(() => {
         fetchComments();
     }, [mixerId]);
@@ -23,12 +22,9 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
         try {
             const fetchedComments = await MixerCommentService.fetchComments(mixerId);
             setComments(fetchedComments);
-
-            // Get unique author IDs to fetch names
             const authorIds = [...new Set(fetchedComments.map(comment => comment.author))];
             fetchUserNames(authorIds);
         } catch (err) {
-            console.error('Error fetching comments:', err);
             setError('Failed to load comments. Please try again.');
         } finally {
             setIsLoading(false);
@@ -37,19 +33,16 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
 
     const fetchUserNames = async (authorIds) => {
         const namesMap = {};
-
         for (const authorId of authorIds) {
             if (authorId) {
                 try {
                     const displayName = await UserService.getUserDisplayName(authorId);
                     namesMap[authorId] = displayName;
                 } catch (error) {
-                    console.error(`Error fetching name for user ${authorId}:`, error);
                     namesMap[authorId] = 'Unknown User';
                 }
             }
         }
-
         setUserNames(namesMap);
     };
 
@@ -57,45 +50,30 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
         if (!window.confirm('Are you sure you want to delete this comment?')) {
             return;
         }
-
         try {
             await MixerCommentService.deleteComment(commentId);
-            // Refresh comments after deletion
             fetchComments();
         } catch (err) {
-            console.error('Error deleting comment:', err);
             setError('Failed to delete comment. Please try again.');
         }
     };
 
     const handleAddComment = async (e) => {
         e.preventDefault();
-
         if (!newComment.trim()) {
             return;
         }
-
         setIsSubmitting(true);
-
         try {
-            // Get the current user's ID
             const {data: {user}} = await supabase.auth.getUser();
             const userId = user?.id || sessionStorage.getItem('userId');
-
             if (!userId) {
                 throw new Error('You must be logged in to add comments');
             }
-
-            // Add the comment
             await MixerCommentService.addComment(mixerId, newComment, userId);
-
-            // Clear the input
             setNewComment('');
-
-            // Refresh comments
             fetchComments();
         } catch (err) {
-            console.error('Error adding comment:', err);
             setError('Failed to add comment. Please try again.');
         } finally {
             setIsSubmitting(false);
@@ -107,7 +85,6 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
         return date.toLocaleString();
     };
 
-    // Close modal when clicking outside
     const handleBackdropClick = (e) => {
         if (e.target.classList.contains('comment-modal-backdrop')) {
             onClose();
@@ -130,13 +107,13 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
                     <div className="add-comment-section">
                         <h3>Add New Comment</h3>
                         <form onSubmit={handleAddComment}>
-              <textarea
-                  className="comment-textarea"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Write your comment here..."
-                  disabled={isSubmitting}
-              ></textarea>
+                            <textarea
+                                className="comment-textarea"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Write your comment here..."
+                                disabled={isSubmitting}
+                            ></textarea>
                             <button
                                 type="submit"
                                 className="add-comment-button"
@@ -149,7 +126,6 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
 
                     <div className="comments-list">
                         <h3>Comments History</h3>
-
                         {isLoading ? (
                             <div className="loading-container">
                                 <div className="ios-spinner"></div>

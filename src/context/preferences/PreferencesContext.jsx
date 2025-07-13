@@ -28,12 +28,10 @@ export function PreferencesProvider({children}) {
         };
     });
 
-    // Save preferences to localStorage whenever they change
     useEffect(() => {
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
     }, [preferences]);
 
-    // Update a specific operator filter
     const updateOperatorFilter = (key, value) => {
         setPreferences(prev => ({
             ...prev,
@@ -44,7 +42,6 @@ export function PreferencesProvider({children}) {
         }));
     };
 
-    // Reset all operator filters
     const resetOperatorFilters = () => {
         setPreferences(prev => ({
             ...prev,
@@ -56,7 +53,6 @@ export function PreferencesProvider({children}) {
         }));
     };
 
-    // Update a specific manager filter
     const updateManagerFilter = (key, value) => {
         setPreferences(prev => ({
             ...prev,
@@ -67,7 +63,6 @@ export function PreferencesProvider({children}) {
         }));
     };
 
-    // Reset all manager filters
     const resetManagerFilters = () => {
         setPreferences(prev => ({
             ...prev,
@@ -79,7 +74,6 @@ export function PreferencesProvider({children}) {
         }));
     };
 
-    // Update theme color
     const updateAccentColor = (color) => {
         setPreferences(prev => ({
             ...prev,

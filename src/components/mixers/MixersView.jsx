@@ -9,19 +9,13 @@ import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
 import MixerOverview from './MixerOverview';
 import '../../styles/FilterStyles.css';
-// ThemeUtils is not used directly in this component
 import './MixersView.css';
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
-    // Access preferences context
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
-
-    // State variables
     const [mixers, setMixers] = useState([]);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
-
-    // Get operator's smyrna_id by ID
     const getOperatorSmyrnaId = (operatorId) => {
         if (!operatorId || operatorId === '0') return '';
         const operator = operators.find(op => op.employeeId === operatorId);
@@ -36,24 +30,19 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [showHistory, setShowHistory] = useState(false);
     const [selectedMixer, setSelectedMixer] = useState(null);
     const [showMetrics, setShowMetrics] = useState(true);
-
-    // Filter options
     const filterOptions = [
         'All Statuses', 'Active', 'Spare', 'In Shop', 'Retired',
         'Past Due Service', 'Verified', 'Not Verified'
     ];
 
-    // Fetch data on component mount
     useEffect(() => {
         fetchAllData();
-
-        // Load filters from preferences
         if (preferences?.mixerFilters) {
             setSearchText(preferences.mixerFilters.searchText || '');
             setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
             setStatusFilter(preferences.mixerFilters.statusFilter || '');
         }
-    }, [preferences]);  // Re-run when preferences change
+    }, [preferences]);
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -64,7 +53,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 fetchPlants()
             ]);
         } catch (error) {
-            console.error('Error fetching data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -73,31 +61,25 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const fetchMixers = async () => {
         try {
             const data = await MixerService.fetchMixers();
-            // Make sure the data has isVerified function for each mixer
             const processedData = await Promise.all(data.map(async mixer => {
-                // Fetch the latest history for this mixer to check against verification
                 let latestHistoryDate = null;
                 try {
                     const history = await MixerService.getMixerHistory(mixer.id, 1);
                     latestHistoryDate = history[0]?.changedAt || null;
                 } catch (historyError) {
-                    console.error(`Error fetching history for mixer ${mixer.id}:`, historyError);
                 }
 
-                // Ensure each mixer has an isVerified method that correctly evaluates verification status
                 if (typeof mixer.isVerified !== 'function') {
                     mixer.isVerified = function(historyDate = latestHistoryDate) {
                         return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, historyDate);
                     };
                 }
 
-                // Store the latest history date on the mixer object for reference
                 mixer.latestHistoryDate = latestHistoryDate;
                 return mixer;
             }));
             setMixers(processedData);
         } catch (error) {
-            console.error('Error fetching mixers:', error);
         }
     };
 
@@ -106,14 +88,10 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const data = await OperatorService.fetchOperators();
             if (Array.isArray(data)) {
                 setOperators(data);
-                console.log(`Loaded ${data.length} operators`,
-                    data.filter(op => op.position === 'Mixer Operator').length + ' are Mixer Operators');
             } else {
-                console.error('Error: operators data is not an array', data);
                 setOperators([]);
             }
         } catch (error) {
-            console.error('Error fetching operators:', error);
             setOperators([]);
         }
     };
@@ -123,28 +101,16 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const data = await PlantService.fetchPlants();
             setPlants(data);
         } catch (error) {
-            console.error('Error fetching plants:', error);
         }
     };
 
-    // State for metrics visibility (currently not used but kept for future functionality)
-    // const toggleMetricsVisibility = () => {
-    //   setShowMetrics(!showMetrics);
-    // };
-
-    // Filter mixers based on search text, plant, and status
     const filteredMixers = mixers
         .filter(mixer => {
-            // Search text filter
             const matchesSearch = searchText.trim() === '' ||
                 mixer.truckNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
                 (mixer.assignedOperator && operators.find(op =>
                     op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
-
-            // Plant filter
             const matchesPlant = selectedPlant === '' || mixer.assignedPlant === selectedPlant;
-
-            // Status filter
             let matchesStatus = true;
             if (statusFilter && statusFilter !== 'All Statuses') {
                 if (['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter)) {
@@ -157,49 +123,39 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     matchesStatus = !mixer.isVerified();
                 }
             }
-
             return matchesSearch && matchesPlant && matchesStatus;
         })
-        // Sort mixers
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
             if (a.status !== 'Active' && b.status === 'Active') return 1;
             if (a.status === 'Retired' && b.status !== 'Retired') return 1;
             if (a.status !== 'Retired' && b.status === 'Retired') return -1;
             if (a.status !== b.status) return a.status.localeCompare(b.status);
-
             const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0');
             const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0');
             return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '');
         });
 
-    // Get operators name by ID
     const getOperatorName = (operatorId) => {
         if (!operatorId || operatorId === '0') return 'None';
         const operator = operators.find(op => op.employeeId === operatorId);
         return operator ? operator.name : 'Unknown';
     };
 
-
-    // Get plant name by code
     const getPlantName = (plantCode) => {
         const plant = plants.find(p => p.plantCode === plantCode);
         return plant ? plant.plantName : plantCode || 'No Plant';
     };
 
-    // Check if operators is assigned to multiple mixers
     const isOperatorAssignedToMultipleMixers = (operatorId) => {
         if (!operatorId || operatorId === '0') return false;
         return mixers.filter(m => m.assignedOperator === operatorId).length > 1;
     };
 
-    // Handle mixer selection
     const handleSelectMixer = (mixerId) => {
         const mixer = mixers.find(m => m.id === mixerId);
         if (mixer) {
-            // Save current filters before navigating to detail view
             saveLastViewedFilters();
-
             setSelectedMixer(mixer);
             if (onSelectMixer) {
                 onSelectMixer(mixerId);
@@ -207,7 +163,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         }
     };
 
-    // Calculate status counts for overview
     const statusCounts = ['Active', 'Spare', 'In Shop', 'Retired'].map(status => ({
         status,
         count: mixers.filter(m => m.status === status).length
@@ -218,13 +173,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const unverifiedCount = mixers.length - verifiedCount;
     const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length;
 
-    // Calculate average cleanliness rating
     const averageCleanliness = () => {
         const ratings = mixers.filter(m => m.cleanlinessRating).map(m => m.cleanlinessRating);
         return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'Not Assigned';
     };
 
-    // Overview popup component
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -256,7 +209,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 
     return (
         <div className="dashboard-container mixers-view">
-            {/* Header */}
             <div className="dashboard-header">
                 <h1>{title}</h1>
                 <div className="dashboard-actions">
@@ -273,7 +225,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 </div>
             </div>
 
-            {/* Search and Filters */}
             <div className="search-filters">
                 <div className="search-bar">
                     <input
@@ -374,8 +325,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 </div>
             </div>
 
-
-            {/* Content Container */}
             <div className="content-container">
                 {isLoading ? (
                     <div className="loading-container">
@@ -402,8 +351,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </div>
                 ) : (
                     <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
-                                                    {filteredMixers.map(mixer => {
-                            // Add the operator's smyrna_id to the mixer object
+                        {filteredMixers.map(mixer => {
                             const mixerWithOperatorData = {
                                 ...mixer,
                                 operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)
@@ -425,7 +373,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 )}
             </div>
 
-            {/* Add Mixer View */}
             {showAddSheet && (
                 <MixerAddView
                     plants={plants}
@@ -437,10 +384,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 />
             )}
 
-            {/* Overview Modal */}
             {showOverview && <OverviewPopup/>}
 
-            {/* History Modal */}
             {showHistory && selectedMixer && (
                 <MixerHistoryView
                     mixer={selectedMixer}

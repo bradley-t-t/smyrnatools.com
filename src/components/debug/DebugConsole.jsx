@@ -32,7 +32,6 @@ const DebugConsole = ({onClose}) => {
                 setDbTables(tables);
                 setLoading(false);
             } catch (error) {
-                console.error('Error loading tables:', error);
                 setLoading(false);
             }
         };
@@ -91,7 +90,6 @@ const DebugConsole = ({onClose}) => {
             setTableData(data || []);
             setLoading(false);
         } catch (error) {
-            console.error(`Error loading data from ${tableName}:`, error);
             setTableData([]);
             setLoading(false);
         }

@@ -42,7 +42,7 @@ export class MixerService {
             // Fetch latest history dates for all mixers
             try {
                 const { data: historyData, error: historyError } = await supabase
-                    .from('mixer_history')
+                    .from('mixers_history')
                     .select('mixer_id, changed_at')
                     .order('changed_at', { ascending: false });
 
@@ -193,7 +193,7 @@ export class MixerService {
             if (!mixerId) return null;
 
             const { data, error } = await supabase
-                .from('mixer_history')
+                .from('mixers_history')
                 .select('changed_at')
                 .eq('mixer_id', mixerId)
                 .order('changed_at', { ascending: false })
@@ -233,7 +233,7 @@ export class MixerService {
             static async getMixerHistory(mixerId, limit = null) {
         try {
             let query = supabase
-                .from('mixer_history')
+                .from('mixers_history')
                 .select('*')
                 .eq('mixer_id', mixerId)
                 .order('changed_at', { ascending: false });
@@ -488,7 +488,7 @@ export class MixerService {
 
             if (historyEntries.length > 0) {
                 const {error: historyError} = await supabase
-                    .from('mixer_history')
+                    .from('mixers_history')
                     .insert(historyEntries);
                 if (historyError) {
                     console.error('Error saving mixer history:', historyError);
@@ -506,7 +506,7 @@ export class MixerService {
     static async deleteMixer(id) {
         try {
             const {error: historyError} = await supabase
-                .from('mixer_history')
+                .from('mixers_history')
                 .delete()
                 .eq('mixer_id', id);
 
@@ -549,7 +549,7 @@ export class MixerService {
             const newValueStr = newValue?.toString() || null;
 
             const {error: insertError, data: insertData} = await supabase
-                .from('mixer_history')
+                .from('mixers_history')
                 .insert({
                     mixer_id: mixerId,
                     field_name: fieldName,
@@ -575,7 +575,7 @@ export class MixerService {
     static async getMixerHistory(id) {
         try {
             const {data, error} = await supabase
-                .from('mixer_history')
+                .from('mixers_history')
                 .select('*')
                 .eq('mixer_id', id)
                 .order('changed_at', {ascending: false});
@@ -594,7 +594,7 @@ export class MixerService {
             threshold.setMonth(threshold.getMonth() - months);
 
             let query = supabase
-                .from('mixer_history')
+                .from('mixers_history')
                 .select('mixer_id, field_name, old_value, new_value, changed_at, changed_by')
                 .eq('field_name', 'cleanliness_rating')
                 .gte('changed_at', threshold.toISOString())

@@ -172,7 +172,7 @@ function ManagerDetailView({ managerId, onClose }) {
 
             // Get profile data
             const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .select('*')
                 .eq('id', managerId)
                 .single();
@@ -277,7 +277,7 @@ function ManagerDetailView({ managerId, onClose }) {
             try {
                 // Check if manager still exists before updating
                 const { data: checkManager, error: checkError } = await supabase
-                    .from('profiles')
+                    .from('users_profiles')
                     .select('id')
                     .eq('id', manager.id)
                     .single();
@@ -288,7 +288,7 @@ function ManagerDetailView({ managerId, onClose }) {
 
                 // Update profiles
                 const { error: profileError } = await supabase
-                    .from('profiles')
+                    .from('users_profiles')
                     .update({
                         first_name: firstName,
                         last_name: lastName,

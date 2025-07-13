@@ -27,7 +27,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         fetchData();
     }, [filteredMixers]);
 
-    // Recalculate statistics when filtered mixers or operators change
     useEffect(() => {
         if (filteredMixers && operators.length > 0) {
             updateStatistics(filteredMixers);
@@ -41,7 +40,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setCleanlinessAvg(MixerUtils.getCleanlinessAverage(mixersData));
         setNeedServiceCount(MixerUtils.getNeedServiceCount(mixersData));
 
-        // Calculate verification counts
         const verified = mixersData.filter(mixer => {
             return MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
         }).length;
@@ -49,35 +47,25 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setVerifiedCount(verified);
         setNotVerifiedCount(notVerified);
 
-        // Get all unique operators assigned to mixers
         const assignedOperatorIds = new Set();
         mixersData
             .filter(mixer => mixer.assignedOperator && mixer.assignedOperator !== '0')
             .forEach(mixer => assignedOperatorIds.add(mixer.assignedOperator));
 
-        // Find all assigned operators
         const assignedOperators = operators.filter(op => assignedOperatorIds.has(op.employeeId));
-
-        // Count operators in training (those with an assigned trainer that isn't '0')
         const trainingCount = assignedOperators.filter(op => op.assignedTrainer && op.assignedTrainer !== '0').length;
-        // Count trainers (operators with isTrainer === true)
         const trainersCount = assignedOperators.filter(op => op.isTrainer === true).length;
 
-        // Set the counts
         setTrainingCount(trainingCount);
         setTrainersCount(trainersCount);
 
-        // Update plant distribution
         calculatePlantDistributionByStatus(mixersData);
     };
 
     const calculatePlantDistributionByStatus = (mixersData) => {
         const distribution = {};
-
-        // Get unique plants
         const uniquePlants = [...new Set(mixersData.map(mixer => mixer.assignedPlant || 'Unassigned'))];
 
-        // Initialize structure
         uniquePlants.forEach(plant => {
             distribution[plant] = {
                 Total: 0,
@@ -88,24 +76,16 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
             };
         });
 
-        // Count mixers by plant and status
         mixersData.forEach(mixer => {
             const plant = mixer.assignedPlant || 'Unassigned';
             const status = mixer.status || 'Unknown';
-
-            // Increment total count
             distribution[plant].Total++;
-
-            // Increment status-specific count
             if (['Active', 'Spare', 'In Shop', 'Retired'].includes(status)) {
                 distribution[plant][status]++;
             } else {
-                // Default to active if status is not recognized
                 distribution[plant].Active++;
             }
         });
-
-        // No longer counting operators by training status and trainer role
 
         setPlantDistributionByStatus(distribution);
     };
@@ -113,11 +93,7 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            // Fetch mixers and plants
             const mixersData = await MixerService.getAllMixers();
-            console.log('MixerOverview: Fetched mixers:', mixersData?.length || 0);
-
-            // Fetch maintenance issues count
             try {
                 const { data, error } = await supabase
                     .from('mixers_maintenance')
@@ -128,47 +104,35 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                     setOpenMaintenanceIssues(data?.length || 0);
                 }
             } catch (maintenanceError) {
-                console.error('Error fetching maintenance issues:', maintenanceError);
             }
-
             setMixers(mixersData);
-
             const plantsData = await PlantService.fetchPlants();
             setPlants(plantsData);
-
-            // Fetch operators directly from database for more reliable data
             try {
-                // Get all operators from database
                 const { data: operatorsRawData, error: operatorsError } = await supabase
                     .from('operators')
                     .select('*');
 
                 if (operatorsError) throw operatorsError;
 
-                // Map raw data to operator objects
                 const operatorsData = operatorsRawData.map(op => ({
                     employeeId: op.employee_id,
                     smyrnaId: op.smyrna_id || '',
                     name: op.name,
                     plantCode: op.plant_code,
                     status: op.status,
-                    isTrainer: op.is_trainer === true, // Ensure boolean
+                    isTrainer: op.is_trainer === true,
                     assignedTrainer: op.assigned_trainer,
                     position: op.position
                 }));
 
-                // Simply store the operators - updateStatistics will handle the counting
                 setOperators(operatorsData || []);
             } catch (operatorsError) {
-                console.error('Error fetching operators:', operatorsError);
             }
-
-            // If no filtered mixers are provided, use all mixers for statistics
             if (!filteredMixers) {
                 updateStatistics(mixersData);
             }
         } catch (error) {
-            console.error('Error fetching overview data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -207,7 +171,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
             )}
 
             <div className="overview-grid">
-                {/* Status Card */}
                 <div className="overview-card status-card">
                     <h2>Status Overview</h2>
                     <div className="status-grid">
@@ -242,7 +205,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                     </div>
                 </div>
 
-                {/* Maintenance Card */}
                 <div className="overview-card maintenance-card">
                     <h2>Maintenance</h2>
                     <div className="maintenance-stats">
@@ -276,7 +238,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                     </div>
                 </div>
 
-                {/* Plant Distribution Card - only show if no specific plant is selected or multiple plants are present */}
                 {(!selectedPlant || Object.keys(plantCounts).length > 1) && (
                     <div className="overview-card plant-card">
                         <h2>Plant Distribution</h2>
@@ -309,7 +270,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                     </div>
                 )}
 
-                {/* Cleanliness History Chart */}
                 <div className="overview-card cleanliness-card">
                     <CleanlinessHistoryChart mixers={filteredMixers || mixers}/>
                 </div>

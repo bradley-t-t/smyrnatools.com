@@ -1,18 +1,14 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 
-// Create the context
 const MixerFilterContext = createContext(null);
 
-// Export the provider component
 export const MixerFilterProvider = ({children}) => {
-    // State for the filters
     const [filters, setFilters] = useState({
         searchText: '',
         selectedPlant: '',
         statusFilter: ''
     });
 
-    // Method to update a single filter
     const updateFilter = (filterName, value) => {
         setFilters(prev => ({
             ...prev,
@@ -20,7 +16,6 @@ export const MixerFilterProvider = ({children}) => {
         }));
     };
 
-    // Method to reset all filters
     const resetFilters = () => {
         setFilters({
             searchText: '',
@@ -29,12 +24,9 @@ export const MixerFilterProvider = ({children}) => {
         });
     };
 
-    // Debug log when filters change
     useEffect(() => {
-        console.log('Filter context updated:', filters);
     }, [filters]);
 
-    // Provide the filter state and methods to update it
     return (
         <MixerFilterContext.Provider value={{
             filters,
@@ -47,7 +39,6 @@ export const MixerFilterProvider = ({children}) => {
     );
 };
 
-// Custom hook to use the filter context
 export const useMixerFilters = () => {
     const context = useContext(MixerFilterContext);
 

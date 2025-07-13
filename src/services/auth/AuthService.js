@@ -169,7 +169,7 @@ class AuthServiceImpl {
 
             // Insert profiles
             const {error: profileError} = await supabase
-                .from('profiles')
+                .from('users_profiles')
                 .insert(profile);
 
             if (profileError) throw profileError;

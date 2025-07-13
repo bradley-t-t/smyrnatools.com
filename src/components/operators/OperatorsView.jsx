@@ -24,7 +24,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
     const [showDetailView, setShowDetailView] = useState(false);
     const [selectedOperator, setSelectedOperator] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
-
     const [newEmployeeId, setNewEmployeeId] = useState('');
     const [newName, setNewName] = useState('');
     const [newPlantCode, setNewPlantCode] = useState('');
@@ -39,7 +38,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
         'All Statuses', 'Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training',
         'Trainer', 'Not Trainer'
     ];
-
     const positionOptions = ['All Positions', 'Mixer Operator', 'Tractor Operator'];
 
     useEffect(() => {
@@ -56,7 +54,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
         fetchAllData();
     }, []);
 
-    // Load filters from preferences when they change
     useEffect(() => {
         if (preferences.operatorFilters) {
             setSearchText(preferences.operatorFilters.searchText || '');
@@ -74,7 +71,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                 fetchPlants()
             ]);
         } catch (error) {
-            console.error('Error fetching data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -103,7 +99,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
             localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators));
             localStorage.setItem('cachedOperatorsDate', new Date().toISOString());
         } catch (error) {
-            console.error('Error fetching operators:', error);
             const cachedData = localStorage.getItem('cachedOperators');
             const cacheDate = localStorage.getItem('cachedOperatorsDate');
             if (cachedData && cacheDate) {
@@ -125,7 +120,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
             if (error) throw error;
             setPlants(data);
         } catch (error) {
-            console.error('Error fetching plants:', error);
         }
     };
 
@@ -159,7 +153,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
             setShowAddSheet(false);
             fetchOperators();
         } catch (error) {
-            console.error('Error adding operator:', error);
             alert('Failed to add operator. Please try again.');
         }
     };
@@ -175,7 +168,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
             fetchOperators();
             setSelectedOperator(null);
         } catch (error) {
-            console.error('Error deleting operator:', error);
             alert('Failed to delete operator. Please try again.');
         }
     };
@@ -239,7 +231,6 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
     const trainerCount = operators.filter(op => op.isTrainer).length;
 
-    // Overview Popup component that uses the new OperatorsOverview component
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -250,7 +241,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                     </button>
                 </div>
                 <div className="modal-body">
-                    <OperatorsOverview 
+                    <OperatorsOverview
                         filteredOperators={filteredOperators}
                         selectedPlant={selectedPlant}
                     />
@@ -543,8 +534,8 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                                     )}
                                 </div>
                                 <div className="modal-footer">
-                                    <button 
-                                        className="cancel-button" 
+                                    <button
+                                        className="cancel-button"
                                         onClick={() => setShowAddSheet(false)}
                                         style={{ borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                                     >

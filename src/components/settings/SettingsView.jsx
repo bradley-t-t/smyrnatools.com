@@ -8,37 +8,27 @@ function SettingsView() {
     const [showFeedback, setShowFeedback] = useState(false);
     const [userId, setUserId] = useState(null);
 
-    // Get current user ID for saving preferences
     useEffect(() => {
         const getCurrentUser = async () => {
             try {
-                // Try to get from auth session first
                 const {data} = await supabase.auth.getSession();
                 if (data?.session?.user?.id) {
                     setUserId(data.session.user.id);
-                    console.log('User ID set from session:', data.session.user.id);
                     return;
                 }
 
-                // Fallback: try to get from session storage
                 const sessionUserId = sessionStorage.getItem('userId');
                 if (sessionUserId) {
                     setUserId(sessionUserId);
-                    console.log('User ID set from sessionStorage:', sessionUserId);
                     return;
                 }
-
-                console.warn('No user ID found in session or storage');
             } catch (error) {
-                console.error('Error getting current user:', error);
             }
         };
 
         getCurrentUser();
     }, []);
 
-
-    // Show feedback message when settings change
     const handleSettingChange = (changeFunction, ...args) => {
         changeFunction(...args);
         setShowFeedback(true);
@@ -59,8 +49,6 @@ function SettingsView() {
             </div>
 
             <div className="settings-content">
-
-                {/* Appearance Settings */}
                 <div className="settings-card">
                     <div className="settings-card-header">
                         <h2><i className="fas fa-palette"
@@ -123,7 +111,6 @@ function SettingsView() {
                     </div>
                 </div>
 
-                {/* Navigation Settings */}
                 <div className="settings-card">
                     <div className="settings-card-header">
                         <h2><i className="fas fa-bars"

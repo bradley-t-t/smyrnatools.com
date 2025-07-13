@@ -7,7 +7,6 @@
     font-size: 1rem;
     background: none;
     animation: none;
-    /* Ensure no animation is applied */
     animation: none;
 }
 
@@ -21,7 +20,6 @@
     font-size: 1.2rem;
 }
 
-/* Explicitly disable any animations in children */
 .simple-loading *, .simple-loading *::before, .simple-loading *::after {
     animation: none !important;
     transition: none !important;

@@ -6,12 +6,9 @@ import { usePreferences } from '../../context/preferences/PreferencesContext';
 import './OperatorSelectModal.css';
 
 const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers = [], assignedPlant = '' }) => {
-
-  // Access the theme preferences
   const { preferences } = usePreferences();
   const isDarkMode = preferences.themeMode === 'dark';
   const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
-  // Convert hex to RGB for CSS variables
   const accentColorRGB = preferences.accentColor === 'red' ? '184, 0, 23' : '0, 56, 150';
 
   const [operators, setOperators] = useState([]);
@@ -22,17 +19,12 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
   const [sortAvailableFirst, setSortAvailableFirst] = useState(true);
   const modalRef = useRef(null);
 
-  // Set initial filter values when assignedPlant changes
   useEffect(() => {
     if (assignedPlant) {
-      // Always use the mixer's plant for filtering
       setFilterPlant(assignedPlant);
-    } else {
-      console.warn('OperatorSelectModal: No plant code provided. This will result in no operators being found.');
     }
   }, [assignedPlant]);
 
-  // Prevent body scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -46,7 +38,6 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
     };
   }, [isOpen]);
 
-  // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -68,18 +59,13 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
     try {
       let data;
       if (assignedPlant) {
-        // Fetch only operators from the mixer's plant
         data = await OperatorService.fetchOperatorsByPlant(assignedPlant);
-        console.log(`Fetched ${data.length} operators for plant ${assignedPlant}`);
-
-        // If no operators found with plant filter, try fetching all operators from that plant
         if (data.length === 0) {
-          console.log(`No operators found for plant ${assignedPlant}, fetching all operators for this plant`);
           try {
             const { data: plantData, error } = await supabase
-              .from('operators')
-              .select('*')
-              .eq('plant_code', assignedPlant);
+                .from('operators')
+                .select('*')
+                .eq('plant_code', assignedPlant);
 
             if (plantData && plantData.length > 0) {
               data = plantData.map(op => ({
@@ -92,257 +78,243 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
                 assignedTrainer: op.assigned_trainer,
                 position: op.position || ''
               }));
-              console.log(`Found ${data.length} total operators for plant ${assignedPlant}`);
             }
           } catch (innerError) {
-            console.error('Error fetching all plant operators:', innerError);
           }
         }
       } else {
-          // Log a warning if there's no assigned plant
-          console.warn('OperatorSelectModal: No plant code provided to fetch operators');
-          data = [];
+        data = [];
       }
       setOperators(data);
     } catch (error) {
-      console.error('Error fetching operators:', error);
-      // Fallback to empty array if fetch fails
       setOperators([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Check if an operator is already assigned to another mixer
   const isOperatorAssigned = (operatorId) => {
     if (!operatorId || operatorId === '0') return false;
-    return mixers.some(mixer => 
-      mixer.assignedOperator === operatorId && 
-      mixer.status === 'Active'
+    return mixers.some(mixer =>
+        mixer.assignedOperator === operatorId &&
+        mixer.status === 'Active'
     );
   };
 
-  // Filter operators based on search text, position, plant, and availability
   const filteredOperators = operators
-    .filter(operator => {
-      const matchesSearch = searchText.trim() === '' ||
-        operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        (operator.smyrnaId && operator.smyrnaId.toLowerCase().includes(searchText.toLowerCase())) ||
-        operator.employeeId.toLowerCase().includes(searchText.toLowerCase());
+      .filter(operator => {
+        const matchesSearch = searchText.trim() === '' ||
+            operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            (operator.smyrnaId && operator.smyrnaId.toLowerCase().includes(searchText.toLowerCase())) ||
+            operator.employeeId.toLowerCase().includes(searchText.toLowerCase());
 
-      // Filter by position if filterPosition is provided
-      const matchesPosition = !filterPosition || operator.position === filterPosition;
+        const matchesPosition = !filterPosition || operator.position === filterPosition;
+        const matchesPlant = operator.plantCode === assignedPlant;
 
-      // Always filter by plant - only show operators from the assigned plant
-      const matchesPlant = operator.plantCode === assignedPlant;
+        return matchesSearch && matchesPosition && matchesPlant;
+      })
+      .sort((a, b) => {
+        if (sortAvailableFirst) {
+          const aAssigned = isOperatorAssigned(a.employeeId) || a.status !== 'Active';
+          const bAssigned = isOperatorAssigned(b.employeeId) || b.status !== 'Active';
 
-      return matchesSearch && matchesPosition && matchesPlant;
-    })
-    .sort((a, b) => {
-      if (sortAvailableFirst) {
-        // First, sort by availability
-        const aAssigned = isOperatorAssigned(a.employeeId) || a.status !== 'Active';
-        const bAssigned = isOperatorAssigned(b.employeeId) || b.status !== 'Active';
+          if (!aAssigned && bAssigned) return -1;
+          if (aAssigned && !bAssigned) return 1;
+        }
 
-        if (!aAssigned && bAssigned) return -1;
-        if (aAssigned && !bAssigned) return 1;
-      }
-
-      // Then sort alphabetically by name
-      return a.name.localeCompare(b.name);
-    });
+        return a.name.localeCompare(b.name);
+      });
 
   if (!isOpen) return null;
 
-  // Use React Portal to render modal directly to body
   return ReactDOM.createPortal(
-    <div className={`operator-modal-overlay ${isDarkMode ? 'dark-mode' : ''}`} 
-         style={{
-           '--accent-color': accentColor,
-           '--accent-color-rgb': accentColorRGB
-         }}>
-      <div className="operator-modal-backdrop" onClick={onClose}></div>
-      <div 
-        className="operator-modal-container" 
-        ref={modalRef}
-        style={{ maxWidth: '500px' }}
-      >
-        <div className="operator-modal-header">
-          <h2>Select Operator</h2>
-          <button className="close-button" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div className="operator-modal-search">
-          <div className="search-input-container">
-            <i className="fas fa-search search-icon"></i>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search operators..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              autoFocus
-            />
-            {searchText && (
-              <button className="clear-search" onClick={() => setSearchText('')}>
-                <i className="fas fa-times"></i>
-              </button>
-            )}
-          </div>
-
-          <div className="filter-buttons">
-            <button 
-              className={`filter-button ${sortAvailableFirst ? 'active' : ''}`} 
-              title={sortAvailableFirst ? "Showing available operators first" : "Default sorting"}
-              onClick={() => setSortAvailableFirst(!sortAvailableFirst)}
-              style={{
-                fontWeight: sortAvailableFirst ? '600' : '500',
-                ...(sortAvailableFirst && {
-                  backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                  borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'
-                })
-              }}
-            >
-              <i className="fas fa-sort-amount-down"></i>
-              Available First
+      <div className={`operator-modal-overlay ${isDarkMode ? 'dark-mode' : ''}`}
+           style={{
+             '--accent-color': accentColor,
+             '--accent-color-rgb': accentColorRGB
+           }}>
+        <div className="operator-modal-backdrop" onClick={onClose}></div>
+        <div
+            className="operator-modal-container"
+            ref={modalRef}
+            style={{ maxWidth: '500px' }}
+        >
+          <div className="operator-modal-header">
+            <h2>Select Operator</h2>
+            <button className="close-button" onClick={onClose}>
+              <i className="fas fa-times"></i>
             </button>
           </div>
-        </div>
 
-        <div className="operator-modal-content">
-          <div className="filter-status">
-            <span className="result-count" style={{fontWeight: '500'}}>{filteredOperators.length} operator{filteredOperators.length !== 1 ? 's' : ''} found{assignedPlant ? ` for plant ${assignedPlant}` : ''}</span>
-            {assignedPlant ? (
-              <span className="filter-tag plant-tag">
-                <i className="fas fa-building"></i> Plant: {assignedPlant}
-              </span>
-            ) : (
-              <span className="filter-tag error-tag">
-                <i className="fas fa-exclamation-triangle"></i> No plant selected
-              </span>
-            )}
-            {sortAvailableFirst && (
-              <span className="filter-tag" style={{fontWeight: '500'}}>
-                <i className="fas fa-sort-amount-down"></i> Available First
-              </span>
-            )}
+          <div className="operator-modal-search">
+            <div className="search-input-container">
+              <i className="fas fa-search search-icon"></i>
+              <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search operators..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  autoFocus
+              />
+              {searchText && (
+                  <button className="clear-search" onClick={() => setSearchText('')}>
+                    <i className="fas fa-times"></i>
+                  </button>
+              )}
+            </div>
+
+            <div className="filter-buttons">
+              <button
+                  className={`filter-button ${sortAvailableFirst ? 'active' : ''}`}
+                  title={sortAvailableFirst ? "Showing available operators first" : "Default sorting"}
+                  onClick={() => setSortAvailableFirst(!sortAvailableFirst)}
+                  style={{
+                    fontWeight: sortAvailableFirst ? '600' : '500',
+                    ...(sortAvailableFirst && {
+                      backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                      borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                    })
+                  }}
+              >
+                <i className="fas fa-sort-amount-down"></i>
+                Available First
+              </button>
+            </div>
           </div>
 
-          {isLoading ? (
-            <div className="loading-spinner">
-              <div className="spinner"></div>
-              <p>Loading operators...</p>
+          <div className="operator-modal-content">
+            <div className="filter-status">
+              <span className="result-count" style={{fontWeight: '500'}}>{filteredOperators.length} operator{filteredOperators.length !== 1 ? 's' : ''} found{assignedPlant ? ` for plant ${assignedPlant}` : ''}</span>
+              {assignedPlant ? (
+                  <span className="filter-tag plant-tag">
+                <i className="fas fa-building"></i> Plant: {assignedPlant}
+              </span>
+              ) : (
+                  <span className="filter-tag error-tag">
+                <i className="fas fa-exclamation-triangle"></i> No plant selected
+              </span>
+              )}
+              {sortAvailableFirst && (
+                  <span className="filter-tag" style={{fontWeight: '500'}}>
+                <i className="fas fa-sort-amount-down"></i> Available First
+              </span>
+              )}
             </div>
-          ) : filteredOperators.length === 0 ? (
-            <div className="no-results">
-              <i className="fas fa-user-slash no-results-icon"></i>
-              <p>
-                {assignedPlant
-                  ? `No operators found for plant (${assignedPlant})`
-                  : 'No plant selected. Please select a plant first.'}
-              </p>
-              <p className="no-results-hint">
-                Please add operators with this plant code in the Operators section
-              </p>
-              <div className="no-results-actions">
-                <button 
-                  className="show-all-button"
-                  onClick={() => {
-                    setFilterPosition('');
-                    setSearchText('');
-                  }}
-                >
-                  Reset Search
-                </button>
-                <a 
-                  href="/operators/add"
-                  className="add-operator-button"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ marginLeft: '8px' }}
-                >
-                  <i className="fas fa-plus"></i> Add Operator
-                </a>
-                <button 
-                  className="cancel-button ml-2"
-                  onClick={() => onClose()}
-                  style={{ marginLeft: '8px' }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="operator-list">
-              <div 
-                className="operator-item unassigned"
-                onClick={() => onSelect('0')}
-              >
-                <div className="operator-main-info">
-                  <span className="operator-name">None (Unassigned)</span>
+
+            {isLoading ? (
+                <div className="loading-spinner">
+                  <div className="spinner"></div>
+                  <p>Loading operators...</p>
                 </div>
-                <div className="operator-details">
+            ) : filteredOperators.length === 0 ? (
+                <div className="no-results">
+                  <i className="fas fa-user-slash no-results-icon"></i>
+                  <p>
+                    {assignedPlant
+                        ? `No operators found for plant (${assignedPlant})`
+                        : 'No plant selected. Please select a plant first.'}
+                  </p>
+                  <p className="no-results-hint">
+                    Please add operators with this plant code in the Operators section
+                  </p>
+                  <div className="no-results-actions">
+                    <button
+                        className="show-all-button"
+                        onClick={() => {
+                          setFilterPosition('');
+                          setSearchText('');
+                        }}
+                    >
+                      Reset Search
+                    </button>
+                    <a
+                        href="/operators/add"
+                        className="add-operator-button"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ marginLeft: '8px' }}
+                    >
+                      <i className="fas fa-plus"></i> Add Operator
+                    </a>
+                    <button
+                        className="cancel-button ml-2"
+                        onClick={() => onClose()}
+                        style={{ marginLeft: '8px' }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+            ) : (
+                <div className="operator-list">
+                  <div
+                      className="operator-item unassigned"
+                      onClick={() => onSelect('0')}
+                  >
+                    <div className="operator-main-info">
+                      <span className="operator-name">None (Unassigned)</span>
+                    </div>
+                    <div className="operator-details">
                   <span className="unassigned-label">
                     <i className="fas fa-times-circle"></i> No operator will be assigned
                   </span>
-                </div>
-              </div>
-
-              {filteredOperators.map(operator => {
-                const isAssigned = isOperatorAssigned(operator.employeeId);
-                const isInactive = operator.status !== 'Active';
-                const isUnavailable = isAssigned || isInactive;
-                const isSelected = operator.employeeId === currentValue;
-
-                return (
-                  <div 
-                    key={operator.employeeId}
-                    className={`operator-item ${isUnavailable ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}`}
-                    onClick={() => !isUnavailable && onSelect(operator.employeeId)}
-                  >
-                    <div className="operator-main-info">
-                      <span className="operator-name">{operator.name}</span>
-                      {operator.smyrnaId ? (
-                        <span className="operator-id">{operator.smyrnaId}</span>
-                      ) : null}
                     </div>
-                    <div className="operator-details">
+                  </div>
+
+                  {filteredOperators.map(operator => {
+                    const isAssigned = isOperatorAssigned(operator.employeeId);
+                    const isInactive = operator.status !== 'Active';
+                    const isUnavailable = isAssigned || isInactive;
+                    const isSelected = operator.employeeId === currentValue;
+
+                    return (
+                        <div
+                            key={operator.employeeId}
+                            className={`operator-item ${isUnavailable ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() => !isUnavailable && onSelect(operator.employeeId)}
+                        >
+                          <div className="operator-main-info">
+                            <span className="operator-name">{operator.name}</span>
+                            {operator.smyrnaId ? (
+                                <span className="operator-id">{operator.smyrnaId}</span>
+                            ) : null}
+                          </div>
+                          <div className="operator-details">
                       <span className="operator-position">
                         <i className="fas fa-hard-hat"></i> {operator.position || 'No Position'}
                       </span>
-                      {operator.plantCode && (
-                        <span className="operator-plant">
+                            {operator.plantCode && (
+                                <span className="operator-plant">
                           <i className="fas fa-building"></i> {operator.plantCode}
                         </span>
-                      )}
-                      {isInactive && (
-                        <span className="operator-status">
+                            )}
+                            {isInactive && (
+                                <span className="operator-status">
                           <i className="fas fa-exclamation-triangle"></i> {operator.status}
                         </span>
-                      )}
-                      {isAssigned && operator.status === 'Active' && (
-                        <span className="operator-status">
+                            )}
+                            {isAssigned && operator.status === 'Active' && (
+                                <span className="operator-status">
                           <i className="fas fa-user-slash"></i> Already Assigned
                         </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                            )}
+                          </div>
+                        </div>
+                    );
+                  })}
+                </div>
+            )}
+          </div>
 
-        <div className="operator-modal-footer">
-          <button className="cancel-button" onClick={onClose}>
-            Cancel
-          </button>
+          <div className="operator-modal-footer">
+            <button className="cancel-button" onClick={onClose}>
+              Cancel
+            </button>
+          </div>
         </div>
-      </div>
-    </div>,
-    document.body
+      </div>,
+      document.body
   );
 };
 

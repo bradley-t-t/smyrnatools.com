@@ -8,10 +8,8 @@ import './MixerCard.css';
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
     const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
-    // Use MixerUtils directly instead of calling the method on the object
-    // Make sure to account for verification status based on all necessary fields including history
-    const isVerified = typeof mixer.isVerified === 'function' 
-        ? mixer.isVerified(mixer.latestHistoryDate) 
+    const isVerified = typeof mixer.isVerified === 'function'
+        ? mixer.isVerified(mixer.latestHistoryDate)
         : MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
     const statusColor = ThemeUtils.statusColors[mixer.status] || ThemeUtils.statusColors.default;
     const {preferences} = usePreferences();
@@ -24,7 +22,6 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                 const openIssues = issues.filter(issue => !issue.time_completed);
                 setOpenIssuesCount(openIssues.length);
             } catch (error) {
-                console.error('Error fetching open issues count:', error);
                 setOpenIssuesCount(0);
             }
         };
@@ -60,9 +57,9 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                  title={mixer.status || 'Unknown'}></div>
             {!isVerified && (
                 <div className="verification-flag"
-                     title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' : 
-                            mixer.latestHistoryDate && new Date(mixer.latestHistoryDate) > new Date(mixer.updatedLast) ? 'Changes recorded in history since last verification' :
-                            'Mixer not verified since last Sunday'}>
+                     title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' :
+                         mixer.latestHistoryDate && new Date(mixer.latestHistoryDate) > new Date(mixer.updatedLast) ? 'Changes recorded in history since last verification' :
+                             'Mixer not verified since last Sunday'}>
                     <i className="fas fa-flag" style={{color: '#e74c3c'}}></i>
                 </div>
             )}
@@ -72,7 +69,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Truck
                         #{mixer.truckNumber || 'Not Assigned'}</h3>
                     {openIssuesCount > 0 && (
-                        <div className={`issues-badge ${!isVerified ? 'with-verification-flag' : ''}`} 
+                        <div className={`issues-badge ${!isVerified ? 'with-verification-flag' : ''}`}
                              title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                             <i className="fas fa-tools"></i>
                             <span>{openIssuesCount}</span>

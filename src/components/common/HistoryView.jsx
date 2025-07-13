@@ -2,13 +2,11 @@ import React from 'react';
 import './HistoryView.css';
 
 function HistoryView({historyData, onClose, entityType}) {
-    // Format the date to a more readable format
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleString();
     };
 
-    // Get a user-friendly field name
     const getFieldLabel = (fieldName) => {
         const fieldLabels = {
             name: 'Name',
@@ -19,7 +17,6 @@ function HistoryView({historyData, onClose, entityType}) {
             notes: 'Notes',
             last_maintenance: 'Last Maintenance',
             next_maintenance: 'Next Maintenance',
-            // Add more field mappings as needed
         };
 
         return fieldLabels[fieldName] || fieldName;
