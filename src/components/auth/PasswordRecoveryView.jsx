@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {supabase} from '../../core/clients/SupabaseClient';
 import EmailClient from '../../core/clients/EmailClient';
-import {sendEmailMock} from '../../api/EmailService';
+import {sendEmailMock} from '../../services/emails/EmailService';
 import './LoginView.css';
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 
