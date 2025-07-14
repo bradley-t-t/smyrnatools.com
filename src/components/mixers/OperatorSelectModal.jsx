@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { OperatorService } from '../../services/operators/OperatorService';
-import supabase from '../../core/clients/SupabaseClient';
+import { supabase } from '../../core/clients/SupabaseClient';
 import { usePreferences } from '../../context/preferences/PreferencesContext';
 import './OperatorSelectModal.css';
 
-const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers = [], assignedPlant = '' }) => {
+const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers = [], assignedPlant = '', readOnly = false }) => {
   const { preferences } = usePreferences();
   const isDarkMode = preferences.themeMode === 'dark';
   const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
@@ -36,7 +36,7 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
     return () => {
       document.body.style.overflow = 'auto';
     };
-  }, [isOpen]);
+  }, [isOpen, assignedPlant, mixers]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -95,14 +95,25 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
 
   const isOperatorAssigned = (operatorId) => {
     if (!operatorId || operatorId === '0') return false;
-    return mixers.some(mixer =>
+    if (!Array.isArray(mixers) || mixers.length === 0) {
+      console.log('No mixers provided to check for operator assignments');
+      return false;
+    }
+    const isAssigned = mixers.some(mixer =>
         mixer.assignedOperator === operatorId &&
         mixer.status === 'Active'
     );
+    if (isAssigned) {
+      console.log(`Operator ${operatorId} is already assigned to an active mixer`);
+    }
+    return isAssigned;
   };
 
   const filteredOperators = operators
       .filter(operator => {
+        // Always include currently selected operator in the list regardless of search or filters
+        if (operator.employeeId === currentValue) return true;
+
         const matchesSearch = searchText.trim() === '' ||
             operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
             (operator.smyrnaId && operator.smyrnaId.toLowerCase().includes(searchText.toLowerCase())) ||
@@ -173,7 +184,8 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
                     fontWeight: sortAvailableFirst ? '600' : '500',
                     ...(sortAvailableFirst && {
                       backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                      borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                      borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                      color: '#ffffff'
                     })
                   }}
               >
@@ -185,7 +197,16 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
 
           <div className="operator-modal-content">
             <div className="filter-status">
-              <span className="result-count" style={{fontWeight: '500'}}>{filteredOperators.length} operator{filteredOperators.length !== 1 ? 's' : ''} found{assignedPlant ? ` for plant ${assignedPlant}` : ''}</span>
+              <span className="result-count" style={{fontWeight: '500'}}>
+                {filteredOperators.filter(op => readOnly || !isOperatorAssigned(op.employeeId) || op.employeeId === currentValue).length}
+                {' '}operator{filteredOperators.filter(op => readOnly || !isOperatorAssigned(op.employeeId) || op.employeeId === currentValue).length !== 1 ? 's' : ''}
+                {' '}found{assignedPlant ? ` for plant ${assignedPlant}` : ''}
+              </span>
+              {!readOnly && (
+                <span className="filter-tag info-tag">
+                  <i className="fas fa-info-circle"></i> Already assigned operators are hidden
+                </span>
+              )}
               {assignedPlant ? (
                   <span className="filter-tag plant-tag">
                 <i className="fas fa-building"></i> Plant: {assignedPlant}
@@ -250,7 +271,10 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
                 <div className="operator-list">
                   <div
                       className="operator-item unassigned"
-                      onClick={() => onSelect('0')}
+                      onClick={() => {
+                        onSelect('0');
+                        onClose();
+                      }}
                   >
                     <div className="operator-main-info">
                       <span className="operator-name">None (Unassigned)</span>
@@ -265,14 +289,29 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
                   {filteredOperators.map(operator => {
                     const isAssigned = isOperatorAssigned(operator.employeeId);
                     const isInactive = operator.status !== 'Active';
-                    const isUnavailable = isAssigned || isInactive;
+                    const isUnavailable = (isAssigned && !readOnly) || isInactive;
                     const isSelected = operator.employeeId === currentValue;
+
+                    // Skip rendering operators that are already assigned when not in readOnly mode
+                    // But always show the currently selected operator
+                    if (isAssigned && !readOnly && operator.employeeId !== currentValue) {
+                      // This helps with debugging
+                      console.log(`Operator ${operator.name} (${operator.employeeId}) is already assigned and filtered out`);
+                      return null;
+                    }
 
                     return (
                         <div
                             key={operator.employeeId}
                             className={`operator-item ${isUnavailable ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() => !isUnavailable && onSelect(operator.employeeId)}
+                            onClick={() => {
+                              // Always allow selecting in readOnly mode
+                              // In regular mode, only allow unassigned operators
+                              if (readOnly || !isUnavailable) {
+                                onSelect(operator.employeeId);
+                                onClose();
+                              }
+                            }}
                         >
                           <div className="operator-main-info">
                             <span className="operator-name">{operator.name}</span>

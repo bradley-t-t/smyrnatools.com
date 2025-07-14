@@ -5,7 +5,7 @@ import {MixerService} from '../../services/mixers/MixerService';
 import {PlantService} from '../../services/plants/PlantService';
 import {OperatorService} from '../../services/operators/OperatorService';
 import {UserService} from '../../services/auth/UserService';
-import supabase from '../../core/clients/SupabaseClient';
+import {supabase} from '../../core/clients/SupabaseClient';
 import {usePreferences} from '../../context/preferences/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
@@ -398,7 +398,8 @@ function MixerDetailView({mixerId, onClose}) {
             setShowDeleteConfirmation(true);
             return;
         }
-        setShowOperatorModal(true);
+
+        // No longer shows operator modal during delete
 
         try {
             await supabase
@@ -692,9 +693,9 @@ useEffect(() => {
                                         {mixer.updatedLast ? 
                                             `${new Date(mixer.updatedLast).toLocaleString()}${!mixer.isVerified() ? 
                                                 (new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? 
-                                                    ' (Changes made since verification)' : 
-                                                    ' (Needs verification since Sunday)') : 
-                                                ''}` : 
+                                                    ' (Changes have been made)' : 
+                                                    ' (It is a new week)') : 
+                                                ''}` :
                                             'Never verified'}
                                     </span>
                                 </div>
@@ -793,9 +794,10 @@ useEffect(() => {
                                 <div className="operator-select-container">
                                     <button 
                                         className="operator-select-button form-control"
-                                        onClick={() => setShowOperatorModal(true)}
+                                        onClick={() => canEditMixer && setShowOperatorModal(true)}
                                         type="button"
-                                                disabled={!canEditMixer}
+                                        disabled={!canEditMixer}
+                                        style={!canEditMixer ? {cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa'} : {}}
                                     >
                                         {assignedOperator && assignedOperator !== '0'
                                             ? getOperatorName(assignedOperator)
@@ -815,6 +817,20 @@ useEffect(() => {
                                         assignedPlant={assignedPlant}
                                                                                 readOnly={!canEditMixer}
                                                                             />
+                                )}
+                                {showOperatorModal && (
+                                    <OperatorSelectModal
+                                        isOpen={showOperatorModal}
+                                        onClose={() => setShowOperatorModal(false)}
+                                        onSelect={(operatorId) => {
+                                            setAssignedOperator(operatorId);
+                                            setShowOperatorModal(false);
+                                        }}
+                                        currentValue={assignedOperator}
+                                        mixers={mixers || []}
+                                        assignedPlant={assignedPlant}
+                                        readOnly={!canEditMixer}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -970,19 +986,8 @@ useEffect(() => {
                             >
                                 Delete
                             </button>
-                                            {showOperatorModal && (
-                                                <OperatorSelectModal
-                                                    isOpen={showOperatorModal}
-                                                    onClose={() => setShowOperatorModal(false)}
-                                                    onSelect={(operatorId) => {
-                                                        setAssignedOperator(operatorId);
-                                                        setShowOperatorModal(false);
-                                                    }}
-                                                    currentValue={assignedOperator}
-                                                    mixers={mixers || []}
-                                                    assignedPlant={assignedPlant}
-                                                />
-                            )}
+                                                                            {/* Removed duplicate operator modal that caused conflicts */}
+                            )
                         </div>
                     </div>
                 </div>

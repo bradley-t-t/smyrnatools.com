@@ -11,6 +11,20 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
     const [assignedPlant, setAssignedPlant] = useState('');
     const [assignedOperator, setAssignedOperator] = useState('0');
     const [showOperatorModal, setShowOperatorModal] = useState(false);
+    const [activeMixers, setActiveMixers] = useState([]);
+
+    // Load current mixers to check for operator assignments
+    useEffect(() => {
+        const loadMixers = async () => {
+            try {
+                const mixers = await MixerService.fetchMixers();
+                setActiveMixers(mixers.filter(mixer => mixer.status === 'Active'));
+            } catch (error) {
+                console.error('Error loading mixers:', error);
+            }
+        };
+        loadMixers();
+    }, []);
     useEffect(() => {
         setAssignedOperator('0');
     }, [assignedPlant]);
@@ -221,7 +235,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                         setShowOperatorModal(false);
                                     }}
                                     currentValue={assignedOperator}
-                                    mixers={[]}
+                                    mixers={activeMixers}
                                     assignedPlant={assignedPlant}
                                 />
                             )}
