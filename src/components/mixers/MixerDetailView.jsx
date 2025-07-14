@@ -54,6 +54,30 @@ const plantRestrictionStyles = `
     font-style: italic;
     color: #666;
 }
+
+.unassign-operator-button {
+    margin-top: 8px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.unassign-operator-button:hover {
+    background-color: #d32f2f;
+}
+
+.unassign-operator-button i {
+    margin-right: 8px;
+}
 `;
 
 // Add styles to document head
@@ -310,7 +334,7 @@ function MixerDetailView({mixerId, onClose}) {
                     ...mixer,
                     id: mixer.id,
                     truckNumber,
-                    assignedOperator,
+                    assignedOperator: assignedOperator || null,  // Ensure empty string becomes null for UUID compatibility
                     assignedPlant,
                     status,
                     cleanlinessRating: cleanlinessRating || null,
@@ -342,6 +366,7 @@ function MixerDetailView({mixerId, onClose}) {
 
                 // Explicitly set updatedLast to its current value to ensure it's not changed
                 updatedMixer.updatedLast = preservedUpdatedLast;
+                console.log('Sending mixer update with operator value:', updatedMixer.assignedOperator);
                 await MixerService.updateMixer(updatedMixer.id, updatedMixer);
 
                 setMixer(updatedMixer);
@@ -499,7 +524,7 @@ function MixerDetailView({mixerId, onClose}) {
     }, [hasUnsavedChanges]);
 
     const getOperatorName = (operatorId) => {
-        if (!operatorId || operatorId === '0') return 'None';
+        if (!operatorId || operatorId === '' || operatorId === '0') return 'None';
         const operator = operators.find(op => op.employeeId === operatorId);
         return operator ? (operator.position ? `${operator.name} (${operator.position})` : operator.name) : 'Unknown';
     };
@@ -799,31 +824,39 @@ useEffect(() => {
                                         disabled={!canEditMixer}
                                         style={!canEditMixer ? {cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa'} : {}}
                                     >
-                                        {assignedOperator && assignedOperator !== '0'
+                                        {assignedOperator
                                             ? getOperatorName(assignedOperator)
                                             : 'None (Click to select)'}
                                     </button>
+                                    {assignedOperator && canEditMixer && (
+                                        <button
+                                            className="unassign-operator-button"
+                                            onClick={() => {
+                                                if (window.confirm(`Are you sure you want to unassign the operator? The truck status will be changed to Spare.`)) {
+                                                    setAssignedOperator(null);
+                                                    setStatus('Spare');
+                                                    setMessage('Operator unassigned and status set to Spare');
+                                                    setTimeout(() => setMessage(''), 3000);
+                                                }
+                                            }}
+                                            type="button"
+                                        >
+                                            <i className="fas fa-user-slash" style={{ marginRight: '8px' }}></i>
+                                            Unassign Operator
+                                        </button>
+                                    )}
                                 </div>
-                                {showOperatorModal && (
-                                                                            <OperatorSelectModal
-                                        isOpen={showOperatorModal}
-                                        onClose={() => setShowOperatorModal(false)}
-                                        onSelect={(operatorId) => {
-                                            setAssignedOperator(operatorId);
-                                            setShowOperatorModal(false);
-                                        }}
-                                        currentValue={assignedOperator}
-                                        mixers={mixers || []}
-                                        assignedPlant={assignedPlant}
-                                                                                readOnly={!canEditMixer}
-                                                                            />
-                                )}
                                 {showOperatorModal && (
                                     <OperatorSelectModal
                                         isOpen={showOperatorModal}
                                         onClose={() => setShowOperatorModal(false)}
                                         onSelect={(operatorId) => {
-                                            setAssignedOperator(operatorId);
+                                            console.log('Selected operator in modal:', operatorId, typeof operatorId);
+                                            setAssignedOperator(operatorId === '0' ? '' : operatorId);
+                                            // If assigning an operator, ensure status is Active
+                                            if (operatorId && operatorId !== '0') {
+                                                setStatus('Active');
+                                            }
                                             setShowOperatorModal(false);
                                         }}
                                         currentValue={assignedOperator}
@@ -843,7 +876,6 @@ useEffect(() => {
                                     value={lastServiceDate ? formatDate(lastServiceDate) : ''}
                                     onChange={(e) => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
                                     className="form-control"
-                                    readOnly={!canEditMixer}
                                     readOnly={!canEditMixer}
                                 />
                                 {lastServiceDate && MixerUtils.isServiceOverdue(lastServiceDate) && (
@@ -987,7 +1019,6 @@ useEffect(() => {
                                 Delete
                             </button>
                                                                             {/* Removed duplicate operator modal that caused conflicts */}
-                            )
                         </div>
                     </div>
                 </div>

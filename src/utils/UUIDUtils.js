@@ -63,3 +63,15 @@ export function isValidUUID(uuid) {
     const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return regex.test(uuid);
 }
+
+/**
+ * Safely handles UUID values for database operations
+ * @param {string|null} uuid - The UUID string or empty value
+ * @returns {null} Returns null for empty values to ensure proper SQL type compatibility
+ */
+export function safeUUID(uuid) {
+    if (!uuid || uuid === '' || uuid === '0') {
+        return null;
+    }
+    return uuid;
+}

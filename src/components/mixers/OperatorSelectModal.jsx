@@ -94,7 +94,7 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
   };
 
   const isOperatorAssigned = (operatorId) => {
-    if (!operatorId || operatorId === '0') return false;
+    if (!operatorId || operatorId === '' || operatorId === '0') return false;
     if (!Array.isArray(mixers) || mixers.length === 0) {
       console.log('No mixers provided to check for operator assignments');
       return false;
@@ -269,22 +269,6 @@ const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers =
                 </div>
             ) : (
                 <div className="operator-list">
-                  <div
-                      className="operator-item unassigned"
-                      onClick={() => {
-                        onSelect('0');
-                        onClose();
-                      }}
-                  >
-                    <div className="operator-main-info">
-                      <span className="operator-name">None (Unassigned)</span>
-                    </div>
-                    <div className="operator-details">
-                  <span className="unassigned-label">
-                    <i className="fas fa-times-circle"></i> No operator will be assigned
-                  </span>
-                    </div>
-                  </div>
 
                   {filteredOperators.map(operator => {
                     const isAssigned = isOperatorAssigned(operator.employeeId);

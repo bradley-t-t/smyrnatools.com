@@ -12,7 +12,7 @@ export class Operator {
         this.status = data.status || 'Active';
         // Ensure isTrainer is always a boolean
         this.isTrainer = data.is_trainer === true || String(data.is_trainer).toLowerCase() === 'true';
-        this.assignedTrainer = data.assigned_trainer || '0';
+        this.assignedTrainer = data.assigned_trainer || null;
         this.position = data.position || '';
         this.createdAt = data.created_at || new Date().toISOString();
         this.updatedAt = data.updated_at || new Date().toISOString();

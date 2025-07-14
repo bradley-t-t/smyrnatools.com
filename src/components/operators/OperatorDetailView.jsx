@@ -80,7 +80,7 @@ function OperatorDetailView({operatorId, onClose}) {
             const statusVal = operatorData.status || '';
             const positionVal = operatorData.position || '';
             const isTrainerVal = operatorData.isTrainer || false;
-            const trainer = operatorData.assignedTrainer || '0';
+            const trainer = operatorData.assignedTrainer || '';
 
             setEmployeeId(empId);
             setSmyrnaId(opSmyrnaId);
@@ -160,10 +160,15 @@ function OperatorDetailView({operatorId, onClose}) {
                     status,
                     position,
                     isTrainer,
-                    assignedTrainer: assignedTrainer || '0',
+                    assignedTrainer: assignedTrainer || null,
                     updatedAt: new Date().toISOString(),
                     updatedBy: userId
                 };
+
+                // Ensure assigned trainer is null if empty string or '0'
+                if (!updatedOperator.assignedTrainer || updatedOperator.assignedTrainer === '0') {
+                    updatedOperator.assignedTrainer = null;
+                }
 
                 await OperatorService.updateOperator(updatedOperator, userId);
                 setOperator(updatedOperator);
@@ -235,7 +240,7 @@ function OperatorDetailView({operatorId, onClose}) {
     }, [hasUnsavedChanges]);
 
     const getTrainerName = (trainerId) => {
-        if (!trainerId || trainerId === '0') return 'None';
+        if (!trainerId || trainerId === null) return 'None';
         const trainer = trainers.find(t => t.employeeId === trainerId);
         return trainer ? (trainer.position ? `${trainer.name} (${trainer.position})` : trainer.name) : 'Unknown';
     };
@@ -424,7 +429,7 @@ function OperatorDetailView({operatorId, onClose}) {
                                 const isTrainerValue = e.target.value === "true";
                                 setIsTrainer(isTrainerValue);
                                 if (isTrainerValue) {
-                                    setAssignedTrainer('0');
+                                    setAssignedTrainer(null);
                                 }
                             }}
                         >
@@ -441,7 +446,7 @@ function OperatorDetailView({operatorId, onClose}) {
                             className="form-control"
                             disabled={isTrainer}
                         >
-                            <option value="0">None</option>
+                            <option value="">None</option>
                             {trainers.map(trainer => (
                                 <option key={trainer.employeeId} value={trainer.employeeId}>
                                     {trainer.name}

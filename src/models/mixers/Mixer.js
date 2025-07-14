@@ -83,7 +83,7 @@ export class Mixer {
         const apiObject = {
             truck_number: this.truckNumber,
             assigned_plant: this.assignedPlant,
-            assigned_operator: this.assignedOperator,
+            assigned_operator: this.assignedOperator || null, // Ensure empty string becomes null for UUID compatibility
             last_service_date: this.lastServiceDate ? formatDateForDb(this.lastServiceDate) : null,
             last_chip_date: this.lastChipDate ? formatDateForDb(this.lastChipDate) : null,
             cleanliness_rating: this.cleanlinessRating,
