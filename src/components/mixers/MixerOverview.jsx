@@ -2,8 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../services/mixers/MixerService';
 import {MixerUtils} from '../../utils/MixerUtils';
 import {PlantService} from '../../services/plants/PlantService';
-import {OperatorService} from '../../services/operators/OperatorService';
-import CleanlinessHistoryChart from './CleanlinessHistoryChart';
 import {supabase} from '../../core/clients/SupabaseClient';
 import './MixerOverview.css';
 
@@ -245,7 +243,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                     <th>Active</th>
                                     <th>Spare</th>
                                     <th>In Shop</th>
-                                    <th>Retired</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -256,7 +253,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                         <td>{counts.Active || 0}</td>
                                         <td>{counts.Spare || 0}</td>
                                         <td>{counts['In Shop'] || 0}</td>
-                                        <td>{counts.Retired || 0}</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -264,10 +260,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                         </div>
                     </div>
                 )}
-
-                <div className="overview-card cleanliness-card">
-                    <CleanlinessHistoryChart mixers={filteredMixers || mixers}/>
-                </div>
             </div>
         </div>
     );
