@@ -67,7 +67,7 @@ export function AuthProvider({children}) {
 
             const {data: users, error} = await supabase
                 .from('users')
-                .select('*, profiles(first_name, last_name, plant_code)')
+                .select('*')
                 .eq('id', userId);
 
             if (error || !users || users.length === 0) {
@@ -77,7 +77,16 @@ export function AuthProvider({children}) {
                 return false;
             }
 
-            setUser({...users[0], profile: users[0].profiles});
+            // Fetch profile separately
+            const {data: profile, error: profileError} = await supabase
+                .from('users_profiles')
+                .select('first_name, last_name, plant_code')
+                .eq('id', userId)
+                .single();
+
+            // Create user object with profile information
+            const userWithProfile = { ...users[0], profile: profile || {} };
+            setUser(userWithProfile);
             clearTimeout(timeout);
             setLoading(false);
             return true;
@@ -198,6 +207,7 @@ export function AuthProvider({children}) {
                 .single();
 
             if (profileError) {
+                console.error('Error loading profile:', profileError);
                 return;
             }
 

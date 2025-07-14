@@ -205,9 +205,12 @@ class ProfileServiceImpl {
         try {
             const {data: profiles, error} = await supabase
                 .from('users_profiles')
-                .select();
+                .select('id, first_name, last_name, plant_code, created_at, updated_at');
 
-            if (error) throw error;
+            if (error) {
+                console.error('Error fetching profiles:', error);
+                throw error;
+            }
 
             this.allProfiles = profiles || [];
             return this.allProfiles;

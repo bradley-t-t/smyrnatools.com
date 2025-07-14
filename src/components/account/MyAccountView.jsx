@@ -58,7 +58,7 @@ function MyAccountView({userId}) {
             console.log('Fetching profiles for user ID:', userIdToUse);
             const {data: profileData, error: profileError} = await supabase
                 .from('users_profiles')
-                .select('first_name, last_name, plant_code, email')
+                .select('first_name, last_name, plant_code')
                 .eq('id', userIdToUse)
                 .single();
             console.log('Profile data received:', profileData, 'Error:', profileError);

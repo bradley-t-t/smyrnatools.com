@@ -91,13 +91,21 @@ export const createPartialTextFilter = (column, searchTerm) => {
 export const SupabaseUtils = {
     async fetchAll(table, columns = '*') {
         try {
+            // Validate inputs
+            if (!table) throw new Error('Table name is required');
+            if (!columns) columns = '*';
+
             const {data, error} = await supabase
                 .from(table)
                 .select(columns);
 
-            if (error) throw error;
-            return data;
+            if (error) {
+                console.error(`Error fetching from ${table}:`, error);
+                throw error;
+            }
+            return data || [];
         } catch (error) {
+            console.error(`Failed operation on table ${table}:`, error);
             throw error;
         }
     },
