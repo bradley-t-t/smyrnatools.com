@@ -1,4 +1,4 @@
-import supabase from '../core/Supabase';
+import supabase from '../core/clients/SupabaseClient';
 import {MixerImage} from '../models/mixers/MixerImage';
 
 const BUCKET_NAME = 'smyrna';

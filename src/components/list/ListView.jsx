@@ -310,10 +310,6 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                     {title}
                 </h1>
                 <div className="dashboard-actions">
-                    <button className="action-button secondary" onClick={() => window.location.href = '/archived'}>
-                        <i className="fas fa-archive"></i>
-                        Archived
-                    </button>
                     <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
                         <i className="fas fa-plus"></i>
                         Add Item

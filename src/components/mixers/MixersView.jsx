@@ -4,6 +4,7 @@ import {MixerUtils} from '../../utils/MixerUtils';
 import {MixerService} from '../../services/MixerService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
+import {MixerMaintenanceService} from '../../services/MixerMaintenanceService';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
@@ -32,7 +33,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [showMetrics, setShowMetrics] = useState(true);
     const filterOptions = [
         'All Statuses', 'Active', 'Spare', 'In Shop', 'Retired',
-        'Past Due Service', 'Verified', 'Not Verified'
+        'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'
     ];
 
     useEffect(() => {
@@ -67,6 +68,15 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     const history = await MixerService.getMixerHistory(mixer.id, 1);
                     latestHistoryDate = history[0]?.changedAt || null;
                 } catch (historyError) {
+                }
+
+                // Fetch issues for each mixer
+                try {
+                    const issues = await MixerMaintenanceService.fetchIssues(mixer.id);
+                    mixer.issues = issues || [];
+                } catch (issuesError) {
+                    mixer.issues = [];
+                    console.error('Error fetching issues for mixer:', mixer.id, issuesError);
                 }
 
                 if (typeof mixer.isVerified !== 'function') {
@@ -121,6 +131,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     matchesStatus = mixer.isVerified();
                 } else if (statusFilter === 'Not Verified') {
                     matchesStatus = !mixer.isVerified();
+                } else if (statusFilter === 'Open Issues') {
+                    // Filter mixers that have unresolved issues (open issues)
+                    matchesStatus = mixer.issues?.some(issue => !issue.time_completed) || false;
                 }
             }
             return matchesSearch && matchesPlant && matchesStatus;
@@ -172,6 +185,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const verifiedCount = mixers.filter(m => m.isVerified()).length;
     const unverifiedCount = mixers.length - verifiedCount;
     const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length;
+    const openIssuesCount = mixers.filter(m => m.issues && m.issues.some(issue => !issue.time_completed)).length;
 
     const averageCleanliness = () => {
         const ratings = mixers.filter(m => m.cleanlinessRating).map(m => m.cleanlinessRating);

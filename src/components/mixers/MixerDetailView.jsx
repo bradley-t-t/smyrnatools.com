@@ -973,27 +973,7 @@ useEffect(() => {
                         </div>
                     </div>
                 </div>
-                <div className="form-actions">
-                    {canEditMixer && (
-                        <>
-                            <button
-                                className="primary-button save-button"
-                                onClick={handleSave}
-                                disabled={isSaving}
-                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
-                            >
-                                {isSaving ? 'Saving...' : 'Save Changes'}
-                            </button>
-                            <button
-                                className="danger-button"
-                                onClick={() => setShowDeleteConfirmation(true)}
-                                disabled={isSaving}
-                            >
-                                Delete Mixer
-                            </button>
-                        </>
-                    )}
-                </div>
+                {/* Bottom action buttons removed */}
             </div>
             {showHistory && (
                 <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)}/>

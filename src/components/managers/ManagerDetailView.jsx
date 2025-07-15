@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../core/clients/SupabaseClient';
 import { usePreferences } from '../../context/PreferencesContext';
-import { DatabaseService } from '../../core/services/DatabaseService';
 import ManagerCard from './ManagerCard';
 import ThemeUtils from '../../utils/ThemeUtils';
 import { useAuth } from '../../context/AuthContext';
 import './ManagerDetailView.css';
 import {UserService} from "../../services/UserService";
+import {SupabaseClient} from "@supabase/supabase-js";
 
 function ManagerDetailView({ managerId, onClose }) {
     // eslint-disable-next-line no-unused-vars
@@ -92,7 +92,7 @@ function ManagerDetailView({ managerId, onClose }) {
             // 1. Try DatabaseService first (raw SQL)
             try {
                 console.log('DETAIL VIEW: Using DatabaseService to get roles');
-                const rolesData = await DatabaseService.getAllRecords('users_roles');
+                const rolesData = await SupabaseClient.getAllRecords('users_roles');
                 console.log('DETAIL VIEW: Roles from DatabaseService:', rolesData);
 
                 if (rolesData && rolesData.length > 0) {

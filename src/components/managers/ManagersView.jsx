@@ -2,10 +2,10 @@ import React, {useEffect, useState} from 'react';
 import './ManagersView.css';
 import {supabase} from '../../core/clients/SupabaseClient';
 import {UserService} from '../../services/UserService';
-import {DatabaseService} from '../../core/services/DatabaseService';
 import ManagerDetailView from './ManagerDetailView';
 import ManagerCard from './ManagerCard';
 import {usePreferences} from '../../context/PreferencesContext';
+import {SupabaseClient} from "@supabase/supabase-js";
 
 function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, onSelectManager}) {
     const {preferences, updateManagerFilter, resetManagerFilters} = usePreferences();
@@ -53,7 +53,7 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
             // 1. Try DatabaseService first (raw SQL)
             try {
                 console.log('MANAGERS VIEW: Using DatabaseService to get roles');
-                const rolesData = await DatabaseService.getAllRecords('users_roles');
+                const rolesData = await SupabaseClient.getAllRecords('users_roles');
                 console.log('MANAGERS VIEW: Roles from DatabaseService:', rolesData);
 
                 if (rolesData && rolesData.length > 0) {

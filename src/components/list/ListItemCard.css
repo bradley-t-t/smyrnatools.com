@@ -127,6 +127,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
 }
 
 .pending-badge {
@@ -137,6 +140,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
 }
 
 .overdue-badge {
@@ -147,6 +153,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
 }
 
 .card-footer {
