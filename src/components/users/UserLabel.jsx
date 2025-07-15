@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {UserService} from '../../services/auth/UserService';
+import {UserService} from '../../services/UserService';
 import './UserLabel.css';
 
 function UserLabel({userId, showInitials = false, showIcon = false, size = 'medium'}) {

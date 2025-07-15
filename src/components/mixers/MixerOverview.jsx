@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
-import {MixerService} from '../../services/mixers/MixerService';
+import {MixerService} from '../../services/MixerService';
 import {MixerUtils} from '../../utils/MixerUtils';
-import {PlantService} from '../../services/plants/PlantService';
+import {PlantService} from '../../services/PlantService';
 import {supabase} from '../../core/clients/SupabaseClient';
 import './MixerOverview.css';
 

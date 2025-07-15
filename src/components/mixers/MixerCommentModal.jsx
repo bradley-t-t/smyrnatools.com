@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import './MixerCommentModal.css';
-import {MixerCommentService} from '../../services/mixers/MixerCommentService';
+import {MixerCommentService} from '../../services/MixerCommentService';
 import {supabase} from '../../core/clients/SupabaseClient';
-import {UserService} from '../../services/auth/UserService';
+import {UserService} from '../../services/UserService';
 
 function MixerCommentModal({mixerId, mixerNumber, onClose}) {
     const [comments, setComments] = useState([]);

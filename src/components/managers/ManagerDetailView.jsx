@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../core/clients/SupabaseClient';
-import { usePreferences } from '../../context/preferences/PreferencesContext';
+import { usePreferences } from '../../context/PreferencesContext';
 import { DatabaseService } from '../../core/services/DatabaseService';
 import ManagerCard from './ManagerCard';
 import ThemeUtils from '../../utils/ThemeUtils';
-import { useAuth } from '../../context/auth/AuthContext';
-import { AccountManager } from '../../core/accounts/AccountManager';
+import { useAuth } from '../../context/AuthContext';
 import './ManagerDetailView.css';
+import {UserService} from "../../services/UserService";
 
 function ManagerDetailView({ managerId, onClose }) {
     // eslint-disable-next-line no-unused-vars
@@ -59,7 +59,7 @@ function ManagerDetailView({ managerId, onClose }) {
                 return;
             }
 
-            const highestRole = await AccountManager.getHighestRole(user.id);
+            const highestRole = await UserService.getHighestRole(user.id);
             if (highestRole) {
                 setCurrentUserRoleWeight(highestRole.weight || 0);
                 console.log(`Current user has role ${highestRole.name} with weight ${highestRole.weight}`);

@@ -1,7 +1,7 @@
 import React from 'react';
 import './OperatorCard.css';
 import ThemeUtils from '../../utils/ThemeUtils';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 
 function OperatorCard({operator, plantName, onSelect, onDelete}) {
     const {preferences} = usePreferences();

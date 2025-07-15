@@ -5,7 +5,7 @@ import App from './core/App';
 import reportWebVitalsUtils from './utils/ReportWebVitalsUtils';
 
 // Import the PreferencesProvider
-import {PreferencesProvider} from './context/preferences/PreferencesContext';
+import {PreferencesProvider} from './context/PreferencesContext';
 
 const meta = document.createElement('meta');
 meta.name = 'viewport';

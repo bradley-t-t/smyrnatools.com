@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { OperatorService } from '../../services/operators/OperatorService';
+import { OperatorService } from '../../services/OperatorService';
 import { supabase } from '../../core/clients/SupabaseClient';
-import { usePreferences } from '../../context/preferences/PreferencesContext';
+import { usePreferences } from '../../context/PreferencesContext';
 import './OperatorSelectModal.css';
 
 const OperatorSelectModal = ({ isOpen, onClose, onSelect, currentValue, mixers = [], assignedPlant = '', readOnly = false }) => {

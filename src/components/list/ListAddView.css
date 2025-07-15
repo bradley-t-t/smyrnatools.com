@@ -1,0 +1,109 @@
+.list-add-modal {
+    width: 90%;
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-primary, #1a202c);
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--divider, #e2e8f0);
+    font-size: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent, #3182ce);
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--divider, #e2e8f0);
+}
+
+.cancel-button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background-color: transparent;
+    border: 1px solid var(--divider, #e2e8f0);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.cancel-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.primary-button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background-color: var(--accent, #3182ce);
+    color: white;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.primary-button:hover {
+    background-color: var(--accent-dark, #2b6cb0);
+}
+
+.primary-button:disabled {
+    background-color: var(--text-light, #a0aec0);
+    cursor: not-allowed;
+}
+
+.form-group.has-error .form-control {
+    border-color: var(--error, #e53e3e);
+}
+
+.error-message {
+    color: var(--error, #e53e3e);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.form-group.has-error label {
+    color: var(--error, #e53e3e);
+}
+
+@media (max-width: 768px) {
+    .list-add-modal {
+        width: 95%;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .cancel-button, .primary-button {
+        width: 100%;
+    }
+}

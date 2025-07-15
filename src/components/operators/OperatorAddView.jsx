@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
-import {OperatorService} from '../../services/operators/OperatorService';
-import {AuthService} from '../../services/auth/AuthService';
+import {OperatorService} from '../../services/OperatorService';
+import {AuthService} from '../../services/AuthService';
 import './OperatorAddView.css';
 
 function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {

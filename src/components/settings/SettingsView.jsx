@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 import {supabase} from '../../core/clients/SupabaseClient';
 import './SettingsView.css';
 

@@ -1,12 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import './ManagersView.css';
 import {supabase} from '../../core/clients/SupabaseClient';
-import {UserService} from '../../services/auth/UserService';
+import {UserService} from '../../services/UserService';
 import {DatabaseService} from '../../core/services/DatabaseService';
 import ManagerDetailView from './ManagerDetailView';
-import MultiSelect from '../common/MultiSelect';
 import ManagerCard from './ManagerCard';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 
 function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, onSelectManager}) {
     const {preferences, updateManagerFilter, resetManagerFilters} = usePreferences();

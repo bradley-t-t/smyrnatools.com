@@ -1,8 +1,8 @@
-import {AuthService} from '../../services/auth/AuthService';
-import {ProfileService} from '../../services/profiles/ProfileService';
-import {PlantService} from '../../services/plants/PlantService';
-import {OperatorService} from '../../services/operators/OperatorService';
-import {TaskService} from '../../services/tasks/TaskService';
+import {AuthService} from '../../services/AuthService';
+import {ProfileService} from '../../services/ProfileService';
+import {PlantService} from '../../services/PlantService';
+import {OperatorService} from '../../services/OperatorService';
+import {TaskService} from '../../services/TaskService';
 import {NetworkUtils} from '../../utils/NetworkUtils';
 
 /**

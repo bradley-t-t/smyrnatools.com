@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import {PlantService} from '../../services/plants/PlantService';
-import {OperatorService} from '../../services/operators/OperatorService';
-import {UserService} from '../../services/auth/UserService';
+import {PlantService} from '../../services/PlantService';
+import {OperatorService} from '../../services/OperatorService';
+import {UserService} from '../../services/UserService';
 import supabase from '../../core/clients/SupabaseClient';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';
 import {generateEmployeeIdFromUUID, generateRandomEmployeeId} from '../../utils/IdUtils';
 import './OperatorDetailView.css';

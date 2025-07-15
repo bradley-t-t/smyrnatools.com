@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { supabase } from '../../core/clients/SupabaseClient';
-import { RoleService } from '../../services/auth/RoleService';
+import { RoleService } from '../../services/RoleService';
 import { AccountManager } from '../../core/accounts/AccountManager';
 
 function RoleSetupComponent() {

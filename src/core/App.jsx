@@ -16,7 +16,41 @@ import AuthLayout from './components/layout/AuthLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import MyAccountPage from './pages/account/MyAccountPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
-import { PreferencesProvider } from '../context/preferences/PreferencesContext';
+import { PreferencesProvider } from '../context/PreferencesContext';
 import { AccountProvider } from './context/AccountContext';
 import RoleSetupComponent from '../components/managers/RoleSetupComponent';
 import RoleDebugComponent from '../components/managers/RoleDebugComponent';
+import ListView from '../components/list/ListView';
+
+function App() {
+  return (
+    <PreferencesProvider>
+      <AccountProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegistrationPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+            </Route>
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/operators" element={<OperatorsPage />} />
+              <Route path="/operators/training" element={<TrainingHistoryPage />} />
+              <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/account" element={<MyAccountPage />} />
+              <Route path="/list" element={<ListView />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AccountProvider>
+    </PreferencesProvider>
+  );
+}
+
+export default App;

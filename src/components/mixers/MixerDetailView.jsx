@@ -1,19 +1,17 @@
 import React, {useEffect, useState} from 'react';
 import {Mixer} from '../../models/mixers/Mixer';
 import {MixerUtils} from '../../utils/MixerUtils';
-import {MixerService} from '../../services/mixers/MixerService';
-import {PlantService} from '../../services/plants/PlantService';
-import {OperatorService} from '../../services/operators/OperatorService';
-import {UserService} from '../../services/auth/UserService';
+import {MixerService} from '../../services/MixerService';
+import {PlantService} from '../../services/PlantService';
+import {OperatorService} from '../../services/OperatorService';
+import {UserService} from '../../services/UserService';
 import {supabase} from '../../core/clients/SupabaseClient';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
 import MixerIssueModal from './MixerIssueModal';
 import MixerCard from './MixerCard';
 import OperatorSelectModal from './OperatorSelectModal';
-import {AccountManager} from '../../core/accounts/AccountManager';
-import '../common/LoadingText.css';
 import './MixerDetailView.css';
 
 // Add CSS styling for plant restriction
@@ -146,7 +144,7 @@ function MixerDetailView({mixerId, onClose}) {
                 }
 
                 // Check if user has bypass permission
-                const hasPermission = await AccountManager.hasPermission(userId, 'mixers.bypass.plantrestriction');
+                const hasPermission = await UserService.hasPermission(userId, 'mixers.bypass.plantrestriction');
                 if (hasPermission) {
                     setCanEditMixer(true);
                     return;

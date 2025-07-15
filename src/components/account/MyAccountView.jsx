@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {supabase} from '../../core/clients/SupabaseClient';
-import {AuthService} from '../../services/auth/AuthService';
+import {AuthService} from '../../services/AuthService';
 import SimpleLoading from '../common/SimpleLoading';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 import './MyAccountView.css';
 
 function MyAccountView({userId}) {

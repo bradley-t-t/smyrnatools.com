@@ -7,18 +7,19 @@ import ManagersView from '../components/managers/ManagersView';
 import SettingsView from '../components/settings/SettingsView';
 import MixerDetailView from '../components/mixers/MixerDetailView';
 import OperatorsView from '../components/operators/OperatorsView';
-import WebView from '../components/common/WebView';
 import LoginView from '../components/auth/LoginView';
 import LoadingScreen from '../components/common/LoadingScreen';
 import MyAccountView from '../components/account/MyAccountView';
 import SimpleNavbar from "../components/common/SimpleNavbar";
 import GuestView from '../components/auth/GuestView';
-import {AuthProvider} from '../context/auth/AuthContext';
+import ListView from '../components/list/ListView';
+import {AuthProvider} from '../context/AuthContext';
 import {supabase} from './clients/SupabaseClient';
-import {PreferencesProvider} from '../context/preferences/PreferencesContext';
-import {AccountManager} from './accounts/AccountManager';
+import {PreferencesProvider} from '../context/PreferencesContext';
 import '../styles/Theme.css';
 import '../styles/Global.css';
+import WebView from "../components/common/WebView";
+import {UserService} from "../services/UserService";
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');
@@ -132,7 +133,7 @@ function AppContent() {
 
     const fetchUserRole = async (userId) => {
         try {
-            const highestRole = await AccountManager.getHighestRole(userId);
+            const highestRole = await UserService.getHighestRole(userId);
 
             if (highestRole && highestRole.name) {
                 setUserRole(highestRole.name.toLowerCase());
@@ -276,6 +277,14 @@ function AppContent() {
                         showSidebar={false}
                         setShowSidebar={() => {
                         }}
+                    />
+                );
+            case 'List':
+                return (
+                    <ListView
+                        title="Tasks List"
+                        showSidebar={false}
+                        setShowSidebar={() => {}}
                     />
                 );
             case 'MyAccount':

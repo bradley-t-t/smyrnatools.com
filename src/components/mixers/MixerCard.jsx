@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {MixerUtils} from '../../utils/MixerUtils';
 import ThemeUtils from '../../utils/ThemeUtils';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
-import {MixerMaintenanceService} from '../../services/mixers/MixerMaintenanceService';
+import {usePreferences} from '../../context/PreferencesContext';
+import {MixerMaintenanceService} from '../../services/MixerMaintenanceService';
 import './MixerCard.css';
 
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {

@@ -2,12 +2,11 @@ import React, {useEffect, useState} from 'react';
 import './OperatorsView.css';
 import '../../styles/FilterStyles.css';
 import {supabase} from '../../core/clients/SupabaseClient';
-import {UserService} from '../../services/auth/UserService';
+import {UserService} from '../../services/UserService';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';
 import OperatorsOverview from './OperatorsOverview';
-import MultiSelect from '../common/MultiSelect';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {usePreferences} from '../../context/PreferencesContext';
 
 function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator}) {
     const {preferences, updateOperatorFilter, resetOperatorFilters} = usePreferences();

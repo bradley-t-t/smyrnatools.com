@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {MixerService} from '../../services/mixers/MixerService';
+import {MixerService} from '../../services/MixerService';
 import {Mixer} from '../../models/mixers/Mixer';
-import {AuthService} from '../../services/auth/AuthService';
+import {AuthService} from '../../services/AuthService';
 import OperatorSelectModal from './OperatorSelectModal';
 import './MixerAddView.css';
 

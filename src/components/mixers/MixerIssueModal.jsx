@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { MixerMaintenanceService } from '../../services/mixers/MixerMaintenanceService';
-import { usePreferences } from '../../context/preferences/PreferencesContext';
+import { MixerMaintenanceService } from '../../services/MixerMaintenanceService';
+import { usePreferences } from '../../context/PreferencesContext';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorMessage from '../common/ErrorMessage';
 import './MixerIssueModal.css';

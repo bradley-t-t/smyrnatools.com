@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import './SimpleNavbar.css';
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
-import {AccountManager} from '../../core/accounts/AccountManager';
+import {usePreferences} from '../../context/PreferencesContext';
+import {UserService} from "../../services/UserService";
 
 const ensureFontAwesome = () => {
     if (!document.getElementById('font-awesome-stylesheet')) {
@@ -91,7 +91,7 @@ export default function SimpleNavbar({
         async function fetchUserPermissions() {
             if (userId) {
                 try {
-                    const permissions = await AccountManager.getUserPermissions(userId);
+                    const permissions = await UserService.getUserPermissions(userId);
                     setUserPermissions(permissions);
                 } catch (error) {
                     setUserPermissions([]);
@@ -112,7 +112,7 @@ export default function SimpleNavbar({
             }
 
             try {
-                const permissions = await AccountManager.getUserPermissions(userId);
+                const permissions = await UserService.getUserPermissions(userId);
                 const filtered = menuItems.filter(item => {
                     if (item.permission) {
                         return permissions.includes(item.permission);

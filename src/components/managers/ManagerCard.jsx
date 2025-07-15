@@ -1,7 +1,7 @@
 import React from 'react';
 import './ManagerCard.css';
 import ThemeUtils from '../../utils/ThemeUtils';
-import { usePreferences } from '../../context/preferences/PreferencesContext';
+import { usePreferences } from '../../context/PreferencesContext';
 
 function ManagerCard({ manager, plantName, onSelect }) {
     const { preferences } = usePreferences();

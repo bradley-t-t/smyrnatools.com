@@ -1,10 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import MixerAddView from './MixerAddView';
 import {MixerUtils} from '../../utils/MixerUtils';
-import {MixerService} from '../../services/mixers/MixerService';
-import {PlantService} from '../../services/plants/PlantService';
-import {OperatorService} from '../../services/operators/OperatorService';
-import {usePreferences} from '../../context/preferences/PreferencesContext';
+import {MixerService} from '../../services/MixerService';
+import {PlantService} from '../../services/PlantService';
+import {OperatorService} from '../../services/OperatorService';
+import {usePreferences} from '../../context/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerHistoryView from './MixerHistoryView';
 import MixerOverview from './MixerOverview';
