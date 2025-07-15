@@ -1,7 +1,7 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
-import {isSupabaseConfigured, supabase} from '../core/clients/SupabaseClient';
-import {AuthUtils} from '../utils/AuthUtils';
-import {UserService} from "../services/UserService";
+import {isSupabaseConfigured, supabase} from '../services/DatabaseService';
+import {AuthUtility} from '../utils/AuthUtility';
+import {UserService} from '../services/UserService';
 
 const AuthContext = createContext();
 
@@ -21,38 +21,29 @@ export function AuthProvider({children}) {
             return;
         }
 
-        const checkAuthSession = async () => {
+        async function checkAuthSession() {
             try {
                 const {data} = await supabase.auth.getSession();
                 if (data?.session?.user) {
                     sessionStorage.setItem('userId', data.session.user.id);
                 }
-            } catch (error) {
             } finally {
                 restoreSession();
             }
-        };
+        }
 
         checkAuthSession();
     }, []);
 
     async function restoreSession() {
-        let timeout;
+        const timeout = setTimeout(() => {
+            setLoading(false);
+            sessionStorage.removeItem('userId');
+        }, 10000);
 
         try {
             setLoading(true);
-
-            const {data} = await supabase.auth.getSession();
-            let userId = data?.session?.user?.id;
-
-            if (!userId) {
-                userId = sessionStorage.getItem('userId');
-            }
-
-            timeout = setTimeout(() => {
-                setLoading(false);
-                sessionStorage.removeItem('userId');
-            }, 10000);
+            let userId = (await supabase.auth.getSession())?.data?.session?.user?.id || sessionStorage.getItem('userId');
 
             if (!userId) {
                 clearTimeout(timeout);
@@ -70,27 +61,24 @@ export function AuthProvider({children}) {
                 .select('*')
                 .eq('id', userId);
 
-            if (error || !users || users.length === 0) {
+            if (error || !users?.length) {
                 sessionStorage.removeItem('userId');
                 clearTimeout(timeout);
                 setLoading(false);
                 return false;
             }
 
-            // Fetch profile separately
-            const {data: profile, error: profileError} = await supabase
+            const {data: profile} = await supabase
                 .from('users_profiles')
                 .select('first_name, last_name, plant_code')
                 .eq('id', userId)
                 .single();
 
-            // Create user object with profile information
-            const userWithProfile = { ...users[0], profile: profile || {} };
-            setUser(userWithProfile);
+            setUser({...users[0], profile: profile || {}});
             clearTimeout(timeout);
             setLoading(false);
             return true;
-        } catch (error) {
+        } catch {
             sessionStorage.removeItem('userId');
             clearTimeout(timeout);
             setLoading(false);
@@ -109,7 +97,6 @@ export function AuthProvider({children}) {
 
         try {
             const trimmedEmail = email.trim().toLowerCase();
-
             await new Promise(resolve => setTimeout(resolve, 300));
 
             const {data: users, error} = await supabase
@@ -117,57 +104,28 @@ export function AuthProvider({children}) {
                 .select('id, email, password_hash, salt')
                 .eq('email', trimmedEmail);
 
-            if (error) {
-                throw new Error(`Database error: ${error.message}`);
-            }
-
-            if (!users || users.length === 0) {
-                throw new Error('Invalid email or password');
+            if (error || !users?.length) {
+                throw new Error(error?.message || 'Invalid email or password');
             }
 
             const user = users[0];
-
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            let passwordMatched = false;
-
-            try {
-                const asyncHash = await AuthUtils.hashPassword(password, user.salt);
-                if (asyncHash === user.password_hash) {
-                    passwordMatched = true;
-                }
-            } catch (asyncError) {
-            }
-
-            if (!passwordMatched) {
-                const syncHash = AuthUtils.hashPasswordSync(password, user.salt);
-                if (syncHash === user.password_hash) {
-                    passwordMatched = true;
-                }
-            }
+            const passwordMatched = (await AuthUtility.hashPassword(password, user.salt).catch(() => null)) === user.password_hash ||
+                AuthUtility.hashPasswordSync(password, user.salt) === user.password_hash;
 
             if (!passwordMatched) {
                 throw new Error('Invalid email or password');
             }
 
-            const basicUser = {
-                id: user.id,
-                email: user.email
-            };
-
+            const basicUser = {id: user.id, email: user.email};
             setUser(basicUser);
             sessionStorage.setItem('userId', user.id);
-
             clearTimeout(safetyTimeout);
             setLoading(false);
 
-            const authEvent = new CustomEvent('authSuccess', {detail: {userId: user.id}});
-            window.dispatchEvent(authEvent);
-
-            setTimeout(() => {
-                loadUserProfile(user.id).catch(e => {
-                });
-            }, 100);
+            window.dispatchEvent(new CustomEvent('authSuccess', {detail: {userId: user.id}}));
+            setTimeout(() => loadUserProfile(user.id).catch(() => {}), 100);
 
             return basicUser;
         } catch (error) {
@@ -178,78 +136,43 @@ export function AuthProvider({children}) {
         }
     }
 
-    function simpleHashMethod(password, salt) {
-        try {
-            const data = password + salt;
-            let hash = 0;
-
-            for (let i = 0; i < data.length; i++) {
-                const char = data.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-
-            const hashHex = (hash >>> 0).toString(16);
-            return hashHex.padStart(64, '0');
-        } catch (error) {
-            return '';
-        }
-    }
-
     async function loadUserProfile(userId) {
         if (!userId) return;
 
-        try {
-            const {data: profileData, error: profileError} = await supabase
-                .from('users_profiles')
-                .select('first_name, last_name, plant_code')
-                .eq('id', userId)
-                .single();
+        const {data: profileData, error} = await supabase
+            .from('users_profiles')
+            .select('first_name, last_name, plant_code')
+            .eq('id', userId)
+            .single();
 
-            if (profileError) {
-                console.error('Error loading profile:', profileError);
-                return;
-            }
-
-            setUser(currentUser => ({
-                ...currentUser,
-                profile: profileData
-            }));
-        } catch (error) {
+        if (!error && profileData) {
+            setUser(currentUser => ({...currentUser, profile: profileData}));
         }
     }
 
     async function signUp(email, password, firstName, lastName) {
+        setError(null);
+        setLoading(true);
+
         try {
-            setError(null);
-            setLoading(true);
-
-            if (!AuthUtils.emailIsValid(email)) {
-                throw new Error('Please enter a valid email address');
-            }
-
-            const passwordStrength = AuthUtils.passwordStrength(password);
-            if (passwordStrength.value === 'weak') {
+            if (!AuthUtility.emailIsValid(email)) throw new Error('Please enter a valid email address');
+            if (AuthUtility.passwordStrength(password).value === 'weak') {
                 throw new Error('Password must be at least 8 characters with a mix of letters, numbers, and special characters');
             }
 
             const trimmedEmail = email.trim().toLowerCase();
-
             const {data: existingUsers} = await supabase
                 .from('users')
                 .select('id')
                 .eq('email', trimmedEmail);
 
-            if (existingUsers && existingUsers.length > 0) {
-                throw new Error('Email is already registered');
-            }
+            if (existingUsers?.length) throw new Error('Email is already registered');
 
-            const salt = AuthUtils.generateSalt();
-            const passwordHash = await AuthUtils.hashPassword(password, salt);
-
-            const {generateUUID} = await import('../utils/UUIDUtils');
+            const {generateUUID} = await import('../utils/UUIDUtility');
             const userId = generateUUID();
             const now = new Date().toISOString();
+            const salt = AuthUtility.generateSalt();
+            const passwordHash = await AuthUtility.hashPassword(password, salt);
 
             const user = {
                 id: userId,
@@ -269,25 +192,17 @@ export function AuthProvider({children}) {
                 updated_at: now
             };
 
-            const {error: userError} = await supabase
-                .from('users')
-                .insert(user);
+            const [{error: userError}, {error: profileError}] = await Promise.all([
+                supabase.from('users').insert(user),
+                supabase.from('users_profiles').insert(profile)
+            ]);
 
-            if (userError) throw new Error(`User creation error: ${userError.message}`);
-
-            const {error: profileError} = await supabase
-                .from('users_profiles')
-                .insert(profile);
-
-            if (profileError) throw new Error(`Profile creation error: ${profileError.message}`);
+            if (userError || profileError) throw new Error(userError?.message || profileError?.message || 'User creation error');
 
             const guestRole = await UserService.getRoleByName('Guest');
-            if (!guestRole) {
-                throw new Error('Could not find Guest role for new user');
-            }
+            if (!guestRole) throw new Error('Could not find Guest role');
 
-            const roleAssigned = await UserService.assignRole(userId, guestRole.id);
-            if (!roleAssigned) {
+            if (!(await UserService.assignRole(userId, guestRole.id))) {
                 throw new Error('Role assignment failed');
             }
 
@@ -303,48 +218,37 @@ export function AuthProvider({children}) {
     }
 
     async function signOut() {
-        try {
-            sessionStorage.removeItem('userId');
-            localStorage.removeItem('cachedPlants');
-            localStorage.removeItem('userRole');
-
-            setUser(null);
-
-            const signOutEvent = new CustomEvent('authSignOut');
-            window.dispatchEvent(signOutEvent);
-
-            return true;
-        } catch (error) {
-            return false;
-        }
+        sessionStorage.removeItem('userId');
+        localStorage.removeItem('cachedPlants');
+        localStorage.removeItem('userRole');
+        setUser(null);
+        window.dispatchEvent(new CustomEvent('authSignOut'));
+        return true;
     }
 
     async function checkBiometricSupport() {
-        if (navigator.credentials && window.PublicKeyCredential) {
-            return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        }
-        return false;
+        return navigator.credentials && window.PublicKeyCredential
+            ? await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+            : false;
     }
 
     async function signInWithBiometric() {
+        setError(null);
+        setLoading(true);
+
         try {
-            setError(null);
-            setLoading(true);
-
-            const isBiometricSupported = await checkBiometricSupport();
-
-            if (!isBiometricSupported) {
+            if (!(await checkBiometricSupport())) {
                 throw new Error('Biometric authentication is not supported on this device');
             }
 
-            const KeychainHelper = (await import('../utils/KeychainUtils')).KeychainUtl;
-            const credentials = KeychainHelper.shared.retrieveCredentials();
+            const {default: KeychainUtility} = await import('../utils/KeychainUtility');
+            const credentials = KeychainUtility.shared.retrieveCredentials();
 
             if (!credentials) {
                 throw new Error('No stored credentials found. Please sign in with email and password first.');
             }
 
-            await signIn(credentials.email, credentials.password);
+            return await signIn(credentials.email, credentials.password);
         } catch (error) {
             setError(`Biometric authentication failed: ${error.message}`);
             setLoading(false);
@@ -352,18 +256,8 @@ export function AuthProvider({children}) {
         }
     }
 
-    const value = {
-        user,
-        loading,
-        error,
-        signIn,
-        signUp,
-        signOut,
-        isAuthenticated: !!user
-    };
-
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={{user, loading, error, signIn, signUp, signOut, isAuthenticated: !!user}}>
             {children}
         </AuthContext.Provider>
     );

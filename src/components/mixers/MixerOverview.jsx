@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../services/MixerService';
-import {MixerUtils} from '../../utils/MixerUtils';
+import {MixerUtility} from '../../utils/MixerUtility';
 import {PlantService} from '../../services/PlantService';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import './MixerOverview.css';
 
 const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCount = 0, neverVerifiedCount = 0}) => {
@@ -32,14 +32,14 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
     }, [filteredMixers, operators]);
 
     const updateStatistics = (mixersData) => {
-        const statusCounts = MixerUtils.getStatusCounts(mixersData);
+        const statusCounts = MixerUtility.getStatusCounts(mixersData);
         setStatusCounts(statusCounts);
-        setPlantCounts(MixerUtils.getPlantCounts(mixersData));
-        setCleanlinessAvg(MixerUtils.getCleanlinessAverage(mixersData));
-        setNeedServiceCount(MixerUtils.getNeedServiceCount(mixersData));
+        setPlantCounts(MixerUtility.getPlantCounts(mixersData));
+        setCleanlinessAvg(MixerUtility.getCleanlinessAverage(mixersData));
+        setNeedServiceCount(MixerUtility.getNeedServiceCount(mixersData));
 
         const verified = mixersData.filter(mixer => {
-            return MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
+            return MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
         }).length;
         const notVerified = mixersData.length - verified;
         setVerifiedCount(verified);

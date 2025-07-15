@@ -766,6 +766,9 @@ input[type="date"].form-control {
     justify-content: center;
     align-items: center;
     z-index: 100;
+    position: relative;
+    z-index: 0;
+    overflow: visible;
 }
 
 .operator-select-container {

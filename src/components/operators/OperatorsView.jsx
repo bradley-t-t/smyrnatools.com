@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './OperatorsView.css';
 import '../../styles/FilterStyles.css';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';

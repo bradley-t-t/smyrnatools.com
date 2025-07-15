@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import './ManagersView.css';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
 import ManagerDetailView from './ManagerDetailView';
 import ManagerCard from './ManagerCard';
 import {usePreferences} from '../../context/PreferencesContext';
-import {SupabaseClient} from "@supabase/supabase-js";
+import {DatabaseService} from '../../services/DatabaseService';
 
-function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, onSelectManager}) {
+function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelectManager}) {
     const {preferences, updateManagerFilter, resetManagerFilters} = usePreferences();
     const [managers, setManagers] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -18,81 +18,21 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
     const [showOverview, setShowOverview] = useState(false);
     const [showDetailView, setShowDetailView] = useState(false);
     const [selectedManager, setSelectedManager] = useState(null);
-    // eslint-disable-next-line no-unused-vars
     const [currentUserId, setCurrentUserId] = useState(null);
     const [availableRoles, setAvailableRoles] = useState([]);
 
-    // Keep this for backward compatibility with any other references
-    const filterOptions = ['All Roles'];
-
     useEffect(() => {
-        const fetchCurrentUser = async () => {
+        async function fetchCurrentUser() {
             const user = await UserService.getCurrentUser();
-            if (user) {
-                setCurrentUserId(user.id);
-            }
-        };
+            if (user) setCurrentUserId(user.id);
+        }
         fetchCurrentUser();
     }, []);
 
     useEffect(() => {
         fetchAllData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Log when roles are updated
-    useEffect(() => {
-        console.log('Available roles updated:', availableRoles);
-    }, [availableRoles]);
-
-
-    const fetchRoles = async () => {
-        try {
-            console.log('MANAGERS VIEW: Fetching roles with multiple approaches');
-
-            // 1. Try DatabaseService first (raw SQL)
-            try {
-                console.log('MANAGERS VIEW: Using DatabaseService to get roles');
-                const rolesData = await SupabaseClient.getAllRecords('users_roles');
-                console.log('MANAGERS VIEW: Roles from DatabaseService:', rolesData);
-
-                if (rolesData && rolesData.length > 0) {
-                    console.log('MANAGERS VIEW: Using roles from DatabaseService');
-                    setAvailableRoles(rolesData);
-                    return; // Exit if this approach worked
-                }
-            } catch (dbServiceError) {
-                console.error('MANAGERS VIEW: DatabaseService error:', dbServiceError.message);
-                // Continue to next approach if this failed
-            }
-
-            // 2. Try direct Supabase query as fallback
-            console.log('MANAGERS VIEW: Directly querying with Supabase');
-            const { data, error } = await supabase
-                .from('users_roles')
-                .select('*');
-
-            if (error) {
-                console.error('MANAGERS VIEW: Supabase error:', error);
-                throw error;
-            }
-
-            console.log('MANAGERS VIEW: Roles from direct Supabase query:', data);
-
-            if (data && Array.isArray(data) && data.length > 0) {
-                console.log('MANAGERS VIEW: Using roles from Supabase query');
-                setAvailableRoles(data);
-            } else {
-                console.warn('MANAGERS VIEW: No roles found in database');
-                setAvailableRoles([]);
-            }
-        } catch (error) {
-            console.error('MANAGERS VIEW: Error fetching roles:', error.message);
-            setAvailableRoles([]);
-        }
-    };
-
-    // Load filters from preferences when they change
     useEffect(() => {
         if (preferences.managerFilters) {
             setSearchText(preferences.managerFilters.searchText || '');
@@ -101,76 +41,43 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
         }
     }, [preferences.managerFilters]);
 
-    const fetchAllData = async () => {
+    async function fetchAllData() {
         setIsLoading(true);
         try {
-            await Promise.all([
-                fetchManagers(),
-                fetchPlants(),
-                fetchRoles()
-            ]);
+            await Promise.all([fetchManagers(), fetchPlants(), fetchRoles()]);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }
 
-    const fetchManagers = async () => {
+    async function fetchManagers() {
         try {
-            // First get all users
-            const {data: users, error: usersError} = await supabase
-                .from('users')
-                .select('id, email, created_at, updated_at');
+            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {data: permissions, error: permissionsError}, {data: rolesList, error: rolesError}] = await Promise.all([
+                supabase.from('users').select('id, email, created_at, updated_at'),
+                supabase.from('users_profiles').select('id, first_name, last_name, plant_code, created_at, updated_at'),
+                supabase.from('users_permissions').select('user_id, role_id'),
+                supabase.from('users_roles').select('id, name, weight')
+            ]);
 
             if (usersError) throw usersError;
-
-            // Then get profiles for those users
-            const {data: profiles, error: profilesError} = await supabase
-                .from('users_profiles')
-                .select('id, first_name, last_name, plant_code, created_at, updated_at');
-
             if (profilesError) throw profilesError;
-
-            // Then get permissions and roles for those users
-            const {data: permissions, error: permissionsError} = await supabase
-                .from('users_permissions')
-                .select('user_id, role_id');
-
             if (permissionsError) throw permissionsError;
-
-            // Get all available roles
-            const {data: rolesList, error: rolesError} = await supabase
-                .from('users_roles')
-                .select('id, name, weight');
-
             if (rolesError) throw rolesError;
 
-            // Combine the data
             const managersData = users.map(user => {
                 const profile = profiles.find(p => p.id === user.id) || {};
                 const permission = permissions.find(p => p.user_id === user.id) || {};
-
-                // Find the role name and weight from the role_id
-                let roleName = 'User'; // Default role
-                let roleWeight = 0; // Default weight
-
-                if (permission.role_id) {
-                    const role = rolesList.find(r => r.id === permission.role_id);
-                    if (role) {
-                        roleName = role.name;
-                        roleWeight = role.weight || 0;
-                    }
-                }
-
+                const role = permission.role_id ? rolesList.find(r => r.id === permission.role_id) : null;
                 return {
                     id: user.id,
                     email: user.email,
                     firstName: profile.first_name || '',
                     lastName: profile.last_name || '',
                     plantCode: profile.plant_code || '',
-                    roleName: roleName,
-                    roleWeight: roleWeight,
+                    roleName: role?.name || 'User',
+                    roleWeight: role?.weight || 0,
                     createdAt: user.created_at,
                     updatedAt: user.updated_at
                 };
@@ -183,72 +90,63 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
             console.error('Error fetching managers:', error);
             const cachedData = localStorage.getItem('cachedManagers');
             const cacheDate = localStorage.getItem('cachedManagersDate');
-            if (cachedData && cacheDate) {
-                const cachedTime = new Date(cacheDate).getTime();
-                const hourAgo = new Date().getTime() - 3600000;
-                if (cachedTime > hourAgo) {
-                    setManagers(JSON.parse(cachedData));
-                }
+            if (cachedData && cacheDate && new Date(cacheDate).getTime() > new Date().getTime() - 3600000) {
+                setManagers(JSON.parse(cachedData));
             }
         }
-    };
+    }
 
-    const fetchPlants = async () => {
+    async function fetchPlants() {
         try {
-            const {data, error} = await supabase
-                .from('plants')
-                .select('*');
-
+            const {data, error} = await supabase.from('plants').select('*');
             if (error) throw error;
             setPlants(data);
         } catch (error) {
             console.error('Error fetching plants:', error);
         }
-    };
+    }
 
+    async function fetchRoles() {
+        try {
+            const rolesData = await DatabaseService.getAllRecords('users_roles');
+            if (rolesData?.length) {
+                setAvailableRoles(rolesData);
+                return;
+            }
+
+            const {data, error} = await supabase.from('users_roles').select('*');
+            if (error) throw error;
+            setAvailableRoles(data || []);
+        } catch (error) {
+            console.error('Error fetching roles:', error);
+            setAvailableRoles([]);
+        }
+    }
 
     const filteredManagers = managers
         .filter(manager => {
-            const matchesSearch = searchText.trim() === '' ||
+            const matchesSearch = !searchText.trim() ||
                 `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchText.toLowerCase()) ||
                 manager.email.toLowerCase().includes(searchText.toLowerCase());
-
-                const matchesPlant = selectedPlant === '' || manager.plantCode === selectedPlant;
-
-            // Role filter logic
-            let matchesRole = true;
-            if (roleFilter && roleFilter !== '') {
-                // Case insensitive match for role name
-                matchesRole = manager.roleName && 
-                    manager.roleName.toLowerCase() === roleFilter.toLowerCase();
-            }
-
+            const matchesPlant = !selectedPlant || manager.plantCode === selectedPlant;
+            const matchesRole = !roleFilter || (manager.roleName && manager.roleName.toLowerCase() === roleFilter.toLowerCase());
             return matchesSearch && matchesPlant && matchesRole;
         })
         .sort((a, b) => {
-            // Sort by role weight first
-            const roleWeights = { 'Admin': 4, 'Manager': 3, 'Supervisor': 2, 'User': 1 };
+            const roleWeights = {'Admin': 4, 'Manager': 3, 'Supervisor': 2, 'User': 1};
             const weightA = roleWeights[a.roleName] || 0;
             const weightB = roleWeights[b.roleName] || 0;
-
-            if (weightA !== weightB) return weightB - weightA;
-
-            // Then sort by last name
-            return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+            return weightA !== weightB ? weightB - weightA : `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
         });
 
-    const getPlantName = (plantCode) => {
+    const getPlantName = plantCode => {
         const plant = plants.find(p => p.plant_code === plantCode);
         return plant ? plant.plant_name : plantCode || 'No Plant';
     };
 
-    const handleSelectManager = (manager) => {
+    const handleSelectManager = manager => {
         setSelectedManager(manager);
-        if (onSelectManager) {
-            onSelectManager(manager.id);
-        } else {
-            setShowDetailView(true);
-        }
+        onSelectManager ? onSelectManager(manager.id) : setShowDetailView(true);
     };
 
     const roleCounts = availableRoles.map(role => ({
@@ -278,15 +176,12 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                         </div>
                         <h3 className="section-title">Plants</h3>
                         <div className="metrics-row">
-                            {plants.map(plant => {
-                                const count = managers.filter(m => m.plantCode === plant.plant_code).length;
-                                return (
-                                    <div className="metric-card" key={plant.plant_code}>
-                                        <div className="metric-title">{plant.plant_name}</div>
-                                        <div className="metric-value">{count}</div>
-                                    </div>
-                                );
-                            })}
+                            {plants.map(plant => (
+                                <div className="metric-card" key={plant.plant_code}>
+                                    <div className="metric-title">{plant.plant_name}</div>
+                                    <div className="metric-value">{managers.filter(m => m.plantCode === plant.plant_code).length}</div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -310,20 +205,17 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                     }}
                 />
             )}
-
             {!showDetailView && (
                 <>
                     <div className="dashboard-header">
                         <h1>
                             {title}
-                            {(searchText || selectedPlant || (roleFilter && roleFilter !== 'All Roles')) && (
+                            {(searchText || selectedPlant || roleFilter) && (
                                 <span className="filtered-indicator">(Filtered)</span>
                             )}
                         </h1>
-                        <div className="dashboard-actions">
-                        </div>
+                        <div className="dashboard-actions"></div>
                     </div>
-
                     <div className="search-filters">
                         <div className="search-bar">
                             <input
@@ -331,10 +223,9 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                                 className="ios-search-input"
                                 placeholder="Search by name or email..."
                                 value={searchText}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchText(value);
-                                    updateManagerFilter('searchText', value);
+                                onChange={e => {
+                                    setSearchText(e.target.value);
+                                    updateManagerFilter('searchText', e.target.value);
                                 }}
                             />
                             {searchText && (
@@ -346,84 +237,55 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                                 </button>
                             )}
                         </div>
-
                         <div className="filters">
                             <div className="filter-wrapper">
                                 <select
                                     className="ios-select"
                                     value={selectedPlant}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setSelectedPlant(value);
-                                        updateManagerFilter('selectedPlant', value);
+                                    onChange={e => {
+                                        setSelectedPlant(e.target.value);
+                                        updateManagerFilter('selectedPlant', e.target.value);
                                     }}
                                     aria-label="Filter by plant"
                                 >
                                     <option value="">All Plants</option>
-                                    {plants.sort((a, b) => {
-                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
-                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
-                                        return aCode - bCode;
-                                    }).map(plant => (
+                                    {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
                                         <option key={plant.plant_code} value={plant.plant_code}>
                                             ({plant.plant_code}) {plant.plant_name}
                                         </option>
                                     ))}
                                 </select>
                             </div>
-
                             <div className="filter-wrapper">
                                 <select
                                     className="ios-select"
                                     value={roleFilter}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setRoleFilter(value);
-                                        if (updateManagerFilter) {
-                                            updateManagerFilter('roleFilter', value);
-                                        } else {
-                                            console.warn('updateManagerFilter is not available');
-                                        }
+                                    onChange={e => {
+                                        setRoleFilter(e.target.value);
+                                        updateManagerFilter('roleFilter', e.target.value);
                                     }}
                                 >
                                     <option value="">All Roles</option>
                                     {availableRoles.map(role => (
-                                        <option key={role.id} value={role.name}>
-                                            {role.name}
-                                        </option>
+                                        <option key={role.id} value={role.name}>{role.name}</option>
                                     ))}
                                 </select>
-                                <div className="debug-info" style={{display: 'none'}}>
-                                    Available roles: {JSON.stringify(availableRoles.map(r => r.name))}
-                                </div>
                             </div>
-
-                                {(searchText || selectedPlant || (roleFilter && roleFilter !== 'All Roles')) && (
-                                <button
-                                    className="filter-reset-button"
-                                    onClick={() => {
-                                        setSearchText('');
-                                        setSelectedPlant('');
-                                        setRoleFilter('');
-                                        if (resetManagerFilters) {
-                                            resetManagerFilters();
-                                        } else {
-                                            console.warn('resetManagerFilters is not available');
-                                        }
-                                    }}
-                                >
-                                    <i className="fas fa-undo"></i>
-                                    Reset Filters
+                            {(searchText || selectedPlant || roleFilter) && (
+                                <button className="filter-reset-button" onClick={() => {
+                                    setSearchText('');
+                                    setSelectedPlant('');
+                                    setRoleFilter('');
+                                    resetManagerFilters?.();
+                                }}>
+                                    <i className="fas fa-undo"></i> Reset Filters
                                 </button>
                             )}
-
                             <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                <i className="fas fa-chart-bar"></i>
-                                Overview
+                                <i className="fas fa-chart-bar"></i> Overview
                             </button>
                         </div>
                     </div>
-
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
@@ -436,28 +298,17 @@ function ManagersView({title = 'Manager Roster', showSidebar, setShowSidebar, on
                                     <i className="fas fa-user-tie"></i>
                                 </div>
                                 <h3>No Managers Found</h3>
-                                <p>
-                                    {searchText || selectedPlant || (roleFilter && roleFilter !== 'All Roles')
-                                        ? "No managers match your search criteria."
-                                        : "There are no managers in the system yet."}
-                                </p>
+                                <p>{searchText || selectedPlant || roleFilter ? "No managers match your search criteria." : "There are no managers in the system yet."}</p>
                             </div>
                         ) : (
                             <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredManagers.map(manager => (
-                                    <ManagerCard
-                                        key={manager.id}
-                                        manager={manager}
-                                        plantName={getPlantName(manager.plantCode)}
-                                        onSelect={handleSelectManager}
-                                    />
+                                    <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={handleSelectManager} />
                                 ))}
                             </div>
                         )}
                     </div>
-
-
-                    {showOverview && <OverviewPopup/>}
+                    {showOverview && <OverviewPopup />}
                 </>
             )}
         </div>

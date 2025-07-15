@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useAuth} from '../../context/AuthContext';
-import {AuthUtils} from '../../utils/AuthUtils';
+import {AuthUtility} from '../../utils/AuthUtility';
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 import PasswordRecoveryView from './PasswordRecoveryView';
 import './LoginView.css';
@@ -54,7 +54,7 @@ function LoginView() {
 
     useEffect(() => {
         if (password) {
-            setPasswordStrength(AuthUtils.passwordStrength(password));
+            setPasswordStrength(AuthUtility.passwordStrength(password));
         } else {
             setPasswordStrength({value: '', color: ''});
         }

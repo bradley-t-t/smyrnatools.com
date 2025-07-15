@@ -1,360 +1,222 @@
-import supabase from '../core/clients/SupabaseClient';
-import {AuthUtils} from '../utils/AuthUtils';
-import {UserService} from "./UserService";
+import supabase from './DatabaseService';
+import {AuthUtility} from '../utils/AuthUtility';
+import {UserService} from './UserService';
+
+const USERS_TABLE = 'users';
+const PROFILES_TABLE = 'users_profiles';
+const OPERATORS_TABLE = 'operators';
 
 class AuthServiceImpl {
     constructor() {
         this.currentUser = null;
         this.isAuthenticated = false;
         this.observers = [];
-        this.operatorCache = {}; // Cache for operator lookups
+        this.operatorCache = {};
     }
 
-    /**
-     * Get operator information from the operators table
-     * @param {string} employeeId - The employee ID to lookup
-     * @returns {Promise<Object|null>} - The operator information or null
-     */
     async getOperatorInfo(employeeId) {
         if (!employeeId) return null;
+        if (this.operatorCache[employeeId]) return this.operatorCache[employeeId];
 
-        if (this.operatorCache[employeeId]) {
-            return this.operatorCache[employeeId];
-        }
+        const {data, error} = await supabase
+            .from(OPERATORS_TABLE)
+            .select('*')
+            .eq('employee_id', employeeId)
+            .single();
 
-        try {
-            const {data, error} = await supabase
-                .from('operators')
-                .select('*')
-                .eq('employee_id', employeeId)
-                .single();
-
-            if (error) {
-                console.error('Error fetching operator:', error);
-                return null;
-            }
-
-            if (data) {
-                // Cache the result
-                this.operatorCache[employeeId] = data;
-                return data;
-            }
-
-            return null;
-        } catch (error) {
+        if (error || !data) {
             console.error(`Error fetching operator info for ${employeeId}:`, error);
             return null;
         }
+
+        this.operatorCache[employeeId] = data;
+        return data;
     }
 
-    /**
-     * Sign in a user with email and password
-     */
     async signIn(email, password) {
-        try {
-            const trimmedEmail = email.trim().toLowerCase();
+        const trimmedEmail = email?.trim().toLowerCase();
+        if (!trimmedEmail || !password) throw new Error('Email and password are required');
 
-            // Get user record with email - only select necessary fields to optimize query
-            const {data: users, error} = await supabase
-                .from('users')
-                .select('id, email, password_hash, salt')
-                .eq('email', trimmedEmail)
-                .limit(1); // Limit to 1 record for performance
+        const {data, error} = await supabase
+            .from(USERS_TABLE)
+            .select('id, email, password_hash, salt')
+            .eq('email', trimmedEmail)
+            .single();
 
-            if (error) throw error;
-
-            if (!users || users.length === 0) {
-                throw new Error('Invalid email or password');
-            }
-
-            const user = users[0];
-
-            // Calculate password hash and compare
-            const computedHash = AuthUtils.hashPassword(password, user.salt);
-
-            if (computedHash !== user.password_hash) {
-                throw new Error('Invalid email or password');
-            }
-
-            // Successful login
-            this.currentUser = user;
-            // Make sure userId is directly accessible on currentUser
-            this.currentUser.userId = user.id;
-            this.isAuthenticated = true;
-
-            // Store authentication in session
-            sessionStorage.setItem('userId', user.id);
-
-            console.log('User logged in successfully:', user.id);
-
-            // Notify observers
-            this._notifyObservers();
-
-            return user;
-        } catch (error) {
-            console.error('Sign in error:', error);
-            throw error;
+        if (error || !data) {
+            console.error(`Error signing in for ${trimmedEmail}:`, error);
+            throw new Error('Invalid credentials');
         }
+
+        if (AuthUtility.hashPassword(password, data.salt) !== data.password_hash) {
+            throw new Error('Invalid credentials');
+        }
+
+        this.currentUser = {...data, userId: data.id};
+        this.isAuthenticated = true;
+        sessionStorage.setItem('userId', data.id);
+        this._notifyObservers();
+        return this.currentUser;
     }
 
-    /**
-     * Sign up a new user
-     */
     async signUp(email, password, firstName, lastName) {
-        try {
-            if (!AuthUtils.emailIsValid(email)) {
-                throw new Error('Please enter a valid email address');
-            }
+        if (!AuthUtility.emailIsValid(email)) throw new Error('Invalid email');
+        if (AuthUtility.passwordStrength(password).value === 'weak') throw new Error('Weak password');
+        if (!firstName?.trim() || !lastName?.trim()) throw new Error('First and last name are required');
 
-            const passwordStrength = AuthUtils.passwordStrength(password);
-            if (passwordStrength.value === 'weak') {
-                throw new Error('Password must be at least 8 characters with a mix of letters, numbers, and special characters');
-            }
+        const trimmedEmail = email.trim().toLowerCase();
+        const {data: existingUser} = await supabase
+            .from(USERS_TABLE)
+            .select('id')
+            .eq('email', trimmedEmail)
+            .single();
 
-            const trimmedEmail = email.trim().toLowerCase();
+        if (existingUser) throw new Error('Email already registered');
 
-            // Check if email already exists
-            const {data: existingUsers} = await supabase
-                .from('users')
-                .select('id')
-                .eq('email', trimmedEmail);
+        const userId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        const salt = AuthUtility.generateSalt();
+        const passwordHash = AuthUtility.hashPassword(password, salt);
 
-            if (existingUsers && existingUsers.length > 0) {
-                throw new Error('Email is already registered');
-            }
+        const user = {
+            id: userId,
+            email: trimmedEmail,
+            password_hash: passwordHash,
+            salt,
+            created_at: now,
+            updated_at: now
+        };
 
-            // Generate salt and hash password
-            const salt = AuthUtils.generateSalt();
-            const passwordHash = AuthUtils.hashPassword(password, salt);
+        const profile = {
+            id: userId,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            plant_code: '',
+            created_at: now,
+            updated_at: now
+        };
 
-            // Create user record
-            const userId = crypto.randomUUID();
-            const now = new Date().toISOString();
-
-            const user = {
-                id: userId,
-                email: trimmedEmail,
-                password_hash: passwordHash,
-                salt: salt,
-                created_at: now,
-                updated_at: now
-            };
-
-            // Create profiles record
-            const profile = {
-                id: userId,
-                first_name: firstName,
-                last_name: lastName,
-                plant_code: '',
-                created_at: now,
-                updated_at: now
-            };
-
-            // Insert user
-            const {error: userError} = await supabase
-                .from('users')
-                .insert(user);
-
-            if (userError) throw userError;
-
-            // Verify user was created
-            const {data: createdUsers, error: verifyError} = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', userId);
-
-            if (verifyError || !createdUsers || createdUsers.length === 0) {
-                throw new Error('User creation failed');
-            }
-
-            // Insert profiles
-            const {error: profileError} = await supabase
-                .from('users_profiles')
-                .insert(profile);
-
-            if (profileError) throw profileError;
-
-            // Get the Guest role
-            const guestRole = await UserService.getRoleByName('Guest');
-            if (!guestRole) {
-                throw new Error('Could not find Guest role for new user');
-            }
-
-            // Assign Guest role to the new user
-            const roleAssigned = await UserService.assignRole(userId, guestRole.id);
-            if (!roleAssigned) {
-                throw new Error('Role assignment failed');
-            }
-
-            // Set as current user
-            this.currentUser = user;
-            this.isAuthenticated = true;
-
-            // Store authentication in session
-            sessionStorage.setItem('userId', userId);
-
-            // Notify observers
-            this._notifyObservers();
-
-            return user;
-        } catch (error) {
-            console.error('Sign up error:', error);
-            throw error;
+        const {error: userError} = await supabase.from(USERS_TABLE).insert(user);
+        if (userError) {
+            console.error(`Error creating user ${trimmedEmail}:`, userError);
+            throw userError;
         }
+
+        const {data: createdUser, error: verifyError} = await supabase
+            .from(USERS_TABLE)
+            .select('id')
+            .eq('id', userId)
+            .single();
+
+        if (verifyError || !createdUser) {
+            console.error('User creation verification failed:', verifyError);
+            throw new Error('User creation failed');
+        }
+
+        const {error: profileError} = await supabase.from(PROFILES_TABLE).insert(profile);
+        if (profileError) {
+            console.error(`Error creating profile for ${userId}:`, profileError);
+            throw profileError;
+        }
+
+        const guestRole = await UserService.getRoleByName('Guest');
+        if (!guestRole) throw new Error('Guest role not found');
+
+        const roleAssigned = await UserService.assignRole(userId, guestRole.id);
+        if (!roleAssigned) throw new Error('Role assignment failed');
+
+        this.currentUser = {...user, userId};
+        this.isAuthenticated = true;
+        sessionStorage.setItem('userId', userId);
+        this._notifyObservers();
+        return user;
     }
 
-    /**
-     * Sign out the current user
-     */
     async signOut() {
         this.currentUser = null;
         this.isAuthenticated = false;
         sessionStorage.removeItem('userId');
-
-        // Clear any cached data
         localStorage.removeItem('cachedPlants');
-
-        // Notify observers
         this._notifyObservers();
     }
 
-    /**
-     * Update user email
-     */
     async updateEmail(newEmail) {
-        try {
-            if (!this.currentUser) {
-                throw new Error('No authenticated user');
-            }
+        if (!this.currentUser) throw new Error('No authenticated user');
+        if (!AuthUtility.emailIsValid(newEmail)) throw new Error('Invalid email');
 
-            if (!AuthUtils.emailIsValid(newEmail)) {
-                throw new Error('Please enter a valid email address');
-            }
+        const trimmedEmail = newEmail.trim().toLowerCase();
+        const {data: existingUser} = await supabase
+            .from(USERS_TABLE)
+            .select('id')
+            .eq('email', trimmedEmail)
+            .neq('id', this.currentUser.id)
+            .single();
 
-            const trimmedEmail = newEmail.trim().toLowerCase();
+        if (existingUser) throw new Error('Email already registered');
 
-            // Check if email already exists (except for current user)
-            const {data: existingUsers} = await supabase
-                .from('users')
-                .select('id')
-                .eq('email', trimmedEmail)
-                .neq('id', this.currentUser.id);
+        const {error} = await supabase
+            .from(USERS_TABLE)
+            .update({email: trimmedEmail, updated_at: new Date().toISOString()})
+            .eq('id', this.currentUser.id);
 
-            if (existingUsers && existingUsers.length > 0) {
-                throw new Error('Email is already registered');
-            }
-
-            // Update email
-            const {error} = await supabase
-                .from('users')
-                .update({
-                    email: trimmedEmail,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', this.currentUser.id);
-
-            if (error) throw error;
-
-            // Update local user object
-            this.currentUser.email = trimmedEmail;
-
-            // Notify observers
-            this._notifyObservers();
-
-            return true;
-        } catch (error) {
-            console.error('Update email error:', error);
+        if (error) {
+            console.error(`Error updating email for user ${this.currentUser.id}:`, error);
             throw error;
         }
+
+        this.currentUser.email = trimmedEmail;
+        this._notifyObservers();
+        return true;
     }
 
-    /**
-     * Update user password
-     */
     async updatePassword(newPassword) {
-        try {
-            if (!this.currentUser) {
-                throw new Error('No authenticated user');
-            }
+        if (!this.currentUser) throw new Error('No authenticated user');
+        if (AuthUtility.passwordStrength(newPassword).value === 'weak') throw new Error('Weak password');
 
-            const passwordStrength = AuthUtils.passwordStrength(newPassword);
-            if (passwordStrength.value === 'weak') {
-                throw new Error('Password must be at least 8 characters with a mix of letters, numbers, and special characters');
-            }
+        const salt = AuthUtility.generateSalt();
+        const passwordHash = AuthUtility.hashPassword(newPassword, salt);
 
-            // Generate new salt and hash password
-            const salt = AuthUtils.generateSalt();
-            const passwordHash = AuthUtils.hashPassword(newPassword, salt);
+        const {error} = await supabase
+            .from(USERS_TABLE)
+            .update({
+                password_hash: passwordHash,
+                salt,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', this.currentUser.id);
 
-            // Update password
-            const {error} = await supabase
-                .from('users')
-                .update({
-                    password_hash: passwordHash,
-                    salt: salt,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', this.currentUser.id);
-
-            if (error) throw error;
-
-            return true;
-        } catch (error) {
-            console.error('Update password error:', error);
+        if (error) {
+            console.error(`Error updating password for user ${this.currentUser.id}:`, error);
             throw error;
         }
+
+        return true;
     }
 
-    /**
-     * Try to restore session from storage
-     */
     async restoreSession() {
-        try {
-            const userId = sessionStorage.getItem('userId');
+        const userId = sessionStorage.getItem('userId');
+        if (!userId) return false;
 
-            if (!userId) return false;
+        const {data, error} = await supabase
+            .from(USERS_TABLE)
+            .select('id, email')
+            .eq('id', userId)
+            .single()
+            .abortSignal(AbortSignal.timeout(3000));
 
-            // Get user record - only select necessary fields with timeout
-            const {data: users, error} = await supabase
-                .from('users')
-                .select('id, email')
-                .eq('id', userId)
-                .limit(1)
-                .abortSignal(AbortSignal.timeout(3000)); // Add 3s timeout
-
-            if (error) {
-                console.error('Error restoring session:', error);
-                // Don't remove userId from session on network errors
-                // Only set isAuthenticated to false
-                this.isAuthenticated = false;
-                return false;
-            }
-
-            if (!users || users.length === 0) {
-                console.warn('User not found when restoring session');
-                sessionStorage.removeItem('userId');
-                return false;
-            }
-
-            this.currentUser = users[0];
-            // Make sure userId is directly accessible on currentUser
-            this.currentUser.userId = users[0].id;
-            this.isAuthenticated = true;
-
-            // Notify observers
-            this._notifyObservers();
-
-            return true;
-        } catch (error) {
-            console.error('Restore session error:', error);
+        if (error || !data) {
+            console.error(`Error restoring session for user ${userId}:`, error);
             sessionStorage.removeItem('userId');
+            this.isAuthenticated = false;
             return false;
         }
+
+        this.currentUser = {...data, userId: data.id};
+        this.isAuthenticated = true;
+        this._notifyObservers();
+        return true;
     }
 
-    /**
-     * Observer pattern methods
-     */
     addObserver(callback) {
         this.observers.push(callback);
     }
@@ -364,15 +226,13 @@ class AuthServiceImpl {
     }
 
     _notifyObservers() {
-        for (const callback of this.observers) {
+        this.observers.forEach(callback =>
             callback({
                 isAuthenticated: this.isAuthenticated,
                 currentUser: this.currentUser
-            });
-        }
+            })
+        );
     }
 }
 
-// Create singleton instance
-const singleton = new AuthServiceImpl();
-export const AuthService = singleton;
+export const AuthService = new AuthServiceImpl();

@@ -383,7 +383,7 @@
     right: 12px;
     color: #dc2626;
     font-size: 1.2rem;
-    z-index: 10;
+    z-index: 1;
 }
 
 .days-ago {

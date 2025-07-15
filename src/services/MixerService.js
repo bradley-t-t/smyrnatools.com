@@ -1,75 +1,37 @@
-import supabase from '../core/clients/SupabaseClient';
+import supabase from './DatabaseService';
 import {Mixer} from '../models/mixers/Mixer';
-import {MixerUtils} from '../utils/MixerUtils';
+import {MixerUtility} from '../utils/MixerUtility';
 import {MixerHistory} from '../models/mixers/MixerHistory';
 
-const formatDateForSupabase = (date) => {
+const MIXERS_TABLE = 'mixers';
+const HISTORY_TABLE = 'mixers_history';
+
+const formatDate = date => {
     if (!date) return null;
     if (date instanceof Date) return date.toISOString();
-    return date;
-};
-
-const logSupabaseError = (action, error) => {
-    console.error(`Supabase error while ${action}:`, error);
-    return error;
-};
-
-const formatDate = (date) => {
-    if (date === null || date === undefined) return null;
-    if (date instanceof Date) return date.toISOString();
     if (typeof date === 'string') {
-        try {
-            const d = new Date(date);
-            if (!isNaN(d.getTime())) return date;
-            return null;
-        } catch {
-            return null;
-        }
+        const parsed = new Date(date);
+        return isNaN(parsed.getTime()) ? null : date;
     }
     return null;
 };
 
 export class MixerService {
     static async getAllMixers() {
-        try {
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .order('truck_number', {ascending: true});
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .order('truck_number', {ascending: true});
 
-            if (error) throw error;
-
-            // Fetch latest history dates for all mixers
-            try {
-                const { data: historyData, error: historyError } = await supabase
-                    .from('mixers_history')
-                    .select('mixer_id, changed_at')
-                    .order('changed_at', { ascending: false });
-
-                if (!historyError && historyData) {
-                    // Group by mixer_id and take the first (latest) entry for each
-                    const historyDates = {};
-                    historyData.forEach(entry => {
-                        if (!historyDates[entry.mixer_id] || 
-                            new Date(entry.changed_at) > new Date(historyDates[entry.mixer_id])) {
-                            historyDates[entry.mixer_id] = entry.changed_at;
-                        }
-                    });
-
-                    // Add history dates to mixers
-                    data.forEach(mixer => {
-                        mixer.latestHistoryDate = historyDates[mixer.id] || null;
-                    });
-                }
-            } catch (historyErr) {
-                console.error('Error fetching history dates:', historyErr);
-            }
-
-            return data.map(mixer => Mixer.fromApiFormat(mixer));
-        } catch (error) {
+        if (error) {
             console.error('Error fetching mixers:', error);
-            return [];
+            throw error;
         }
+
+        const historyDates = await this._fetchHistoryDates();
+        data.forEach(mixer => mixer.latestHistoryDate = historyDates[mixer.id] ?? null);
+
+        return data.map(mixer => Mixer.fromApiFormat(mixer));
     }
 
     static async fetchMixers() {
@@ -77,616 +39,401 @@ export class MixerService {
     }
 
     static async getMixerById(id) {
-        try {
-            if (!id) {
-                console.error('Cannot fetch mixer: Invalid ID provided');
-                return null;
-            }
+        if (!id) throw new Error('Mixer ID is required');
 
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .eq('id', id)
-                .single();
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .eq('id', id)
+            .single();
 
-            if (error) {
-                if (error.code === 'PGRST116') {
-                    console.error(`Mixer with ID ${id} not found in database`);
-                } else {
-                    console.error(`Error fetching mixer with ID ${id}:`, error);
-                }
-                return null;
-            }
-
-            if (!data) {
-                console.error(`No data returned for mixer with ID ${id}`);
-                return null;
-            }
-
-            // Get latest history date for verification checks
-            try {
-                const latestHistory = await this.getLatestHistoryDate(id);
-                data.latestHistoryDate = latestHistory;
-            } catch (historyError) {
-                console.error(`Error fetching history date for mixer ${id}:`, historyError);
-            }
-
-            return Mixer.fromApiFormat(data);
-        } catch (error) {
+        if (error) {
             console.error(`Error fetching mixer with ID ${id}:`, error);
-            return null;
+            throw error;
         }
+
+        if (!data) return null;
+
+        data.latestHistoryDate = await this.getLatestHistoryDate(id);
+        return Mixer.fromApiFormat(data);
     }
 
     static async fetchMixerById(id) {
-        try {
-            if (!id) {
-                console.error('fetchMixerById called with invalid ID:', id);
-                return null;
-            }
-
-            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            if (!uuidPattern.test(id)) {
-                console.error(`Invalid UUID format for ID: ${id}`);
-                return null;
-            }
-
-            try {
-                const {data, error} = await supabase
-                    .from('mixers')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (!error && data) {
-                    // Get latest history date for verification checks
-                    try {
-                        const latestHistory = await this.getLatestHistoryDate(id);
-                        data.latestHistoryDate = latestHistory;
-                    } catch (historyError) {
-                        console.error(`Error fetching history date for mixer ${id}:`, historyError);
-                    }
-
-                    const mixer = Mixer.fromApiFormat(data);
-                    if (typeof mixer.isVerified !== 'function') {
-                        mixer.isVerified = function (latestHistoryDate) {
-                            return MixerUtils.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate || this.latestHistoryDate);
-                        };
-                    }
-                    return mixer;
-                }
-
-                console.error('Direct query failed:', error?.message || 'No data returned');
-            } catch (directError) {
-                console.error('Error in direct query:', directError);
-            }
-
-            const result = await this.getMixerById(id);
-            if (!result) {
-                try {
-                    const {count, error} = await supabase
-                        .from('mixers')
-                        .select('id', {count: 'exact', head: true})
-                        .eq('id', id);
-                    if (!error) {
-                        console.log(`ID existence check: count = ${count}`);
-                    }
-                } catch (e) {
-                    console.error('Error in ID existence check:', e);
-                }
-                return null;
-            }
-            return result;
-        } catch (error) {
-            console.error(`Error in fetchMixerById for ID ${id}:`, error);
-            return null;
+        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+            console.error(`Invalid mixer ID: ${id}`);
+            throw new Error('Invalid mixer ID');
         }
+
+        const mixer = await this.getMixerById(id);
+        if (!mixer) return null;
+
+        mixer.isVerified = function(latestHistoryDate) {
+            return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate);
+        };
+        return mixer;
     }
 
-    /**
-     * Get the date of the latest history entry for a mixer
-     * @param {string} mixerId - ID of the mixer
-     * @returns {Promise<string|null>} - ISO date string of the latest history entry or null
-     */
     static async getLatestHistoryDate(mixerId) {
-        try {
-            if (!mixerId) return null;
+        if (!mixerId) return null;
 
-            const { data, error } = await supabase
-                .from('mixers_history')
-                .select('changed_at')
-                .eq('mixer_id', mixerId)
-                .order('changed_at', { ascending: false })
-                .limit(1);
+        const {data, error} = await supabase
+            .from(HISTORY_TABLE)
+            .select('changed_at')
+            .eq('mixer_id', mixerId)
+            .order('changed_at', {ascending: false})
+            .limit(1)
+            .single();
 
-            if (error) throw error;
-
-            return data && data.length > 0 ? data[0].changed_at : null;
-        } catch (error) {
-            console.error(`Error fetching latest history date for mixer ${mixerId}:`, error);
-            return null;
-        }
+        if (error || !data) return null;
+        return data.changed_at;
     }
 
     static async getActiveMixers() {
-        try {
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .eq('status', 'Active')
-                .order('truck_number', {ascending: true});
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .eq('status', 'Active')
+            .order('truck_number', {ascending: true});
 
-            if (error) throw error;
-            return data.map(mixer => Mixer.fromApiFormat(mixer));
-        } catch (error) {
+        if (error) {
             console.error('Error fetching active mixers:', error);
-            return [];
+            throw error;
         }
+
+        return data.map(mixer => Mixer.fromApiFormat(mixer));
     }
 
-        /**
-             * Get mixer history entries
-             * @param {string} mixerId - ID of the mixer
-             * @param {number} limit - Optional limit for number of history entries to return
-             * @returns {Promise<Array>} Array of history entries
-             */
-            static async getMixerHistory(mixerId, limit = null) {
-        try {
-            let query = supabase
-                .from('mixers_history')
-                .select('*')
-                .eq('mixer_id', mixerId)
-                .order('changed_at', { ascending: false });
+    static async getMixerHistory(mixerId, limit = null) {
+        if (!mixerId) throw new Error('Mixer ID is required');
 
-            if (limit && Number.isInteger(limit) && limit > 0) {
-                query = query.limit(limit);
-            }
+        let query = supabase
+            .from(HISTORY_TABLE)
+            .select('*')
+            .eq('mixer_id', mixerId)
+            .order('changed_at', {ascending: false});
 
-            const { data, error } = await query.execute();
-
-            if (error) throw error;
-
-            // Convert to our model format
-            return data.map(entry => ({
-                id: entry.id,
-                mixerId: entry.mixer_id,
-                fieldName: entry.field_name,
-                oldValue: entry.old_value,
-                newValue: entry.new_value,
-                changedAt: entry.changed_at,
-                changedBy: entry.changed_by
-            }));
-        } catch (error) {
-            console.error(`Error fetching mixer history for mixer ${mixerId}:`, error);
-            return [];
+        if (limit && Number.isInteger(limit) && limit > 0) {
+            query = query.limit(limit);
         }
-            }
 
-            static async addMixer(mixer, userId) {
-        try {
-            if (!userId) {
-                console.error('No user ID provided when adding mixer');
-                throw new Error('Authentication required to add mixer');
-            }
+        const {data, error} = await query;
+        if (error) {
+            console.error(`Error fetching history for mixer ${mixerId}:`, error);
+            throw error;
+        }
 
-            const apiData = mixer.toApiFormat ? mixer.toApiFormat() : {
-                truck_number: mixer.truckNumber || mixer.truck_number,
-                assigned_plant: mixer.assignedPlant || mixer.assigned_plant,
-                assigned_operator: mixer.assignedOperator || mixer.assigned_operator || '0',
-                last_service_date: formatDate(mixer.lastServiceDate || mixer.last_service_date),
-                last_chip_date: formatDate(mixer.lastChipDate || mixer.last_chip_date),
-                cleanliness_rating: mixer.cleanlinessRating !== undefined ? mixer.cleanlinessRating : (mixer.cleanliness_rating !== undefined ? mixer.cleanliness_rating : 0),
-                vin: mixer.vin,
-                make: mixer.make,
-                model: mixer.model,
-                year: mixer.year,
-                status: mixer.status || 'Active',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                updated_last: new Date().toISOString(),
-                updated_by: userId
-            };
+        return data.map(entry => MixerHistory.fromApiFormat(entry));
+    }
 
-            const {data, error} = await supabase
-                .from('mixers')
-                .insert([apiData])
-                .select();
+    static async addMixer(mixer, userId) {
+        if (!userId) throw new Error('Authentication required');
 
-            if (error) {
-                console.error('Supabase error when adding mixer:', error);
-                throw new Error(`Database error: ${error.message}`);
-            }
+        const apiData = {
+            truck_number: mixer.truckNumber ?? mixer.truck_number,
+            assigned_plant: mixer.assignedPlant ?? mixer.assigned_plant,
+            assigned_operator: mixer.assignedOperator ?? mixer.assigned_operator ?? null,
+            last_service_date: formatDate(mixer.lastServiceDate ?? mixer.last_service_date),
+            last_chip_date: formatDate(mixer.lastChipDate ?? mixer.last_chip_date),
+            cleanliness_rating: mixer.cleanlinessRating ?? mixer.cleanliness_rating ?? 0,
+            vin: mixer.vin,
+            make: mixer.make,
+            model: mixer.model,
+            year: mixer.year,
+            status: mixer.status ?? 'Active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            updated_by: userId
+        };
 
-            if (!data || data.length === 0) {
-                throw new Error('No data returned after adding mixer');
-            }
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .insert([apiData])
+            .select()
+            .single();
 
-            return Mixer.fromApiFormat(data[0]);
-        } catch (error) {
+        if (error) {
             console.error('Error adding mixer:', error);
             throw error;
         }
+
+        return Mixer.fromApiFormat(data);
     }
 
     static async createMixer(mixer, userId) {
         if (!userId) {
-            userId = sessionStorage.getItem('userId');
-            if (!userId) {
-                try {
-                    const {data} = await supabase.auth.getUser();
-                    userId = data?.user?.id;
-                } catch (error) {
-                    console.error('Error getting current user from auth:', error);
-                }
-            }
-
-            if (!userId) {
-                console.warn('No user ID available when creating mixer');
-                throw new Error('Authentication required: Please log in again');
-            }
+            const {data} = await supabase.auth.getUser();
+            userId = data?.user?.id;
+            if (!userId) throw new Error('Authentication required');
         }
 
-        // We don't need to fetch history data here since this is a new mixer creation
-
-        if (mixer.id !== null && mixer.id !== undefined) {
-            console.log('Removing existing ID to ensure database generates a new one');
-            delete mixer.id;
-        }
-
+        if (mixer.id) delete mixer.id;
         return this.addMixer(mixer, userId);
     }
 
     static async updateMixer(mixerId, mixer, userId) {
-        try {
-            const id = typeof mixerId === 'object' ? mixerId.id : mixerId;
-            if (!id) {
-                throw new Error('Mixer ID is required for updates');
-            }
+        const id = typeof mixerId === 'object' ? mixerId.id : mixerId;
+        if (!id) throw new Error('Mixer ID is required');
+        if (!userId) {
+            const {data} = await supabase.auth.getUser();
+            userId = data?.user?.id;
+            if (!userId) throw new Error('Authentication required');
+        }
 
-            if (typeof mixer === 'object') {
-                mixer.id = id;
-            }
+        const currentMixer = await this.getMixerById(id);
+        if (!currentMixer) throw new Error(`Mixer with ID ${id} not found`);
 
-            if (!userId || userId === 'anonymous') {
-                const sessionUserId = sessionStorage.getItem('userId');
-                if (sessionUserId) {
-                    userId = sessionUserId;
-                } else {
-                    try {
-                        const {data} = await supabase.auth.getUser();
-                        userId = data?.user?.id;
-                    } catch (authError) {
-                        console.error('Error getting user from Supabase auth:', authError);
-                    }
-                }
+        const apiData = {
+            truck_number: mixer.truckNumber,
+            assigned_plant: mixer.assignedPlant,
+            assigned_operator: mixer.assignedOperator ?? null,
+            last_service_date: formatDate(mixer.lastServiceDate),
+            last_chip_date: formatDate(mixer.lastChipDate),
+            cleanliness_rating: mixer.cleanlinessRating,
+            vin: mixer.vin,
+            make: mixer.make,
+            model: mixer.model,
+            year: mixer.year,
+            status: mixer.status,
+            updated_at: new Date().toISOString(),
+            updated_by: userId,
+            updated_last: mixer.updatedLast ?? currentMixer.updatedLast
+        };
 
-                if (!userId || userId === 'anonymous') {
-                    throw new Error('Authentication required: Could not determine current user');
-                }
-            }
+        if (apiData.assigned_operator && apiData.assigned_operator !== currentMixer.assignedOperator && apiData.status !== 'Active') {
+            apiData.status = 'Active';
+        }
 
-            const currentMixer = await this.getMixerById(id);
-            if (!currentMixer) {
-                throw new Error(`Mixer with ID ${id} not found`);
-            }
+        if (['In Shop', 'Retired', 'Spare'].includes(apiData.status) && apiData.assigned_operator) {
+            apiData.assigned_operator = null;
+        }
 
-            const apiData = mixer.toApiFormat ? mixer.toApiFormat() : {
-                truck_number: mixer.truckNumber,
-                assigned_plant: mixer.assignedPlant,
-                assigned_operator: mixer.assignedOperator || null,
-                last_service_date: formatDateForSupabase(mixer.lastServiceDate),
-                last_chip_date: formatDateForSupabase(mixer.lastChipDate),
-                cleanliness_rating: mixer.cleanlinessRating,
-                vin: mixer.vin,
-                make: mixer.make,
-                model: mixer.model,
-                year: mixer.year,
-                status: mixer.status,
-                updated_at: new Date().toISOString()
-            };
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .update(apiData)
+            .eq('id', id)
+            .select()
+            .single();
 
-            // CRITICAL: For normal updates, ensure we're NOT changing updated_last
-            // This field is ONLY for verification status
-            if (mixer.updatedLast !== null && mixer.updatedLast !== undefined) {
-                console.log('Preserving verification status:', mixer.updatedLast);
-                apiData.updated_last = mixer.updatedLast;
-            } else {
-                // If explicitly set to null, allow it to be nullified
-                console.log('Verification status explicitly nullified');
-                apiData.updated_last = null;
-            }
-
-            if (apiData.assigned_operator && apiData.assigned_operator !== currentMixer.assignedOperator && apiData.status !== 'Active') {
-                console.log(`Automatically setting status to Active because operator ${apiData.assigned_operator} was assigned`);
-                apiData.status = 'Active';
-            }
-
-            if (['In Shop', 'Retired', 'Spare'].includes(apiData.status) && apiData.assigned_operator) {
-                console.log(`Automatically unassigning operator because status was set to ${apiData.status}`);
-                apiData.assigned_operator = null;
-            }
-
-            apiData.updated_at = new Date().toISOString();
-
-            // CRITICAL: For normal updates, ensure we're NOT changing updated_last
-            // Do NOT include updated_last in API data unless explicitly set
-            // This prevents the field from being modified during regular updates
-            // The only time updated_last should change is during explicit verification
-
-            const {data, error} = await supabase
-                .from('mixers')
-                .update(apiData)
-                .eq('id', id)
-                .select();
-
-            if (error) {
-                logSupabaseError(`updating mixer with id ${id}`, error);
-                throw new Error(`Failed to update mixer: ${error.message}`);
-            }
-
-            const historyEntries = [];
-            const fieldsToTrack = [
-                {field: 'truckNumber', dbField: 'truck_number'},
-                {field: 'assignedPlant', dbField: 'assigned_plant'},
-                {field: 'assignedOperator', dbField: 'assigned_operator'},
-                {field: 'lastServiceDate', dbField: 'last_service_date'},
-                {field: 'lastChipDate', dbField: 'last_chip_date'},
-                {field: 'cleanlinessRating', dbField: 'cleanliness_rating'},
-                {field: 'vin', dbField: 'vin'},
-                {field: 'make', dbField: 'make'},
-                {field: 'model', dbField: 'model'},
-                {field: 'year', dbField: 'year'},
-                {field: 'status', dbField: 'status'}
-            ];
-
-            for (const {field, dbField} of fieldsToTrack) {
-                let hasChanged = false;
-                let oldValue = currentMixer[field];
-                let newValue = mixer[field];
-
-                // Special handling for different field types
-                if (field === 'lastServiceDate' || field === 'lastChipDate') {
-                    // Date fields - compare only the date part
-                    const oldDate = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null;
-                    const newDate = newValue ? new Date(newValue).toISOString().split('T')[0] : null;
-                    hasChanged = oldDate !== newDate;
-                    oldValue = oldDate || '';
-                    newValue = newDate || '';
-                } else if (field === 'cleanlinessRating' || field === 'year') {
-                    // Numeric fields - compare as numbers
-                    const oldNum = oldValue !== null && oldValue !== undefined ? Number(oldValue) : null;
-                    const newNum = newValue !== null && newValue !== undefined ? Number(newValue) : null;
-                    hasChanged = oldNum !== newNum;
-                    oldValue = oldValue?.toString() || '';
-                    newValue = newValue?.toString() || '';
-                } else if (field === 'make' || field === 'model' || field === 'vin' || field === 'truckNumber') {
-                    // String fields with special comparison
-                    const oldStr = oldValue?.toString().trim() || '';
-                    const newStr = newValue?.toString().trim() || '';
-                    hasChanged = oldStr !== newStr;
-                    oldValue = oldStr;
-                    newValue = newStr;
-                } else {
-                    // Other fields
-                    hasChanged = oldValue !== newValue;
-                    oldValue = oldValue?.toString() || '';
-                    newValue = newValue?.toString() || '';
-                }
-
-                if (hasChanged) {
-                    const historyEntry = {
-                        mixer_id: id,
-                        field_name: dbField,
-                        old_value: oldValue,
-                        new_value: newValue,
-                        changed_at: new Date().toISOString(),
-                        changed_by: userId
-                    };
-                    historyEntries.push(historyEntry);
-                }
-            }
-
-            if (historyEntries.length > 0) {
-                const {error: historyError} = await supabase
-                    .from('mixers_history')
-                    .insert(historyEntries);
-                if (historyError) {
-                    console.error('Error saving mixer history:', historyError);
-                }
-            }
-
-            return data && data.length > 0 ? Mixer.fromApiFormat(data[0]) : mixer;
-        } catch (error) {
-            const errorId = typeof mixerId === 'object' ? mixerId.id : mixerId;
-            console.error(`Error updating mixer with ID ${errorId}:`, error);
+        if (error) {
+            console.error(`Error updating mixer with ID ${id}:`, error);
             throw error;
         }
+
+        const historyEntries = this._createHistoryEntries(id, currentMixer, mixer, userId);
+        if (historyEntries.length) {
+            const {error: historyError} = await supabase
+                .from(HISTORY_TABLE)
+                .insert(historyEntries);
+            if (historyError) console.error('Error saving mixer history:', historyError);
+        }
+
+        return Mixer.fromApiFormat(data);
     }
 
     static async deleteMixer(id) {
-        try {
-            const {error: historyError} = await supabase
-                .from('mixers_history')
-                .delete()
-                .eq('mixer_id', id);
+        if (!id) throw new Error('Mixer ID is required');
 
-            if (historyError) {
-                console.error(`Error deleting history for mixer with ID ${id}:`, historyError);
-            }
+        const {error: historyError} = await supabase
+            .from(HISTORY_TABLE)
+            .delete()
+            .eq('mixer_id', id);
 
-            const {error} = await supabase
-                .from('mixers')
-                .delete()
-                .eq('id', id);
+        if (historyError) console.error(`Error deleting history for mixer ${id}:`, historyError);
 
-            if (error) throw error;
-            return true;
-        } catch (error) {
+        const {error} = await supabase
+            .from(MIXERS_TABLE)
+            .delete()
+            .eq('id', id);
+
+        if (error) {
             console.error(`Error deleting mixer with ID ${id}:`, error);
             throw error;
         }
+
+        return true;
     }
 
-    static async createHistoryEntry(mixerId, fieldName, oldValue, newValue, changedBy = null) {
-        try {
-            let userId = changedBy;
-            if (!userId) {
-                userId = sessionStorage.getItem('userId');
-                if (!userId) {
-                    try {
-                        const {data} = await supabase.auth.getUser();
-                        userId = data.user?.id;
-                    } catch (authError) {
-                        console.error('Error in supabase auth:', authError);
-                    }
-                }
-                if (!userId) {
-                    userId = '00000000-0000-0000-0000-000000000000';
-                }
-            }
+    static async createHistoryEntry(mixerId, fieldName, oldValue, newValue, changedBy) {
+        if (!mixerId || !fieldName) throw new Error('Mixer ID and field name are required');
 
-            const oldValueStr = oldValue?.toString() || null;
-            const newValueStr = newValue?.toString() || null;
+        const userId = changedBy ?? (await supabase.auth.getUser())?.data?.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
-            const {error: insertError, data: insertData} = await supabase
-                .from('mixers_history')
-                .insert({
-                    mixer_id: mixerId,
-                    field_name: fieldName,
-                    old_value: oldValueStr,
-                    new_value: newValueStr,
-                    changed_at: new Date().toISOString(),
-                    changed_by: userId
-                })
-                .select();
+        const {data, error} = await supabase
+            .from(HISTORY_TABLE)
+            .insert({
+                mixer_id: mixerId,
+                field_name: fieldName,
+                old_value: oldValue?.toString() ?? null,
+                new_value: newValue?.toString() ?? null,
+                changed_at: new Date().toISOString(),
+                changed_by: userId
+            })
+            .select()
+            .single();
 
-            if (insertError) {
-                console.error('Error inserting history entry:', insertError);
-                throw insertError;
-            }
-
-            return insertData && insertData.length > 0 ? insertData[0] : null;
-        } catch (error) {
+        if (error) {
             console.error(`Error creating history entry for mixer ${mixerId}:`, error);
             throw error;
         }
-    }
 
-    static async getMixerHistory(id) {
-        try {
-            const {data, error} = await supabase
-                .from('mixers_history')
-                .select('*')
-                .eq('mixer_id', id)
-                .order('changed_at', {ascending: false});
-
-            if (error) throw error;
-            return data.map(history => MixerHistory.fromApiFormat(history));
-        } catch (error) {
-            console.error(`Error fetching history for mixer with ID ${id}:`, error);
-            return [];
-        }
+        return data;
     }
 
     static async getCleanlinessHistory(mixerId = null, months = 6) {
-        try {
-            const threshold = new Date();
-            threshold.setMonth(threshold.getMonth() - months);
+        const threshold = new Date();
+        threshold.setMonth(threshold.getMonth() - months);
 
-            let query = supabase
-                .from('mixers_history')
-                .select('mixer_id, field_name, old_value, new_value, changed_at, changed_by')
-                .eq('field_name', 'cleanliness_rating')
-                .gte('changed_at', threshold.toISOString())
-                .order('changed_at', {ascending: true})
-                .abortSignal(AbortSignal.timeout(5000));
+        let query = supabase
+            .from(HISTORY_TABLE)
+            .select('*')
+            .eq('field_name', 'cleanliness_rating')
+            .gte('changed_at', threshold.toISOString())
+            .order('changed_at', {ascending: true})
+            .abortSignal(AbortSignal.timeout(5000))
+            .limit(200);
 
-            if (mixerId) {
-                query = query.eq('mixer_id', mixerId);
-            }
+        if (mixerId) query = query.eq('mixer_id', mixerId);
 
-            query = query.select('*', {cache: 'default'});
-            query = query.limit(200);
-
-            const {data, error} = await query;
-            if (error) throw error;
-            return data;
-        } catch (error) {
+        const {data, error} = await query;
+        if (error) {
             console.error('Error fetching cleanliness history:', error);
-            return [];
+            throw error;
         }
+
+        return data;
     }
 
     static async getMixersByOperator(operatorId) {
-        try {
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .eq('assigned_operator', operatorId)
-                .order('truck_number', {ascending: true});
+        if (!operatorId) throw new Error('Operator ID is required');
 
-            if (error) throw error;
-            return data.map(mixer => Mixer.fromApiFormat(mixer));
-        } catch (error) {
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .eq('assigned_operator', operatorId)
+            .order('truck_number', {ascending: true});
+
+        if (error) {
             console.error(`Error fetching mixers for operator ${operatorId}:`, error);
-            return [];
+            throw error;
         }
+
+        return data.map(mixer => Mixer.fromApiFormat(mixer));
     }
 
     static async getMixersByStatus(status) {
-        try {
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .eq('status', status)
-                .order('truck_number', {ascending: true});
+        if (!status) throw new Error('Status is required');
 
-            if (error) throw error;
-            return data.map(mixer => Mixer.fromApiFormat(mixer));
-        } catch (error) {
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .eq('status', status)
+            .order('truck_number', {ascending: true});
+
+        if (error) {
             console.error(`Error fetching mixers with status ${status}:`, error);
-            return [];
+            throw error;
         }
+
+        return data.map(mixer => Mixer.fromApiFormat(mixer));
     }
 
     static async searchMixersByTruckNumber(query) {
-        try {
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .ilike('truck_number', `%${query}%`)
-                .order('truck_number', {ascending: true});
+        if (!query?.trim()) throw new Error('Search query is required');
 
-            if (error) throw error;
-            return data.map(mixer => Mixer.fromApiFormat(mixer));
-        } catch (error) {
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .ilike('truck_number', `%${query.trim()}%`)
+            .order('truck_number', {ascending: true});
+
+        if (error) {
             console.error(`Error searching mixers with query ${query}:`, error);
-            return [];
+            throw error;
         }
+
+        return data.map(mixer => Mixer.fromApiFormat(mixer));
     }
 
     static async getMixersNeedingService(dayThreshold = 30) {
-        try {
-            const {data, error} = await supabase
-                .from('mixers')
-                .select('*')
-                .order('truck_number', {ascending: true});
+        const {data, error} = await supabase
+            .from(MIXERS_TABLE)
+            .select('*')
+            .order('truck_number', {ascending: true});
 
-            if (error) throw error;
-
-            const now = new Date();
-            const thresholdDate = new Date(now.setDate(now.getDate() - dayThreshold));
-
-            return data
-                .filter(mixer => {
-                    if (!mixer.last_service_date) return true;
-                    const serviceDate = new Date(mixer.last_service_date);
-                    return serviceDate < thresholdDate;
-                })
-                .map(mixer => Mixer.fromApiFormat(mixer));
-        } catch (error) {
-            console.error(`Error fetching mixers needing service:`, error);
-            return [];
+        if (error) {
+            console.error('Error fetching mixers needing service:', error);
+            throw error;
         }
+
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() - dayThreshold);
+
+        return data
+            .filter(mixer => !mixer.last_service_date || new Date(mixer.last_service_date) < thresholdDate)
+            .map(mixer => Mixer.fromApiFormat(mixer));
+    }
+
+    static async _fetchHistoryDates() {
+        const {data, error} = await supabase
+            .from(HISTORY_TABLE)
+            .select('mixer_id, changed_at')
+            .order('changed_at', {ascending: false});
+
+        if (error) {
+            console.error('Error fetching history dates:', error);
+            return {};
+        }
+
+        const historyDates = {};
+        data.forEach(entry => {
+            if (!historyDates[entry.mixer_id] || new Date(entry.changed_at) > new Date(historyDates[entry.mixer_id])) {
+                historyDates[entry.mixer_id] = entry.changed_at;
+            }
+        });
+        return historyDates;
+    }
+
+    static _createHistoryEntries(mixerId, currentMixer, newMixer, userId) {
+        const fieldsToTrack = [
+            {field: 'truckNumber', dbField: 'truck_number'},
+            {field: 'assignedPlant', dbField: 'assigned_plant'},
+            {field: 'assignedOperator', dbField: 'assigned_operator'},
+            {field: 'lastServiceDate', dbField: 'last_service_date'},
+            {field: 'lastChipDate', dbField: 'last_chip_date'},
+            {field: 'cleanlinessRating', dbField: 'cleanliness_rating'},
+            {field: 'vin', dbField: 'vin'},
+            {field: 'make', dbField: 'make'},
+            {field: 'model', dbField: 'model'},
+            {field: 'year', dbField: 'year'},
+            {field: 'status', dbField: 'status'}
+        ];
+
+        return fieldsToTrack.reduce((entries, {field, dbField}) => {
+            let oldValue = currentMixer[field];
+            let newValue = newMixer[field];
+
+            if (field === 'lastServiceDate' || field === 'lastChipDate') {
+                oldValue = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null;
+                newValue = newValue ? new Date(newValue).toISOString().split('T')[0] : null;
+            } else if (field === 'cleanlinessRating' || field === 'year') {
+                oldValue = oldValue != null ? Number(oldValue) : null;
+                newValue = newValue != null ? Number(newValue) : null;
+            } else {
+                oldValue = oldValue?.toString().trim() ?? null;
+                newValue = newValue?.toString().trim() ?? null;
+            }
+
+            if (oldValue !== newValue) {
+                entries.push({
+                    mixer_id: mixerId,
+                    field_name: dbField,
+                    old_value: oldValue?.toString() ?? null,
+                    new_value: newValue?.toString() ?? null,
+                    changed_at: new Date().toISOString(),
+                    changed_by: userId
+                });
+            }
+            return entries;
+        }, []);
     }
 }

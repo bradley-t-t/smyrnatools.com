@@ -1,18 +1,13 @@
-/**
- * Network utility functions
- */
-export class NetworkUtils {
-    /**
-     * Check if the device is online
-     */
+const PING_TIMEOUT = 5000;
+
+export class NetworkUtility {
     static isOnline() {
         return navigator.onLine;
     }
 
-    /**
-     * Add network status event listeners
-     */
     static addNetworkListeners(onlineCallback, offlineCallback) {
+        if (!onlineCallback || !offlineCallback) throw new Error('Callbacks are required');
+
         window.addEventListener('online', onlineCallback);
         window.addEventListener('offline', offlineCallback);
 
@@ -22,13 +17,10 @@ export class NetworkUtils {
         };
     }
 
-    /**
-     * Check connection with a ping
-     */
     static async checkConnection() {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT);
 
             const response = await fetch('/ping', {
                 method: 'HEAD',
@@ -39,7 +31,7 @@ export class NetworkUtils {
             clearTimeout(timeoutId);
             return response.ok;
         } catch (error) {
-            console.log('Connection check failed:', error.message);
+            console.error('Connection check failed:', error.message);
             return false;
         }
     }

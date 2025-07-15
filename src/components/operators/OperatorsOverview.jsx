@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import './OperatorsOverview.css';
 
 const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => {

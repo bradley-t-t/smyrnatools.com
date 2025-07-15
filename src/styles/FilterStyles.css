@@ -1,5 +1,3 @@
-/* Filter Styles with accent color support */
-
 :root {
   --accent-red: #b80017;
   --accent-blue: #003896;
@@ -26,13 +24,11 @@
   color: white !important;
 }
 
-/* Cancel button with accent color */
 .cancel-button:hover {
   border-color: var(--select-active-border) !important;
   color: var(--select-active-border) !important;
 }
 
-/* For JavaScript customization */
 .accent-red {
   --accent-color: var(--accent-red);
   --select-active-border: var(--accent-red);

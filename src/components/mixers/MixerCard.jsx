@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import {MixerUtils} from '../../utils/MixerUtils';
-import ThemeUtils from '../../utils/ThemeUtils';
+import {MixerUtility} from '../../utils/MixerUtility';
+import ThemeUtility from '../../utils/ThemeUtility';
 import {usePreferences} from '../../context/PreferencesContext';
 import {MixerMaintenanceService} from '../../services/MixerMaintenanceService';
 import './MixerCard.css';
 
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
-    const isServiceOverdue = MixerUtils.isServiceOverdue(mixer.lastServiceDate);
-    const isChipOverdue = MixerUtils.isChipOverdue(mixer.lastChipDate);
+    const isServiceOverdue = MixerUtility.isServiceOverdue(mixer.lastServiceDate);
+    const isChipOverdue = MixerUtility.isChipOverdue(mixer.lastChipDate);
     const isVerified = typeof mixer.isVerified === 'function'
         ? mixer.isVerified(mixer.latestHistoryDate)
-        : MixerUtils.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
-    const statusColor = ThemeUtils.statusColors[mixer.status] || ThemeUtils.statusColors.default;
+        : MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
+    const statusColor = ThemeUtility.statusColors[mixer.status] || ThemeUtility.statusColors.default;
     const {preferences} = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
 
@@ -57,6 +57,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                  title={mixer.status || 'Unknown'}></div>
             {!isVerified && (
                 <div className="verification-flag"
+                     style={{position: 'absolute', top: '12px', right: '12px', color: '#dc2626', fontSize: '1.2rem', zIndex: 1}}
                      title={!mixer.updatedLast || !mixer.updatedBy ? 'Mixer never verified' :
                          mixer.latestHistoryDate && new Date(mixer.latestHistoryDate) > new Date(mixer.updatedLast) ? 'Changes recorded in history since last verification' :
                              'Mixer not verified since last Sunday'}>
@@ -69,7 +70,8 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Truck
                         #{mixer.truckNumber || 'Not Assigned'}</h3>
                     {openIssuesCount > 0 && (
-                        <div className={`issues-badge ${!isVerified ? 'with-verification-flag' : ''}`}
+                        <div className="issues-badge"
+                             style={!isVerified ? {marginRight: '30px'} : {}}
                              title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                             <i className="fas fa-tools"></i>
                             <span>{openIssuesCount}</span>

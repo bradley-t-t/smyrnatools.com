@@ -2,10 +2,10 @@ import React, {useEffect, useState} from 'react';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
 import {UserService} from '../../services/UserService';
-import supabase from '../../core/clients/SupabaseClient';
+import supabase from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';
-import {generateEmployeeIdFromUUID, generateRandomEmployeeId} from '../../utils/IdUtils';
+import {generateEmployeeIdFromUUID, generateRandomEmployeeId} from '../../utils/IDUtility';
 import './OperatorDetailView.css';
 
 function OperatorDetailView({operatorId, onClose}) {

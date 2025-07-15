@@ -1,28 +1,28 @@
 .list-item-card {
-    background-color: var(--bg-primary, white);
+    background-color: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
     cursor: pointer;
     overflow: hidden;
     margin-bottom: 16px;
-    border: 1px solid var(--border-light, #edf2f7);
+    border: 1px solid var(--border-light);
     position: relative;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    height: 220px; /* Further reduced height */
+    height: 220px;
     display: flex;
 }
 
 .list-item-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    border-color: rgba(49, 130, 206, 0.2);
+    border-color: rgba(var(--accent-primary-rgb), 0.2);
 }
 
 .list-item-card:active {
-    transform: translateY(0px);
+    transform: translateY(0);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     background-color: #f7f9ff;
 }
@@ -34,7 +34,6 @@
 .card-content {
     flex: 1;
     padding: 12px;
-    position: relative;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -60,7 +59,7 @@
     margin: 0;
     font-size: 1.1rem;
     font-weight: 600;
-    color: var(--text-primary, #1a202c);
+    color: var(--text-primary);
 }
 
 .card-details {
@@ -80,7 +79,7 @@
 }
 
 .detail-label {
-    color: var(--text-secondary, #718096);
+    color: var(--text-secondary);
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -88,7 +87,7 @@
 }
 
 .detail-value {
-    color: var(--text-primary, #1a202c);
+    color: var(--text-primary);
     font-weight: 600;
     text-align: right;
 }
@@ -199,9 +198,6 @@
 
 .toggle-button:active {
     transform: scale(0.98);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 @media (max-width: 768px) {

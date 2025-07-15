@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './index.css';
 import './App.css';
+import {supabase} from '../services/DatabaseService';
 import MobileNavToggle from '../components/common/MobileNavToggle';
 import MixersView from '../components/mixers/MixersView';
 import ManagersView from '../components/managers/ManagersView';
@@ -9,17 +10,16 @@ import MixerDetailView from '../components/mixers/MixerDetailView';
 import OperatorsView from '../components/operators/OperatorsView';
 import LoginView from '../components/auth/LoginView';
 import LoadingScreen from '../components/common/LoadingScreen';
-import MyAccountView from '../components/account/MyAccountView';
+import MyAccountView from '../components/users/MyAccountView';
 import SimpleNavbar from "../components/common/SimpleNavbar";
 import GuestView from '../components/auth/GuestView';
 import ListView from '../components/list/ListView';
 import {AuthProvider} from '../context/AuthContext';
-import {supabase} from './clients/SupabaseClient';
 import {PreferencesProvider} from '../context/PreferencesContext';
-import '../styles/Theme.css';
-import '../styles/Global.css';
 import WebView from "../components/common/WebView";
 import {UserService} from "../services/UserService";
+import '../styles/Theme.css';
+import '../styles/Global.css';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');

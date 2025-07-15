@@ -1,108 +1,81 @@
-import { supabase } from '../core/clients/SupabaseClient';
-import { ErrorLogger } from '../utils/loggers/ErrorLogger';
+import { supabase } from './DatabaseService';
+import { ErrorUtility } from '../utils/ErrorUtility';
+
+const ROLES_TABLE = 'users_roles';
+const PERMISSIONS_TABLE = 'users_permissions';
 
 export class RoleService {
-    /**
-     * Fetch all available roles from the database
-     * @returns {Promise<Array>} Array of role objects
-     */
     static async getAllRoles() {
-        try {
-            const { data, error } = await supabase
-                .from('users_roles')
-                .select('*')
-                .order('weight', { ascending: false });
+        const { data, error } = await supabase
+            .from(ROLES_TABLE)
+            .select('*')
+            .order('weight', { ascending: false });
 
-            if (error) throw error;
-            return data || [];
-        } catch (error) {
-            ErrorLogger.logError('RoleService.getAllRoles', error);
+        if (error) {
+            ErrorUtility.logError('RoleService.getAllRoles', error);
             throw error;
         }
+
+        return data ?? [];
     }
 
-    /**
-     * Get a user's role
-     * @param {string} userId - UUID of the user
-     * @returns {Promise<Object|null>} Role object or null if not found
-     */
     static async getUserRole(userId) {
-        try {
-            // Get the user's role ID from permissions
-            const { data: permData, error: permError } = await supabase
-                .from('users_permissions')
-                .select('role_id')
-                .eq('user_id', userId)
-                .single();
+        if (!userId) throw new Error('User ID is required');
 
-            if (permError) {
-                // No role assigned is a valid state
-                if (permError.code === 'PGRST116') return null;
-                throw permError;
-            }
+        const { data: permData, error: permError } = await supabase
+            .from(PERMISSIONS_TABLE)
+            .select('role_id')
+            .eq('user_id', userId)
+            .single();
 
-            if (!permData?.role_id) return null;
-
-            // Get the role details
-            const { data: roleData, error: roleError } = await supabase
-                .from('users_roles')
-                .select('*')
-                .eq('id', permData.role_id)
-                .single();
-
-            if (roleError) throw roleError;
-            return roleData;
-        } catch (error) {
-            ErrorLogger.logError(`RoleService.getUserRole(${userId})`, error);
-            throw error;
+        if (permError?.code === 'PGRST116' || !permData?.role_id) return null;
+        if (permError) {
+            ErrorUtility.logError(`RoleService.getUserRole(${userId})`, permError);
+            throw permError;
         }
+
+        const { data: roleData, error: roleError } = await supabase
+            .from(ROLES_TABLE)
+            .select('*')
+            .eq('id', permData.role_id)
+            .single();
+
+        if (roleError) {
+            ErrorUtility.logError(`RoleService.getUserRole(${userId})`, roleError);
+            throw roleError;
+        }
+
+        return roleData;
     }
 
-    /**
-     * Assign a role to a user
-     * @param {string} userId - UUID of the user
-     * @param {string} roleId - UUID of the role
-     * @returns {Promise<boolean>} Success status
-     */
     static async assignRoleToUser(userId, roleId) {
-        try {
-            // Check if user already has a role
-            const { data: existingRole, error: checkError } = await supabase
-                .from('users_permissions')
-                .select('id')
-                .eq('user_id', userId);
+        if (!userId || !roleId) throw new Error('User ID and role ID are required');
 
-            if (checkError) throw checkError;
+        const { data: existingRole, error: checkError } = await supabase
+            .from(PERMISSIONS_TABLE)
+            .select('id')
+            .eq('user_id', userId);
 
-            if (existingRole && existingRole.length > 0) {
-                // Update existing role
-                const { error: updateError } = await supabase
-                    .from('users_permissions')
-                    .update({
-                        role_id: roleId,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('user_id', userId);
+        if (checkError) {
+            ErrorUtility.logError(`RoleService.assignRoleToUser(${userId}, ${roleId})`, checkError);
+            throw checkError;
+        }
 
-                if (updateError) throw updateError;
-            } else {
-                // Create new role assignment
-                const { error: insertError } = await supabase
-                    .from('users_permissions')
-                    .insert({
-                        user_id: userId,
-                        role_id: roleId,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    });
+        const now = new Date().toISOString();
+        const { error } = existingRole?.length
+            ? await supabase
+                .from(PERMISSIONS_TABLE)
+                .update({ role_id: roleId, updated_at: now })
+                .eq('user_id', userId)
+            : await supabase
+                .from(PERMISSIONS_TABLE)
+                .insert({ user_id: userId, role_id: roleId, created_at: now, updated_at: now });
 
-                if (insertError) throw insertError;
-            }
-
-            return true;
-        } catch (error) {
-            ErrorLogger.logError(`RoleService.assignRoleToUser(${userId}, ${roleId})`, error);
+        if (error) {
+            ErrorUtility.logError(`RoleService.assignRoleToUser(${userId}, ${roleId})`, error);
             throw error;
         }
+
+        return true;
     }
 }

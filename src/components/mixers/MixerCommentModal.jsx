@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './MixerCommentModal.css';
 import {MixerCommentService} from '../../services/MixerCommentService';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
 
 function MixerCommentModal({mixerId, mixerNumber, onClose}) {

@@ -1,6 +1,6 @@
 import React from 'react';
 import './ManagerCard.css';
-import ThemeUtils from '../../utils/ThemeUtils';
+import ThemeUtility from '../../utils/ThemeUtility';
 import { usePreferences } from '../../context/PreferencesContext';
 
 function ManagerCard({ manager, plantName, onSelect }) {
@@ -8,7 +8,7 @@ function ManagerCard({ manager, plantName, onSelect }) {
 
     console.log('Manager role:', manager.roleName, 'weight:', manager.roleWeight);
 
-    const roleColor = ThemeUtils.getRoleColor(manager.roleName, manager.roleWeight);
+    const roleColor = ThemeUtility.getRoleColor(manager.roleName, manager.roleWeight);
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {

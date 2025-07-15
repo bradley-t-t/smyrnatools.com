@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {usePreferences} from '../../context/PreferencesContext';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import './SettingsView.css';
 
 function SettingsView() {

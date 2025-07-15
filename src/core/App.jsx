@@ -18,8 +18,6 @@ import MyAccountPage from './pages/account/MyAccountPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import { PreferencesProvider } from '../context/PreferencesContext';
 import { AccountProvider } from './context/AccountContext';
-import RoleSetupComponent from '../components/managers/RoleSetupComponent';
-import RoleDebugComponent from '../components/managers/RoleDebugComponent';
 import ListView from '../components/list/ListView';
 
 function App() {

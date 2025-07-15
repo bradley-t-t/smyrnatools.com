@@ -1,27 +1,20 @@
-// MixerComment model class
 export class MixerComment {
-    constructor(data) {
-        this.id = data.id;
-        this.mixerId = data.mixer_id;
-        this.text = data.text;
-        this.author = data.author;
-        this.createdAt = data.created_at;
+    constructor(data = {}) {
+        this.id = data.id ?? null;
+        this.mixerId = data.mixer_id ?? '';
+        this.text = data.text ?? '';
+        this.author = data.author ?? '';
+        this.createdAt = data.created_at ?? new Date().toISOString();
     }
 
-    // Convert database row to MixerComment object
     static fromRow(row) {
-        return new MixerComment({
-            id: row.id,
-            mixer_id: row.mixer_id,
-            text: row.text,
-            author: row.author,
-            created_at: row.created_at
-        });
+        if (!row) return null;
+        return new MixerComment(row);
     }
 
-    // Convert MixerComment object to database row
     toRow() {
         return {
+            id: this.id,
             mixer_id: this.mixerId,
             text: this.text,
             author: this.author,

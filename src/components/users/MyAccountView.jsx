@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {supabase} from '../../core/clients/SupabaseClient';
+import {supabase} from '../../services/DatabaseService';
 import {AuthService} from '../../services/AuthService';
-import SimpleLoading from '../common/SimpleLoading';
+import {UserService} from "../../services/UserService";
 import {usePreferences} from '../../context/PreferencesContext';
 import './MyAccountView.css';
+import SimpleLoading from "../common/SimpleLoading";
 
 function MyAccountView({userId}) {
     const {preferences} = usePreferences();
@@ -85,8 +86,7 @@ function MyAccountView({userId}) {
                 }
             }
             try {
-                const {AccountManager} = await import('../../core/accounts/AccountManager');
-                const highestRole = await AccountManager.getHighestRole(userIdToUse);
+                const highestRole = await UserService.getHighestRole(userIdToUse);
                 if (highestRole) {
                     setUserRole(highestRole.name);
                 }
@@ -181,13 +181,13 @@ function MyAccountView({userId}) {
             if (userError || !userData) {
                 throw new Error('Could not verify current password');
             }
-            const {AuthUtils} = await import('../../utils/AuthUtils');
-            const computedHash = await AuthUtils.hashPassword(currentPassword, userData.salt);
+            const {AuthUtility} = await import('../../utils/AuthUtility');
+            const computedHash = await AuthUtility.hashPassword(currentPassword, userData.salt);
             if (computedHash !== userData.password_hash) {
                 throw new Error('Current password is incorrect');
             }
-            const salt = AuthUtils.generateSalt();
-            const newPasswordHash = await AuthUtils.hashPassword(newPassword, salt);
+            const salt = AuthUtility.generateSalt();
+            const newPasswordHash = await AuthUtility.hashPassword(newPassword, salt);
             const {error: updateError} = await supabase
                 .from('users')
                 .update({

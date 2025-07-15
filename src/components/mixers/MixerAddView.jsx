@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {MixerService} from '../../services/MixerService';
 import {Mixer} from '../../models/mixers/Mixer';
 import {AuthService} from '../../services/AuthService';
@@ -12,22 +12,6 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
     const [assignedOperator, setAssignedOperator] = useState('0');
     const [showOperatorModal, setShowOperatorModal] = useState(false);
     const [activeMixers, setActiveMixers] = useState([]);
-
-    // Load current mixers to check for operator assignments
-    useEffect(() => {
-        const loadMixers = async () => {
-            try {
-                const mixers = await MixerService.fetchMixers();
-                setActiveMixers(mixers.filter(mixer => mixer.status === 'Active'));
-            } catch (error) {
-                console.error('Error loading mixers:', error);
-            }
-        };
-        loadMixers();
-    }, []);
-    useEffect(() => {
-        setAssignedOperator('0');
-    }, [assignedPlant]);
     const [cleanlinessRating, setCleanlinessRating] = useState(3);
     const [status, setStatus] = useState('Active');
     const [lastServiceDate, setLastServiceDate] = useState('');
@@ -39,67 +23,70 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = async (e) => {
+    useEffect(() => {
+        async function loadMixers() {
+            try {
+                const mixers = await MixerService.fetchMixers();
+                setActiveMixers(mixers.filter(mixer => mixer.status === 'Active'));
+            } catch (error) {
+                console.error('Error loading mixers:', error);
+            }
+        }
+        loadMixers();
+    }, []);
+
+    useEffect(() => {
+        setAssignedOperator('0');
+    }, [assignedPlant]);
+
+    async function handleSubmit(e) {
         e.preventDefault();
         setError('');
-        if (!truckNumber) {
-            setError('Truck number is required');
-            return;
-        }
-        if (!assignedPlant) {
-            setError('Plant is required');
-            return;
-        }
+        if (!truckNumber) return setError('Truck number is required');
+        if (!assignedPlant) return setError('Plant is required');
+
         setIsSaving(true);
         try {
-            let userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
-            if (!userId) {
-                throw new Error('User ID not available. Please log in again.');
-            }
-            const operatorToSave = status !== 'Active' ? '0' : assignedOperator;
-            const formatDateForDb = (date) => {
+            const userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
+            if (!userId) throw new Error('User ID not available. Please log in again.');
+
+            const formatDateForDb = date => {
                 if (!date) return null;
                 const d = new Date(date);
                 if (isNaN(d.getTime())) return null;
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const hours = String(d.getHours()).padStart(2, '0');
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                const seconds = String(d.getSeconds()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}+00`;
             };
+
             const now = formatDateForDb(new Date());
             const newMixer = new Mixer({
                 truck_number: truckNumber,
                 assigned_plant: assignedPlant,
-                assigned_operator: operatorToSave,
+                assigned_operator: status !== 'Active' ? '0' : assignedOperator,
                 cleanliness_rating: cleanlinessRating,
-                status: status,
+                status,
                 last_service_date: lastServiceDate ? formatDateForDb(new Date(lastServiceDate)) : null,
                 last_chip_date: lastChipDate ? formatDateForDb(new Date(lastChipDate)) : null,
-                vin: vin,
-                make: make,
-                model: model,
-                year: year,
+                vin,
+                make,
+                model,
+                year,
                 created_at: now,
                 updated_at: now,
                 updated_by: userId,
                 updated_last: now
             });
+
             const savedMixer = await MixerService.createMixer(newMixer, userId);
-            if (savedMixer) {
-                onMixerAdded(savedMixer);
-                onClose();
-            } else {
-                throw new Error('Failed to add mixer - no data returned from server');
-            }
+            if (!savedMixer) throw new Error('Failed to add mixer - no data returned from server');
+
+            onMixerAdded(savedMixer);
+            onClose();
         } catch (error) {
             setError(`Failed to add mixer: ${error.message || 'Unknown error'}`);
         } finally {
             setIsSaving(false);
         }
-    };
+    }
 
     return (
         <div className="add-mixer-modal-backdrop">
@@ -118,7 +105,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="text"
                                 className="ios-input"
                                 value={truckNumber}
-                                onChange={(e) => setTruckNumber(e.target.value)}
+                                onChange={e => setTruckNumber(e.target.value)}
                                 placeholder="Enter truck number"
                                 required
                             />
@@ -130,7 +117,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="text"
                                 className="ios-input"
                                 value={vin}
-                                onChange={(e) => setVin(e.target.value)}
+                                onChange={e => setVin(e.target.value)}
                                 placeholder="Enter VIN"
                             />
                         </div>
@@ -141,7 +128,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="text"
                                 className="ios-input"
                                 value={make}
-                                onChange={(e) => setMake(e.target.value)}
+                                onChange={e => setMake(e.target.value)}
                                 placeholder="Enter make"
                             />
                         </div>
@@ -152,7 +139,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="text"
                                 className="ios-input"
                                 value={model}
-                                onChange={(e) => setModel(e.target.value)}
+                                onChange={e => setModel(e.target.value)}
                                 placeholder="Enter model"
                             />
                         </div>
@@ -163,7 +150,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="text"
                                 className="ios-input"
                                 value={year}
-                                onChange={(e) => setYear(e.target.value)}
+                                onChange={e => setYear(e.target.value)}
                                 placeholder="Enter year"
                             />
                         </div>
@@ -173,11 +160,11 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 id="assignedPlant"
                                 className="ios-select"
                                 value={assignedPlant}
-                                onChange={(e) => setAssignedPlant(e.target.value)}
+                                onChange={e => setAssignedPlant(e.target.value)}
                                 required
                             >
                                 <option value="">Select Plant</option>
-                                {plants && plants.length > 0 ? plants.map(plant => (
+                                {plants?.length ? plants.map(plant => (
                                     <option key={plant.plantCode} value={plant.plantCode}>
                                         ({plant.plantCode}) {plant.plantName}
                                     </option>
@@ -190,11 +177,9 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 id="status"
                                 className="ios-select"
                                 value={status}
-                                onChange={(e) => {
+                                onChange={e => {
                                     setStatus(e.target.value);
-                                    if (e.target.value !== 'Active') {
-                                        setAssignedOperator('0');
-                                    }
+                                    if (e.target.value !== 'Active') setAssignedOperator('0');
                                 }}
                             >
                                 <option value="Active">Active</option>
@@ -208,19 +193,14 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                             <button
                                 id="assignedOperator"
                                 className="ios-select operator-select-button"
-                                onClick={(e) => {
+                                onClick={e => {
                                     e.preventDefault();
-                                    if (status === 'Active') {
-                                        if (!assignedPlant) {
-                                            setError('Please select a plant first');
-                                            return;
-                                        }
-                                        setShowOperatorModal(true);
-                                    }
+                                    if (status === 'Active' && assignedPlant) setShowOperatorModal(true);
+                                    else if (!assignedPlant) setError('Please select a plant first');
                                 }}
                                 type="button"
                                 disabled={status !== 'Active' || !assignedPlant}
-                                style={{ width: '100%', textAlign: 'left', padding: '8px 12px' }}
+                                style={{width: '100%', textAlign: 'left', padding: '8px 12px'}}
                             >
                                 {assignedOperator && assignedOperator !== '0'
                                     ? operators.find(op => op.employeeId === assignedOperator)?.name || 'Unknown Operator'
@@ -230,7 +210,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 <OperatorSelectModal
                                     isOpen={showOperatorModal}
                                     onClose={() => setShowOperatorModal(false)}
-                                    onSelect={(operatorId) => {
+                                    onSelect={operatorId => {
                                         setAssignedOperator(operatorId);
                                         setShowOperatorModal(false);
                                     }}
@@ -240,22 +220,15 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 />
                             )}
                             {!assignedPlant && (
-                                <div className="warning-message"
-                                     style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
+                                <div className="warning-message" style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
                                     Please select a plant first to view available operators
                                 </div>
                             )}
-                            {assignedPlant && operators.filter(op => op.plantCode === assignedPlant).length === 0 && (
-                                <div className="warning-message"
-                                     style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
+                            {assignedPlant && !operators.filter(op => op.plantCode === assignedPlant).length && (
+                                <div className="warning-message" style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
                                     No operators available for this plant
                                     <div style={{marginTop: '4px'}}>
-                                        <a
-                                            href="/operators/add"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{color: '#007AFF', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px'}}
-                                        >
+                                        <a href="/operators/add" target="_blank" rel="noopener noreferrer" style={{color: '#007AFF', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px'}}>
                                             <i className="fas fa-plus-circle"></i> Add an operator
                                         </a>
                                     </div>
@@ -288,7 +261,7 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="date"
                                 className="ios-input"
                                 value={lastServiceDate}
-                                onChange={(e) => setLastServiceDate(e.target.value)}
+                                onChange={e => setLastServiceDate(e.target.value)}
                             />
                         </div>
                         <div className="form-group">
@@ -298,14 +271,10 @@ function MixerAddView({plants, operators = [], onClose, onMixerAdded}) {
                                 type="date"
                                 className="ios-input"
                                 value={lastChipDate}
-                                onChange={(e) => setLastChipDate(e.target.value)}
+                                onChange={e => setLastChipDate(e.target.value)}
                             />
                         </div>
-                        <button
-                            type="submit"
-                            className="ios-button-primary"
-                            disabled={isSaving}
-                        >
+                        <button type="submit" className="ios-button-primary" disabled={isSaving}>
                             {isSaving ? 'Adding...' : 'Add Mixer'}
                         </button>
                     </form>

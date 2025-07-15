@@ -1,63 +1,65 @@
-import {supabase} from '../core/clients/SupabaseClient';
+import {supabase} from './DatabaseService';
 import {MixerComment} from '../models/mixers/MixerComment';
 
+const TABLE_NAME = 'mixers_comments';
+
 export class MixerCommentService {
-    // Fetch all comments for a mixer
     static async fetchComments(mixerId) {
-        try {
-            const {data, error} = await supabase
-                .from('mixers_comments')
-                .select('*')
-                .eq('mixer_id', mixerId)
-                .order('created_at', {ascending: false});
+        if (!mixerId) throw new Error('Mixer ID is required');
 
-            if (error) throw error;
+        const {data, error} = await supabase
+            .from(TABLE_NAME)
+            .select('*')
+            .eq('mixer_id', mixerId)
+            .order('created_at', {ascending: false});
 
-            return data ? data.map(row => MixerComment.fromRow(row)) : [];
-        } catch (error) {
+        if (error) {
             console.error(`Error fetching comments for mixer ${mixerId}:`, error);
             throw error;
         }
+
+        return data?.map(row => MixerComment.fromRow(row)) ?? [];
     }
 
-    // Add a comment to a mixer
     static async addComment(mixerId, text, author) {
-        try {
-            const comment = new MixerComment({
-                mixer_id: mixerId,
-                text: text,
-                author: author,
-                created_at: new Date().toISOString()
-            });
+        if (!mixerId) throw new Error('Mixer ID is required');
+        if (!text?.trim()) throw new Error('Comment text is required');
+        if (!author?.trim()) throw new Error('Author is required');
 
-            const {data, error} = await supabase
-                .from('mixers_comments')
-                .insert([comment.toRow()])
-                .select();
+        const comment = new MixerComment({
+            mixer_id: mixerId,
+            text: text.trim(),
+            author: author.trim(),
+            created_at: new Date().toISOString()
+        });
 
-            if (error) throw error;
+        const {data, error} = await supabase
+            .from(TABLE_NAME)
+            .insert([comment.toRow()])
+            .select()
+            .single();
 
-            return data && data.length > 0 ? MixerComment.fromRow(data[0]) : null;
-        } catch (error) {
+        if (error) {
             console.error(`Error adding comment to mixer ${mixerId}:`, error);
             throw error;
         }
+
+        return data ? MixerComment.fromRow(data) : null;
     }
 
-    // Delete a comment
     static async deleteComment(commentId) {
-        try {
-            const {error} = await supabase
-                .from('mixers_comments')
-                .delete()
-                .eq('id', commentId);
+        if (!commentId) throw new Error('Comment ID is required');
 
-            if (error) throw error;
+        const {error} = await supabase
+            .from(TABLE_NAME)
+            .delete()
+            .eq('id', commentId);
 
-            return true;
-        } catch (error) {
+        if (error) {
             console.error(`Error deleting comment ${commentId}:`, error);
             throw error;
         }
+
+        return true;
     }
 }

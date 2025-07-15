@@ -63,6 +63,7 @@
     color: var(--text-light);
     margin-bottom: 20px;
 }
+
 .modal-backdrop {
     position: fixed;
     top: 0;
@@ -126,8 +127,7 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
 .loading-container p {
@@ -179,11 +179,11 @@
     background: linear-gradient(135deg, var(--accent), var(--accent-dark));
     color: white;
     border: none;
-    box-shadow: 0 4px 15px rgba(49, 130, 206, 0.3);
+    box-shadow: 0 4px 15px rgba(var(--accent-primary-rgb), 0.3);
 }
 
 .list-view .action-button.primary:hover {
-    box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4);
+    box-shadow: 0 6px 20px rgba(var(--accent-primary-rgb), 0.4);
     background: linear-gradient(135deg, var(--accent-light), var(--accent));
 }
 
