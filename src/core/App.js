@@ -287,6 +287,15 @@ function AppContent() {
                         setShowSidebar={() => {}}
                     />
                 );
+                            case 'Archive':
+                return (
+                    <ListView
+                        title="Archived Items"
+                        showSidebar={false}
+                        setShowSidebar={() => {}}
+                        showArchived={true}
+                    />
+                );
             case 'MyAccount':
                 const effectiveUserId = userId || sessionStorage.getItem('userId') || session?.user?.id;
 

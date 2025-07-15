@@ -10,7 +10,7 @@ import {ListItem} from '../../models/app/DataModels';
 import ListAddView from './ListAddView';
 import ListDetailView from './ListDetailView';
 
-function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectItem}) {
+function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectItem, showArchived = false}) {
     const {preferences, updateListFilter, resetListFilters} = usePreferences();
     const [listItems, setListItems] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -26,12 +26,35 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     const [lastToggledItem, setLastToggledItem] = useState(null);
     const [showUndo, setShowUndo] = useState(false);
     const [creatorProfiles, setCreatorProfiles] = useState({});
+    const [userPlantCode, setUserPlantCode] = useState(null);
+    const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false);
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
             const user = await UserService.getCurrentUser();
             if (user) {
                 setCurrentUserId(user.id);
+
+                // Check if user has permission to bypass plant restriction
+                const hasPermission = await UserService.hasPermission(user.id, 'list.bypass.plantrestriction');
+                setCanBypassPlantRestriction(hasPermission);
+
+                // Fetch user's assigned plant if they don't have bypass permission
+                if (!hasPermission) {
+                    try {
+                        const { data: profileData } = await supabase
+                            .from('users_profiles')
+                            .select('plant_code')
+                            .eq('id', user.id)
+                            .single();
+
+                        if (profileData && profileData.plant_code) {
+                            setUserPlantCode(profileData.plant_code);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching user plant code:', error);
+                    }
+                }
             }
         };
         fetchCurrentUser();
@@ -40,6 +63,19 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     useEffect(() => {
         fetchAllData();
     }, []);
+
+    // Debug function to log completed items and their dates
+    useEffect(() => {
+        if (statusFilter === 'completed' || showArchived) {
+            const completedItems = listItems.filter(item => item.completed);
+            console.log('Completed items:', completedItems.map(item => ({
+                id: item.id,
+                description: item.description,
+                completedAt: item.completedAt,
+                sortDate: new Date(item.completedAt || 0).toISOString()
+            })));
+        }
+    }, [listItems, statusFilter, showArchived]);
 
     useEffect(() => {
         if (listItems.length > 0) {
@@ -50,10 +86,25 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     useEffect(() => {
         if (preferences.listFilters) {
             setSearchText(preferences.listFilters.searchText || '');
-            setSelectedPlant(preferences.listFilters.selectedPlant || '');
+
+            // Only apply user's plant preference if they have bypass permission or no plant restriction
+            if (canBypassPlantRestriction || !userPlantCode) {
+                setSelectedPlant(preferences.listFilters.selectedPlant || '');
+            }
+
             setStatusFilter(preferences.listFilters.statusFilter || '');
         }
-    }, [preferences.listFilters]);
+    }, [preferences.listFilters, canBypassPlantRestriction, userPlantCode]);
+
+    // Apply plant restriction when user's plant code is loaded
+    useEffect(() => {
+        if (!canBypassPlantRestriction && userPlantCode) {
+            setSelectedPlant(userPlantCode);
+            if (updateListFilter) {
+                updateListFilter('selectedPlant', userPlantCode);
+            }
+        }
+    }, [canBypassPlantRestriction, userPlantCode, updateListFilter]);
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -216,23 +267,47 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
 
             const matchesPlant = selectedPlant === '' || item.plantCode === selectedPlant;
 
+            // Determine if item is overdue (checking the actual property)
+            const isItemOverdue = item.isOverdue;
+
             // Status filter conditions
             let matchesStatus = true;
-            if (statusFilter === 'overdue') {
-                matchesStatus = item.isOverdue && !item.completed;
+
+            // If specific status filter is applied
+            if (statusFilter === 'completed') {
+                // Show only completed items
+                matchesStatus = item.completed;
+            } else if (statusFilter === 'overdue') {
+                // Show only overdue and not completed items
+                matchesStatus = isItemOverdue && !item.completed;
             } else if (statusFilter === 'pending') {
-                matchesStatus = !item.isOverdue && !item.completed;
+                // Show only pending (not overdue) and not completed items
+                matchesStatus = !isItemOverdue && !item.completed;
+            } else if (showArchived) {
+                // If in archived view and no specific status filter, show all completed items
+                matchesStatus = item.completed;
             } else {
-                // Default: show all non-completed items
+                // Default regular view: show all non-completed items
                 matchesStatus = !item.completed;
             }
 
             return matchesSearch && matchesPlant && matchesStatus;
         })
         .sort((a, b) => {
-            if (a.isOverdue && !b.isOverdue) return -1;
-            if (!a.isOverdue && b.isOverdue) return 1;
-            return new Date(a.deadline) - new Date(b.deadline);
+            // For completed items or archived view, sort by completed_at date (most recent first)
+            if (statusFilter === 'completed' || showArchived) {
+                // For completed items, make sure we're accessing the correct property
+                // Most list items should have 'completedAt' but we'll check both to be safe
+                const dateA = a.completed_at || a.completedAt ? new Date(a.completed_at || a.completedAt) : new Date(0);
+                const dateB = b.completed_at || b.completedAt ? new Date(b.completed_at || b.completedAt) : new Date(0);
+                // Sort in descending order (newest first)
+                return dateB - dateA;
+            } else {
+                // Regular view sorting
+                if (a.isOverdue && !b.isOverdue) return -1;
+                if (!a.isOverdue && b.isOverdue) return 1;
+                return new Date(a.deadline) - new Date(b.deadline);
+            }
         });
 
     const getPlantName = (plantCode) => {
@@ -275,13 +350,14 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     };
 
     const totalItems = filteredItems.length;
-    const overdueItems = filteredItems.filter(item => item.isOverdue).length;
+    // Count overdue items - must be both overdue and not completed
+    const overdueItems = filteredItems.filter(item => item.isOverdue && !item.completed).length;
 
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>List Overview</h2>
+                    <h2>{statusFilter === 'completed' || showArchived ? 'Completed Items Overview' : 'List Overview'}</h2>
                     <button className="close-button" onClick={() => setShowOverview(false)}>
                         <i className="fas fa-times"></i>
                     </button>
@@ -292,6 +368,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                         overdueItems={overdueItems}
                         listItems={filteredItems}
                         selectedPlant={selectedPlant}
+                        isArchived={statusFilter === 'completed' || showArchived}
                     />
                 </div>
                 <div className="modal-footer">
@@ -306,9 +383,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     return (
         <div className="dashboard-container list-view">
             <div className="dashboard-header">
-                <h1>
-                    {title}
-                </h1>
+                <h1>{title}</h1>
                 <div className="dashboard-actions">
                     <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
                         <i className="fas fa-plus"></i>
@@ -350,6 +425,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 setSelectedPlant(value);
                                 updateListFilter && updateListFilter('selectedPlant', value);
                             }}
+                            disabled={!canBypassPlantRestriction && userPlantCode}
                             aria-label="Filter by plant"
                             style={{
                                 '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
@@ -387,6 +463,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                             <option value="">All Status</option>
                             <option value="overdue">Overdue</option>
                             <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
                         </select>
                     </div>
 
@@ -396,9 +473,19 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                             className="filter-reset-button"
                             onClick={() => {
                                 setSearchText('');
-                                setSelectedPlant('');
+                                // Only reset plant filter if user can bypass plant restriction
+                                if (canBypassPlantRestriction) {
+                                    setSelectedPlant('');
+                                } else if (userPlantCode) {
+                                    setSelectedPlant(userPlantCode);
+                                }
                                 setStatusFilter('');
                                 resetListFilters && resetListFilters();
+
+                                // Re-apply plant restriction if needed
+                                if (!canBypassPlantRestriction && userPlantCode && updateListFilter) {
+                                    updateListFilter('selectedPlant', userPlantCode);
+                                }
                             }}
                         >
                             <i className="fas fa-undo"></i>
@@ -424,15 +511,19 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                         <div className="no-results-icon">
                             <i className="fas fa-clipboard-list"></i>
                         </div>
-                        <h3>No List Items Found</h3>
+                        <h3>{statusFilter === 'completed' || showArchived ? 'No Completed Items Found' : 'No List Items Found'}</h3>
                         <p>
                             {searchText || selectedPlant
                                 ? "No items match your search criteria."
-                                : "There are no items in the list yet."}
+                                : (statusFilter === 'completed' || showArchived 
+                                   ? "There are no completed items to show."
+                                   : "There are no items in the list yet.")}
                         </p>
-                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>
-                            Add Item
-                        </button>
+                        {!showArchived && (
+                            <button className="primary-button" onClick={() => setShowAddSheet(true)}>
+                                Add Item
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className={`list-items-grid ${searchText ? 'search-results' : ''}`}>

@@ -30,7 +30,21 @@
     border-color: var(--accent, #3182ce);
     box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
 }
+.plant-restriction-notice {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
+.plant-restriction-notice i {
+    font-size: 16px;
+}
 textarea.form-control {
     resize: vertical;
     min-height: 100px;

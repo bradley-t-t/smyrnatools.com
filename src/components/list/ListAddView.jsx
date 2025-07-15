@@ -14,6 +14,9 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
     const [isSaving, setIsSaving] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [errors, setErrors] = useState({});
+    const [userPlantCode, setUserPlantCode] = useState(null);
+    const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false);
+    const [plantRestrictionMessage, setPlantRestrictionMessage] = useState('');
 
     useEffect(() => {
         // Set default deadline to today at 5:00 PM
@@ -21,11 +24,34 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
         today.setHours(17, 0, 0, 0);
         setDeadline(today.toISOString().slice(0, 16));
 
-        // Get current user
+        // Get current user and check permissions
         const fetchCurrentUser = async () => {
             const user = await UserService.getCurrentUser();
             if (user) {
                 setCurrentUserId(user.id);
+
+                // Check if user has permission to bypass plant restriction
+                const hasPermission = await UserService.hasPermission(user.id, 'list.bypass.plantrestriction');
+                setCanBypassPlantRestriction(hasPermission);
+
+                // If they don't have bypass permission, get their assigned plant
+                if (!hasPermission) {
+                    try {
+                        const { data: profileData } = await supabase
+                            .from('users_profiles')
+                            .select('plant_code')
+                            .eq('id', user.id)
+                            .single();
+
+                        if (profileData && profileData.plant_code) {
+                            setUserPlantCode(profileData.plant_code);
+                            setPlantCode(profileData.plant_code);
+                            setPlantRestrictionMessage(`You can only create items for your assigned plant (${profileData.plant_code}).`);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching user plant code:', error);
+                    }
+                }
             }
         };
         fetchCurrentUser();
@@ -33,7 +59,10 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
         // If editing an existing item, populate the form
         if (item) {
             setDescription(item.description || '');
-            setPlantCode(item.plantCode || '');
+            // Only set the plant code if user can bypass restriction or it matches their plant
+            if (canBypassPlantRestriction || !userPlantCode || item.plantCode === userPlantCode) {
+                setPlantCode(item.plantCode || '');
+            }
             // Format the date for datetime-local input
             if (item.deadline) {
                 const deadlineDate = new Date(item.deadline);
@@ -48,6 +77,12 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
         if (!description.trim()) newErrors.description = 'Description is required';
         if (!plantCode) newErrors.plantCode = 'Plant is required';
         if (!deadline) newErrors.deadline = 'Deadline is required';
+
+        // Check if user is trying to bypass plant restriction
+        if (!canBypassPlantRestriction && userPlantCode && plantCode !== userPlantCode) {
+            newErrors.plantCode = `You can only create items for your assigned plant (${userPlantCode})`;
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -128,15 +163,25 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                         </div>
                         <div className={`form-group ${errors.plantCode ? 'has-error' : ''}`}>
                             <label>Plant</label>
+                            {plantRestrictionMessage && (
+                                <div className="plant-restriction-notice">
+                                    <i className="fas fa-info-circle"></i> {plantRestrictionMessage}
+                                </div>
+                            )}
                             <select
                                 className="form-control"
                                 value={plantCode}
                                 onChange={(e) => setPlantCode(e.target.value)}
+                                disabled={!canBypassPlantRestriction && userPlantCode}
                                 required
                             >
                                 <option value="">Select a plant</option>
                                 {plants.map(plant => (
-                                    <option key={plant.plant_code} value={plant.plant_code}>
+                                    <option 
+                                        key={plant.plant_code} 
+                                        value={plant.plant_code}
+                                        disabled={!canBypassPlantRestriction && userPlantCode && plant.plant_code !== userPlantCode}
+                                    >
                                         {plant.plant_name}
                                     </option>
                                 ))}

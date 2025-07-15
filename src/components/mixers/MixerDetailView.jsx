@@ -657,7 +657,7 @@ useEffect(() => {
                         <span>{plantRestrictionReason}</span>
                     </div>
                 )}
-            <div className="detail-content" style={{maxWidth: '1000px', margin: '0 auto'}}>
+            <div className="detail-content" style={{maxWidth: '1000px', margin: '0 auto', overflow: 'visible'}}>
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
                         {message}
@@ -822,9 +822,11 @@ useEffect(() => {
                                         disabled={!canEditMixer}
                                         style={!canEditMixer ? {cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa'} : {}}
                                     >
-                                        {assignedOperator
-                                            ? getOperatorName(assignedOperator)
-                                            : 'None (Click to select)'}
+                                                                                    <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                                            {assignedOperator
+                                                ? getOperatorName(assignedOperator)
+                                                : 'None (Click to select)'}
+                                                                                    </span>
                                     </button>
                                     {assignedOperator && canEditMixer && (
                                         <button
@@ -973,7 +975,27 @@ useEffect(() => {
                         </div>
                     </div>
                 </div>
-                {/* Bottom action buttons removed */}
+                <div className="form-actions">
+                    {canEditMixer && (
+                        <>
+                            <button
+                                className="primary-button save-button"
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button
+                                className="danger-button"
+                                onClick={() => setShowDeleteConfirmation(true)}
+                                disabled={isSaving}
+                            >
+                                Delete Mixer
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
             {showHistory && (
                 <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)}/>

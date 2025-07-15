@@ -5,6 +5,7 @@
     flex-direction: column;
     background-color: var(--bg-secondary);
     overflow-y: auto;
+    overflow-x: hidden;
     color: var(--text-primary);
 }
 
@@ -145,6 +146,7 @@
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
+    overflow: visible;
 }
 
 .mixer-card-preview {
@@ -256,6 +258,18 @@
     gap: 16px;
 }
 
+.form-control {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid var(--border-light, #edf2f7);
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 0;
+    overflow: visible;
+    text-overflow: ellipsis;
+}
+
 .verification-item {
     display: flex;
     align-items: center;
@@ -356,6 +370,10 @@
         height: 32px;
         font-size: 14px;
     }
+
+    .form-sections {
+        grid-template-columns: 1fr;
+    }
 }
 
 .mixer-card-preview .mixer-card {
@@ -397,6 +415,9 @@
     margin-bottom: 20px;
     position: relative;
     transition: all 0.3s ease;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
 }
 
 .form-group label {
@@ -413,6 +434,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     margin-top: 20px;
+    width: 100%;
+    overflow: visible;
 }
 
 .form-section {
@@ -421,6 +444,9 @@
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: visible;
+    min-width: 0;
+    width: 100%;
 }
 
 .form-section:hover {
@@ -740,6 +766,18 @@ input[type="date"].form-control {
     justify-content: center;
     align-items: center;
     z-index: 100;
+}
+
+.operator-select-container {
+    width: 100%;
+    overflow: visible;
+}
+
+.operator-select-button {
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .confirmation-content {

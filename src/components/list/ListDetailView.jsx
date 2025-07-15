@@ -317,21 +317,10 @@ function ListDetailView({ itemId, onClose }) {
                       onClick={() => setEditing(true)}
                       style={{
                         backgroundColor: preferences.accentColor === 'red' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.2)',
-                        color: 'white',
-                        marginRight: '8px'
-                      }}
-                  >
-                    <i className="fas fa-edit"></i> Edit
-                  </button>
-                  <button
-                      className="delete-button"
-                      onClick={handleDelete}
-                      style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
                         color: 'white'
                       }}
                   >
-                    <i className="fas fa-trash"></i> Delete
+                    <i className="fas fa-edit"></i> Edit
                   </button>
                 </>
               )}
