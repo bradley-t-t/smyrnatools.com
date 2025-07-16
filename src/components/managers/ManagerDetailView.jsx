@@ -7,6 +7,7 @@ import './ManagerDetailView.css';
 import {UserService} from '../../services/UserService';
 import {DatabaseService} from '../../services/DatabaseService';
 import {AuthUtility} from '../../utils/AuthUtility';
+import ThemeUtility from '../../utils/ThemeUtility';
 
 function ManagerDetailView({managerId, onClose}) {
     const {preferences} = usePreferences();
@@ -41,6 +42,18 @@ function ManagerDetailView({managerId, onClose}) {
             Promise.all([fetchManagerDetails(), fetchPlants(), fetchRoles(), fetchCurrentUserRole()]).catch(() => {});
         }
     }, [managerId]);
+
+    // Apply dark mode styling to header immediately, before content loads
+    useEffect(() => {
+        const headerElement = document.querySelector('.detail-header');
+        if (headerElement) {
+            headerElement.style.backgroundColor = preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff';
+            const headerTitle = headerElement.querySelector('h1');
+            if (headerTitle) {
+                headerTitle.style.color = preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122';
+            }
+        }
+    }, [preferences.themeMode]);
 
     useEffect(() => {
         if (!manager || isLoading) return;
@@ -277,11 +290,12 @@ function ManagerDetailView({managerId, onClose}) {
     if (isLoading) {
         return (
             <div className="manager-detail-view">
-                <div className="detail-header">
-                    <button className="back-button" onClick={onClose}>
+                <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                    <button className="back-button" onClick={onClose} style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1>Manager Details</h1>
+                    <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>Manager Details</h1>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
                     <div className="content-loading-container">
@@ -296,11 +310,12 @@ function ManagerDetailView({managerId, onClose}) {
     if (!manager) {
         return (
             <div className="manager-detail-view">
-                <div className="detail-header">
-                    <button className="back-button" onClick={onClose}>
+                <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                    <button className="back-button" onClick={onClose} style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1>Manager Not Found</h1>
+                    <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>Manager Not Found</h1>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="error-message">
                     <p>Could not find the requested manager. They may have been deleted.</p>
@@ -319,15 +334,13 @@ function ManagerDetailView({managerId, onClose}) {
                     <div className="saving-indicator"></div>
                 </div>
             )}
-            <div className="detail-header">
-                <div className="header-left">
-                    <button className="back-button" onClick={handleBackClick} aria-label="Back to managers" style={{backgroundColor: 'var(--accent-color)'}}>
-                        <i className="fas fa-arrow-left"></i>
-                        <span>Back</span>
-                    </button>
-                </div>
-                <h1>{manager.firstName} {manager.lastName || 'Manager Details'}</h1>
-                <div className="header-actions">
+                            <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                <button className="back-button" onClick={handleBackClick} aria-label="Back to managers" style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
+                    <i className="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>{manager.firstName} {manager.lastName || 'Manager Details'}</h1>
+                <div className="header-actions" style={{minWidth: '36px'}}>
                     {!isReadOnly && (
                         <>
                             <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>

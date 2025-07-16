@@ -253,11 +253,12 @@ function OperatorDetailView({operatorId, onClose}) {
     if (isLoading) {
         return (
             <div className="operator-detail-view">
-                <div className="detail-header">
-                    <button className="back-button" onClick={onClose}>
+                <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                    <button className="back-button" onClick={onClose} style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1>Operator Details</h1>
+                    <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>Operator Details</h1>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
                     <div className="content-loading-container">
@@ -272,11 +273,12 @@ function OperatorDetailView({operatorId, onClose}) {
     if (!operator) {
         return (
             <div className="operator-detail-view">
-                <div className="detail-header">
-                    <button className="back-button" onClick={onClose}>
+                <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                    <button className="back-button" onClick={onClose} style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1>Operator Not Found</h1>
+                    <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>Operator Not Found</h1>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="error-message">
                     <p>Could not find the requested operator. They may have been deleted.</p>
@@ -294,16 +296,13 @@ function OperatorDetailView({operatorId, onClose}) {
                 </div>
             )}
 
-            <div className="detail-header">
-                <div className="header-left">
-                    <button className="back-button" onClick={handleBackClick} aria-label="Back to operators" style={{backgroundColor: 'var(--accent-color)'}}>
-                        <i className="fas fa-arrow-left"></i>
-                        <span>Back</span>
-                    </button>
-                </div>
-                <h1>{operator.name || 'Operator Details'}</h1>
-                <div className="header-actions">
-                </div>
+            <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                <button className="back-button" onClick={handleBackClick} aria-label="Back to operators" style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
+                    <i className="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>{operator.name || 'Operator Details'}</h1>
+                <div style={{width: '36px'}}></div>
             </div>
 
             <div className="detail-content">

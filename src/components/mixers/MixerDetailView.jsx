@@ -13,6 +13,7 @@ import OperatorSelectModal from './OperatorSelectModal';
 import './MixerDetailView.css';
 import {MixerUtility} from "../../utils/MixerUtility";
 import {Mixer} from "../../models/mixers/Mixer";
+import ThemeUtility from "../../utils/ThemeUtility";
 
 function MixerDetailView({mixerId, onClose}) {
     const {preferences} = usePreferences();
@@ -315,15 +316,19 @@ function MixerDetailView({mixerId, onClose}) {
 
     if (isLoading) {
         return (
-            <div className="mixer-detail-view">
-                <div className="detail-header">
-                    <button className="back-button" onClick={onClose}>
+            <div className="operator-detail-view">
+                <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                    <button className="back-button" onClick={onClose} style={{marginRight: '8px', backgroundColor: 'var(--accent)'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1>Mixer Details</h1>
+                    <h1 style={{color: preferences.themeMode === 'dark' ? '#f5f5f5' : '#212122', textAlign: 'center', flex: 1, margin: '0 auto'}}>Mixer Details</h1>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <div className="content-loading-container"></div>
+                    <div className="content-loading-container">
+                        <div className="ios-spinner"></div>
+                        <p>Loading operator details...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -355,7 +360,7 @@ function MixerDetailView({mixerId, onClose}) {
                     <div className="saving-indicator"></div>
                 </div>
             )}
-            <div className="detail-header">
+                            <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : ThemeUtility.light.background.primary, color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : ThemeUtility.light.text.primary}}>
                 <div className="header-left">
                     <button className="back-button" onClick={handleBackClick} aria-label="Back to mixers" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                         <i className="fas fa-arrow-left"></i>

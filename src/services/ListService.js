@@ -31,6 +31,8 @@ class ListServiceImpl {
         if (!description?.trim()) throw new Error('Description is required');
 
         const userId = AuthService.currentUser.id;
+        if (!userId) throw new Error('User ID is required');
+
         const now = new Date().toISOString();
         const deadlineString = deadline instanceof Date ? deadline.toISOString() : deadline;
 

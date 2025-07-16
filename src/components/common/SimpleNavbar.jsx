@@ -40,8 +40,6 @@ const getIconForMenuItem = (id) => {
             return <i className="fas fa-list"></i>;
         case 'Archive':
             return <i className="fas fa-archive"></i>;
-        case 'Reports':
-            return <i className="fas fa-file-alt"></i>;
         case 'Settings':
             return <i className="fas fa-cog"></i>;
         case 'MyAccount':
@@ -54,7 +52,6 @@ const getIconForMenuItem = (id) => {
 };
 
 const menuItems = [
-    {text: 'Dashboard', id: 'Dashboard', permission: null, alwaysVisible: false},
     {text: 'Mixers', id: 'Mixers', permission: 'mixers.view', alwaysVisible: false},
     {text: 'Tractors', id: 'Tractors', permission: 'tractors.view', alwaysVisible: false},
     {text: 'Trailers', id: 'Trailers', permission: 'trailers.view', alwaysVisible: false},
@@ -64,7 +61,6 @@ const menuItems = [
     {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
     {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
-    {text: 'Reports', id: 'Reports', permission: null, alwaysVisible: false},
 ];
 
 export default function SimpleNavbar({
@@ -132,7 +128,7 @@ export default function SimpleNavbar({
                     if (item.permission) {
                         return permissions.includes(item.permission);
                     }
-                    return false;
+                    return item.permission === null;
                 });
 
                 setVisibleMenuItems(filtered);
