@@ -64,7 +64,6 @@ const menuItems = [
     {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
     {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
-    {text: 'Archive', id: 'Archive', permission: 'list.view', alwaysVisible: false},
     {text: 'Reports', id: 'Reports', permission: null, alwaysVisible: false},
 ];
 
@@ -76,7 +75,8 @@ export default function SimpleNavbar({
                                          showLogout = false,
                                          unreadMessageCount = 0,
                                          onExternalLink,
-                                         userId = null
+                                         userId = null,
+                                         listStatusFilter = ''
                                      }) {
     const {preferences, toggleNavbarMinimized} = usePreferences();
     const [collapsed, setCollapsed] = useState(preferences.navbarMinimized);
@@ -85,7 +85,22 @@ export default function SimpleNavbar({
 
     useEffect(() => {
         ensureFontAwesome();
-    }, []);
+
+        // Listen for status filter changes to update active menu item
+        const handleStatusFilterChange = (event) => {
+            const { statusFilter } = event.detail;
+            // Force a re-render when status filter changes
+            if (statusFilter === 'completed' || listStatusFilter === 'completed') {
+                setVisibleMenuItems([...visibleMenuItems]);
+            }
+        };
+
+        window.addEventListener('list-status-filter-change', handleStatusFilterChange);
+
+        return () => {
+            window.removeEventListener('list-status-filter-change', handleStatusFilterChange);
+        };
+    }, [listStatusFilter, visibleMenuItems]);
 
     useEffect(() => {
         async function fetchUserPermissions() {
@@ -152,11 +167,29 @@ export default function SimpleNavbar({
 
                 <nav className="navbar-menu">
                     <ul>
-                        {visibleMenuItems.map((item) => (
+                                                    {visibleMenuItems.map((item) => {
+                            // Determine which menu item should be active
+                            let isActive = false;
+
+                            if (item.id === 'List') {
+                                // List is always active when on List view
+                                isActive = selectedView === 'List';
+                            } else {
+                                // For all other menu items, use normal behavior
+                                isActive = selectedView === item.id;
+                            }
+
+                            return (
                             <li
                                 key={item.id}
-                                className={`menu-item ${selectedView === item.id ? 'active' : ''}`}
-                                onClick={() => onSelectView(item.id)}
+                                className={`menu-item ${isActive ? 'active' : ''}`}
+                                onClick={() => {
+                                    if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) {
+                                        window.appSwitchView(item.id);
+                                    } else {
+                                        onSelectView(item.id);
+                                    }
+                                }}
                             >
                                 <span className="menu-icon"
                                       title={item.text}>
@@ -164,7 +197,8 @@ export default function SimpleNavbar({
                                 </span>
                                 {!collapsed && <span className="menu-text">{item.text}</span>}
                             </li>
-                        ))}
+                        );
+                        })}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}
                             onClick={() => onSelectView('Settings')}

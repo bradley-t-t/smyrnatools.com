@@ -10,7 +10,7 @@ import {ListItem} from '../../models/app/DataModels';
 import ListAddView from './ListAddView';
 import ListDetailView from './ListDetailView';
 
-function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectItem, showArchived = false}) {
+function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectItem, onStatusFilterChange}) {
     const {preferences, updateListFilter, resetListFilters} = usePreferences();
     const [listItems, setListItems] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -56,7 +56,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     }, []);
 
     useEffect(() => {
-        if (statusFilter === 'completed' || showArchived) {
+        if (statusFilter === 'completed') {
             console.log('Completed items:', listItems.filter(item => item.completed).map(item => ({
                 id: item.id,
                 description: item.description,
@@ -64,7 +64,21 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                 sortDate: new Date(item.completedAt || 0).toISOString()
             })));
         }
-    }, [listItems, statusFilter, showArchived]);
+
+        // Update menu highlighting when statusFilter changes
+        if (window.updateActiveMenuHighlight) {
+            if (statusFilter === 'completed') {
+                window.updateActiveMenuHighlight('Archive');
+            } else {
+                window.updateActiveMenuHighlight('List');
+            }
+        }
+
+        // Notify parent when status filter changes
+        if (onStatusFilterChange) {
+            onStatusFilterChange(statusFilter);
+        }
+    }, [listItems, statusFilter, onStatusFilterChange]);
 
     useEffect(() => {
         if (listItems.length) fetchCreatorProfiles();
@@ -84,6 +98,18 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             updateListFilter?.('selectedPlant', userPlantCode);
         }
     }, [canBypassPlantRestriction, userPlantCode, updateListFilter]);
+
+    useEffect(() => {
+        // Initialize with no filter when component is first mounted
+        if (!document.documentElement.hasAttribute('data-list-initialized')) {
+            document.documentElement.setAttribute('data-list-initialized', 'true');
+            setStatusFilter('');
+            updateListFilter?.('statusFilter', '');
+            if (onStatusFilterChange) {
+                onStatusFilterChange('');
+            }
+        }
+    }, [updateListFilter, onStatusFilterChange]);
 
     async function fetchAllData() {
         setIsLoading(true);
@@ -157,14 +183,16 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                 item.description.toLowerCase().includes(searchText.toLowerCase()) ||
                 item.comments.toLowerCase().includes(searchText.toLowerCase());
             const matchesPlant = !selectedPlant || item.plantCode === selectedPlant;
-            const matchesStatus = statusFilter === 'completed' ? item.completed :
+                            // Filter based on the status filter selection
+                            const matchesStatus = statusFilter === 'completed' ? item.completed :
                 statusFilter === 'overdue' ? item.isOverdue && !item.completed :
                     statusFilter === 'pending' ? !item.isOverdue && !item.completed :
-                        showArchived ? item.completed : !item.completed;
+                        !item.completed; // Default to showing only pending items
             return matchesSearch && matchesPlant && matchesStatus;
         })
         .sort((a, b) => {
-            if (statusFilter === 'completed' || showArchived) {
+            // Sort completed items by completion date
+            if (statusFilter === 'completed') {
                 const dateA = new Date(a.completedAt || 0);
                 const dateB = new Date(b.completedAt || 0);
                 return dateB - dateA;
@@ -217,7 +245,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>{statusFilter === 'completed' || showArchived ? 'Completed Items Overview' : 'List Overview'}</h2>
+                    <h2>{statusFilter === 'completed' ? 'Completed Items Overview' : 'List Overview'}</h2>
                     <button className="close-button" onClick={() => setShowOverview(false)}>
                         <i className="fas fa-times"></i>
                     </button>
@@ -228,7 +256,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                         overdueItems={overdueItems}
                         listItems={filteredItems}
                         selectedPlant={selectedPlant}
-                        isArchived={statusFilter === 'completed' || showArchived}
+                        isArchived={statusFilter === 'completed'}
                     />
                 </div>
                 <div className="modal-footer">
@@ -297,8 +325,27 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                             className="ios-select"
                             value={statusFilter}
                             onChange={e => {
-                                setStatusFilter(e.target.value);
-                                updateListFilter?.('statusFilter', e.target.value);
+                                const newValue = e.target.value;
+                                setStatusFilter(newValue);
+                                updateListFilter?.('statusFilter', newValue);
+
+                                // We've now combined List and Archive views, so no need to switch views
+
+                                // Dispatch a custom event to notify other components about status filter change
+                                window.dispatchEvent(new CustomEvent('list-status-filter-change', {
+                                    detail: { statusFilter: newValue }
+                                }));
+
+                                // If we've switched to 'completed', we want to force a navigation state update
+                                if (newValue === 'completed' && window.updateActiveMenuHighlight) {
+                                    window.updateActiveMenuHighlight('Archive');
+                                } else if (newValue !== 'completed' && window.updateActiveMenuHighlight) {
+                                    window.updateActiveMenuHighlight('List');
+                                }
+
+                                if (onStatusFilterChange) {
+                                    onStatusFilterChange(newValue);
+                                }
                             }}
                             aria-label="Filter by status"
                             style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
@@ -319,6 +366,15 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 setStatusFilter('');
                                 resetListFilters?.();
                                 if (!canBypassPlantRestriction && userPlantCode) updateListFilter?.('selectedPlant', userPlantCode);
+
+                                // Just ensure the status filter is cleared
+                                if (window.updateActiveMenuHighlight) {
+                                    window.updateActiveMenuHighlight('List');
+                                }
+
+                                if (onStatusFilterChange) {
+                                    onStatusFilterChange('');
+                                }
                             }}
                         >
                             <i className="fas fa-undo"></i> Reset Filters
@@ -340,17 +396,17 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                         <div className="no-results-icon">
                             <i className="fas fa-clipboard-list"></i>
                         </div>
-                        <h3>{statusFilter === 'completed' || showArchived ? 'No Completed Items Found' : 'No List Items Found'}</h3>
+                        <h3>{statusFilter === 'completed' ? 'No Completed Items Found' : 'No List Items Found'}</h3>
                         <p>
                             {searchText || selectedPlant ? "No items match your search criteria." :
-                                statusFilter === 'completed' || showArchived ? "There are no completed items to show." :
+                                statusFilter === 'completed' ? "There are no completed items to show." :
                                     "There are no items in the list yet."}
                         </p>
-                        {!showArchived && (
+                        {
                             <button className="primary-button" onClick={() => setShowAddSheet(true)}>
                                 Add Item
                             </button>
-                        )}
+                            }
                     </div>
                 ) : (
                     <div className="list-view-table">
@@ -358,6 +414,9 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                             <div className="list-column description">Description</div>
                             <div className="list-column plant">Plant</div>
                             <div className="list-column deadline">Deadline</div>
+                            {statusFilter === 'completed' && (
+                                <div className="list-column completed-date">Completed</div>
+                            )}
                             <div className="list-column creator">Created By</div>
                             <div className="list-column status">Status</div>
                         </div>
@@ -382,6 +441,11 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                             {new Date(item.deadline).toLocaleDateString()}
                                         </span>
                                     </div>
+                                    {statusFilter === 'completed' && (
+                                        <div className="list-column completed-date">
+                                            {item.completedAt ? new Date(item.completedAt).toLocaleDateString() : 'N/A'}
+                                        </div>
+                                    )}
                                     <div className="list-column creator" title={getCreatorName(item.userId)}>
                                         {truncateText(getCreatorName(item.userId), 20)}
                                     </div>

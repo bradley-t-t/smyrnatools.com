@@ -180,17 +180,17 @@ function ListDetailView({itemId, onClose}) {
   if (loading) {
     return (
         <div className="detail-view">
-          <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-            <button className="back-button" onClick={onClose}>
+          <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+            <button className="back-button" onClick={onClose} style={{marginRight: '8px'}}>
               <i className="fas fa-arrow-left"></i>
             </button>
-            <h1>Loading...</h1>
-            <div className="spacer"></div>
+            <h1 style={{color: '#ffffff', textAlign: 'center', flex: 1, margin: '0 auto'}}>Loading...</h1>
+            <div style={{width: '36px'}}></div>
           </div>
           <div className="detail-content loading">
             <div className="loader">
               <div className="spinner"></div>
-              <p>Loading item details...</p>
+              <p style={{color: '#ffffff', textAlign: 'center', flex: 1}}>Loading item details...</p>
             </div>
           </div>
         </div>
@@ -200,12 +200,12 @@ function ListDetailView({itemId, onClose}) {
   if (!item) {
     return (
         <div className="detail-view">
-          <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-            <button className="back-button" onClick={onClose}>
+          <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+            <button className="back-button" onClick={onClose} style={{marginRight: '8px'}}>
               <i className="fas fa-arrow-left"></i>
             </button>
-            <h1>Not Found</h1>
-            <div className="spacer"></div>
+            <h1 style={{color: '#ffffff', textAlign: 'center', flex: 1, margin: '0 auto'}}>Not Found</h1>
+            <div style={{width: '36px'}}></div>
           </div>
           <div className="detail-content error">
             <div className="error-state">
@@ -223,15 +223,16 @@ function ListDetailView({itemId, onClose}) {
 
   return (
       <div className="detail-view">
-        <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-          <button className="back-button" onClick={onClose}>
+                  <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+          <button className="back-button" onClick={onClose} style={{marginRight: '8px'}}>
             <i className="fas fa-arrow-left"></i>
           </button>
-          <h1>{editing ? 'Edit Item' : 'Item Details'}</h1>
-          {!editing && (
+          {!editing ? (
               <button className="edit-button" onClick={() => setEditing(true)}>
                 <i className="fas fa-edit"></i>
               </button>
+          ) : (
+              <div style={{width: '36px'}}></div>
           )}
         </div>
         <div className="detail-content">

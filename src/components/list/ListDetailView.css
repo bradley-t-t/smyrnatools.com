@@ -891,7 +891,6 @@
   box-sizing: border-box;
 }
 
-/* Item Details */
 .item-details {
   background-color: var(--bg-primary);
   border-radius: var(--radius-md);
