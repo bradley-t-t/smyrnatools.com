@@ -8,6 +8,7 @@
     --text-tertiary: #a0aec0;
     --accent: #3182ce;
     --accent-dark: #2b6cb0;
+    --accent-color: var(--accent);
     --success: #38a169;
     --danger: #e53e3e;
     --danger-bg: #fed7d7;
@@ -67,7 +68,7 @@
     padding: 8px 16px;
     margin-right: 16px;
     border-radius: 6px;
-    background-color: var(--accent);
+    background-color: var(--accent-color);
     color: white;
     border: none;
     font-size: 14px;
@@ -79,6 +80,7 @@
 .back-button:hover {
     background-color: var(--accent-dark);
     transform: translateX(-2px);
+    opacity: 0.9;
 }
 
 .back-button i {
@@ -198,7 +200,7 @@
 
 .form-control:focus {
     outline: none;
-    border-color: var(--accent);
+    border-color: var(--accent-color);
     box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
 }
 
@@ -321,7 +323,7 @@
 }
 
 .primary-button, .save-button {
-    background-color: var(--accent);
+    background-color: var(--accent-color);
     color: white;
     border: none;
     border-radius: 6px;
@@ -334,6 +336,7 @@
 
 .primary-button:hover, .save-button:hover {
     background-color: var(--accent-dark);
+    opacity: 0.9;
 }
 
 .danger-button {
@@ -453,7 +456,7 @@
     height: 50px;
     border: 5px solid var(--bg-secondary);
     border-radius: 50%;
-    border-top-color: var(--accent);
+    border-top-color: var(--accent-color);
     animation: spin 1s linear infinite;
 }
 

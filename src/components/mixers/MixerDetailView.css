@@ -45,9 +45,9 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
+    padding: 8px 24px;
     margin-right: 16px;
-    border-radius: 6px;
+    border-radius: 6px !important;
     background-color: var(--accent);
     color: white;
     border: none;
@@ -55,6 +55,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    min-width: 100px;
 }
 
 .back-button:hover {

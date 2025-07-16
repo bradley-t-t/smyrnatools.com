@@ -585,11 +585,11 @@ function MixerDetailView({mixerId, onClose}) {
             </div>
             {showHistory && <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)} />}
             {showDeleteConfirmation && (
-                <div className="confirmation-modal">
-                    <div className="confirmation-content">
+                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
                         <p>Are you sure you want to delete Truck #{mixer.truckNumber}? This action cannot be undone.</p>
-                        <div className="confirmation-actions">
+                        <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
                             <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
@@ -597,28 +597,36 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
             )}
             {showUnsavedChangesModal && (
-                <div className="confirmation-modal">
-                    <div className="confirmation-content">
+                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Unsaved Changes</h2>
                         <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="confirmation-actions">
+                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
                             <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button className="primary-button" onClick={async () => {
-                                setShowUnsavedChangesModal(false);
-                                try {
-                                    await handleSave();
-                                    setMessage('Changes saved successfully!');
-                                    setTimeout(() => onClose(), 800);
-                                } catch (error) {
-                                    setMessage('Error saving changes. Please try again.');
-                                    setTimeout(() => setMessage(''), 3000);
-                                }
-                            }} disabled={!canEditMixer} style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', opacity: !canEditMixer ? '0.6' : '1', cursor: !canEditMixer ? 'not-allowed' : 'pointer'}}>Save & Leave</button>
-                            <button className="danger-button" onClick={() => {
-                                setShowUnsavedChangesModal(false);
-                                setHasUnsavedChanges(false);
-                                onClose();
-                            }}>Discard & Leave</button>
+                            <button 
+                                className="primary-button" 
+                                onClick={async () => {
+                                    setShowUnsavedChangesModal(false);
+                                    try {
+                                        await handleSave();
+                                        setMessage('Changes saved successfully!');
+                                        setTimeout(() => onClose(), 800);
+                                    } catch (error) {
+                                        setMessage('Error saving changes. Please try again.');
+                                        setTimeout(() => setMessage(''), 3000);
+                                    }
+                                }} 
+                                disabled={!canEditMixer} 
+                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', opacity: !canEditMixer ? '0.6' : '1', cursor: !canEditMixer ? 'not-allowed' : 'pointer'}}
+                            >Save & Leave</button>
+                            <button 
+                                className="danger-button" 
+                                onClick={() => {
+                                    setShowUnsavedChangesModal(false);
+                                    setHasUnsavedChanges(false);
+                                    onClose();
+                                }}
+                            >Discard & Leave</button>
                         </div>
                     </div>
                 </div>

@@ -200,7 +200,13 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             const name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
             return name || userId.slice(0, 8);
         }
-        setTimeout(() => fetchCreatorProfiles(), 0);
+        if (!window.profileFetchTriggered) {
+            window.profileFetchTriggered = true;
+            setTimeout(() => {
+                window.profileFetchTriggered = false;
+                fetchCreatorProfiles();
+            }, 100);
+        }
         return userId.slice(0, 8);
     };
 
@@ -347,17 +353,50 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                         )}
                     </div>
                 ) : (
-                    <div className={`list-items-grid ${searchText ? 'search-results' : ''}`}>
-                        {filteredItems.map(item => (
-                            <ListItemCard
-                                key={item.id}
-                                item={item}
-                                plantName={getPlantName(item.plantCode)}
-                                creatorName={getCreatorName(item.userId)}
-                                onSelect={handleSelectItem}
-                                truncateText={truncateText}
-                            />
-                        ))}
+                    <div className="list-view-table">
+                        <div className="list-view-header">
+                            <div className="list-column description">Description</div>
+                            <div className="list-column plant">Plant</div>
+                            <div className="list-column deadline">Deadline</div>
+                            <div className="list-column creator">Created By</div>
+                            <div className="list-column status">Status</div>
+                        </div>
+                        <div className="list-view-rows">
+                            {filteredItems.map(item => (
+                                <div 
+                                    key={item.id} 
+                                    className={`list-view-row ${item.completed ? 'completed' : ''}`}
+                                    onClick={() => handleSelectItem(item)}
+                                >
+                                    <div className="list-column description" title={item.description}>
+                                        <div className="item-status-dot" style={{
+                                            backgroundColor: item.completed ? '#38a169' : item.isOverdue ? '#e53e3e' : '#3182ce',
+                                        }}></div>
+                                        {truncateText(item.description, 60)}
+                                    </div>
+                                    <div className="list-column plant" title={getPlantName(item.plantCode)}>
+                                        {truncateText(getPlantName(item.plantCode), 20)}
+                                    </div>
+                                    <div className="list-column deadline">
+                                        <span className={item.isOverdue && !item.completed ? 'deadline-overdue' : ''}>
+                                            {new Date(item.deadline).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <div className="list-column creator" title={getCreatorName(item.userId)}>
+                                        {truncateText(getCreatorName(item.userId), 20)}
+                                    </div>
+                                    <div className="list-column status">
+                                        {item.completed ? (
+                                            <span className="status-badge completed">Completed</span>
+                                        ) : item.isOverdue ? (
+                                            <span className="status-badge overdue">Overdue</span>
+                                        ) : (
+                                            <span className="status-badge pending">Pending</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

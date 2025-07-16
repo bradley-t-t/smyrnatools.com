@@ -1,7 +1,8 @@
 import React, {useState, useEffect} from 'react';
-import './ListDetailView.css';
 import {supabase} from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
+import ThemeUtility from '../../utils/ThemeUtility';
+import './ListDetailView.css';
 
 function ListDetailView({itemId, onClose}) {
   const {preferences} = usePreferences();
@@ -12,11 +13,9 @@ function ListDetailView({itemId, onClose}) {
   const [completer, setCompleter] = useState(null);
   const [editing, setEditing] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [message, setMessage] = useState('');
   const [formData, setFormData] = useState({description: '', plantCode: '', deadline: '', comments: ''});
   const [plants, setPlants] = useState([]);
-  const [errorMessage, setErrorMessage] = useState('');
-  const wordLimit = 5;
+  const [message, setMessage] = useState({text: '', type: ''});
 
   useEffect(() => {
     if (itemId) {
@@ -24,15 +23,11 @@ function ListDetailView({itemId, onClose}) {
     }
   }, [itemId]);
 
-  const fetchItem = async () => {
-    try {
-      setLoading(true);
-      const {data, error} = await supabase
-          .from('list_items')
-          .select('*')
-          .eq('id', itemId)
-          .single();
 
+  async function fetchItem() {
+    setLoading(true);
+    try {
+      const {data, error} = await supabase.from('list_items').select('*').eq('id', itemId).single();
       if (error) throw error;
 
       setItem(data);
@@ -43,98 +38,79 @@ function ListDetailView({itemId, onClose}) {
         comments: data.comments || ''
       });
 
-      if (data.plant_code) {
-        const {data: plantData} = await supabase
-            .from('plants')
-            .select('*')
-            .eq('plant_code', data.plant_code)
-            .single();
-        setPlant(plantData);
-      }
+      const [{data: plantData}, {data: creatorData}, {data: completerData}] = await Promise.all([
+        data.plant_code ? supabase.from('plants').select('*').eq('plant_code', data.plant_code).single() : Promise.resolve({data: null}),
+        data.user_id ? supabase.from('users_profiles').select('*').eq('id', data.user_id).single() : Promise.resolve({data: null}),
+        data.completed && data.completed_by ? supabase.from('users_profiles').select('*').eq('id', data.completed_by).single() : Promise.resolve({data: null})
+      ]);
 
-      if (data.user_id) {
-        const {data: userData} = await supabase
-            .from('users_profiles')
-            .select('*')
-            .eq('id', data.user_id)
-            .single();
-        setCreator(userData);
-      }
-
-      if (data.completed && data.completed_by) {
-        const {data: completerData} = await supabase
-            .from('users_profiles')
-            .select('*')
-            .eq('id', data.completed_by)
-            .single();
-        setCompleter(completerData);
-      }
-    } catch (error) {
-      setErrorMessage('Failed to load item details');
+      setPlant(plantData);
+      setCreator(creatorData);
+      setCompleter(completerData);
+    } catch {
+      showMessage('Failed to load item details', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const fetchPlants = async () => {
+  async function fetchPlants() {
     try {
-      const {data, error} = await supabase
-          .from('plants')
-          .select('*')
-          .order('plant_code');
+      const {data, error} = await supabase.from('plants').select('*').order('plant_code');
       if (error) throw error;
       setPlants(data);
-    } catch (error) {
-      setErrorMessage('Failed to load plants');
+    } catch {
+      showMessage('Failed to load plants', 'error');
     }
-  };
+  }
 
-  const formatDateForInput = dateString => {
+  function formatDateForInput(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  };
+  }
 
-  const formatDate = dateString => {
+  function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? 'Invalid Date' : `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`;
-  };
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleString(undefined, {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+  }
 
-  const truncateDescription = text => {
-    if (!text) return '';
-    const words = text.trim().split(/\s+/);
-    return words.slice(0, wordLimit).join(' ') + (words.length > wordLimit ? '...' : '');
-  };
+  function getRelativeTime(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.round(diffMs / 1000);
+    const diffMin = Math.round(diffSec / 60);
+    const diffHr = Math.round(diffMin / 60);
+    const diffDay = Math.round(diffHr / 24);
 
-  const handleChange = e => {
+    if (diffSec < 60) return `${diffSec} second${diffSec !== 1 ? 's' : ''} ago`;
+    if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+    if (diffHr < 24) return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`;
+    if (diffDay < 30) return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`;
+    return formatDate(dateString);
+  }
+
+  function handleChange(e) {
     setFormData(prev => ({...prev, [e.target.name]: e.target.value}));
-  };
+  }
 
-  const handleSubmit = async e => {
+  function showMessage(text, type = 'success', duration = 3000) {
+    setMessage({text, type});
+    if (duration) setTimeout(() => setMessage({text: '', type: ''}), duration);
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    setMessage('');
-
     try {
-      if (!formData.description.trim()) {
-        setMessage('Description is required');
-        setTimeout(() => setMessage(''), 3000);
-        return;
-      }
-
-      if (formData.description.trim().split(/\s+/).length > wordLimit) {
-        setMessage(`Description cannot exceed ${wordLimit} words`);
-        setTimeout(() => setMessage(''), 3000);
-        return;
-      }
-
+      if (!formData.description.trim()) return showMessage('Description is required', 'error');
       const deadlineDate = new Date(formData.deadline);
-      if (isNaN(deadlineDate.getTime())) {
-        setMessage('Invalid deadline date');
-        setTimeout(() => setMessage(''), 3000);
-        return;
-      }
+      if (isNaN(deadlineDate.getTime())) return showMessage('Invalid deadline date', 'error');
 
       const {error} = await supabase
           .from('list_items')
@@ -150,15 +126,13 @@ function ListDetailView({itemId, onClose}) {
 
       await fetchItem();
       setEditing(false);
-      setMessage('Changes saved successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage(`Error saving changes: ${error.message || 'Unknown error'}`);
-      setTimeout(() => setMessage(''), 5000);
+      showMessage('Changes saved successfully!');
+    } catch {
+      showMessage('Error saving changes', 'error', 5000);
     }
-  };
+  }
 
-  const handleToggleCompletion = async () => {
+  async function handleToggleCompletion() {
     try {
       const completed = !item.completed;
       const completedAt = completed ? new Date().toISOString() : null;
@@ -170,51 +144,52 @@ function ListDetailView({itemId, onClose}) {
           .eq('id', itemId);
 
       if (error) throw error;
+
+      showMessage(completed ? 'Item marked as complete' : 'Item marked as incomplete');
       await fetchItem();
-    } catch (error) {
-      setMessage('Failed to update completion status');
-      setTimeout(() => setMessage(''), 3000);
+    } catch {
+      showMessage('Failed to update completion status', 'error');
     }
-  };
+  }
 
-  const handleDelete = async () => {
-    if (!showDeleteConfirmation) {
-      setShowDeleteConfirmation(true);
-      return;
-    }
-
+  async function handleDelete() {
     try {
-      const {error} = await supabase
-          .from('list_items')
-          .delete()
-          .eq('id', itemId);
-
+      const {error} = await supabase.from('list_items').delete().eq('id', itemId);
       if (error) throw error;
       onClose();
-    } catch (error) {
-      setMessage('Failed to delete item');
-      setTimeout(() => setMessage(''), 3000);
-    } finally {
+    } catch {
+      showMessage('Failed to delete item', 'error');
       setShowDeleteConfirmation(false);
     }
-  };
+  }
+
+  function calculateStatusInfo() {
+    if (!item) return {color: '#718096', label: 'Unknown', icon: 'question-circle'};
+    if (item.completed) return {color: '#10B981', label: 'Completed', icon: 'check-circle'};
+
+    const deadline = new Date(item.deadline);
+    const now = new Date();
+    if (isNaN(deadline.getTime())) return {color: '#718096', label: 'No Deadline', icon: 'calendar-times'};
+    if (deadline < now) return {color: '#EF4444', label: 'Overdue', icon: 'exclamation-circle'};
+
+    const hours = (deadline - now) / (1000 * 60 * 60);
+    if (hours < 24) return {color: '#F59E0B', label: 'Due Soon', icon: 'clock'};
+    return {color: '#3B82F6', label: 'Upcoming', icon: 'calendar-check'};
+  }
 
   if (loading) {
     return (
-        <div className="detail-view-container">
-          <div className="detail-view-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-            <div className="header-container">
-              <div className="header-left">
-                <button className="close-button" onClick={onClose} aria-label="Close details">
-                  <i className="fas fa-chevron-left"></i>
-                </button>
-                <h2>Loading Item</h2>
-              </div>
-            </div>
+        <div className="detail-view">
+          <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+            <button className="back-button" onClick={onClose}>
+              <i className="fas fa-arrow-left"></i>
+            </button>
+            <h1>Loading...</h1>
+            <div className="spacer"></div>
           </div>
-          <div className="detail-view-content centered">
-            <div className="loading-container">
-              <div className="ios-spinner"></div>
+          <div className="detail-content loading">
+            <div className="loader">
+              <div className="spinner"></div>
               <p>Loading item details...</p>
             </div>
           </div>
@@ -224,111 +199,85 @@ function ListDetailView({itemId, onClose}) {
 
   if (!item) {
     return (
-        <div className="detail-view-container">
-          <div className="detail-view-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-            <div className="header-container">
-              <div className="header-left">
-                <button className="close-button" onClick={onClose} aria-label="Close details">
-                  <i className="fas fa-chevron-left"></i>
-                </button>
-                <h2>Item Not Found</h2>
-              </div>
-            </div>
+        <div className="detail-view">
+          <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+            <button className="back-button" onClick={onClose}>
+              <i className="fas fa-arrow-left"></i>
+            </button>
+            <h1>Not Found</h1>
+            <div className="spacer"></div>
           </div>
-          <div className="detail-view-content centered">
-            <div className="error-container">
-              <div className="error-icon">
-                <i className="fas fa-exclamation-circle"></i>
-              </div>
-              <h3>Item Not Found</h3>
-              <p>The requested item could not be found. It may have been deleted.</p>
-              <button className="primary-button" onClick={onClose} style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-                <i className="fas fa-arrow-left"></i> Return to List
-              </button>
+          <div className="detail-content error">
+            <div className="error-state">
+              <i className="fas fa-exclamation-triangle"></i>
+              <h2>Item Not Found</h2>
+              <p>The requested item could not be found or has been deleted.</p>
+              <button className="primary-button" onClick={onClose}>Go Back</button>
             </div>
           </div>
         </div>
     );
   }
 
+  const statusInfo = calculateStatusInfo();
+
   return (
-      <div className="detail-view-container">
-        {editing && message && (
-            <div className="saving-overlay" style={{display: 'flex'}}>
-              <div className="saving-indicator"></div>
-            </div>
-        )}
-        <div className="detail-view-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-          <div className="header-container">
-            <div className="header-left">
-              <button className="close-button" onClick={onClose} aria-label="Close details">
-                <i className="fas fa-chevron-left"></i>
+      <div className="detail-view">
+        <div className="detail-header" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+          <button className="back-button" onClick={onClose}>
+            <i className="fas fa-arrow-left"></i>
+          </button>
+          <h1>{editing ? 'Edit Item' : 'Item Details'}</h1>
+          {!editing && (
+              <button className="edit-button" onClick={() => setEditing(true)}>
+                <i className="fas fa-edit"></i>
               </button>
-              <h2>{editing ? 'Edit Item' : (truncateDescription(item.description) || 'Item Details')}</h2>
-            </div>
-            {!editing && (
-                <div className="header-actions">
-                  <button className="edit-button" onClick={() => setEditing(true)} style={{backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white'}}>
-                    <i className="fas fa-edit"></i> Edit
-                  </button>
-                </div>
-            )}
-          </div>
+          )}
         </div>
-        <div className="detail-view-content">
-          {(message || errorMessage) && (
-              <div className={`message ${(message.includes('Error') || errorMessage) ? 'error' : 'success'}`}>
-                <i className={`fas ${(message.includes('Error') || errorMessage) ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
-                {message || errorMessage}
+        <div className="detail-content">
+          {message.text && (
+              <div className={`message ${message.type}`}>
+                <i className={`fas fa-${message.type === 'error' ? 'exclamation-circle' : 'check-circle'}`}></i>
+                <span>{message.text}</span>
               </div>
           )}
           {editing ? (
-              <div className="detail-card edit-card">
-                <div className="edit-header">
-                  <h2><i className="fas fa-pen"></i> Edit Item</h2>
-                </div>
+                              <div className="edit-form-container" style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : '#ffffff'}}>
                 <form onSubmit={handleSubmit} className="edit-form">
-                  <div className="form-section">
-                    <div className="form-group description-group">
-                      <label htmlFor="description">
-                        <i className="fas fa-file-alt"></i> Description <span className="required">*</span>
-                      </label>
-                      <input
-                          type="text"
-                          id="description"
-                          name="description"
-                          value={formData.description}
-                          onChange={handleChange}
-                          className="form-control"
-                          placeholder="Brief description of the item"
-                          required
-                          autoFocus
-                      />
-                      <div className="word-limit-indicator">
-                                        <span className={formData.description.trim().split(/\s+/).length > wordLimit ? 'exceeded' : ''}>
-                                            <i className="fas fa-info-circle"></i> {formData.description.trim().split(/\s+/).length}/{wordLimit} words
-                                        </span>
-                      </div>
-                    </div>
+                  <div className="form-group">
+                    <label htmlFor="description" style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Description <span className="required">*</span></label>
+                    <input
+                        type="text"
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        className="form-control"
+                        placeholder="What needs to be done?"
+                        required
+                        autoFocus
+                        style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff', color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c', borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'}}
+                    />
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="plantCode">
-                        <i className="fas fa-building"></i> Plant
-                      </label>
-                      <select id="plantCode" name="plantCode" value={formData.plantCode} onChange={handleChange} className="form-control">
+                      <label htmlFor="plantCode" style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Plant</label>
+                      <select 
+                        id="plantCode" 
+                        name="plantCode" 
+                        value={formData.plantCode} 
+                        onChange={handleChange} 
+                        className="form-control"
+                        style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff', color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c', borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'}}
+                      >
                         <option value="">Select a plant</option>
                         {plants.map(plant => (
-                            <option key={plant.plant_code} value={plant.plant_code}>
-                              ({plant.plant_code}) {plant.plant_name}
-                            </option>
+                            <option key={plant.plant_code} value={plant.plant_code}>({plant.plant_code}) {plant.plant_name}</option>
                         ))}
                       </select>
                     </div>
                     <div className="form-group">
-                      <label htmlFor="deadline">
-                        <i className="fas fa-calendar-alt"></i> Deadline <span className="required">*</span>
-                      </label>
+                      <label htmlFor="deadline" style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Deadline <span className="required">*</span></label>
                       <input
                           type="datetime-local"
                           id="deadline"
@@ -337,13 +286,12 @@ function ListDetailView({itemId, onClose}) {
                           onChange={handleChange}
                           className="form-control"
                           required
+                          style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff', color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c', borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'}}
                       />
                     </div>
                   </div>
                   <div className="form-group">
-                    <label htmlFor="comments">
-                      <i className="fas fa-comment-alt"></i> Comments
-                    </label>
+                    <label htmlFor="comments" style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Comments</label>
                     <textarea
                         id="comments"
                         name="comments"
@@ -351,85 +299,75 @@ function ListDetailView({itemId, onClose}) {
                         onChange={handleChange}
                         className="form-control"
                         rows="4"
-                        placeholder="Additional notes or instructions..."
+                        placeholder="Add any additional notes or context here..."
+                        style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff', color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c', borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'}}
                     ></textarea>
                   </div>
                   <div className="form-actions">
-                    <button type="button" className="cancel-button" onClick={() => setEditing(false)}>
-                      <i className="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" className="save-button" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
-                      <i className="fas fa-save"></i> Save Changes
-                    </button>
+                    <button 
+                      type="button" 
+                      className="cancel-button" 
+                      onClick={() => setEditing(false)}
+                      style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.tertiary : '#f5f5f5', color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#718096'}}
+                    >Cancel</button>
+                    <button type="submit" className="save-button" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Save Changes</button>
                   </div>
                 </form>
               </div>
           ) : (
-              <div className="detail-card">
-                <div
-                    className="status-banner"
-                    style={{
-                      backgroundColor: item.completed
-                          ? '#38a169'
-                          : (new Date(item.deadline) < new Date() && item.deadline ? '#e53e3e' : '#003896')
-                    }}
-                >
-                            <span className="status-text">
-                                <i className={`fas ${item.completed ? 'fa-check-circle' : (new Date(item.deadline) < new Date() && item.deadline ? 'fa-exclamation-circle' : 'fa-clock')}`}></i>
-                              {item.completed ? 'Completed' : (new Date(item.deadline) < new Date() && item.deadline ? 'Overdue' : 'Pending')}
-                            </span>
-                </div>
-                <div className="item-main-details">
-                  <h2 className="item-title">{truncateDescription(item.description) || 'Untitled Item'}</h2>
-                  <div className="item-metadata">
-                    <div className="metadata-item">
-                      <i className="fas fa-building"></i>
-                      <span>{plant ? `${plant.plant_code} - ${plant.plant_name}` : 'No Plant'}</span>
-                    </div>
-                    <div className="metadata-item">
-                      <i className="fas fa-calendar-alt"></i>
-                      <span className={item.completed ? '' : (new Date(item.deadline) < new Date() && item.deadline ? 'overdue-text' : '')}>
-                                        {formatDate(item.deadline)}
-                                    </span>
-                    </div>
+              <>
+                <div className="item-details">
+                  <h2 className="item-title">{item.description}</h2>
+                  <div className="item-status" style={{color: statusInfo.color, marginBottom: '16px', paddingLeft: '24px'}}>
+                    <i className={`fas fa-${statusInfo.icon}`} style={{marginRight: '8px'}}></i>
+                    <span style={{fontWeight: 600}}>{statusInfo.label}</span>
+                    {item.deadline && (
+                      <span className="item-deadline" style={{marginLeft: '16px'}}>
+                        <i className="fas fa-calendar-alt" style={{marginRight: '4px'}}></i>
+                        {formatDate(item.deadline)}
+                      </span>
+                    )}
                   </div>
-                </div>
-                {item.comments && (
-                    <div className="comments-section">
-                      <h3><i className="fas fa-comment-alt"></i> Comments</h3>
-                      <div className="comment-content">{item.comments}</div>
-                    </div>
-                )}
-                <div className="creator-info">
-                  <div className="info-group">
-                    <div className="info-item">
-                      <label>Created By</label>
-                      <span>{creator ? `${creator.first_name} ${creator.last_name}` : (item.user_id || 'Unknown')}</span>
-                    </div>
-                    <div className="info-item">
-                      <label>Created</label>
-                      <span>{formatDate(item.created_at)}</span>
-                    </div>
-                  </div>
-                  {item.completed && (
-                      <div className="info-group">
-                        <div className="info-item">
-                          <label>Completed By</label>
-                          <span>{completer ? `${completer.first_name} ${completer.last_name}` : (item.completed_by || 'Unknown')}</span>
-                        </div>
-                        <div className="info-item">
-                          <label>Completed</label>
-                          <span>{formatDate(item.completed_at)}</span>
-                        </div>
+                  {plant && (
+                      <div className="item-plant">
+                        <i className="fas fa-building"></i>
+                        <span>{plant.plant_name} ({plant.plant_code})</span>
                       </div>
                   )}
+                  {item.comments && (
+                      <div className="item-comments">
+                        <h3>Comments</h3>
+                        <p>{item.comments}</p>
+                      </div>
+                  )}
+                  <div className="meta-information">
+                    <div className="meta-section">
+                      <h3><i className="fas fa-history"></i> History</h3>
+                      <div className="meta-row">
+                        <div className="meta-label">Created by</div>
+                        <div className="meta-value">{creator ? `${creator.first_name} ${creator.last_name}` : 'Unknown'}</div>
+                      </div>
+                      <div className="meta-row">
+                        <div className="meta-label">Created on</div>
+                        <div className="meta-value">{formatDate(item.created_at)}</div>
+                      </div>
+                      {item.completed && (
+                          <>
+                            <div className="meta-row">
+                              <div className="meta-label">Completed by</div>
+                              <div className="meta-value">{completer ? `${completer.first_name} ${completer.last_name}` : 'Unknown'}</div>
+                            </div>
+                            <div className="meta-row">
+                              <div className="meta-label">Completed on</div>
+                              <div className="meta-value">{formatDate(item.completed_at)}</div>
+                            </div>
+                          </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="action-buttons">
-                  <button
-                      className="toggle-completion-button"
-                      onClick={handleToggleCompletion}
-                      style={{backgroundColor: item.completed ? (preferences.accentColor === 'red' ? '#b80017' : '#003896') : '#38a169'}}
-                  >
+                <div className="action-buttons" style={{marginTop: '-10px'}}>
+                  <button className="toggle-completion-button" style={{backgroundColor: item.completed ? '#EF4444' : '#10B981'}} onClick={handleToggleCompletion}>
                     {item.completed ? (
                         <>
                           <i className="fas fa-undo"></i> Mark as Incomplete
@@ -440,29 +378,110 @@ function ListDetailView({itemId, onClose}) {
                         </>
                     )}
                   </button>
+                  <button className="delete-button" onClick={() => setShowDeleteConfirmation(true)}>
+                    <i className="fas fa-trash"></i>
+                  </button>
                 </div>
-              </div>
+              </>
           )}
         </div>
         {showDeleteConfirmation && (
-            <div className="confirmation-modal">
-              <div className="confirmation-content">
-                <div className="confirmation-header">
-                  <i className="fas fa-exclamation-triangle warning-icon"></i>
-                  <h2>Confirm Delete</h2>
-                </div>
-                <div className="confirmation-body">
-                  <p>Are you sure you want to delete this item?</p>
-                  <p className="item-to-delete">"{truncateDescription(item.description) || 'Untitled item'}"</p>
-                  <p className="warning-text"><i className="fas fa-exclamation-circle"></i> This action cannot be undone.</p>
-                </div>
-                <div className="confirmation-actions">
-                  <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>
-                    <i className="fas fa-times"></i> Cancel
-                  </button>
-                  <button className="delete-button danger" onClick={handleDelete}>
-                    <i className="fas fa-trash"></i> Delete
-                  </button>
+            <div className="modal-overlay" onClick={() => setShowDeleteConfirmation(false)}>
+              <div 
+                className="delete-confirmation-modal" 
+                onClick={e => e.stopPropagation()}
+                style={{
+                  backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : ThemeUtility.light.background.primary,
+                  color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c'
+                }}
+              >
+                <div className="delete-modal-content">
+                  <div 
+                    className="delete-modal-header"
+                    style={{
+                      borderBottomColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : ThemeUtility.light.border.light,
+                      color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c'
+                    }}
+                  >
+                    <div 
+                      className="delete-icon-container"
+                      style={{
+                        color: preferences.accentColor === 'red' ? ThemeUtility.accent.red.primary : ThemeUtility.accent.blue.primary
+                      }}
+                    >
+                      <i className="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2 style={{color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c'}}>Delete Item</h2>
+                    <button 
+                      className="close-modal-button" 
+                      onClick={() => setShowDeleteConfirmation(false)}
+                      style={{
+                        color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : ThemeUtility.light.text.secondary
+                      }}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <div 
+                    className="delete-modal-body"
+                    style={{
+                      backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : ThemeUtility.light.background.secondary,
+                      color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c'
+                    }}
+                  >
+                    <div className="item-to-delete">
+                      <i className="fas fa-file-alt item-icon"></i>
+                      <span className="item-name" style={{color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c', fontWeight: 500}}>{item.description}</span>
+                    </div>
+
+                    <p 
+                      className="delete-warning-text"
+                      style={{
+                        color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c',
+                        fontWeight: 500
+                      }}
+                    >
+                      Are you sure you want to delete this item?
+                    </p>
+
+                    <div 
+                      className="warning-container"
+                      style={{
+                        backgroundColor: preferences.themeMode === 'dark' ? 'rgba(229, 62, 62, 0.1)' : 'rgba(229, 62, 62, 0.08)'
+                      }}
+                    >
+                      <i className="fas fa-exclamation-circle" style={{color: '#e53e3e'}}></i>
+                      <span style={{color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c', fontWeight: 500}}>This action cannot be undone. All associated information will be permanently removed.</span>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="delete-modal-footer"
+                    style={{
+                      backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : ThemeUtility.light.background.secondary,
+                      borderTopColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : ThemeUtility.light.border.light
+                    }}
+                  >
+                    <button 
+                      className="cancel-delete-button" 
+                      onClick={() => setShowDeleteConfirmation(false)}
+                      style={{
+                        backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.tertiary : ThemeUtility.light.background.tertiary,
+                        color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : ThemeUtility.light.text.secondary
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      className="confirm-delete-button" 
+                      onClick={handleDelete}
+                      style={{backgroundColor: preferences.accentColor === 'red' ? ThemeUtility.accent.red.primary : ThemeUtility.accent.blue.primary}}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                      Delete Item
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

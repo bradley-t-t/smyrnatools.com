@@ -17,7 +17,6 @@ export class DatabaseService {
 
     static async tableExists(tableName) {
         if (!tableName) throw new Error('Table name is required');
-
         try {
             const sql = `
                 SELECT EXISTS (
@@ -29,7 +28,6 @@ export class DatabaseService {
             const result = await this.executeRawQuery(sql, [tableName]);
             return result?.[0]?.exists === true;
         } catch (error) {
-            console.error(`Error checking table existence for ${tableName}:`, error);
             return false;
         }
     }

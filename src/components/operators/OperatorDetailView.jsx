@@ -296,7 +296,7 @@ function OperatorDetailView({operatorId, onClose}) {
 
             <div className="detail-header">
                 <div className="header-left">
-                    <button className="back-button" onClick={handleBackClick} aria-label="Back to operators">
+                    <button className="back-button" onClick={handleBackClick} aria-label="Back to operators" style={{backgroundColor: 'var(--accent-color)'}}>
                         <i className="fas fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
@@ -476,34 +476,28 @@ function OperatorDetailView({operatorId, onClose}) {
             </div>
 
             {showDeleteConfirmation && (
-                <div className="confirmation-modal">
-                    <div className="confirmation-content">
+                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
                         <p>Are you sure you want to delete {operator.name}? This action cannot be undone.</p>
-                        <div className="confirmation-actions">
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>
-                                Cancel
-                            </button>
-                            <button className="danger-button" onClick={handleDelete}>
-                                Delete
-                            </button>
+                        <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                            <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>
                 </div>
             )}
 
             {showUnsavedChangesModal && (
-                <div className="confirmation-modal">
-                    <div className="confirmation-content">
+                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to
-                            do?</p>
-                        <div className="confirmation-actions">
-                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>
-                                Continue Editing
-                            </button>
-                            <button
-                                className="primary-button save-button"
+                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
+                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
+                            <button 
+                                className="primary-button save-button" 
+                                style={{backgroundColor: 'var(--accent-color)'}} 
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
                                     try {
@@ -515,19 +509,15 @@ function OperatorDetailView({operatorId, onClose}) {
                                         setTimeout(() => setMessage(''), 3000);
                                     }
                                 }}
-                            >
-                                Save & Leave
-                            </button>
-                            <button
-                                className="danger-button"
+                            >Save & Leave</button>
+                            <button 
+                                className="danger-button" 
                                 onClick={() => {
                                     setShowUnsavedChangesModal(false);
                                     setHasUnsavedChanges(false);
                                     onClose();
                                 }}
-                            >
-                                Discard & Leave
-                            </button>
+                            >Discard & Leave</button>
                         </div>
                     </div>
                 </div>
