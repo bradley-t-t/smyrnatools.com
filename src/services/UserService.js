@@ -12,15 +12,43 @@ class UserServiceImpl {
 
     async getCurrentUser() {
         const userId = sessionStorage.getItem('userId');
-        if (userId) return { id: userId };
+        if (userId) {
+            console.log('Found user ID in session storage:', userId);
 
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data?.user) {
-            console.warn('No authenticated user found');
-            return null;
+            try {
+                const { data, error } = await supabase
+                    .from(USERS_TABLE)
+                    .select('id')
+                    .eq('id', userId)
+                    .single();
+
+                if (data && data.id) {
+                    return { id: userId };
+                } else {
+                    console.warn('User ID in session storage not found in database:', userId);
+                    sessionStorage.removeItem('userId');
+                }
+            } catch (err) {
+                console.error('Error verifying user from session storage:', err);
+            }
         }
 
-        return data.user;
+        try {
+            const { data, error } = await supabase.auth.getUser();
+            if (error || !data?.user) {
+                console.warn('No authenticated user found');
+                return null;
+            }
+
+            if (data.user.id) {
+                sessionStorage.setItem('userId', data.user.id);
+            }
+
+            return data.user;
+        } catch (err) {
+            console.error('Error getting authenticated user:', err);
+            return null;
+        }
     }
 
     async getUserById(userId) {

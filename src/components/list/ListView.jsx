@@ -6,7 +6,7 @@ import {UserService} from '../../services/UserService';
 import ListItemCard from './ListItemCard';
 import ListOverview from './ListOverview';
 import {usePreferences} from '../../context/PreferencesContext';
-import {ListItem} from '../../models/app/DataModels';
+import {ListItem} from '../../models/list/ListItem';
 import ListAddView from './ListAddView';
 import ListDetailView from './ListDetailView';
 
@@ -478,7 +478,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             {showOverview && <OverviewPopup/>}
             {showDetailView && selectedItem && (
                 <div className="modal-backdrop">
-                    <div className="modal-detail-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal-detail-content" onClick={e => e.stopPropagation()} style={{height: '90vh', overflow: 'hidden'}}>
                         <ListDetailView
                             itemId={selectedItem.id}
                             onClose={() => {

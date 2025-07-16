@@ -8,7 +8,6 @@ import OperatorsPage from './pages/operators/OperatorsPage';
 import TrainingHistoryPage from './pages/operators/TrainingHistoryPage';
 import TasksPage from './pages/tasks/TasksPage';
 import SettingsPage from './pages/settings/SettingsPage';
-import ReportsPage from './pages/reports/ReportsPage';
 import RegistrationPage from './pages/auth/RegistrationPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
@@ -38,7 +37,6 @@ function App() {
               <Route path="/operators" element={<OperatorsPage />} />
               <Route path="/operators/training" element={<TrainingHistoryPage />} />
               <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/account" element={<MyAccountPage />} />
               <Route path="/list" element={<ListView />} />

@@ -25,8 +25,12 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
     useEffect(() => {
         async function fetchCurrentUser() {
             const user = await UserService.getCurrentUser();
-            if (!user) return;
+            if (!user) {
+                console.error('No authenticated user found');
+                return;
+            }
 
+            console.log('Current user ID:', user.id);
             setCurrentUserId(user.id);
             const hasPermission = await UserService.hasPermission(user.id, 'list.bypass.plantrestriction');
             setCanBypassPlantRestriction(hasPermission);
@@ -80,6 +84,17 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
 
         setIsSaving(true);
         try {
+            let userId = currentUserId;
+            if (!userId) {
+                const user = await UserService.getCurrentUser();
+                if (!user || !user.id) {
+                    throw new Error('User ID is required. Please ensure you are logged in.');
+                }
+                userId = user.id;
+                setCurrentUserId(userId);
+                console.log('Retrieved user ID at submit time:', userId);
+            }
+
             const updateData = {
                 plant_code: plantCode,
                 description: description.trim(),
@@ -91,7 +106,7 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                 ? await supabase.from('list_items').update(updateData).eq('id', item.id)
                 : await supabase.from('list_items').insert({
                     id: generateUUID(),
-                    user_id: currentUserId,
+                    user_id: userId,
                     ...updateData,
                     created_at: new Date().toISOString(),
                     completed: false
