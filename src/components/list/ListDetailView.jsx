@@ -20,9 +20,11 @@ function ListDetailView({itemId, onClose}) {
   const [message, setMessage] = useState({text: '', type: ''});
 
   useEffect(() => {
+    let isMounted = true;
     if (itemId) {
       Promise.all([fetchItem(), fetchPlants()]).catch(() => {});
     }
+    return () => { isMounted = false; };
   }, [itemId]);
 
 
@@ -181,8 +183,8 @@ function ListDetailView({itemId, onClose}) {
 
   if (loading) {
     return (
-      <div className="popup-outer">
-        <div className="popup-inner">
+      <div className="popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
+        <div className="popup-inner" style={{willChange: 'opacity, transform'}}>
           <div className="popup-header">
             <button className="back-button" onClick={onClose}>
               <i className="fas fa-arrow-left"></i>
@@ -200,8 +202,8 @@ function ListDetailView({itemId, onClose}) {
 
   if (!item) {
     return (
-      <div className="popup-outer">
-        <div className="popup-inner">
+      <div className="popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
+        <div className="popup-inner" style={{willChange: 'opacity, transform'}}>
           <div className="popup-header">
             <button className="back-button" onClick={onClose}>
               <i className="fas fa-arrow-left"></i>
@@ -225,8 +227,8 @@ function ListDetailView({itemId, onClose}) {
   const statusInfo = calculateStatusInfo();
 
   return (
-    <div className="popup-outer">
-      <div className="popup-inner">
+    <div className="popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
+      <div className="popup-inner" style={{willChange: 'opacity, transform'}}>
         <div className="popup-header" style={{position: 'relative'}}>
           <button className="back-button" onClick={onClose}>
             <i className="fas fa-arrow-left"></i>

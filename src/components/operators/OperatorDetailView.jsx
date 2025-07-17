@@ -375,7 +375,7 @@ function OperatorDetailView({operatorId, onClose}) {
                     </div>
 
                     <div className="form-group">
-                        <label>Smyrna ID</label>
+                        <label>Employee ID</label>
                         <input
                             type="text"
                             value={smyrnaId}

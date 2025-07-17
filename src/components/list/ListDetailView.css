@@ -1111,6 +1111,8 @@
   align-items: center;
   justify-content: center;
   overflow: auto;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .popup-inner {
@@ -1123,6 +1125,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  will-change: opacity, transform;
+  transition: opacity 0.18s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.popup-inner {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.popup-outer[aria-hidden="true"] .popup-inner {
+  opacity: 0;
+  transform: translateY(20px);
 }
 
 .popup-header {
