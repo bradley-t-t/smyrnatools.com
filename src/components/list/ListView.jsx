@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './ListView.css';
 import '../../styles/FilterStyles.css';
 import {supabase} from '../../services/DatabaseService';
+import LoadingScreen from '../common/LoadingScreen';
 import {UserService} from '../../services/UserService';
 import ListItemCard from './ListItemCard';
 import ListOverview from './ListOverview';
@@ -388,8 +389,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             <div className="content-container">
                 {isLoading ? (
                     <div className="loading-container">
-                        <div className="ios-spinner"></div>
-                        <p>Loading list items...</p>
+                        <LoadingScreen message="Loading list items..." inline={true} />
                     </div>
                 ) : filteredItems.length === 0 ? (
                     <div className="no-results-container">

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import './SimpleNavbar.css';
+import './Navigation.css';
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
 import {usePreferences} from '../../context/PreferencesContext';
 import {UserService} from "../../services/UserService";
@@ -63,7 +63,7 @@ const menuItems = [
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
 ];
 
-export default function SimpleNavbar({
+export default function Navigation({
                                          selectedView,
                                          onSelectView,
                                          children,
@@ -154,7 +154,7 @@ export default function SimpleNavbar({
             <div className={`vertical-navbar ${collapsed ? 'collapsed' : ''}`}>
                 <div className="navbar-header">
                     <div className="logo-container">
-                        <img src={SmyrnaLogo} alt="Smyrna Logo" className="navbar-logo"/>
+                        <img src={SmyrnaLogo} alt="Smyrna Logo" className="navbar-logo" title="Smyrna Ready Mix"/>
                     </div>
                 </div>
                 <button className="collapse-btn" onClick={toggleCollapse}>

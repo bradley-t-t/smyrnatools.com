@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './index.css';
 import './App.css';
 import {supabase} from '../services/DatabaseService';
-import MobileNavToggle from '../components/common/MobileNavToggle';
+import MobileNavigation from '../components/common/MobileNavigation';
 import MixersView from '../components/mixers/MixersView';
 import ManagersView from '../components/managers/ManagersView';
 import SettingsView from '../components/settings/SettingsView';
@@ -11,7 +11,7 @@ import OperatorsView from '../components/operators/OperatorsView';
 import LoginView from '../components/auth/LoginView';
 import LoadingScreen from '../components/common/LoadingScreen';
 import MyAccountView from '../components/users/MyAccountView';
-import SimpleNavbar from "../components/common/SimpleNavbar";
+import Navigation from "../components/common/Navigation";
 import GuestView from '../components/auth/GuestView';
 import ListView from '../components/list/ListView';
 import {AuthProvider} from '../context/AuthContext';
@@ -175,7 +175,7 @@ function AppContent() {
     }, [userId]);
 
     if (loading) {
-        return <LoadingScreen message="Loading application..."/>;
+        return <LoadingScreen message="Loading application..." fullPage={true}/>;
     }
 
     if (!userId) {
@@ -318,8 +318,8 @@ function AppContent() {
 
     return (
         <div className="App">
-            {isMobile && <MobileNavToggle/>}
-            <SimpleNavbar
+            {isMobile && <MobileNavigation/>}
+            <Navigation
                 selectedView={selectedView}
                 onSelectView={handleViewSelection}
                 unreadMessageCount={unreadMessageCount}
@@ -329,7 +329,7 @@ function AppContent() {
                 userId={userId}
             >
                 {renderCurrentView()}
-            </SimpleNavbar>
+            </Navigation>
         </div>
     );
 }

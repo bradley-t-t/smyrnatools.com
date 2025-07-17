@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './MixerCommentModal.css';
 import {MixerCommentService} from '../../services/MixerCommentService';
+import LoadingScreen from '../common/LoadingScreen';
 import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
 
@@ -128,8 +129,7 @@ function MixerCommentModal({mixerId, mixerNumber, onClose}) {
                         <h3>Comments History</h3>
                         {isLoading ? (
                             <div className="loading-container">
-                                <div className="ios-spinner"></div>
-                                <p>Loading comments...</p>
+                                    <LoadingScreen message="Loading comments..." inline={true} />
                             </div>
                         ) : comments.length === 0 ? (
                             <div className="empty-comments">

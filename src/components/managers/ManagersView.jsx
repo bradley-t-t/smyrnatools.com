@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './ManagersView.css';
 import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
+import LoadingScreen from '../common/LoadingScreen';
 import ManagerDetailView from './ManagerDetailView';
 import ManagerCard from './ManagerCard';
 import {usePreferences} from '../../context/PreferencesContext';
@@ -289,8 +290,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
-                                <div className="ios-spinner"></div>
-                                <p>Loading managers...</p>
+                                <LoadingScreen message="Loading managers..." inline={true} />
                             </div>
                         ) : filteredManagers.length === 0 ? (
                             <div className="no-results-container">

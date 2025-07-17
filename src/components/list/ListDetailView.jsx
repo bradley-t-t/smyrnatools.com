@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {supabase} from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
+import LoadingScreen from '../common/LoadingScreen';
 import ThemeUtility from '../../utils/ThemeUtility';
 import './ListDetailView.css';
 
@@ -188,10 +189,7 @@ function ListDetailView({itemId, onClose}) {
             <div style={{width: '36px'}}></div>
           </div>
           <div className="detail-content loading">
-            <div className="loader">
-              <div className="spinner"></div>
-              <p style={{color: '#ffffff', textAlign: 'center', flex: 1}}>Loading item details...</p>
-            </div>
+            <LoadingScreen message="Loading item details..." inline={true} />
           </div>
         </div>
     );

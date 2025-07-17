@@ -3,6 +3,7 @@ import './OperatorsView.css';
 import '../../styles/FilterStyles.css';
 import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
+import LoadingScreen from '../common/LoadingScreen';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';
 import OperatorsOverview from './OperatorsOverview';
@@ -398,8 +399,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
-                                <div className="ios-spinner"></div>
-                                <p>Loading operators...</p>
+                                <LoadingScreen message="Loading operators..." inline={true} />
                             </div>
                         ) : filteredOperators.length === 0 ? (
                             <div className="no-results-container">

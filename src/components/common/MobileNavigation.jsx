@@ -1,8 +1,8 @@
 import React from 'react';
 import {usePreferences} from '../../context/PreferencesContext';
-import './MobileNavToggle.css';
+import './MobileNavgation.css';
 
-function MobileNavToggle() {
+function MobileNavigation() {
     const {preferences, toggleNavbarMinimized} = usePreferences();
 
     const handleToggle = () => {
@@ -20,4 +20,4 @@ function MobileNavToggle() {
     );
 }
 
-export default MobileNavToggle;
+export default MobileNavigation;
