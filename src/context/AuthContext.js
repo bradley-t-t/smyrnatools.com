@@ -197,7 +197,16 @@ export function AuthProvider({children}) {
                 supabase.from('users_profiles').insert(profile)
             ]);
 
-            if (userError || profileError) throw new Error(userError?.message || profileError?.message || 'User creation error');
+            if (userError || profileError) {
+                if (userError) console.error(`Error creating user:`, userError);
+                if (profileError) console.error(`Error creating profile:`, profileError);
+
+                if (!userError && profileError) {
+                    await supabase.from('users').delete().eq('id', userId);
+                }
+
+                throw new Error(userError?.message || profileError?.message || 'User creation error');
+            }
 
             const guestRole = await UserService.getRoleByName('Guest');
             if (!guestRole) throw new Error('Could not find Guest role');

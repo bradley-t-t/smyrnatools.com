@@ -3,6 +3,7 @@ import { usePresence } from '../../hooks/UsePresence';
 import { usePreferences } from '../../context/PreferencesContext';
 import { AuthService } from '../../services/AuthService';
 import './OnlineUsersOverlay.css';
+import {UserService} from "../../services/UserService";
 
 function OnlineUsersOverlay() {
     const { onlineUsers, loading, error } = usePresence();
@@ -12,7 +13,7 @@ function OnlineUsersOverlay() {
     const [animateCount, setAnimateCount] = useState(false);
     const prevCountRef = useRef(onlineUsers.length);
     const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
-    const isLoggedIn = AuthService.isLoggedIn();
+    const isLoggedIn = true;
 
     useEffect(() => {
         if (!loading && onlineUsers.length !== prevCountRef.current) {

@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OperatorService } from '../../services/OperatorService';
-import { AuthService } from '../../services/AuthService';
+import { UserService } from '../../services/UserService';
 import { generateUUID, isValidUUID, safeUUID } from '../../utils/UUIDUtility';
 import './OperatorAddView.css';
 
 function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
-    const hasOperators = Array.isArray(operators) && operators.length > 0;
     const [name, setName] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('Active');
@@ -14,6 +13,18 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
     const [assignedTrainer, setAssignedTrainer] = useState('0');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+    const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
+
+    useEffect(() => {
+        async function checkPermission() {
+            const userId = sessionStorage.getItem('userId');
+            if (userId) {
+                const hasPermission = await UserService.hasPermission(userId, 'operators.training');
+                setHasTrainingPermission(hasPermission);
+            }
+        }
+        checkPermission();
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -29,10 +40,15 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
             return;
         }
 
+        if (!hasTrainingPermission && ['Training', 'Pending Start'].includes(status)) {
+            setError('You do not have permission to assign this status.');
+            return;
+        }
+
         setIsSaving(true);
 
         try {
-            let userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
+            let userId = sessionStorage.getItem('userId');
             if (!isValidUUID(userId)) {
                 throw new Error('Invalid or missing User ID. Please log in again.');
             }
@@ -128,9 +144,9 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                             >
                                 <option value="Active">Active</option>
                                 <option value="Light Duty">Light Duty</option>
-                                <option value="Pending Start">Pending Start</option>
                                 <option value="Terminated">Terminated</option>
-                                <option value="Training">Training</option>
+                                {hasTrainingPermission && <option value="Pending Start">Pending Start</option>}
+                                {hasTrainingPermission && <option value="Training">Training</option>}
                             </select>
                         </div>
 
@@ -148,50 +164,54 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                             </select>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="isTrainer">Trainer Status</label>
-                            <select
-                                id="isTrainer"
-                                className="ios-select"
-                                value={isTrainer ? "true" : "false"}
-                                onChange={(e) => {
-                                    const isTrainerValue = e.target.value === "true";
-                                    setIsTrainer(isTrainerValue);
-                                    if (isTrainerValue) {
-                                        setAssignedTrainer('0');
-                                    }
-                                }}
-                            >
-                                <option value="false">Non-Trainer</option>
-                                <option value="true">Trainer</option>
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="assignedTrainer">Assigned Trainer</label>
-                            <select
-                                id="assignedTrainer"
-                                className="ios-select"
-                                value={assignedTrainer}
-                                onChange={(e) => setAssignedTrainer(e.target.value)}
-                                disabled={isTrainer}
-                            >
-                                <option value="0">None</option>
-                                {operators
-                                    .filter(operator => operator.isTrainer)
-                                    .map(trainer => (
-                                        <option key={trainer.employeeId} value={trainer.employeeId}>
-                                            {trainer.name}
-                                        </option>
-                                    ))}
-                            </select>
-                            {operators.filter(op => op.isTrainer).length === 0 && (
-                                <div className="warning-message"
-                                     style={{ marginTop: '5px', fontSize: '12px', color: '#FF9500' }}>
-                                    No trainers available
+                        {hasTrainingPermission && (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="isTrainer">Trainer Status</label>
+                                    <select
+                                        id="isTrainer"
+                                        className="ios-select"
+                                        value={isTrainer ? "true" : "false"}
+                                        onChange={(e) => {
+                                            const isTrainerValue = e.target.value === "true";
+                                            setIsTrainer(isTrainerValue);
+                                            if (isTrainerValue) {
+                                                setAssignedTrainer('0');
+                                            }
+                                        }}
+                                    >
+                                        <option value="false">Non-Trainer</option>
+                                        <option value="true">Trainer</option>
+                                    </select>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="assignedTrainer">Assigned Trainer</label>
+                                    <select
+                                        id="assignedTrainer"
+                                        className="ios-select"
+                                        value={assignedTrainer}
+                                        onChange={(e) => setAssignedTrainer(e.target.value)}
+                                        disabled={isTrainer}
+                                    >
+                                        <option value="0">None</option>
+                                        {operators
+                                            .filter(operator => operator.isTrainer)
+                                            .map(trainer => (
+                                                <option key={trainer.employeeId} value={trainer.employeeId}>
+                                                    {trainer.name}
+                                                </option>
+                                            ))}
+                                    </select>
+                                    {operators.filter(op => op.isTrainer).length === 0 && (
+                                        <div className="warning-message"
+                                             style={{ marginTop: '5px', fontSize: '12px', color: '#FF9500' }}>
+                                            No trainers available
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
 
                         <button
                             type="submit"

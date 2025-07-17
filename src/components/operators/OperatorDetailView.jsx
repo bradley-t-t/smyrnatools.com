@@ -7,10 +7,12 @@ import supabase from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';
 import {generateEmployeeIdFromUUID, generateRandomEmployeeId} from '../../utils/IDUtility';
+import { AuthService } from '../../services/AuthService';
 import './OperatorDetailView.css';
 
 function OperatorDetailView({operatorId, onClose}) {
     const {preferences} = usePreferences();
+    const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
     const [operator, setOperator] = useState(null);
     const [trainers, setTrainers] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -127,6 +129,11 @@ function OperatorDetailView({operatorId, onClose}) {
     };
 
     const handleSave = async () => {
+        if (!hasTrainingPermission && ['Training', 'Pending Start'].includes(status)) {
+            alert('You do not have permission to assign this status.');
+            return;
+        }
+
         return new Promise(async (resolve, reject) => {
             if (!operator || !operator.employeeId) {
                 alert('Error: Cannot save operator with undefined Employee ID');
@@ -264,6 +271,17 @@ function OperatorDetailView({operatorId, onClose}) {
         return plant ? plant.plantName : plantCode || 'No Plant';
     };
 
+    useEffect(() => {
+        async function checkPermission() {
+            const userId = sessionStorage.getItem('userId');
+            if (userId) {
+                const hasPermission = await UserService.hasPermission(userId, 'operators.training');
+                setHasTrainingPermission(hasPermission);
+            }
+        }
+        checkPermission();
+    }, []);
+
     if (isLoading) {
         return (
             <div className="operator-detail-view">
@@ -383,12 +401,11 @@ function OperatorDetailView({operatorId, onClose}) {
                             onChange={(e) => setStatus(e.target.value)}
                             className="form-control"
                         >
-                            <option value="">Select Status</option>
                             <option value="Active">Active</option>
                             <option value="Light Duty">Light Duty</option>
-                            <option value="Pending Start">Pending Start</option>
                             <option value="Terminated">Terminated</option>
-                            <option value="Training">Training</option>
+                            {hasTrainingPermission && <option value="Pending Start">Pending Start</option>}
+                            {hasTrainingPermission && <option value="Training">Training</option>}
                         </select>
                     </div>
 
@@ -426,45 +443,47 @@ function OperatorDetailView({operatorId, onClose}) {
                     </div>
                 </div>
 
-                <div className="detail-card">
-                    <h2>Training Information</h2>
+                {hasTrainingPermission && (
+                    <div className="detail-card">
+                        <h2>Training Information</h2>
 
-                    <div className="form-group">
-                        <label>Trainer Status</label>
-                        <select
-                            id="trainer-status"
-                            className="form-control"
-                            value={isTrainer ? "true" : "false"}
-                            onChange={(e) => {
-                                const isTrainerValue = e.target.value === "true";
-                                setIsTrainer(isTrainerValue);
-                                if (isTrainerValue) {
-                                    setAssignedTrainer(null);
-                                }
-                            }}
-                        >
-                            <option value="false">Non-Trainer</option>
-                            <option value="true">Trainer</option>
-                        </select>
-                    </div>
+                        <div className="form-group">
+                            <label>Trainer Status</label>
+                            <select
+                                id="trainer-status"
+                                className="form-control"
+                                value={isTrainer ? "true" : "false"}
+                                onChange={(e) => {
+                                    const isTrainerValue = e.target.value === "true";
+                                    setIsTrainer(isTrainerValue);
+                                    if (isTrainerValue) {
+                                        setAssignedTrainer(null);
+                                    }
+                                }}
+                            >
+                                <option value="false">Non-Trainer</option>
+                                <option value="true">Trainer</option>
+                            </select>
+                        </div>
 
-                    <div className="form-group">
-                        <label>Assigned Trainer</label>
-                        <select
-                            value={assignedTrainer}
-                            onChange={(e) => setAssignedTrainer(e.target.value)}
-                            className="form-control"
-                            disabled={isTrainer}
-                        >
-                            <option value="">None</option>
-                            {trainers.map(trainer => (
-                                <option key={trainer.employeeId} value={trainer.employeeId}>
-                                    {trainer.name}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="form-group">
+                            <label>Assigned Trainer</label>
+                            <select
+                                value={assignedTrainer}
+                                onChange={(e) => setAssignedTrainer(e.target.value)}
+                                className="form-control"
+                                disabled={isTrainer}
+                            >
+                                <option value="">None</option>
+                                {trainers.map(trainer => (
+                                    <option key={trainer.employeeId} value={trainer.employeeId}>
+                                        {trainer.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div className="form-actions">
                     <button

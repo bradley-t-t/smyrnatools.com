@@ -112,7 +112,6 @@ export class Mixer {
         try {
             return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate);
         } catch (error) {
-            console.error('Error checking verification status:', error);
             if (!this.updatedLast || !this.updatedBy) return false;
 
             const lastVerified = new Date(this.updatedLast);

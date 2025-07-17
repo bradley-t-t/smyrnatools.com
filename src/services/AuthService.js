@@ -61,10 +61,7 @@ class AuthServiceImpl {
                 email: trimmedEmail,
                 password
             });
-        } catch (supabaseAuthError) {
-            // If Supabase auth is not used, ignore this error
-            // If used, handle accordingly
-        }
+        } catch (supabaseAuthError) { }
 
         this.currentUser = {...data, userId: data.id};
         this.isAuthenticated = true;
@@ -79,7 +76,7 @@ class AuthServiceImpl {
         if (!firstName?.trim() || !lastName?.trim()) throw new Error('First and last name are required');
 
         const trimmedEmail = email.trim().toLowerCase();
-        const {data: existingUser} = await supabase
+        const { data: existingUser } = await supabase
             .from(USERS_TABLE)
             .select('id')
             .eq('email', trimmedEmail)
@@ -101,22 +98,13 @@ class AuthServiceImpl {
             updated_at: now
         };
 
-        const profile = {
-            id: userId,
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            plant_code: '',
-            created_at: now,
-            updated_at: now
-        };
-
-        const {error: userError} = await supabase.from(USERS_TABLE).insert(user);
+        const { error: userError } = await supabase.from(USERS_TABLE).insert(user);
         if (userError) {
             console.error(`Error creating user ${trimmedEmail}:`, userError);
             throw userError;
         }
 
-        const {data: createdUser, error: verifyError} = await supabase
+        const { data: createdUser, error: verifyError } = await supabase
             .from(USERS_TABLE)
             .select('id')
             .eq('id', userId)
@@ -127,9 +115,22 @@ class AuthServiceImpl {
             throw new Error('User creation failed');
         }
 
-        const {error: profileError} = await supabase.from(PROFILES_TABLE).insert(profile);
+        const profile = {
+            id: userId,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            plant_code: '',
+            created_at: now,
+            updated_at: now
+        };
+
+
+        const { error: profileError } = await supabase.from(PROFILES_TABLE).insert(profile);
         if (profileError) {
             console.error(`Error creating profile for ${userId}:`, profileError);
+
+            // Rollback the user creation if the profile creation fails
+            await supabase.from(USERS_TABLE).delete().eq('id', userId);
             throw profileError;
         }
 
@@ -139,7 +140,7 @@ class AuthServiceImpl {
         const roleAssigned = await UserService.assignRole(userId, guestRole.id);
         if (!roleAssigned) throw new Error('Role assignment failed');
 
-        this.currentUser = {...user, userId};
+        this.currentUser = { ...user, userId };
         this.isAuthenticated = true;
         sessionStorage.setItem('userId', userId);
         this._notifyObservers();
