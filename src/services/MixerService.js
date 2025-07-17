@@ -3,6 +3,7 @@ import {Mixer} from '../models/mixers/Mixer';
 import {MixerUtility} from '../utils/MixerUtility';
 import {MixerHistory} from '../models/mixers/MixerHistory';
 import AuthUtility from "../utils/AuthUtility";
+import {UserService} from "./UserService";
 
 const MIXERS_TABLE = 'mixers';
 const HISTORY_TABLE = 'mixers_history';
@@ -173,7 +174,7 @@ export class MixerService {
         const id = typeof mixerId === 'object' ? mixerId.id : mixerId;
         if (!id) throw new Error('Mixer ID is required');
         if (!userId) {
-            const {data} = await AuthUtility.getUserId();
+            const {data} = await UserService.getCurrentUser();
             userId = data?.user?.id;
         }
 

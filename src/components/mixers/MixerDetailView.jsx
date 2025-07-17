@@ -117,7 +117,7 @@ function MixerDetailView({mixerId, onClose}) {
             if (isLoading || !mixer) return;
 
             try {
-                const userId = await AuthUtility.getUserId();
+                const userId = await UserService.getCurrentUser();
                 if (!userId) return;
 
                 const hasPermission = await UserService.hasPermission(userId, 'mixers.bypass.plantrestriction');
@@ -173,7 +173,7 @@ function MixerDetailView({mixerId, onClose}) {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [hasUnsavedChanges]);
 
-    async function handleSave() {
+    async function handleSave(overrideValues = {}) {
         if (!mixer?.id) {
             alert('Error: Cannot save mixer with undefined ID');
             return;
@@ -181,7 +181,7 @@ function MixerDetailView({mixerId, onClose}) {
 
         setIsSaving(true);
         try {
-            const userId = await AuthUtility.getUserId();
+            const userId = await UserService.getCurrentUser();
 
             const formatDate = date => {
                 if (!date) return null;
@@ -190,20 +190,21 @@ function MixerDetailView({mixerId, onClose}) {
                 return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`;
             };
 
+            // Use override values if provided, otherwise use current state
             const updatedMixer = {
                 ...mixer,
                 id: mixer.id,
-                truckNumber,
-                assignedOperator: assignedOperator || null,
-                assignedPlant,
-                status,
-                cleanlinessRating: cleanlinessRating || null,
-                lastServiceDate: formatDate(lastServiceDate),
-                lastChipDate: formatDate(lastChipDate),
-                vin,
-                make,
-                model,
-                year,
+                truckNumber: overrideValues.truckNumber ?? truckNumber,
+                assignedOperator: (overrideValues.assignedOperator ?? assignedOperator) || null,
+                assignedPlant: overrideValues.assignedPlant ?? assignedPlant,
+                status: overrideValues.status ?? status,
+                cleanlinessRating: (overrideValues.cleanlinessRating ?? cleanlinessRating) || null,
+                lastServiceDate: formatDate(overrideValues.lastServiceDate ?? lastServiceDate),
+                lastChipDate: formatDate(overrideValues.lastChipDate ?? lastChipDate),
+                vin: overrideValues.vin ?? vin,
+                make: overrideValues.make ?? make,
+                model: overrideValues.model ?? model,
+                year: overrideValues.year ?? year,
                 updatedAt: new Date().toISOString(),
                 updatedBy: userId,
                 updatedLast: mixer.updatedLast
@@ -216,17 +217,17 @@ function MixerDetailView({mixerId, onClose}) {
             setTimeout(() => setMessage(''), 5000);
 
             setOriginalValues({
-                truckNumber,
-                assignedOperator,
-                assignedPlant,
-                status,
-                cleanlinessRating,
-                lastServiceDate,
-                lastChipDate,
-                vin,
-                make,
-                model,
-                year
+                truckNumber: updatedMixer.truckNumber,
+                assignedOperator: updatedMixer.assignedOperator,
+                assignedPlant: updatedMixer.assignedPlant,
+                status: updatedMixer.status,
+                cleanlinessRating: updatedMixer.cleanlinessRating,
+                lastServiceDate: updatedMixer.lastServiceDate ? new Date(updatedMixer.lastServiceDate) : null,
+                lastChipDate: updatedMixer.lastChipDate ? new Date(updatedMixer.lastChipDate) : null,
+                vin: updatedMixer.vin,
+                make: updatedMixer.make,
+                model: updatedMixer.model,
+                year: updatedMixer.year
             });
 
             setHasUnsavedChanges(false);
@@ -267,7 +268,7 @@ function MixerDetailView({mixerId, onClose}) {
                 });
             }
 
-            const userId = await AuthUtility.getUserId();
+            const userId = await UserService.getCurrentUser();
 
             const now = new Date().toISOString();
             const {data, error} = await supabase
@@ -488,21 +489,51 @@ function MixerDetailView({mixerId, onClose}) {
                             <div className="form-group">
                                 <label>Assigned Operator</label>
                                 <div className="operator-select-container">
-                                    <button className="operator-select-button form-control" onClick={() => canEditMixer && setShowOperatorModal(true)} type="button" disabled={!canEditMixer} style={!canEditMixer ? {cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa'} : {}}>
-                                        <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>{assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}</span>
+                                    <button
+                                        className="operator-select-button form-control"
+                                        onClick={() => canEditMixer && setShowOperatorModal(true)}
+                                        type="button"
+                                        disabled={!canEditMixer}
+                                        style={!canEditMixer ? { cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa' } : {}}
+                                    >
+                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}
+                                        </span>
                                     </button>
                                     {assignedOperator && canEditMixer && (
-                                        <button className="unassign-operator-button" onClick={async () => {
-                                            if (window.confirm(`Are you sure you want to unassign the operator? The truck status will be changed to Spare.`)) {
-                                                setAssignedOperator(null);
-                                                setStatus('Spare');
-                                                setMessage('Operator unassigned and status set to Spare');
-                                                setTimeout(() => setMessage(''), 3000);
-                                                await handleSave();
-                                                window.location.reload();
-                                            }
-                                        }} type="button">
-                                            <i className="fas fa-user-slash"></i> Unassign Operator
+                                        <button
+                                            className="unassign-operator-button"
+                                            title="Unassign Operator"
+                                            onClick={async () => {
+                                                try {
+                                                    // Save with specific values, not relying on state updates
+                                                    await handleSave({
+                                                        assignedOperator: null,
+                                                        status: 'Spare'
+                                                    });
+
+                                                    // Update local state after save
+                                                    setAssignedOperator(null);
+                                                    setStatus('Spare');
+
+                                                    // Refresh operators and mixer data
+                                                    const [updatedOperators, updatedMixer] = await Promise.all([
+                                                        OperatorService.fetchOperators(),
+                                                        MixerService.fetchMixerById(mixerId)
+                                                    ]);
+                                                    setOperators(updatedOperators);
+                                                    setMixer(updatedMixer);
+                                                    setMessage('Operator unassigned and status set to Spare');
+                                                    setTimeout(() => setMessage(''), 3000);
+                                                } catch (error) {
+                                                    console.error('Error unassigning operator:', error);
+                                                    setMessage('Error unassigning operator. Please try again.');
+                                                    setTimeout(() => setMessage(''), 3000);
+                                                }
+                                            }}
+                                            type="button"
+                                        >
+                                            Unassign Operator
                                         </button>
                                     )}
                                 </div>
@@ -510,10 +541,39 @@ function MixerDetailView({mixerId, onClose}) {
                                     <OperatorSelectModal
                                         isOpen={showOperatorModal}
                                         onClose={() => setShowOperatorModal(false)}
-                                        onSelect={operatorId => {
-                                            setAssignedOperator(operatorId === '0' ? '' : operatorId);
-                                            if (operatorId && operatorId !== '0') setStatus('Active');
+                                        onSelect={async operatorId => {
+                                            const newOperator = operatorId === '0' ? '' : operatorId;
+                                            const newStatus = newOperator ? 'Active' : status;
+
                                             setShowOperatorModal(false);
+
+                                            if (newOperator) {
+                                                try {
+                                                    // Save with specific values, not relying on state updates
+                                                    await handleSave({
+                                                        assignedOperator: newOperator,
+                                                        status: newStatus
+                                                    });
+
+                                                    // Update local state after save
+                                                    setAssignedOperator(newOperator);
+                                                    setStatus(newStatus);
+
+                                                    // Refresh operators and mixer data
+                                                    const [updatedOperators, updatedMixer] = await Promise.all([
+                                                        OperatorService.fetchOperators(),
+                                                        MixerService.fetchMixerById(mixerId)
+                                                    ]);
+                                                    setOperators(updatedOperators);
+                                                    setMixer(updatedMixer);
+                                                    setMessage('Operator assigned and status set to Active');
+                                                    setTimeout(() => setMessage(''), 3000);
+                                                } catch (error) {
+                                                    console.error('Error assigning operator:', error);
+                                                    setMessage('Error assigning operator. Please try again.');
+                                                    setTimeout(() => setMessage(''), 3000);
+                                                }
+                                            }
                                         }}
                                         currentValue={assignedOperator}
                                         mixers={mixers}
@@ -605,8 +665,8 @@ function MixerDetailView({mixerId, onClose}) {
                         <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
                         <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
                             <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button 
-                                className="primary-button" 
+                            <button
+                                className="primary-button"
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
                                     try {
@@ -617,12 +677,12 @@ function MixerDetailView({mixerId, onClose}) {
                                         setMessage('Error saving changes. Please try again.');
                                         setTimeout(() => setMessage(''), 3000);
                                     }
-                                }} 
-                                disabled={!canEditMixer} 
+                                }}
+                                disabled={!canEditMixer}
                                 style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', opacity: !canEditMixer ? '0.6' : '1', cursor: !canEditMixer ? 'not-allowed' : 'pointer'}}
                             >Save & Leave</button>
-                            <button 
-                                className="danger-button" 
+                            <button
+                                className="danger-button"
                                 onClick={() => {
                                     setShowUnsavedChangesModal(false);
                                     setHasUnsavedChanges(false);

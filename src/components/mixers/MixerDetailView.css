@@ -825,21 +825,62 @@ input[type="date"].form-control {
 .operator-select-container {
     position: relative;
     width: 100%;
-}
-
-.operator-select-button {
     display: flex;
     align-items: center;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
+    gap: 8px;
+    overflow: visible;
 }
 
-.operator-select-button:hover {
-    border-color: var(--primary-color);
-    background-color: rgba(0, 0, 0, 0.02);
+.unassign-operator-button {
+    background: var(--danger-bg, #ffeaea);
+    color: var(--danger, #b80017);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-size: 15px;
+    font-weight: 500;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-shadow: none;
+    display: inline-block;
+}
+
+.unassign-operator-button:hover,
+.unassign-operator-button:focus {
+    background: var(--danger, #b80017);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(184, 0, 23, 0.10);
+}
+
+.unassign-operator-button i {
+    pointer-events: none;
+    font-size: 18px;
+}
+
+.unassign-operator-button[title]:hover:after,
+.unassign-operator-button[title]:focus:after {
+    content: attr(title);
+    position: absolute;
+    left: 50%;
+    bottom: -36px;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.unassign-operator-button[title]:after {
+    content: '';
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
 .metadata-label {
