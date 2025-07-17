@@ -1,20 +1,33 @@
+import { generateUUID, isValidUUID, safeUUID } from '../../utils/UUIDUtility';
+
 export class Operator {
     constructor(data = {}) {
-        this.employeeId = data.employee_id ?? '';
-        this.smyrnaId = data.smyrna_id ?? '';
-        this.name = data.name ?? '';
-        this.plantCode = data.plant_code ?? null;
+        this.employeeId = data.employee_id ?? data.employeeId ?? generateUUID();
+        this.smyrnaId = data.smyrna_id ?? data.smyrnaId ?? null;
+        this.name = data.name?.trim() ?? '';
+        this.plantCode = data.plant_code ?? data.plantCode ?? null;
         this.status = data.status ?? 'Active';
         this.isTrainer = data.is_trainer === true || String(data.is_trainer).toLowerCase() === 'true';
-        this.assignedTrainer = data.assigned_trainer ?? null;
-        this.position = data.position ?? '';
-        this.createdAt = data.created_at ?? new Date().toISOString();
-        this.updatedAt = data.updated_at ?? new Date().toISOString();
+        this.assignedTrainer = data.assigned_trainer ?? data.assignedTrainer ?? null;
+        this.position = data.position ?? null;
+        this.createdAt = data.created_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+        this.updatedAt = data.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     }
 
     static fromApiFormat(data) {
         if (!data) return null;
-        return new Operator(data);
+        return new Operator({
+            employee_id: data.employee_id ?? data.employeeId ?? generateUUID(),
+            smyrna_id: data.smyrna_id ?? data.smyrnaId ?? null,
+            name: data.name ?? '',
+            plant_code: data.plant_code ?? data.plantCode ?? null,
+            status: data.status ?? 'Active',
+            is_trainer: data.is_trainer ?? data.isTrainer ?? false,
+            assigned_trainer: data.assigned_trainer ?? data.assignedTrainer ?? null,
+            position: data.position ?? null,
+            created_at: data.created_at ?? data.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            updated_at: data.updated_at ?? data.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+        });
     }
 
     static fromRow(row) {
@@ -22,46 +35,23 @@ export class Operator {
     }
 
     toApiFormat() {
+        if (!isValidUUID(this.employeeId)) {
+            throw new Error('Invalid employee_id: Must be a valid UUID');
+        }
+        if (this.smyrnaId && isValidUUID(this.smyrnaId)) {
+            throw new Error('smyrna_id cannot be a UUID');
+        }
         return {
             employee_id: this.employeeId,
-            smyrna_id: this.smyrnaId,
-            name: this.name,
-            plant_code: this.plantCode,
-            status: this.status,
-            is_trainer: this.isTrainer,
-            assigned_trainer: this.assignedTrainer,
-            position: this.position,
-            created_at: this.createdAt,
-            updated_at: this.updatedAt
-        };
-    }
-}
-
-export class OperatorHistory {
-    constructor(data = {}) {
-        this.id = data.id ?? null;
-        this.employeeId = data.employee_id ?? '';
-        this.fieldName = data.field_name ?? '';
-        this.oldValue = data.old_value ?? '';
-        this.newValue = data.new_value ?? '';
-        this.changedAt = data.changed_at ?? new Date().toISOString();
-        this.changedBy = data.changed_by ?? null;
-    }
-
-    static fromApiFormat(data) {
-        if (!data) return null;
-        return new OperatorHistory(data);
-    }
-
-    toApiFormat() {
-        return {
-            id: this.id,
-            employee_id: this.employeeId,
-            field_name: this.fieldName,
-            old_value: this.oldValue,
-            new_value: this.newValue,
-            changed_at: this.changedAt,
-            changed_by: this.changedBy
+            smyrna_id: this.smyrnaId ?? null,
+            name: this.name?.trim() || '',
+            plant_code: this.plantCode ?? null,
+            status: this.status || 'Active',
+            is_trainer: this.isTrainer ?? false,
+            assigned_trainer: safeUUID(this.assignedTrainer),
+            position: this.position ?? null,
+            created_at: this.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            updated_at: this.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
         };
     }
 }

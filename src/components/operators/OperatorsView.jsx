@@ -1,16 +1,17 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import './OperatorsView.css';
 import '../../styles/FilterStyles.css';
-import {supabase} from '../../services/DatabaseService';
-import {UserService} from '../../services/UserService';
+import { supabase } from '../../services/DatabaseService';
+import { UserService } from '../../services/UserService';
 import LoadingScreen from '../common/LoadingScreen';
 import OperatorDetailView from './OperatorDetailView';
 import OperatorCard from './OperatorCard';
 import OperatorsOverview from './OperatorsOverview';
-import {usePreferences} from '../../context/PreferencesContext';
+import OperatorAddView from './OperatorAddView';
+import { usePreferences } from '../../context/PreferencesContext';
 
-function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator}) {
-    const {preferences, updateOperatorFilter, resetOperatorFilters} = usePreferences();
+function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator }) {
+    const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences();
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -20,20 +21,11 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
     const [positionFilter, setPositionFilter] = useState(preferences.operatorFilters?.positionFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
     const [showDetailView, setShowDetailView] = useState(false);
     const [selectedOperator, setSelectedOperator] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [newEmployeeId, setNewEmployeeId] = useState('');
-    const [newName, setNewName] = useState('');
-    const [newPlantCode, setNewPlantCode] = useState('');
-    const [newStatus, setNewStatus] = useState('Active');
-    const [newIsTrainer, setNewIsTrainer] = useState(false);
-    const [newAssignedTrainer, setNewAssignedTrainer] = useState('');
-    const [newPosition, setNewPosition] = useState('');
 
     const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
-    const positions = ['Mixer Operator', 'Tractor Operator'];
     const filterOptions = [
         'All Statuses', 'Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training',
         'Trainer', 'Not Trainer'
@@ -78,7 +70,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
     const fetchOperators = async () => {
         try {
-            const {data, error} = await supabase
+            const { data, error } = await supabase
                 .from('operators')
                 .select('*');
 
@@ -113,7 +105,7 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
 
     const fetchPlants = async () => {
         try {
-            const {data, error} = await supabase
+            const { data, error } = await supabase
                 .from('plants')
                 .select('*');
 
@@ -123,43 +115,9 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
         }
     };
 
-    const addOperator = async () => {
-        try {
-            const newOperator = {
-                employee_id: newEmployeeId,
-                name: newName,
-                plant_code: newPlantCode || null,
-                status: newStatus,
-                is_trainer: newIsTrainer,
-                assigned_trainer: newAssignedTrainer || '0',
-                position: newPosition,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-
-            const {error} = await supabase
-                .from('operators')
-                .insert([newOperator]);
-
-            if (error) throw error;
-
-            setNewEmployeeId('');
-            setNewName('');
-            setNewPlantCode('');
-            setNewStatus('Active');
-            setNewIsTrainer(false);
-            setNewAssignedTrainer('');
-            setNewPosition('');
-            setShowAddSheet(false);
-            fetchOperators();
-        } catch (error) {
-            alert('Failed to add operator. Please try again.');
-        }
-    };
-
     const deleteOperator = async (operatorId) => {
         try {
-            const {error} = await supabase
+            const { error } = await supabase
                 .from('operators')
                 .delete()
                 .eq('employee_id', operatorId);
@@ -274,8 +232,8 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                             {title}
                         </h1>
                         <div className="dashboard-actions">
-                            <button 
-                                className="action-button primary rectangular-button" 
+                            <button
+                                className="action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}
                                 style={{ height: '44px', lineHeight: '1' }}
                             >
@@ -434,128 +392,18 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                     </div>
 
                     {showAddSheet && (
-                        <div className="modal-backdrop">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <h2>Add New Operator</h2>
-                                    <button className="close-button" onClick={() => setShowAddSheet(false)}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="modal-body">
-                                    <div className="form-group">
-                                        <label>Employee ID</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={newEmployeeId}
-                                            onChange={(e) => setNewEmployeeId(e.target.value)}
-                                            placeholder="Enter employee ID"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Name</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={newName}
-                                            onChange={(e) => setNewName(e.target.value)}
-                                            placeholder="Enter full name"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Plant</label>
-                                        <select
-                                            className="form-control"
-                                            value={newPlantCode}
-                                            onChange={(e) => setNewPlantCode(e.target.value)}
-                                        >
-                                            <option value="">Select a plant</option>
-                                            {plants.map(plant => (
-                                                <option key={plant.plant_code} value={plant.plant_code}>
-                                                    {plant.plant_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Status</label>
-                                        <select
-                                            className="form-control"
-                                            value={newStatus}
-                                            onChange={(e) => setNewStatus(e.target.value)}
-                                        >
-                                            {statuses.map(status => (
-                                                <option key={status} value={status}>{status}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Position</label>
-                                        <select
-                                            className="form-control"
-                                            value={newPosition}
-                                            onChange={(e) => setNewPosition(e.target.value)}
-                                        >
-                                            <option value="">Select position</option>
-                                            {positions.map(pos => (
-                                                <option key={pos} value={pos}>{pos}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group checkbox-group">
-                                        <input
-                                            type="checkbox"
-                                            id="is-trainer"
-                                            className="form-checkbox"
-                                            checked={newIsTrainer}
-                                            onChange={(e) => setNewIsTrainer(e.target.checked)}
-                                        />
-                                        <label htmlFor="is-trainer">Is a Trainer</label>
-                                    </div>
-                                    {!newIsTrainer && (
-                                        <div className="form-group">
-                                            <label>Assigned Trainer</label>
-                                            <select
-                                                className="form-control"
-                                                value={newAssignedTrainer}
-                                                onChange={(e) => setNewAssignedTrainer(e.target.value)}
-                                            >
-                                                <option value="0">None</option>
-                                                {operators
-                                                    .filter(op => op.isTrainer)
-                                                    .map(trainer => (
-                                                        <option key={trainer.employeeId} value={trainer.employeeId}>
-                                                            {trainer.name}
-                                                        </option>
-                                                    ))}
-                                            </select>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="modal-footer">
-                                    <button
-                                        className="cancel-button"
-                                        onClick={() => setShowAddSheet(false)}
-                                        style={{ borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        className="primary-button"
-                                        onClick={addOperator}
-                                        disabled={!newEmployeeId || !newName}
-                                    >
-                                        Add Operator
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <OperatorAddView
+                            plants={plants}
+                            operators={operators}
+                            onClose={() => setShowAddSheet(false)}
+                            onOperatorAdded={() => {
+                                fetchOperators();
+                                setShowAddSheet(false);
+                            }}
+                        />
                     )}
 
-                    {showOverview && <OverviewPopup/>}
+                    {showOverview && <OverviewPopup />}
                 </>
             )}
         </div>

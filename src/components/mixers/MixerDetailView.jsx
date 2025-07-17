@@ -492,12 +492,14 @@ function MixerDetailView({mixerId, onClose}) {
                                         <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>{assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}</span>
                                     </button>
                                     {assignedOperator && canEditMixer && (
-                                        <button className="unassign-operator-button" onClick={() => {
+                                        <button className="unassign-operator-button" onClick={async () => {
                                             if (window.confirm(`Are you sure you want to unassign the operator? The truck status will be changed to Spare.`)) {
                                                 setAssignedOperator(null);
                                                 setStatus('Spare');
                                                 setMessage('Operator unassigned and status set to Spare');
                                                 setTimeout(() => setMessage(''), 3000);
+                                                await handleSave();
+                                                window.location.reload();
                                             }
                                         }} type="button">
                                             <i className="fas fa-user-slash"></i> Unassign Operator

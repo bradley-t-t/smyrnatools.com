@@ -1,11 +1,11 @@
-import React, {useState} from 'react';
-import {OperatorService} from '../../services/OperatorService';
-import {AuthService} from '../../services/AuthService';
+import React, { useState } from 'react';
+import { OperatorService } from '../../services/OperatorService';
+import { AuthService } from '../../services/AuthService';
+import { generateUUID, isValidUUID, safeUUID } from '../../utils/UUIDUtility';
 import './OperatorAddView.css';
 
-function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
+function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
     const hasOperators = Array.isArray(operators) && operators.length > 0;
-    const [employeeId, setEmployeeId] = useState('');
     const [name, setName] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('Active');
@@ -18,11 +18,6 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-
-        if (!employeeId) {
-            setError('Employee ID is required');
-            return;
-        }
 
         if (!name) {
             setError('Name is required');
@@ -37,46 +32,30 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
         setIsSaving(true);
 
         try {
-            let userId = AuthService.currentUser?.id;
-            if (!userId) {
-                userId = sessionStorage.getItem('userId');
+            let userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
+            if (!isValidUUID(userId)) {
+                throw new Error('Invalid or missing User ID. Please log in again.');
             }
 
-            if (!userId) {
-                throw new Error('User ID not available. Please log in again.');
-            }
-
-            const formatDateForDb = (date) => {
-                if (!date) return null;
-                const d = new Date(date);
-                if (isNaN(d.getTime())) return null;
-
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const hours = String(d.getHours()).padStart(2, '0');
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                const seconds = String(d.getSeconds()).padStart(2, '0');
-
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
-            };
-
-            const now = formatDateForDb(new Date());
+            const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
             const newOperator = {
-                employee_id: employeeId,
-                name,
+                employee_id: generateUUID(),
+                smyrna_id: null,
+                name: name.trim(),
                 plant_code: assignedPlant,
                 status,
-                position,
+                position: position || null,
                 is_trainer: isTrainer,
-                assigned_trainer: isTrainer ? '0' : assignedTrainer,
+                assigned_trainer: safeUUID(assignedTrainer),
                 created_at: now,
                 updated_at: now,
                 updated_by: userId
             };
 
-            const savedOperator = await OperatorService.createOperator(newOperator, userId);
+            console.log('Submitting operator data:', JSON.stringify(newOperator, null, 2));
+
+            const savedOperator = await OperatorService.createOperator(newOperator);
 
             if (savedOperator) {
                 onOperatorAdded(savedOperator);
@@ -86,7 +65,7 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
             }
         } catch (error) {
             console.error('Error adding operator:', error);
-            setError(`Failed to add operator: ${error.message || 'Unknown error'}`);
+            setError(`Failed to add operator: ${error.message || 'Unknown error. Check console for details.'}`);
         } finally {
             setIsSaving(false);
         }
@@ -104,19 +83,6 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                     {error && <div className="error-message">{error}</div>}
 
                     <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="employeeId">Employee ID*</label>
-                            <input
-                                id="employeeId"
-                                type="text"
-                                className="ios-input"
-                                value={employeeId}
-                                onChange={(e) => setEmployeeId(e.target.value)}
-                                placeholder="Enter employee ID"
-                                required
-                            />
-                        </div>
-
                         <div className="form-group">
                             <label htmlFor="name">Name*</label>
                             <input
@@ -141,12 +107,12 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                             >
                                 <option value="">Select Plant</option>
                                 {plants.sort((a, b) => {
-                                    const aCode = parseInt(a.plantCode?.replace(/\D/g, '') || '0');
-                                    const bCode = parseInt(b.plantCode?.replace(/\D/g, '') || '0');
+                                    const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
+                                    const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
                                     return aCode - bCode;
                                 }).map(plant => (
-                                    <option key={plant.plantCode} value={plant.plantCode}>
-                                        ({plant.plantCode}) {plant.plantName}
+                                    <option key={plant.plant_code} value={plant.plant_code}>
+                                        ({plant.plant_code}) {plant.plant_name} {/* Ensure plant_name is displayed */}
                                     </option>
                                 ))}
                             </select>
@@ -221,7 +187,7 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                             </select>
                             {operators.filter(op => op.isTrainer).length === 0 && (
                                 <div className="warning-message"
-                                     style={{marginTop: '5px', fontSize: '12px', color: '#FF9500'}}>
+                                     style={{ marginTop: '5px', fontSize: '12px', color: '#FF9500' }}>
                                     No trainers available
                                 </div>
                             )}

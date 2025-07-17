@@ -13,7 +13,8 @@ function TipBanner() {
         'Be sure to keep your truck issues up to date',
         'Verify your assets by Friday at 10am weekly',
         'Whenever you make changes to an asset, you must re-verify it',
-        'Training operators should not be assigned to an asset until they have completed their training'
+        'Training operators should not be assigned to an asset until they have completed their training',
+        "You can disable these tips in your settings"
     ];
 
     useEffect(() => {

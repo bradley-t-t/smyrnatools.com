@@ -201,21 +201,34 @@ function OperatorDetailView({operatorId, onClose}) {
     };
 
     const handleDelete = async () => {
-        if (!operator) return;
-
-        if (!showDeleteConfirmation) {
-            setShowDeleteConfirmation(true);
-            return;
-        }
-
         try {
-            await OperatorService.deleteOperator(operator.employeeId);
-            alert('Operator deleted successfully');
-            onClose();
+            const confirmed = window.confirm('Are you sure you want to delete this operator?');
+            if (!confirmed) return;
+
+            const userId = sessionStorage.getItem('userId') || (await supabase.auth.getUser()).data?.user?.id;
+            if (!userId) {
+                alert('Your session has expired. Please refresh the page and log in again.');
+                throw new Error('Authentication required: You must be logged in to delete operators.');
+            }
+
+            // Fetch operator details to ensure correct employee_id is used
+            const operatorData = await OperatorService.getOperatorByEmployeeId(operatorId);
+            if (!operatorData || !operatorData.employeeId) {
+                alert('Error: Operator not found or invalid Employee ID.');
+                return;
+            }
+
+            const result = await OperatorService.deleteOperator(operatorData.employeeId);
+
+            if (result) {
+                alert('Operator successfully deleted.');
+                onClose();
+            } else {
+                alert('Failed to delete operator. Please try again.');
+            }
         } catch (error) {
-            alert('Error deleting operator');
-        } finally {
-            setShowDeleteConfirmation(false);
+            console.error('Error during operator deletion:', error);
+            alert('Failed to delete operator. Please try again.');
         }
     };
 
@@ -524,3 +537,4 @@ function OperatorDetailView({operatorId, onClose}) {
 }
 
 export default OperatorDetailView;
+
