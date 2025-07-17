@@ -190,12 +190,23 @@ function MixerDetailView({mixerId, onClose}) {
                 return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`;
             };
 
-            // Use override values if provided, otherwise use current state
+            let assignedOperatorValue = overrideValues.hasOwnProperty('assignedOperator')
+                ? overrideValues.assignedOperator
+                : assignedOperator;
+
+            // If unassigning, use prevAssignedOperator for history
+            let mixerForHistory = {
+                ...mixer,
+                assignedOperator: overrideValues.hasOwnProperty('prevAssignedOperator')
+                    ? overrideValues.prevAssignedOperator
+                    : mixer.assignedOperator
+            };
+
             const updatedMixer = {
                 ...mixer,
                 id: mixer.id,
                 truckNumber: overrideValues.truckNumber ?? truckNumber,
-                assignedOperator: (overrideValues.assignedOperator ?? assignedOperator) || null,
+                assignedOperator: assignedOperatorValue || null,
                 assignedPlant: overrideValues.assignedPlant ?? assignedPlant,
                 status: overrideValues.status ?? status,
                 cleanlinessRating: (overrideValues.cleanlinessRating ?? cleanlinessRating) || null,
@@ -210,7 +221,12 @@ function MixerDetailView({mixerId, onClose}) {
                 updatedLast: mixer.updatedLast
             };
 
-            await MixerService.updateMixer(updatedMixer.id, updatedMixer);
+            await MixerService.updateMixer(
+                updatedMixer.id,
+                updatedMixer,
+                undefined,
+                mixerForHistory // pass previous state for history
+            );
             setMixer(updatedMixer);
 
             setMessage('Changes saved successfully! Mixer needs verification.');
@@ -356,7 +372,7 @@ function MixerDetailView({mixerId, onClose}) {
                     <div className="saving-indicator"></div>
                 </div>
             )}
-                            <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : ThemeUtility.light.background.primary, color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : ThemeUtility.light.text.primary}}>
+            <div className="detail-header" style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : ThemeUtility.light.background.primary, color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : ThemeUtility.light.text.primary}}>
                 <div className="header-left">
                     <button className="back-button" onClick={handleBackClick} aria-label="Back to mixers" style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                         <i className="fas fa-arrow-left"></i>
@@ -506,17 +522,14 @@ function MixerDetailView({mixerId, onClose}) {
                                             title="Unassign Operator"
                                             onClick={async () => {
                                                 try {
-                                                    // Save with specific values, not relying on state updates
+                                                    const prevOperator = assignedOperator;
                                                     await handleSave({
                                                         assignedOperator: null,
-                                                        status: 'Spare'
+                                                        status: 'Spare',
+                                                        prevAssignedOperator: prevOperator
                                                     });
-
-                                                    // Update local state after save
                                                     setAssignedOperator(null);
                                                     setStatus('Spare');
-
-                                                    // Refresh operators and mixer data
                                                     const [updatedOperators, updatedMixer] = await Promise.all([
                                                         OperatorService.fetchOperators(),
                                                         MixerService.fetchMixerById(mixerId)
@@ -525,6 +538,12 @@ function MixerDetailView({mixerId, onClose}) {
                                                     setMixer(updatedMixer);
                                                     setMessage('Operator unassigned and status set to Spare');
                                                     setTimeout(() => setMessage(''), 3000);
+                                                    if (showOperatorModal) {
+                                                        setShowOperatorModal(false);
+                                                        const refreshedOperators = await OperatorService.fetchOperators();
+                                                        setOperators(refreshedOperators);
+                                                        setShowOperatorModal(true);
+                                                    }
                                                 } catch (error) {
                                                     console.error('Error unassigning operator:', error);
                                                     setMessage('Error unassigning operator. Please try again.');
@@ -544,22 +563,15 @@ function MixerDetailView({mixerId, onClose}) {
                                         onSelect={async operatorId => {
                                             const newOperator = operatorId === '0' ? '' : operatorId;
                                             const newStatus = newOperator ? 'Active' : status;
-
                                             setShowOperatorModal(false);
-
                                             if (newOperator) {
                                                 try {
-                                                    // Save with specific values, not relying on state updates
                                                     await handleSave({
                                                         assignedOperator: newOperator,
                                                         status: newStatus
                                                     });
-
-                                                    // Update local state after save
                                                     setAssignedOperator(newOperator);
                                                     setStatus(newStatus);
-
-                                                    // Refresh operators and mixer data
                                                     const [updatedOperators, updatedMixer] = await Promise.all([
                                                         OperatorService.fetchOperators(),
                                                         MixerService.fetchMixerById(mixerId)

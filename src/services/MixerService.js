@@ -2,7 +2,6 @@ import supabase from './DatabaseService';
 import {Mixer} from '../models/mixers/Mixer';
 import {MixerUtility} from '../utils/MixerUtility';
 import {MixerHistory} from '../models/mixers/MixerHistory';
-import AuthUtility from "../utils/AuthUtility";
 import {UserService} from "./UserService";
 
 const MIXERS_TABLE = 'mixers';
@@ -161,24 +160,25 @@ export class MixerService {
 
     static async createMixer(mixer, userId) {
         if (!userId) {
-            const {data} = await supabase.auth.getUser();
-            userId = data?.user?.id;
+            const user = await UserService.getCurrentUser();
+            userId = typeof user === 'object' && user !== null ? user.id : user;
             if (!userId) throw new Error('Authentication required');
         }
-
         if (mixer.id) delete mixer.id;
         return this.addMixer(mixer, userId);
     }
 
-    static async updateMixer(mixerId, mixer, userId) {
+    static async updateMixer(mixerId, mixer, userId, prevMixerState = null) {
         const id = typeof mixerId === 'object' ? mixerId.id : mixerId;
         if (!id) throw new Error('Mixer ID is required');
         if (!userId) {
-            const {data} = await UserService.getCurrentUser();
-            userId = data?.user?.id;
+            const user = await UserService.getCurrentUser();
+            userId = typeof user === 'object' && user !== null ? user.id : user;
         }
+        if (!userId) throw new Error('User ID is required');
 
-        const currentMixer = await this.getMixerById(id);
+        // Use provided previous mixer state if available (for accurate history), otherwise fetch from DB
+        const currentMixer = prevMixerState || await this.getMixerById(id);
         if (!currentMixer) throw new Error(`Mixer with ID ${id} not found`);
 
         const apiData = {
@@ -254,8 +254,12 @@ export class MixerService {
 
     static async createHistoryEntry(mixerId, fieldName, oldValue, newValue, changedBy) {
         if (!mixerId || !fieldName) throw new Error('Mixer ID and field name are required');
-
-        const userId = changedBy ?? (await supabase.auth.getUser())?.data?.user?.id ?? '00000000-0000-0000-0000-000000000000';
+        let userId = changedBy;
+        if (!userId) {
+            const user = await UserService.getCurrentUser();
+            userId = typeof user === 'object' && user !== null ? user.id : user;
+        }
+        if (!userId) userId = '00000000-0000-0000-0000-000000000000';
 
         const {data, error} = await supabase
             .from(HISTORY_TABLE)
