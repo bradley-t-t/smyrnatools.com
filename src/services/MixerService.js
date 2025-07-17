@@ -2,6 +2,7 @@ import supabase from './DatabaseService';
 import {Mixer} from '../models/mixers/Mixer';
 import {MixerUtility} from '../utils/MixerUtility';
 import {MixerHistory} from '../models/mixers/MixerHistory';
+import AuthUtility from "../utils/AuthUtility";
 
 const MIXERS_TABLE = 'mixers';
 const HISTORY_TABLE = 'mixers_history';
@@ -126,8 +127,6 @@ export class MixerService {
     }
 
     static async addMixer(mixer, userId) {
-        if (!userId) throw new Error('Authentication required');
-
         const apiData = {
             truck_number: mixer.truckNumber ?? mixer.truck_number,
             assigned_plant: mixer.assignedPlant ?? mixer.assigned_plant,
@@ -174,9 +173,8 @@ export class MixerService {
         const id = typeof mixerId === 'object' ? mixerId.id : mixerId;
         if (!id) throw new Error('Mixer ID is required');
         if (!userId) {
-            const {data} = await supabase.auth.getUser();
+            const {data} = await AuthUtility.getUserId();
             userId = data?.user?.id;
-            if (!userId) throw new Error('Authentication required');
         }
 
         const currentMixer = await this.getMixerById(id);

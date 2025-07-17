@@ -114,6 +114,32 @@ const ThemeUtility = {
         return mode === 'dark' ? this.dark : this.light;
     },
 
+    getThemeStyles(mode = 'light') {
+        const theme = this.getTheme(mode);
+        return {
+            backgroundColor: theme.background.primary,
+            color: theme.text.primary,
+            borderColor: theme.border.light
+        };
+    },
+
+    getLoadingScreenStyles(mode = 'light') {
+        const theme = this.getTheme(mode);
+        return {
+            content: {
+                backgroundColor: theme.background.primary,
+                color: theme.text.primary,
+                boxShadow: mode === 'dark' ? '0 4px 8px rgba(0, 0, 0, 0.7)' : '0 4px 6px rgba(0, 0, 0, 0.1)'
+            },
+            background: {
+                backgroundColor: theme.background.main
+            },
+            text: {
+                color: theme.text.primary
+            }
+        };
+    },
+
     setColorSeed(seed) {
         if (typeof seed === 'string' && seed) {
             this._colorSeed = seed;

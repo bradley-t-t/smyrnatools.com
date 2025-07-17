@@ -37,6 +37,7 @@ class AuthServiceImpl {
         const trimmedEmail = email?.trim().toLowerCase();
         if (!trimmedEmail || !password) throw new Error('Email and password are required');
 
+        // Custom credential check (legacy)
         const {data, error} = await supabase
             .from(USERS_TABLE)
             .select('id, email, password_hash, salt')
@@ -50,6 +51,19 @@ class AuthServiceImpl {
 
         if (AuthUtility.hashPassword(password, data.salt) !== data.password_hash) {
             throw new Error('Invalid credentials');
+        }
+
+        // Also sign in with Supabase auth to establish a session
+        // If you don't use Supabase auth for your users, you can use signInWithPassword with a dummy password or JWT
+        // Otherwise, you must ensure your backend does not require a Supabase session
+        try {
+            await supabase.auth.signInWithPassword({
+                email: trimmedEmail,
+                password
+            });
+        } catch (supabaseAuthError) {
+            // If Supabase auth is not used, ignore this error
+            // If used, handle accordingly
         }
 
         this.currentUser = {...data, userId: data.id};
@@ -137,6 +151,8 @@ class AuthServiceImpl {
         this.isAuthenticated = false;
         sessionStorage.removeItem('userId');
         localStorage.removeItem('cachedPlants');
+        // Always sign out from Supabase session
+        await supabase.auth.signOut();
         this._notifyObservers();
     }
 

@@ -1,5 +1,29 @@
 const PING_TIMEOUT = 5000;
+export class NetworkUtility {
+    static isOnline() {
+        return navigator.onLine;
+    }
 
+    static addOnlineListener(callback) {
+        if (typeof callback !== 'function') return;
+        window.addEventListener('online', callback);
+    }
+
+    static removeOnlineListener(callback) {
+        if (typeof callback !== 'function') return;
+        window.removeEventListener('online', callback);
+    }
+
+    static addOfflineListener(callback) {
+        if (typeof callback !== 'function') return;
+        window.addEventListener('offline', callback);
+    }
+
+    static removeOfflineListener(callback) {
+        if (typeof callback !== 'function') return;
+        window.removeEventListener('offline', callback);
+    }
+}
 export class NetworkUtility {
     static isOnline() {
         return navigator.onLine;

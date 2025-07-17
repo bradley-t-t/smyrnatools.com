@@ -1,28 +1,35 @@
 import {sha256Hash} from './CryptoUtility';
+import {supabase} from '../services/DatabaseService';
 
 const PWD_HASH_TIMEOUT = 5000;
+
+// Export as a standalone function for compatibility
+export function passwordStrength(password) {
+    if (!password || password.length < 8) {
+        return {value: 'weak', color: '#e53e3e'};
+    }
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
+
+    if (score < 3) return {value: 'weak', color: '#e53e3e'};
+    if (score < 5) return {value: 'medium', color: '#ecc94b'};
+    return {value: 'strong', color: '#38a169'};
+}
 
 export class AuthUtility {
     static emailIsValid(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    // Reference the standalone function for static usage
     static passwordStrength(password) {
-        if (!password || password.length < 8) {
-            return {value: 'weak', color: '#e53e3e'};
-        }
-
-        let score = 0;
-        if (password.length >= 8) score++;
-        if (password.length >= 12) score++;
-        if (/[A-Z]/.test(password)) score++;
-        if (/[a-z]/.test(password)) score++;
-        if (/[0-9]/.test(password)) score++;
-        if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
-
-        if (score < 3) return {value: 'weak', color: '#e53e3e'};
-        if (score < 5) return {value: 'medium', color: '#ecc94b'};
-        return {value: 'strong', color: '#38a169'};
+        return passwordStrength(password);
     }
 
     static generateSalt() {
@@ -64,6 +71,26 @@ export class AuthUtility {
         const computedHash = await this.hashPassword(password, salt);
         return computedHash === hash;
     }
+
+    static async getUserId() {
+        // Try sessionStorage first
+        let userId = sessionStorage.getItem('userId');
+        if (userId) return userId;
+
+        // Try Supabase session
+        try {
+            const { data } = await supabase.auth.getSession();
+            if (data?.session?.user?.id) {
+                sessionStorage.setItem('userId', data.session.user.id);
+                return data.session.user.id;
+            }
+        } catch {
+            // ignore errors
+        }
+
+        return null;
+    }
 }
+
 
 export default AuthUtility;

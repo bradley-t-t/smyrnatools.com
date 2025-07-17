@@ -4,6 +4,7 @@ import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
 import {UserService} from '../../services/UserService';
 import {supabase} from '../../services/DatabaseService';
+import {AuthUtility} from '../../utils/AuthUtility';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerHistoryView from './MixerHistoryView';
 import MixerCommentModal from './MixerCommentModal';
@@ -116,7 +117,7 @@ function MixerDetailView({mixerId, onClose}) {
             if (isLoading || !mixer) return;
 
             try {
-                let userId = sessionStorage.getItem('userId') || (await supabase.auth.getUser())?.data?.user?.id;
+                const userId = await AuthUtility.getUserId();
                 if (!userId) return;
 
                 const hasPermission = await UserService.hasPermission(userId, 'mixers.bypass.plantrestriction');
@@ -173,15 +174,14 @@ function MixerDetailView({mixerId, onClose}) {
     }, [hasUnsavedChanges]);
 
     async function handleSave() {
-        if (!mixer?.id) return alert('Error: Cannot save mixer with undefined ID');
+        if (!mixer?.id) {
+            alert('Error: Cannot save mixer with undefined ID');
+            return;
+        }
 
         setIsSaving(true);
         try {
-            const userId = sessionStorage.getItem('userId') || (await supabase.auth.getUser())?.data?.user?.id;
-            if (!userId) {
-                alert('Your session has expired. Please refresh the page and log in again.');
-                throw new Error('Authentication required: You must be logged in to update mixers');
-            }
+            const userId = await AuthUtility.getUserId();
 
             const formatDate = date => {
                 if (!date) return null;
@@ -205,6 +205,7 @@ function MixerDetailView({mixerId, onClose}) {
                 model,
                 year,
                 updatedAt: new Date().toISOString(),
+                updatedBy: userId,
                 updatedLast: mixer.updatedLast
             };
 
@@ -266,11 +267,7 @@ function MixerDetailView({mixerId, onClose}) {
                 });
             }
 
-            const userId = sessionStorage.getItem('userId') || (await supabase.auth.getUser())?.data?.user?.id;
-            if (!userId) {
-                alert('Your session has expired. Please refresh the page and log in again.');
-                throw new Error('Authentication required: You must be logged in to verify mixers');
-            }
+            const userId = await AuthUtility.getUserId();
 
             const now = new Date().toISOString();
             const {data, error} = await supabase
@@ -639,3 +636,4 @@ function MixerDetailView({mixerId, onClose}) {
 }
 
 export default MixerDetailView;
+

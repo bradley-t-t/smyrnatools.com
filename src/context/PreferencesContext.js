@@ -7,6 +7,8 @@ const defaultPreferences = {
     navbarMinimized: false,
     themeMode: 'light',
     accentColor: 'red',
+    showTips: true,
+    showOnlineOverlay: true,
     mixerFilters: {
         searchText: '',
         selectedPlant: '',
@@ -137,6 +139,8 @@ export const PreferencesProvider = ({children}) => {
             navbarMinimized: data.navbar_minimized,
             themeMode: data.theme_mode,
             accentColor: data.accent_color,
+            showTips: data.show_tips === undefined ? true : data.show_tips,
+            showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
             mixerFilters: data.mixer_filters ? {
                 searchText: data.mixer_filters.searchText || '',
                 selectedPlant: data.mixer_filters.selectedPlant || '',
@@ -286,6 +290,32 @@ export const PreferencesProvider = ({children}) => {
         }
     };
 
+    const toggleShowTips = async () => {
+        setPreferences(prev => {
+            const updated = {...prev, showTips: !prev.showTips};
+            localStorage.setItem('userPreferences', JSON.stringify(updated));
+            return updated;
+        });
+
+        await updateDatabasePreferences(userId, {
+            ...preferences,
+            showTips: !preferences.showTips
+        });
+    };
+
+    const toggleShowOnlineOverlay = async () => {
+        setPreferences(prev => {
+            const updated = {...prev, showOnlineOverlay: !prev.showOnlineOverlay};
+            localStorage.setItem('userPreferences', JSON.stringify(updated));
+            return updated;
+        });
+
+        await updateDatabasePreferences(userId, {
+            ...preferences,
+            showOnlineOverlay: !preferences.showOnlineOverlay
+        });
+    };
+
     const updateOperatorFilter = async (key, value) => {
         try {
             const updatedFilters = {
@@ -410,6 +440,8 @@ export const PreferencesProvider = ({children}) => {
                     navbar_minimized: preferences.navbarMinimized,
                     theme_mode: preferences.themeMode,
                     accent_color: preferences.accentColor,
+                    show_tips: preferences.showTips,
+                    show_online_overlay: preferences.showOnlineOverlay,
                     mixer_filters: preferences.mixerFilters || {
                         searchText: '',
                         selectedPlant: '',
@@ -438,6 +470,8 @@ export const PreferencesProvider = ({children}) => {
                 navbar_minimized: prefsToUpdate.navbarMinimized,
                 theme_mode: prefsToUpdate.themeMode,
                 accent_color: prefsToUpdate.accentColor,
+                                show_tips: prefsToUpdate.showTips,
+                                show_online_overlay: prefsToUpdate.showOnlineOverlay,
                 mixer_filters: prefsToUpdate.mixerFilters,
                 operator_filters: prefsToUpdate.operatorFilters,
                 last_viewed_filters: prefsToUpdate.lastViewedFilters,
@@ -489,6 +523,8 @@ export const PreferencesProvider = ({children}) => {
                 preferences,
                 loading,
                 toggleNavbarMinimized,
+                        toggleShowTips,
+                        toggleShowOnlineOverlay,
                 setThemeMode,
                 setAccentColor,
                 updatePreferences,

@@ -77,6 +77,33 @@ export const formatDateForSupabase = date => {
     }
 };
 
+export const refreshAuth = async () => {
+    try {
+        // Try refreshing the session first
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshData?.session?.user?.id) {
+            return { userId: refreshData.session.user.id, source: 'refreshSession' };
+        }
+
+        // If refresh failed, try getSession
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.user?.id) {
+            return { userId: sessionData.session.user.id, source: 'getSession' };
+        }
+
+        // Last resort
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user?.id) {
+            return { userId: userData.user.id, source: 'getUser' };
+        }
+
+        return { userId: null, source: 'none' };
+    } catch (error) {
+        console.error('Error in refreshAuth:', error);
+        return { userId: null, source: 'error', error };
+    }
+};
+
 export const isSupabaseConfigured = supabase => {
     if (!supabase) return false;
     if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_ANON_KEY) return false;

@@ -4,7 +4,7 @@ import {supabase} from '../../services/DatabaseService';
 import './SettingsView.css';
 
 function SettingsView() {
-    const {preferences, toggleNavbarMinimized, setThemeMode, setAccentColor} = usePreferences();
+    const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, setThemeMode, setAccentColor} = usePreferences();
     const [showFeedback, setShowFeedback] = useState(false);
     const [userId, setUserId] = useState(null);
 
@@ -133,6 +133,35 @@ function SettingsView() {
                             </label>
                             <span
                                 className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
+                        </div>
+                    </div>
+
+                    <div className="settings-section">
+                        <h3>Interface Elements</h3>
+                        <div className="toggle-setting">
+                            <span className="toggle-label">Show Tips Banner</span>
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.showTips}
+                                    onChange={() => handleSettingChange(toggleShowTips)}
+                                />
+                                <span className="slider round"></span>
+                            </label>
+                            <span className="toggle-state">{preferences.showTips ? 'Visible' : 'Hidden'}</span>
+                        </div>
+
+                        <div className="toggle-setting">
+                            <span className="toggle-label">Show Online Users Overlay</span>
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.showOnlineOverlay}
+                                    onChange={() => handleSettingChange(toggleShowOnlineOverlay)}
+                                />
+                                <span className="slider round"></span>
+                            </label>
+                            <span className="toggle-state">{preferences.showOnlineOverlay ? 'Visible' : 'Hidden'}</span>
                         </div>
                     </div>
                 </div>

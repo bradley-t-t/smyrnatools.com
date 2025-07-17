@@ -274,8 +274,12 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             <div className="dashboard-header">
                 <h1>{title}</h1>
                 <div className="dashboard-actions">
-                    <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
-                        <i className="fas fa-plus"></i> Add Item
+                    <button 
+                        className="action-button primary rectangular-button" 
+                        onClick={() => setShowAddSheet(true)}
+                        style={{ height: '44px', lineHeight: '1' }}
+                    >
+                        <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Item
                     </button>
                 </div>
             </div>

@@ -18,6 +18,8 @@ import {AuthProvider} from '../context/AuthContext';
 import {PreferencesProvider} from '../context/PreferencesContext';
 import WebView from "../components/common/WebView";
 import {UserService} from "../services/UserService";
+import OnlineUsersOverlay from '../components/common/OnlineUsersOverlay';
+import TipBanner from '../components/common/TipBanner';
 import '../styles/Theme.css';
 import '../styles/Global.css';
 
@@ -349,6 +351,10 @@ function App() {
         <AuthProvider>
             <PreferencesProvider>
                 <AppContent/>
+                <div style={{ position: 'relative', zIndex: 9999 }}>
+                    <OnlineUsersOverlay/>
+                    <TipBanner/>
+                </div>
             </PreferencesProvider>
         </AuthProvider>
     );

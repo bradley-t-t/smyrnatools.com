@@ -154,15 +154,28 @@
     background-color: var(--accent);
     color: white;
     border-color: var(--accent);
+    border-radius: 8px !important;
 }
 
 .action-button.primary:hover {
     background-color: var(--accent-dark);
     border-color: var(--accent-dark);
+    border-radius: 8px !important;
 }
 
 .button-icon {
     font-size: 16px;
+}
+
+.rectangular-button {
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    min-width: 120px !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 15px !important;
 }
 
 .stats-cards {

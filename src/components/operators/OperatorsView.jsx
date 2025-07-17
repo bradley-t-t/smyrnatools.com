@@ -274,9 +274,12 @@ function OperatorsView({title = 'Operator Roster', showSidebar, setShowSidebar, 
                             {title}
                         </h1>
                         <div className="dashboard-actions">
-                            <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
-                                <i className="fas fa-plus"></i>
-                                Add Operator
+                            <button 
+                                className="action-button primary rectangular-button" 
+                                onClick={() => setShowAddSheet(true)}
+                                style={{ height: '44px', lineHeight: '1' }}
+                            >
+                                <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Operator
                             </button>
                         </div>
                     </div>

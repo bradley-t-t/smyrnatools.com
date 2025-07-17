@@ -216,7 +216,7 @@ export default function Navigation({
                             {!collapsed && (
                                 <div className="user-menu-content">
                                     <span className="menu-text">My Account</span>
-                                    {userName && <span className="user-name">{userName}</span>}
+                                    {userName && <span className="user-name" style={{ paddingLeft: 0 }}>{userName}</span>}
                                 </div>
                             )}
                         </li>

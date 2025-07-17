@@ -186,3 +186,17 @@ button.primary:hover {
     background-color: var(--primary-dark);
     color: var(--text-primary);
 }
+
+/* Loading screen theme support */
+.dark-mode .loading-screen.full-page {
+    background-color: var(--background);
+}
+
+.dark-mode .loading-content {
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-md);
+}
+
+.dark-mode .loading-message {
+    color: var(--text-primary);
+}

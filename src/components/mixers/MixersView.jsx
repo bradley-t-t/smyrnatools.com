@@ -195,8 +195,12 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             <i className="fas fa-bars"></i> Menu
                         </button>
                     )}
-                    <button className="action-button primary" onClick={() => setShowAddSheet(true)}>
-                        <i className="fas fa-plus"></i> Add Mixer
+                    <button 
+                        className="action-button primary rectangular-button" 
+                        onClick={() => setShowAddSheet(true)}
+                        style={{ height: '44px', lineHeight: '1' }}
+                    >
+                        <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Mixer
                     </button>
                 </div>
             </div>
