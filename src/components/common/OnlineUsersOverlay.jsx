@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePresence } from '../../hooks/UsePresence';
 import { usePreferences } from '../../context/PreferencesContext';
+import { AuthService } from '../../services/AuthService';
 import './OnlineUsersOverlay.css';
 
 function OnlineUsersOverlay() {
     const { onlineUsers, loading, error } = usePresence();
     const { preferences } = usePreferences();
     const [isExpanded, setIsExpanded] = useState(false);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(true);
     const [animateCount, setAnimateCount] = useState(false);
     const prevCountRef = useRef(onlineUsers.length);
     const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
+    const isLoggedIn = AuthService.isLoggedIn();
 
     useEffect(() => {
         if (!loading && onlineUsers.length !== prevCountRef.current) {
@@ -23,11 +25,9 @@ function OnlineUsersOverlay() {
 
     const getRelativeTime = (timestamp) => {
         if (!timestamp) return 'Now';
-
         const now = new Date();
         const lastSeen = new Date(timestamp);
         const diffMs = now - lastSeen;
-
         if (diffMs < 60000) {
             return 'Just now';
         } else if (diffMs < 3600000) {
@@ -45,10 +45,7 @@ function OnlineUsersOverlay() {
     const toggleExpand = () => setIsExpanded(!isExpanded);
     const toggleMinimize = () => setIsMinimized(!isMinimized);
 
-    if (loading) return null;
-    if (error) return null;
-    if (onlineUsers.length === 0) return null;
-    if (!preferences.showOnlineOverlay) return null;
+    if (!isLoggedIn || loading || error || onlineUsers.length === 0 || !preferences.showOnlineOverlay) return null;
 
     return (
         <div className={`online-users-overlay ${isExpanded ? 'expanded' : ''} ${isMinimized ? 'minimized' : ''}`}

@@ -9,16 +9,13 @@ export function usePresence() {
     useEffect(() => {
         let isMounted = true;
         setLoading(true);
-
         PresenceService.setup().then(success => {
             if (!isMounted) return;
-
             if (!success) {
                 setError('Failed to initialize presence service');
                 setLoading(false);
                 return;
             }
-
             PresenceService.getOnlineUsers().then(users => {
                 if (!isMounted) return;
                 setOnlineUsers(users);
@@ -28,14 +25,11 @@ export function usePresence() {
                 setError(err.message || 'Failed to get online users');
                 setLoading(false);
             });
-
             const handlePresenceChange = (users) => {
                 if (!isMounted) return;
                 setOnlineUsers(users);
             };
-
             PresenceService.addListener(handlePresenceChange);
-
             return () => {
                 PresenceService.removeListener(handlePresenceChange);
             };
@@ -44,7 +38,6 @@ export function usePresence() {
             setError(err.message || 'Failed to initialize presence service');
             setLoading(false);
         });
-
         return () => {
             isMounted = false;
         };
