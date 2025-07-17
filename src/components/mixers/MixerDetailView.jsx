@@ -148,7 +148,6 @@ function MixerDetailView({mixerId, onClose}) {
         const formatDateForComparison = date => date ? (date instanceof Date ? date.toISOString().split('T')[0] : '') : '';
         const hasChanges =
             truckNumber !== originalValues.truckNumber ||
-            assignedOperator !== originalValues.assignedOperator ||
             assignedPlant !== originalValues.assignedPlant ||
             status !== originalValues.status ||
             cleanlinessRating !== originalValues.cleanlinessRating ||
@@ -160,7 +159,7 @@ function MixerDetailView({mixerId, onClose}) {
             year !== originalValues.year;
 
         setHasUnsavedChanges(hasChanges);
-    }, [truckNumber, assignedOperator, assignedPlant, status, cleanlinessRating, lastServiceDate, lastChipDate, vin, make, model, year, originalValues, isLoading]);
+    }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, lastChipDate, vin, make, model, year, originalValues, isLoading]);
 
     useEffect(() => {
         const handleBeforeUnload = e => {
@@ -194,7 +193,6 @@ function MixerDetailView({mixerId, onClose}) {
                 ? overrideValues.assignedOperator
                 : assignedOperator;
 
-            // If unassigning, use prevAssignedOperator for history
             let mixerForHistory = {
                 ...mixer,
                 assignedOperator: overrideValues.hasOwnProperty('prevAssignedOperator')
