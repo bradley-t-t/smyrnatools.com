@@ -136,8 +136,13 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             return matchesSearch && matchesPlant && matchesStatus;
         })
         .sort((a, b) => {
+            // Active first
             if (a.status === 'Active' && b.status !== 'Active') return -1;
             if (a.status !== 'Active' && b.status === 'Active') return 1;
+            if (a.status === 'Spare' && b.status !== 'Spare') return -1;
+            if (a.status !== 'Spare' && b.status === 'Spare') return 1;
+            if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
+            if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
             if (a.status === 'Retired' && b.status !== 'Retired') return 1;
             if (a.status !== 'Retired' && b.status === 'Retired') return -1;
             if (a.status !== b.status) return a.status.localeCompare(b.status);

@@ -10,10 +10,10 @@ const ThemeUtility = {
     },
 
     statusColors: {
-        Active: '#38a169',
-        Spare: '#007AFF',
-        'In Shop': '#FF9500',
-        Retired: '#e53e3e',
+        Active: '#38a169',      // green
+        Spare: '#7c3aed',       // purple
+        'In Shop': '#3182ce',   // blue
+        Retired: '#1a202c',     // black
         default: '#718096'
     },
 
@@ -107,7 +107,7 @@ const ThemeUtility = {
     },
 
     statusColor(status) {
-        return this.statusColors[status] ?? '#8e8e93';
+        return this.statusColors[status] ?? this.statusColors.default;
     },
 
     getTheme(mode = 'light') {

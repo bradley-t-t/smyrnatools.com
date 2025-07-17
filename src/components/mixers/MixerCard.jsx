@@ -11,7 +11,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const isVerified = typeof mixer.isVerified === 'function'
         ? mixer.isVerified(mixer.latestHistoryDate)
         : MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
-    const statusColor = ThemeUtility.statusColors[mixer.status] || ThemeUtility.statusColors.default;
+    const statusColor = ThemeUtility.statusColor(mixer.status);
     const {preferences} = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
 
