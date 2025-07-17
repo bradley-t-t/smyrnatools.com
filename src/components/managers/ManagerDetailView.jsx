@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {supabase} from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
+import LoadingScreen from '../common/LoadingScreen';
 import ManagerCard from './ManagerCard';
 import {useAuth} from '../../context/AuthContext';
 import './ManagerDetailView.css';
@@ -298,10 +299,7 @@ function ManagerDetailView({managerId, onClose}) {
                     <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <div className="content-loading-container">
-                        <div className="ios-spinner"></div>
-                        <p>Loading manager details...</p>
-                    </div>
+                    <LoadingScreen message="Loading manager details..." inline={true} />
                 </div>
             </div>
         );

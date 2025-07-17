@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
 import {UserService} from '../../services/UserService';
+import LoadingScreen from '../common/LoadingScreen';
 import supabase from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
 import OperatorCard from './OperatorCard';
@@ -261,10 +262,7 @@ function OperatorDetailView({operatorId, onClose}) {
                     <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <div className="content-loading-container">
-                        <div className="ios-spinner"></div>
-                        <p>Loading operator details...</p>
-                    </div>
+                    <LoadingScreen message="Loading operator details..." inline={true} />
                 </div>
             </div>
         );

@@ -14,6 +14,7 @@ import './MixerDetailView.css';
 import {MixerUtility} from "../../utils/MixerUtility";
 import {Mixer} from "../../models/mixers/Mixer";
 import ThemeUtility from "../../utils/ThemeUtility";
+import LoadingScreen from "../common/LoadingScreen";
 
 function MixerDetailView({mixerId, onClose}) {
     const {preferences} = usePreferences();
@@ -325,10 +326,7 @@ function MixerDetailView({mixerId, onClose}) {
                     <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <div className="content-loading-container">
-                        <div className="ios-spinner"></div>
-                        <p>Loading operator details...</p>
-                    </div>
+                    <LoadingScreen message="Loading mixer details..." inline={true} />
                 </div>
             </div>
         );

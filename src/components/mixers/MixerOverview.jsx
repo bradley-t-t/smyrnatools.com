@@ -3,6 +3,7 @@ import {MixerService} from '../../services/MixerService';
 import {MixerUtility} from '../../utils/MixerUtility';
 import {PlantService} from '../../services/PlantService';
 import {supabase} from '../../services/DatabaseService';
+import LoadingScreen from '../../components/common/LoadingScreen';
 import './MixerOverview.css';
 
 const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCount = 0, neverVerifiedCount = 0}) => {
@@ -143,8 +144,7 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
     if (isLoading) {
         return (
             <div className="mixer-overview">
-                <h1>Mixer Fleet Overview</h1>
-                <div className="loading-spinner"></div>
+                <LoadingScreen message="Loading mixer data..." inline={true} />
             </div>
         );
     }

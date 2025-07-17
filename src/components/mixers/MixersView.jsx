@@ -4,6 +4,7 @@ import {MixerUtility} from '../../utils/MixerUtility';
 import {MixerService} from '../../services/MixerService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
+import LoadingScreen from '../common/LoadingScreen';
 import {MixerMaintenanceService} from '../../services/MixerMaintenanceService';
 import {usePreferences} from '../../context/PreferencesContext';
 import MixerCard from './MixerCard';
@@ -273,8 +274,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             <div className="content-container">
                 {isLoading ? (
                     <div className="loading-container">
-                        <div className="ios-spinner"></div>
-                        <p>Loading mixers...</p>
+                        <LoadingScreen message="Loading mixers..." inline={true} />
                     </div>
                 ) : filteredMixers.length === 0 ? (
                     <div className="no-results-container">

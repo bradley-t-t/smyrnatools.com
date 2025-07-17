@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {usePreferences} from '../../context/PreferencesContext';
 import {MixerService} from '../../services/MixerService';
 import {OperatorService} from '../../services/OperatorService';
+import LoadingScreen from '../common/LoadingScreen';
 import UserLabel from '../users/UserLabel';
 import './MixerHistoryView.css';
 
@@ -162,8 +163,7 @@ function MixerHistoryView({mixer, onClose}) {
                 <div className="history-modal-content">
                     {isLoading ? (
                         <div className="loading-spinner-container">
-                            <div className="ios-spinner"></div>
-                            <p>Loading history...</p>
+                            <LoadingScreen message="Loading history..." inline={true} />
                         </div>
                     ) : error ? (
                         <div className="error-message">
