@@ -431,7 +431,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                     className={`list-view-row ${item.completed ? 'completed' : ''}`}
                                     onClick={() => handleSelectItem(item)}
                                 >
-                                    <div className="list-column description" title={item.description}>
+                                    <div className="list-column description left-align" title={item.description}>
                                         <div className="item-status-dot" style={{
                                             backgroundColor: item.completed ? '#38a169' : item.isOverdue ? '#e53e3e' : '#3182ce',
                                         }}></div>
@@ -482,7 +482,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             {showOverview && <OverviewPopup/>}
             {showDetailView && selectedItem && (
                 <div className="modal-backdrop">
-                    <div className="modal-detail-content" onClick={e => e.stopPropagation()} style={{height: '90vh', overflow: 'hidden'}}>
+                    <div className="modal-detail-content" style={{background: 'none', boxShadow: 'none', padding: 0, maxHeight: 'unset', overflow: 'visible'}}>
                         <ListDetailView
                             itemId={selectedItem.id}
                             onClose={() => {
@@ -499,3 +499,4 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
 }
 
 export default ListView;
+
