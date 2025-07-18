@@ -24,6 +24,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [showDetailView, setShowDetailView] = useState(false);
     const [selectedOperator, setSelectedOperator] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [trainers, setTrainers] = useState([]);
 
     const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
     const filterOptions = [
@@ -60,7 +61,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         try {
             await Promise.all([
                 fetchOperators(),
-                fetchPlants()
+                fetchPlants(),
+                fetchTrainers()
             ]);
         } catch (error) {
         } finally {
@@ -84,7 +86,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                 status: op.status,
                 isTrainer: op.is_trainer,
                 assignedTrainer: op.assigned_trainer,
-                position: op.position
+                position: op.position,
+                pendingStartDate: op.pending_start_date || ''
             }));
 
             setOperators(formattedOperators);
@@ -112,6 +115,23 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             if (error) throw error;
             setPlants(data);
         } catch (error) {
+        }
+    };
+
+    const fetchTrainers = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('operators')
+                .select('employee_id, name')
+                .eq('is_trainer', true);
+
+            if (error) throw error;
+            setTrainers(data.map(t => ({
+                employeeId: t.employee_id,
+                name: t.name
+            })));
+        } catch (error) {
+            setTrainers([]);
         }
     };
 
@@ -159,6 +179,10 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
             if (a.status !== 'Active' && b.status === 'Active') return 1;
+            if (a.status === 'Training' && b.status !== 'Training') return -1;
+            if (a.status !== 'Training' && b.status === 'Training') return 1;
+            if (a.status === 'Pending Start' && b.status !== 'Pending Start') return -1;
+            if (a.status !== 'Pending Start' && b.status === 'Pending Start') return 1;
             if (a.status === 'Terminated' && b.status !== 'Terminated') return 1;
             if (a.status !== 'Terminated' && b.status === 'Terminated') return -1;
             if (a.status !== b.status) return a.status.localeCompare(b.status);
@@ -384,6 +408,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                         key={operator.employeeId}
                                         operator={operator}
                                         plantName={getPlantName(operator.plantCode)}
+                                        trainers={trainers}
                                         onSelect={handleSelectOperator}
                                     />
                                 ))}

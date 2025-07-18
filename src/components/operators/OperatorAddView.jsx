@@ -11,6 +11,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
     const [position, setPosition] = useState('');
     const [isTrainer, setIsTrainer] = useState(false);
     const [assignedTrainer, setAssignedTrainer] = useState('0');
+    const [pendingStartDate, setPendingStartDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
@@ -66,7 +67,8 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                 assigned_trainer: safeUUID(assignedTrainer),
                 created_at: now,
                 updated_at: now,
-                updated_by: userId
+                updated_by: userId,
+                pending_start_date: status === 'Pending Start' ? pendingStartDate : null
             };
 
             console.log('Submitting operator data:', JSON.stringify(newOperator, null, 2));
@@ -150,6 +152,19 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                             </select>
                         </div>
 
+                        {status === 'Pending Start' && (
+                            <div className="form-group">
+                                <label htmlFor="pendingStartDate">Pending Start Date</label>
+                                <input
+                                    id="pendingStartDate"
+                                    type="date"
+                                    className="ios-input"
+                                    value={pendingStartDate}
+                                    onChange={e => setPendingStartDate(e.target.value)}
+                                />
+                            </div>
+                        )}
+
                         <div className="form-group">
                             <label htmlFor="position">Position</label>
                             <select
@@ -180,7 +195,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                                             }
                                         }}
                                     >
-                                        <option value="false">Non-Trainer</option>
+                                        <option value="false">Not a Trainer</option>
                                         <option value="true">Trainer</option>
                                     </select>
                                 </div>

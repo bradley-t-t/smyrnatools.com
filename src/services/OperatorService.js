@@ -98,7 +98,8 @@ export class OperatorService {
             assigned_trainer: safeUUID(operator.assigned_trainer),
             position: operator.position || null,
             created_at: operator.created_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            updated_at: operator.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+            updated_at: operator.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            pending_start_date: operator.pending_start_date ?? operator.pendingStartDate ?? null
         });
 
         const insertObj = operatorInstance.toApiFormat();
@@ -106,8 +107,6 @@ export class OperatorService {
         if (!isValidUUID(insertObj.employee_id)) {
             throw new Error('Invalid employee_id: Must be a valid UUID');
         }
-
-        console.log('Attempting to insert operator with the following data:', JSON.stringify(insertObj, null, 2));
 
         try {
             const { data, error } = await supabase
@@ -117,15 +116,11 @@ export class OperatorService {
                 .single();
 
             if (error) {
-                console.error('Error adding operator:', error);
-                console.error('Supabase response:', error.details || error.message);
                 throw new Error(`Failed to add operator: ${error.message} (Code: ${error.code})`);
             }
 
-            console.log('Operator successfully inserted:', JSON.stringify(data, null, 2));
             return Operator.fromApiFormat(data);
         } catch (error) {
-            console.error('Error during operator insertion:', error);
             throw error;
         }
     }
@@ -142,7 +137,6 @@ export class OperatorService {
             .single();
 
         if (lookupError || !currentData) {
-            console.error(`Operator with ID ${operator.employeeId} not found:`, lookupError);
             throw new Error('Operator not found');
         }
 
@@ -156,7 +150,8 @@ export class OperatorService {
             assigned_trainer: (operator.assignedTrainer && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(operator.assignedTrainer)) ? operator.assignedTrainer : null,
             position: operator.position || null,
             created_at: operator.createdAt ?? currentData.created_at,
-            updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+            updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            pending_start_date: operator.pendingStartDate ?? operator.pending_start_date ?? null
         });
 
         const updateObj = operatorInstance.toApiFormat();
@@ -171,7 +166,6 @@ export class OperatorService {
             .eq('employee_id', operatorInstance.employeeId);
 
         if (error) {
-            console.error(`Error updating operator with ID ${operator.employeeId}:`, error);
             throw new Error(`Failed to update operator: ${error.message} (Code: ${error.code})`);
         }
 

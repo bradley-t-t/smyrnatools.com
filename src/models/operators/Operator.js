@@ -12,6 +12,7 @@ export class Operator {
         this.position = data.position ?? null;
         this.createdAt = data.created_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
         this.updatedAt = data.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+        this.pendingStartDate = data.pending_start_date ?? data.pendingStartDate ?? null;
     }
 
     static fromApiFormat(data) {
@@ -26,7 +27,8 @@ export class Operator {
             assigned_trainer: data.assigned_trainer ?? data.assignedTrainer ?? null,
             position: data.position ?? null,
             created_at: data.created_at ?? data.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            updated_at: data.updated_at ?? data.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+            updated_at: data.updated_at ?? data.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            pending_start_date: data.pending_start_date ?? data.pendingStartDate ?? null
         });
     }
 
@@ -51,7 +53,8 @@ export class Operator {
             assigned_trainer: safeUUID(this.assignedTrainer),
             position: this.position ?? null,
             created_at: this.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            updated_at: this.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+            updated_at: this.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            pending_start_date: this.pendingStartDate ?? null
         };
     }
 }

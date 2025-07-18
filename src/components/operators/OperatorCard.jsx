@@ -3,7 +3,21 @@ import './OperatorCard.css';
 import ThemeUtility from '../../utils/ThemeUtility';
 import {usePreferences} from '../../context/PreferencesContext';
 
-function OperatorCard({operator, plantName, onSelect, onDelete}) {
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const options = { month: 'long', day: 'numeric', year: 'numeric' };
+    const formatted = date.toLocaleDateString('en-US', options);
+    const day = date.getDate();
+    let suffix = 'th';
+    if (day % 10 === 1 && day !== 11) suffix = 'st';
+    else if (day % 10 === 2 && day !== 12) suffix = 'nd';
+    else if (day % 10 === 3 && day !== 13) suffix = 'rd';
+    return formatted.replace(`${day}`, `${day}${suffix}`);
+}
+
+function OperatorCard({operator, plantName, onSelect, onDelete, trainers}) {
     const {preferences} = usePreferences();
     const statusColor = ThemeUtility.operatorStatusColors[operator.status] || ThemeUtility.operatorStatusColors.default;
 
@@ -13,11 +27,18 @@ function OperatorCard({operator, plantName, onSelect, onDelete}) {
         }
     };
 
+    let trainerName = 'None';
+    if (
+        operator.assignedTrainer &&
+        operator.assignedTrainer !== '0' &&
+        Array.isArray(trainers)
+    ) {
+        const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer);
+        trainerName = trainerObj ? trainerObj.name : 'Unknown';
+    }
+
     const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
-    const trainerName = operator.assignedTrainer && operator.assignedTrainer !== '0'
-        ? 'View details to see trainer'
-        : 'None';
 
     return (
         <div className="operator-card" {...cardProps}>
@@ -45,6 +66,12 @@ function OperatorCard({operator, plantName, onSelect, onDelete}) {
                         <div className="detail-label">Status</div>
                         <div className="detail-value">{operator.status || 'Unknown'}</div>
                     </div>
+                    {operator.status === 'Pending Start' && operator.pendingStartDate && (
+                        <div className="detail-row">
+                            <div className="detail-label">Pending Start Date</div>
+                            <div className="detail-value">{formatDate(operator.pendingStartDate)}</div>
+                        </div>
+                    )}
                     <div className="detail-row">
                         <div className="detail-label">Role</div>
                         <div className="detail-value">
@@ -59,14 +86,13 @@ function OperatorCard({operator, plantName, onSelect, onDelete}) {
                             <div className="detail-value">{operator.position || 'Not Specified'}</div>
                         </div>
                     )}
-                    {!operator.isTrainer && (
+                    {!operator.isTrainer && operator.status !== 'Active' && (
                         <div className="detail-row">
                             <div className="detail-label">Trainer</div>
                             <div className="detail-value">{trainerName}</div>
                         </div>
                     )}
                 </div>
-                {}
             </div>
         </div>
     );

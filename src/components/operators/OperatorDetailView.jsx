@@ -33,6 +33,7 @@ function OperatorDetailView({operatorId, onClose}) {
     const [position, setPosition] = useState('');
     const [isTrainer, setIsTrainer] = useState(false);
     const [assignedTrainer, setAssignedTrainer] = useState('');
+    const [pendingStartDate, setPendingStartDate] = useState('');
 
     useEffect(() => {
         document.body.classList.add('in-detail-view');
@@ -56,10 +57,11 @@ function OperatorDetailView({operatorId, onClose}) {
             status !== originalValues.status ||
             position !== originalValues.position ||
             isTrainer !== originalValues.isTrainer ||
-            assignedTrainer !== originalValues.assignedTrainer;
+            assignedTrainer !== originalValues.assignedTrainer ||
+            pendingStartDate !== originalValues.pendingStartDate;
 
         setHasUnsavedChanges(hasChanges);
-    }, [employeeId, smyrnaId, name, assignedPlant, status, position, isTrainer, assignedTrainer, originalValues, isLoading]);
+    }, [employeeId, smyrnaId, name, assignedPlant, status, position, isTrainer, assignedTrainer, pendingStartDate, originalValues, isLoading]);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -84,6 +86,7 @@ function OperatorDetailView({operatorId, onClose}) {
             const positionVal = operatorData.position || '';
             const isTrainerVal = operatorData.isTrainer || false;
             const trainer = operatorData.assignedTrainer || '';
+            const pendingDate = operatorData.pendingStartDate || operatorData.pending_start_date || '';
 
             setEmployeeId(empId);
             setSmyrnaId(opSmyrnaId);
@@ -93,6 +96,7 @@ function OperatorDetailView({operatorId, onClose}) {
             setPosition(positionVal);
             setIsTrainer(isTrainerVal);
             setAssignedTrainer(trainer);
+            setPendingStartDate(pendingDate);
 
             setOriginalValues({
                 employeeId: empId,
@@ -102,7 +106,8 @@ function OperatorDetailView({operatorId, onClose}) {
                 status: statusVal,
                 position: positionVal,
                 isTrainer: isTrainerVal,
-                assignedTrainer: trainer
+                assignedTrainer: trainer,
+                pendingStartDate: pendingDate
             });
 
             setHasUnsavedChanges(false);
@@ -170,7 +175,8 @@ function OperatorDetailView({operatorId, onClose}) {
                     isTrainer,
                     assignedTrainer: assignedTrainer || null,
                     updatedAt: new Date().toISOString(),
-                    updatedBy: userId
+                    updatedBy: userId,
+                    pendingStartDate: status === 'Pending Start' ? pendingStartDate : null
                 };
 
                 if (!updatedOperator.assignedTrainer || updatedOperator.assignedTrainer === '0') {
@@ -192,7 +198,8 @@ function OperatorDetailView({operatorId, onClose}) {
                     status,
                     position,
                     isTrainer,
-                    assignedTrainer
+                    assignedTrainer,
+                    pendingStartDate
                 });
 
                 setHasUnsavedChanges(false);
@@ -406,6 +413,17 @@ function OperatorDetailView({operatorId, onClose}) {
                             {hasTrainingPermission && <option value="Training">Training</option>}
                         </select>
                     </div>
+                    {status === 'Pending Start' && (
+                        <div className="form-group">
+                            <label>Pending Start Date</label>
+                            <input
+                                type="date"
+                                value={pendingStartDate || ''}
+                                onChange={e => setPendingStartDate(e.target.value)}
+                                className="form-control"
+                            />
+                        </div>
+                    )}
 
                     <div className="form-group">
                         <label>Assigned Plant</label>
@@ -459,27 +477,29 @@ function OperatorDetailView({operatorId, onClose}) {
                                     }
                                 }}
                             >
-                                <option value="false">Non-Trainer</option>
+                                <option value="false">Not a Trainer</option>
                                 <option value="true">Trainer</option>
                             </select>
                         </div>
 
-                        <div className="form-group">
-                            <label>Assigned Trainer</label>
-                            <select
-                                value={assignedTrainer}
-                                onChange={(e) => setAssignedTrainer(e.target.value)}
-                                className="form-control"
-                                disabled={isTrainer}
-                            >
-                                <option value="">None</option>
-                                {trainers.map(trainer => (
-                                    <option key={trainer.employeeId} value={trainer.employeeId}>
-                                        {trainer.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {status === 'Training' && (
+                            <div className="form-group">
+                                <label>Assigned Trainer</label>
+                                <select
+                                    value={assignedTrainer}
+                                    onChange={(e) => setAssignedTrainer(e.target.value)}
+                                    className="form-control"
+                                    disabled={isTrainer}
+                                >
+                                    <option value="">None</option>
+                                    {trainers.map(trainer => (
+                                        <option key={trainer.employeeId} value={trainer.employeeId}>
+                                            {trainer.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 )}
 
