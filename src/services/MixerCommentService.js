@@ -26,16 +26,17 @@ export class MixerCommentService {
         if (!text?.trim()) throw new Error('Comment text is required');
         if (!author?.trim()) throw new Error('Author is required');
 
-        const comment = new MixerComment({
+        // Do NOT set id: null, let DB generate it
+        const comment = {
             mixer_id: mixerId,
             text: text.trim(),
             author: author.trim(),
             created_at: new Date().toISOString()
-        });
+        };
 
         const {data, error} = await supabase
             .from(TABLE_NAME)
-            .insert([comment.toRow()])
+            .insert([comment])
             .select()
             .single();
 

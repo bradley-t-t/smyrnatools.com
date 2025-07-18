@@ -383,7 +383,7 @@
     right: 12px;
     color: #dc2626;
     font-size: 1.2rem;
-    z-index: 1;
+    z-index: 5;
 }
 
 .days-ago {
@@ -575,4 +575,55 @@
     display: inline-flex;
     margin-left: 4px;
     color: #ff9900;
+}
+
+.comments-badge {
+    position: absolute;
+    top: 12px;
+    right: 92px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #FFD600;
+    color: #7a5c00;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.comments-badge i {
+    margin-right: 4px;
+    font-size: 0.9rem;
+}
+
+.issues-badge {
+    position: absolute;
+    top: 12px;
+    right: 42px; /* moved 5px more to the right */
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.issues-badge i {
+    margin-right: 4px;
+    font-size: 0.9rem;
+}
+
+.verification-flag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #dc2626;
+    font-size: 1.2rem;
+    z-index: 5;
 }
