@@ -18,21 +18,6 @@ function PasswordRecoveryView({onBackToLogin}) {
         setError('');
     }, [stage]);
 
-    // useEffect(() => {
-    //     const configStatus = EmailClient.checkEmailConfiguration();
-    //     if (process.env.NODE_ENV === 'development') {
-    //         for (let i = 0; i < localStorage.length; i++) {
-    //             const key = localStorage.key(i);
-    //             if (key.startsWith('recovery_code_')) {
-    //                 try {
-    //                     const data = JSON.parse(localStorage.getItem(key));
-    //                 } catch (err) {
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }, []);
-
     const handleSubmitEmail = async (e) => {
         e.preventDefault();
         setError('');
@@ -44,12 +29,6 @@ function PasswordRecoveryView({onBackToLogin}) {
             setIsSubmitting(false);
             return;
         }
-
-        // if (!EmailClient.validateEmail(email)) {
-        //     setError('Please enter a valid email address');
-        //     setIsSubmitting(false);
-        //     return;
-        // }
 
         const normalizedEmail = email.trim().toLowerCase();
         setEmail(normalizedEmail);
@@ -98,16 +77,6 @@ function PasswordRecoveryView({onBackToLogin}) {
                     throw new Error('Error generating recovery code');
                 }
             }
-
-            // try {
-            //     await sendEmailMock({
-            //         to: email,
-            //         from: 'noreply@yourdomain.com',
-            //         subject: 'Password Recovery Code',
-            //         message: `Your password recovery code is: ${verificationCode}\n\nThis code will expire in 30 minutes.`,
-            //     });
-            // } catch (emailError) {
-            // }
 
             if (process.env.NODE_ENV === 'development') {
                 setMessage(`Recovery code sent! For testing, use code: ${verificationCode}`);

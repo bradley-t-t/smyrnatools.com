@@ -188,7 +188,7 @@ export class OperatorService {
                 .from(OPERATORS_TABLE)
                 .delete()
                 .eq('employee_id', employeeId)
-                .select(); // Select the deleted rows to verify deletion
+                .select();
 
             if (error) {
                 console.error(`Error deleting operator with ID ${employeeId}:`, error);

@@ -10,10 +10,10 @@ const ThemeUtility = {
     },
 
     statusColors: {
-        Active: '#38a169',      // green
-        Spare: '#7c3aed',       // purple
-        'In Shop': '#3182ce',   // blue
-        Retired: '#1a202c',     // black
+        Active: '#38a169',
+        Spare: '#7c3aed',
+        'In Shop': '#3182ce',
+        Retired: '#1a202c',
         default: '#718096'
     },
 

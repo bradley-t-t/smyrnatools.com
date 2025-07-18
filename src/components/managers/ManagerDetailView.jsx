@@ -44,7 +44,6 @@ function ManagerDetailView({managerId, onClose}) {
         }
     }, [managerId]);
 
-    // Apply dark mode styling to header immediately, before content loads
     useEffect(() => {
         const headerElement = document.querySelector('.detail-header');
         if (headerElement) {

@@ -136,7 +136,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             return matchesSearch && matchesPlant && matchesStatus;
         })
         .sort((a, b) => {
-            // Active first
             if (a.status === 'Active' && b.status !== 'Active') return -1;
             if (a.status !== 'Active' && b.status === 'Active') return 1;
             if (a.status === 'Spare' && b.status !== 'Spare') return -1;

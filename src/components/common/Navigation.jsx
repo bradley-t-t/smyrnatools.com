@@ -82,10 +82,8 @@ export default function Navigation({
     useEffect(() => {
         ensureFontAwesome();
 
-        // Listen for status filter changes to update active menu item
         const handleStatusFilterChange = (event) => {
             const { statusFilter } = event.detail;
-            // Force a re-render when status filter changes
             if (statusFilter === 'completed' || listStatusFilter === 'completed') {
                 setVisibleMenuItems([...visibleMenuItems]);
             }
@@ -164,14 +162,11 @@ export default function Navigation({
                 <nav className="navbar-menu">
                     <ul>
                                                     {visibleMenuItems.map((item) => {
-                            // Determine which menu item should be active
                             let isActive = false;
 
                             if (item.id === 'List') {
-                                // List is always active when on List view
                                 isActive = selectedView === 'List';
                             } else {
-                                // For all other menu items, use normal behavior
                                 isActive = selectedView === item.id;
                             }
 

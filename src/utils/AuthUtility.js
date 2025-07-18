@@ -3,7 +3,6 @@ import {supabase} from '../services/DatabaseService';
 
 const PWD_HASH_TIMEOUT = 5000;
 
-// Export as a standalone function for compatibility
 export function passwordStrength(password) {
     if (!password || password.length < 8) {
         return {value: 'weak', color: '#e53e3e'};
@@ -27,7 +26,6 @@ export class AuthUtility {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    // Reference the standalone function for static usage
     static passwordStrength(password) {
         return passwordStrength(password);
     }
@@ -73,11 +71,9 @@ export class AuthUtility {
     }
 
     static async getUserId() {
-        // Try sessionStorage first
         let userId = sessionStorage.getItem('userId');
         if (userId) return userId;
 
-        // Try Supabase session
         try {
             const { data } = await supabase.auth.getSession();
             if (data?.session?.user?.id) {
@@ -85,7 +81,6 @@ export class AuthUtility {
                 return data.session.user.id;
             }
         } catch {
-            // ignore errors
         }
 
         return null;

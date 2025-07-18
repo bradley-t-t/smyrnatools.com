@@ -285,7 +285,6 @@ export class AppState {
         try {
             this.isLoading = true;
             this.errorMessage = '';
-            // Ensure we have a current user before creating the list item
             if (!AuthService.currentUser || !AuthService.currentUser.id) {
                 throw new Error('You must be logged in to create a list item.');
             }

@@ -66,7 +66,6 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             })));
         }
 
-        // Update menu highlighting when statusFilter changes
         if (window.updateActiveMenuHighlight) {
             if (statusFilter === 'completed') {
                 window.updateActiveMenuHighlight('Archive');
@@ -75,7 +74,6 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             }
         }
 
-        // Notify parent when status filter changes
         if (onStatusFilterChange) {
             onStatusFilterChange(statusFilter);
         }
@@ -101,7 +99,6 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
     }, [canBypassPlantRestriction, userPlantCode, updateListFilter]);
 
     useEffect(() => {
-        // Initialize with no filter when component is first mounted
         if (!document.documentElement.hasAttribute('data-list-initialized')) {
             document.documentElement.setAttribute('data-list-initialized', 'true');
             setStatusFilter('');
@@ -184,15 +181,13 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                 item.description.toLowerCase().includes(searchText.toLowerCase()) ||
                 item.comments.toLowerCase().includes(searchText.toLowerCase());
             const matchesPlant = !selectedPlant || item.plantCode === selectedPlant;
-                            // Filter based on the status filter selection
                             const matchesStatus = statusFilter === 'completed' ? item.completed :
                 statusFilter === 'overdue' ? item.isOverdue && !item.completed :
                     statusFilter === 'pending' ? !item.isOverdue && !item.completed :
-                        !item.completed; // Default to showing only pending items
+                        !item.completed;
             return matchesSearch && matchesPlant && matchesStatus;
         })
         .sort((a, b) => {
-            // Sort completed items by completion date
             if (statusFilter === 'completed') {
                 const dateA = new Date(a.completedAt || 0);
                 const dateB = new Date(b.completedAt || 0);
@@ -334,14 +329,10 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 setStatusFilter(newValue);
                                 updateListFilter?.('statusFilter', newValue);
 
-                                // We've now combined List and Archive views, so no need to switch views
-
-                                // Dispatch a custom event to notify other components about status filter change
                                 window.dispatchEvent(new CustomEvent('list-status-filter-change', {
                                     detail: { statusFilter: newValue }
                                 }));
 
-                                // If we've switched to 'completed', we want to force a navigation state update
                                 if (newValue === 'completed' && window.updateActiveMenuHighlight) {
                                     window.updateActiveMenuHighlight('Archive');
                                 } else if (newValue !== 'completed' && window.updateActiveMenuHighlight) {
@@ -372,7 +363,6 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 resetListFilters?.();
                                 if (!canBypassPlantRestriction && userPlantCode) updateListFilter?.('selectedPlant', userPlantCode);
 
-                                // Just ensure the status filter is cleared
                                 if (window.updateActiveMenuHighlight) {
                                     window.updateActiveMenuHighlight('List');
                                 }

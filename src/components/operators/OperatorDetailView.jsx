@@ -173,7 +173,6 @@ function OperatorDetailView({operatorId, onClose}) {
                     updatedBy: userId
                 };
 
-                // Ensure assigned trainer is null if empty string or '0'
                 if (!updatedOperator.assignedTrainer || updatedOperator.assignedTrainer === '0') {
                     updatedOperator.assignedTrainer = null;
                 }
@@ -218,7 +217,6 @@ function OperatorDetailView({operatorId, onClose}) {
                 throw new Error('Authentication required: You must be logged in to delete operators.');
             }
 
-            // Fetch operator details to ensure correct employee_id is used
             const operatorData = await OperatorService.getOperatorByEmployeeId(operatorId);
             if (!operatorData || !operatorData.employeeId) {
                 alert('Error: Operator not found or invalid Employee ID.');

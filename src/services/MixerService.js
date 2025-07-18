@@ -177,7 +177,6 @@ export class MixerService {
         }
         if (!userId) throw new Error('User ID is required');
 
-        // Use provided previous mixer state if available (for accurate history), otherwise fetch from DB
         const currentMixer = prevMixerState || await this.getMixerById(id);
         if (!currentMixer) throw new Error(`Mixer with ID ${id} not found`);
 

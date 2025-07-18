@@ -180,7 +180,8 @@ function MixerDetailView({mixerId, onClose}) {
 
         setIsSaving(true);
         try {
-            const userId = await UserService.getCurrentUser();
+            let userObj = await UserService.getCurrentUser();
+            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
 
             const formatDate = date => {
                 if (!date) return null;
@@ -223,7 +224,7 @@ function MixerDetailView({mixerId, onClose}) {
                 updatedMixer.id,
                 updatedMixer,
                 undefined,
-                mixerForHistory // pass previous state for history
+                mixerForHistory
             );
             setMixer(updatedMixer);
 
@@ -282,7 +283,8 @@ function MixerDetailView({mixerId, onClose}) {
                 });
             }
 
-            const userId = await UserService.getCurrentUser();
+            let userObj = await UserService.getCurrentUser();
+            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
 
             const now = new Date().toISOString();
             const {data, error} = await supabase
