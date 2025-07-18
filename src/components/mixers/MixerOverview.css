@@ -101,25 +101,32 @@
     align-items: center;
     padding: 1rem;
     border-radius: 8px;
-    background-color: rgba(52, 152, 219, 0.05);
+    background-color: var(--bg-secondary); /* was rgba(52, 152, 219, 0.05); */
     min-width: 120px;
 }
 
 .stat-icon {
     font-size: 1.8rem;
-    color: #3498db;
+    color: var(--accent); /* was #3498db or #0055a5 */
     margin-right: 1rem;
+    background-color: var(--accent-light-theme); /* for icon background */
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
 }
 
 .stat-value {
     font-size: 1.5rem;
     font-weight: bold;
-    color: var(--text-primary);
+    color: var(--text-primary); /* was #212122 */
 }
 
 .stat-label {
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--text-secondary); /* was #666 */
 }
 
 .plant-list {
@@ -256,20 +263,20 @@
     display: flex;
     align-items: center;
     padding: 10px;
-    background-color: #f9f9f9;
+    background-color: var(--bg-secondary); /* was #f9f9f9 */
     border-radius: 6px;
 }
 
 .stat-icon {
     font-size: 1.5rem;
     margin-right: 15px;
-    color: #0055a5;
+    color: var(--accent);
     width: 40px;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 85, 165, 0.1);
+    background-color: var(--accent-light-theme);
     border-radius: 50%;
 }
 
@@ -281,11 +288,12 @@
     font-size: 1.4rem;
     font-weight: bold;
     margin-bottom: 2px;
+    color: var(--text-primary);
 }
 
 .stat-label {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .plant-list {

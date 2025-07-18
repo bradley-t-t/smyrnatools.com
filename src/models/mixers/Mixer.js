@@ -29,6 +29,11 @@ export class Mixer {
         return this.fromApiFormat(row);
     }
 
+    static ensureInstance(obj) {
+        if (obj instanceof Mixer) return obj;
+        return Mixer.fromApiFormat(obj);
+    }
+
     toApiFormat() {
         const formatDateForDb = date => {
             if (!date) return null;
@@ -110,7 +115,12 @@ export class Mixer {
 
     isVerified(latestHistoryDate) {
         try {
-            return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate);
+            return MixerUtility.isVerified(
+                this.updatedLast,
+                this.updatedAt,
+                this.updatedBy,
+                latestHistoryDate
+            );
         } catch (error) {
             if (!this.updatedLast || !this.updatedBy) return false;
 

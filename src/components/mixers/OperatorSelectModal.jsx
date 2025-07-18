@@ -5,14 +5,13 @@ import {supabase} from '../../services/DatabaseService';
 import {usePreferences} from '../../context/PreferencesContext';
 import './OperatorSelectModal.css';
 
-function OperatorSelectModal({isOpen, onClose, onSelect, currentValue, mixers = [], assignedPlant = '', readOnly = false}) {
+function OperatorSelectModal({isOpen, onClose, onSelect, currentValue, mixers = [], assignedPlant = '', readOnly = false, operators, onRefresh}) {
   const {preferences} = usePreferences();
   const isDarkMode = preferences.themeMode === 'dark';
   const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
   const accentColorRGB = preferences.accentColor === 'red' ? '184, 0, 23' : '0, 56, 150';
-  const [operators, setOperators] = useState([]);
   const [searchText, setSearchText] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // always false now
   const [filterPlant, setFilterPlant] = useState(assignedPlant);
   const [filterPosition, setFilterPosition] = useState('');
   const [sortAvailableFirst, setSortAvailableFirst] = useState(true);
@@ -25,12 +24,11 @@ function OperatorSelectModal({isOpen, onClose, onSelect, currentValue, mixers = 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      fetchOperators();
     } else {
       document.body.style.overflow = 'auto';
     }
     return () => { document.body.style.overflow = 'auto'; };
-  }, [isOpen, assignedPlant, mixers]);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = e => {
@@ -39,31 +37,6 @@ function OperatorSelectModal({isOpen, onClose, onSelect, currentValue, mixers = 
     if (isOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
-
-  async function fetchOperators() {
-    setIsLoading(true);
-    try {
-      let data = assignedPlant ? await OperatorService.fetchOperatorsByPlant(assignedPlant) : [];
-      if (!data.length && assignedPlant) {
-        const {data: plantData} = await supabase.from('operators').select('*').eq('plant_code', assignedPlant);
-        data = plantData?.map(op => ({
-          employeeId: op.employee_id,
-          smyrnaId: op.smyrna_id || '',
-          name: op.name,
-          plantCode: op.plant_code,
-          status: op.status,
-          isTrainer: op.is_trainer,
-          assignedTrainer: op.assigned_trainer,
-          position: op.position || ''
-        })) || [];
-      }
-      setOperators(data);
-    } catch {
-      setOperators([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   function isOperatorAssigned(operatorId) {
     if (!operatorId || operatorId === '0' || !Array.isArray(mixers)) return false;
@@ -126,6 +99,14 @@ function OperatorSelectModal({isOpen, onClose, onSelect, currentValue, mixers = 
                   style={sortAvailableFirst ? {fontWeight: '600', backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', color: '#ffffff'} : {fontWeight: '500'}}
               >
                 <i className="fas fa-sort-amount-down"></i> Available First
+              </button>
+              <button
+                  className="filter-button"
+                  title="Refresh operator list"
+                  onClick={() => onRefresh && onRefresh()}
+                  style={{marginLeft: '8px'}}
+              >
+                <i className="fas fa-sync"></i> Refresh List
               </button>
             </div>
           </div>

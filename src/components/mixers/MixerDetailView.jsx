@@ -49,6 +49,8 @@ function MixerDetailView({mixerId, onClose}) {
     const [make, setMake] = useState('');
     const [model, setModel] = useState('');
     const [year, setYear] = useState('');
+    const [operatorModalOperators, setOperatorModalOperators] = useState([]);
+    const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -300,6 +302,9 @@ function MixerDetailView({mixerId, onClose}) {
                 setTimeout(() => setMessage(''), 3000);
             }
 
+            // Ensure unsaved changes are cleared after verify
+            setHasUnsavedChanges(false);
+
         } catch (error) {
             console.error('Error verifying mixer:', error);
             alert(`Error verifying mixer: ${error.message}`);
@@ -327,6 +332,29 @@ function MixerDetailView({mixerId, onClose}) {
     function formatDate(date) {
         if (!date) return '';
         return date instanceof Date ? date.toISOString().split('T')[0] : date;
+    }
+
+    // Add a function to fetch operators for the modal, always from DB
+    async function fetchOperatorsForModal() {
+        let dbOperators = await OperatorService.fetchOperators();
+        // If we have a last unassigned operator, ensure it's in the list
+        if (lastUnassignedOperatorId) {
+            const alreadyIncluded = dbOperators.some(op => op.employeeId === lastUnassignedOperatorId);
+            if (!alreadyIncluded) {
+                const unassignedOperator = await OperatorService.fetchOperatorById(lastUnassignedOperatorId);
+                if (unassignedOperator) {
+                    dbOperators = [...dbOperators, unassignedOperator];
+                }
+            }
+        }
+        setOperatorModalOperators(dbOperators);
+        // Do NOT reset lastUnassignedOperatorId here
+    }
+
+    // Add a function to always fetch the latest operators
+    async function refreshOperators() {
+        const updatedOperators = await OperatorService.fetchOperators();
+        setOperators(updatedOperators);
     }
 
     if (isLoading) {
@@ -419,7 +447,7 @@ function MixerDetailView({mixerId, onClose}) {
                     <div className="verification-card">
                         <div className="verification-card-header">
                             <i className="fas fa-clipboard-check"></i>
-                            {mixer.isVerified() ? (
+                            {Mixer.ensureInstance(mixer).isVerified() ? (
                                 <div className="verification-badge verified">
                                     <i className="fas fa-check-circle"></i>
                                     <span>Verified</span>
@@ -442,13 +470,13 @@ function MixerDetailView({mixerId, onClose}) {
                                 </div>
                             </div>
                             <div className="verification-item">
-                                <div className="verification-icon" style={{color: mixer.updatedLast ? (mixer.isVerified() ? '#10b981' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                <div className="verification-icon" style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? '#10b981' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
-                                    <span className="verification-value" style={{color: mixer.updatedLast ? (mixer.isVerified() ? 'inherit' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
-                                        {mixer.updatedLast ? `${new Date(mixer.updatedLast).toLocaleString()}${!mixer.isVerified() ? (new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? ' (Changes have been made)' : ' (It is a new week)') : ''}` : 'Never verified'}
+                                    <span className="verification-value" style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'inherit' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                        {mixer.updatedLast ? `${new Date(mixer.updatedLast).toLocaleString()}${!Mixer.ensureInstance(mixer).isVerified() ? (new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? ' (Changes have been made)' : ' (It is a new week)') : ''}` : 'Never verified'}
                                     </span>
                                 </div>
                             </div>
@@ -507,7 +535,12 @@ function MixerDetailView({mixerId, onClose}) {
                                 <div className="operator-select-container">
                                     <button
                                         className="operator-select-button form-control"
-                                        onClick={() => canEditMixer && setShowOperatorModal(true)}
+                                        onClick={async () => {
+                                            if (canEditMixer) {
+                                                await fetchOperatorsForModal();
+                                                setShowOperatorModal(true);
+                                            }
+                                        }}
                                         type="button"
                                         disabled={!canEditMixer}
                                         style={!canEditMixer ? { cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa' } : {}}
@@ -516,45 +549,90 @@ function MixerDetailView({mixerId, onClose}) {
                                             {assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}
                                         </span>
                                     </button>
-                                    {assignedOperator && canEditMixer && (
-                                        <button
-                                            className="unassign-operator-button"
-                                            title="Unassign Operator"
-                                            onClick={async () => {
-                                                try {
-                                                    const prevOperator = assignedOperator;
-                                                    await handleSave({
-                                                        assignedOperator: null,
-                                                        status: 'Spare',
-                                                        prevAssignedOperator: prevOperator
-                                                    });
-                                                    setAssignedOperator(null);
-                                                    setStatus('Spare');
-                                                    const [updatedOperators, updatedMixer] = await Promise.all([
-                                                        OperatorService.fetchOperators(),
-                                                        MixerService.fetchMixerById(mixerId)
-                                                    ]);
-                                                    setOperators(updatedOperators);
-                                                    setMixer(updatedMixer);
-                                                    setMessage('Operator unassigned and status set to Spare');
-                                                    setTimeout(() => setMessage(''), 3000);
-                                                    if (showOperatorModal) {
-                                                        setShowOperatorModal(false);
-                                                        const refreshedOperators = await OperatorService.fetchOperators();
-                                                        setOperators(refreshedOperators);
-                                                        setShowOperatorModal(true);
+                                    {canEditMixer && (
+                                        assignedOperator ? (
+                                            <button
+                                                className="unassign-operator-button"
+                                                title="Unassign Operator"
+                                                onClick={async () => {
+                                                    try {
+                                                        const prevOperator = assignedOperator;
+                                                        await handleSave({
+                                                            assignedOperator: null,
+                                                            status: 'Spare',
+                                                            prevAssignedOperator: prevOperator
+                                                        });
+                                                        setAssignedOperator(null);
+                                                        setStatus('Spare');
+                                                        setLastUnassignedOperatorId(prevOperator); // Track last unassigned
+                                                        await refreshOperators();
+                                                        await fetchOperatorsForModal();
+                                                        const updatedMixer = await MixerService.fetchMixerById(mixerId);
+                                                        setMixer(updatedMixer);
+                                                        setMessage('Operator unassigned and status set to Spare');
+                                                        setTimeout(() => setMessage(''), 3000);
+                                                        if (showOperatorModal) {
+                                                            setShowOperatorModal(false);
+                                                            setTimeout(() => {
+                                                                setShowOperatorModal(true);
+                                                            }, 0);
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Error unassigning operator:', error);
+                                                        setMessage('Error unassigning operator. Please try again.');
+                                                        setTimeout(() => setMessage(''), 3000);
                                                     }
-                                                } catch (error) {
-                                                    console.error('Error unassigning operator:', error);
-                                                    setMessage('Error unassigning operator. Please try again.');
-                                                    setTimeout(() => setMessage(''), 3000);
-                                                }
-                                            }}
-                                            type="button"
-                                        >
-                                            Unassign Operator
-                                        </button>
-                                    )}
+                                                }}
+                                                type="button"
+                                            >
+                                                Unassign Operator
+                                            </button>
+                                        ) : (
+                                            lastUnassignedOperatorId && (
+                                                <button
+                                                    className="undo-operator-button"
+                                                    title="Undo Unassign"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await handleSave({
+                                                                assignedOperator: lastUnassignedOperatorId,
+                                                                status: 'Active'
+                                                            });
+                                                            setAssignedOperator(lastUnassignedOperatorId);
+                                                            setStatus('Active');
+                                                            setLastUnassignedOperatorId(null); // Reset undo state ONLY after undo
+                                                            await refreshOperators();
+                                                            await fetchOperatorsForModal();
+                                                            const updatedMixer = await MixerService.fetchMixerById(mixerId);
+                                                            setMixer(updatedMixer);
+                                                            setMessage('Operator re-assigned and status set to Active');
+                                                            setTimeout(() => setMessage(''), 3000);
+                                                        } catch (error) {
+                                                            console.error('Error undoing unassign:', error);
+                                                            setMessage('Error undoing unassign. Please try again.');
+                                                            setTimeout(() => setMessage(''), 3000);
+                                                        }
+                                                    }}
+                                                    type="button"
+                                                    style={{
+                                                        backgroundColor: '#10b981',
+                                                        color: '#fff',
+                                                        marginLeft: '8px',
+                                                        height: '38px', // Match default input/button height
+                                                        minWidth: '140px', // Match width of Unassign Operator button
+                                                        fontSize: '1rem',
+                                                        borderRadius: '4px',
+                                                        border: 'none',
+                                                        padding: '0 16px',
+                                                        cursor: 'pointer',
+                                                        boxSizing: 'border-box'
+                                                    }}
+                                                    className="unassign-operator-button" // Use same class for consistent styling
+                                                >
+                                                    Undo
+                                                </button>
+                                            )
+                                        ))}
                                 </div>
                                 {showOperatorModal && (
                                     <OperatorSelectModal
@@ -572,14 +650,13 @@ function MixerDetailView({mixerId, onClose}) {
                                                     });
                                                     setAssignedOperator(newOperator);
                                                     setStatus(newStatus);
-                                                    const [updatedOperators, updatedMixer] = await Promise.all([
-                                                        OperatorService.fetchOperators(),
-                                                        MixerService.fetchMixerById(mixerId)
-                                                    ]);
-                                                    setOperators(updatedOperators);
+                                                    setLastUnassignedOperatorId(null); // Reset after assignment
+                                                    await refreshOperators();
+                                                    const updatedMixer = await MixerService.fetchMixerById(mixerId);
                                                     setMixer(updatedMixer);
                                                     setMessage('Operator assigned and status set to Active');
                                                     setTimeout(() => setMessage(''), 3000);
+                                                    setHasUnsavedChanges(false);
                                                 } catch (error) {
                                                     console.error('Error assigning operator:', error);
                                                     setMessage('Error assigning operator. Please try again.');
@@ -591,6 +668,10 @@ function MixerDetailView({mixerId, onClose}) {
                                         mixers={mixers}
                                         assignedPlant={assignedPlant}
                                         readOnly={!canEditMixer}
+                                        operators={operatorModalOperators}
+                                        onRefresh={async () => {
+                                            await fetchOperatorsForModal();
+                                        }}
                                     />
                                 )}
                             </div>
