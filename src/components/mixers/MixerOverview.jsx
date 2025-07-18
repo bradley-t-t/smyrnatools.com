@@ -39,6 +39,8 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setCleanlinessAvg(MixerUtility.getCleanlinessAverage(mixersData));
         setNeedServiceCount(MixerUtility.getNeedServiceCount(mixersData));
 
+        const totalNonRetired = mixersData.filter(mixer => mixer.status !== 'Retired').length;
+
         const verified = mixersData.filter(mixer => {
             return MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
         }).length;
@@ -59,6 +61,9 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setTrainersCount(trainersCount);
 
         calculatePlantDistributionByStatus(mixersData);
+
+        // Set total count (excluding retired)
+        setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }));
     };
 
     const calculatePlantDistributionByStatus = (mixersData) => {

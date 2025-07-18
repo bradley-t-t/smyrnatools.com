@@ -39,7 +39,6 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers}) {
 
     const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
-
     return (
         <div className="operator-card" {...cardProps}>
             <div className="card-status-indicator"
@@ -66,10 +65,14 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers}) {
                         <div className="detail-label">Status</div>
                         <div className="detail-value">{operator.status || 'Unknown'}</div>
                     </div>
-                    {operator.status === 'Pending Start' && operator.pendingStartDate && (
+                    {operator.status === 'Pending Start' && (
                         <div className="detail-row">
                             <div className="detail-label">Pending Start Date</div>
-                            <div className="detail-value">{formatDate(operator.pendingStartDate)}</div>
+                            <div className="detail-value">
+                                {operator.pendingStartDate
+                                    ? formatDate(operator.pendingStartDate)
+                                    : 'Not Set'}
+                            </div>
                         </div>
                     )}
                     <div className="detail-row">
