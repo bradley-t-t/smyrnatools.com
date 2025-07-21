@@ -46,6 +46,8 @@ const getIconForMenuItem = (id) => {
             return <i className="fas fa-user"></i>;
         case 'Logout':
             return <i className="fas fa-sign-out-alt"></i>;
+        case 'Teams':
+            return <i className="fas fa-people-arrows"></i>;
         default:
             return <i className="fas fa-clipboard-list"></i>;
     }
@@ -61,6 +63,7 @@ const menuItems = [
     {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
     {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
+    {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
 ];
 
 export default function Navigation({
@@ -161,7 +164,7 @@ export default function Navigation({
 
                 <nav className="navbar-menu">
                     <ul>
-                                                    {visibleMenuItems.map((item) => {
+                        {visibleMenuItems.map((item) => {
                             let isActive = false;
 
                             if (item.id === 'List') {
@@ -171,24 +174,24 @@ export default function Navigation({
                             }
 
                             return (
-                            <li
-                                key={item.id}
-                                className={`menu-item ${isActive ? 'active' : ''}`}
-                                onClick={() => {
-                                    if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) {
-                                        window.appSwitchView(item.id);
-                                    } else {
-                                        onSelectView(item.id);
-                                    }
-                                }}
-                            >
-                                <span className="menu-icon"
-                                      title={item.text}>
-                                    {getIconForMenuItem(item.id)}
-                                </span>
-                                {!collapsed && <span className="menu-text">{item.text}</span>}
-                            </li>
-                        );
+                                <li
+                                    key={item.id}
+                                    className={`menu-item ${isActive ? 'active' : ''}`}
+                                    onClick={() => {
+                                        if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) {
+                                            window.appSwitchView(item.id);
+                                        } else {
+                                            onSelectView(item.id);
+                                        }
+                                    }}
+                                >
+                                    <span className="menu-icon"
+                                          title={item.text}>
+                                        {getIconForMenuItem(item.id)}
+                                    </span>
+                                    {!collapsed && <span className="menu-text">{item.text}</span>}
+                                </li>
+                            );
                         })}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}

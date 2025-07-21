@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { usePresence } from '../../hooks/UsePresence';
 import { usePreferences } from '../../context/PreferencesContext';
 import { AuthService } from '../../services/AuthService';
 import './OnlineUsersOverlay.css';
 import {UserService} from "../../services/UserService";
+import {usePresence} from "../../hooks/UsePresence";
 
 function OnlineUsersOverlay() {
     const { onlineUsers, loading, error } = usePresence();

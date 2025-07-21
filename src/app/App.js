@@ -22,6 +22,7 @@ import OnlineUsersOverlay from '../components/common/OnlineUsersOverlay';
 import TipBanner from '../components/common/TipBanner';
 import '../styles/Theme.css';
 import '../styles/Global.css';
+import TeamsView from '../components/teams/TeamsView';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');
@@ -308,6 +309,8 @@ function AppContent() {
                 return <LoginView/>;
             case 'Settings':
                 return <SettingsView/>;
+            case 'Teams':
+                return <TeamsView />;
             default:
                 return (
                     <div className="coming-soon">
@@ -361,3 +364,4 @@ function App() {
 }
 
 export default App;
+
