@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './core/index.css';
-import App from './core/App';
+import './app/index.css';
+import App from './app/App';
 import {PreferencesProvider} from './context/PreferencesContext';
 import vitalsUtility from './utils/VitalsUtility';
 

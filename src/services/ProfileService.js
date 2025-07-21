@@ -1,6 +1,6 @@
-import supabase from '../core/database/Supabase';
+import supabase from '../app/database/Supabase';
 import {AuthService} from './AuthService';
-import {AccountManager} from '../core/accounts/AccountManager';
+import {AccountManager} from '../app/accounts/AccountManager';
 
 const PROFILES_TABLE = 'users_profiles';
 const USERS_TABLE = 'users';

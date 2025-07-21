@@ -43,11 +43,11 @@ const ThemeUtility = {
             light: '#f5f5f5'
         },
         background: {
-            primary: '#1e1e1e',
-            secondary: '#121212',
-            tertiary: '#2a2a2a',
-            navbar: '#1e1e1e',
-            main: '#121212'
+            primary: '#000b1e',      // 80/20 blend
+            secondary: '#000b1e',    // 80/20 blend
+            tertiary: '#002c78',
+            navbar: '#000b1e',       // 80/20 blend
+            main: '#000b1e'          // 80/20 blend
         },
         border: {
             light: '#333333',
