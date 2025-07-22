@@ -33,7 +33,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
     }, [filteredMixers, operators]);
 
     const updateStatistics = (mixersData) => {
-        // Use filteredMixers if provided, otherwise mixersData
         const statsMixers = filteredMixers || mixersData;
 
         const statusCounts = MixerUtility.getStatusCounts(statsMixers);
@@ -71,7 +70,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         if (selectedPlant) {
             filteredForIssues = statsMixers.filter(mixer => mixer.assignedPlant === selectedPlant);
         }
-        // Fix: count openMaintenanceIssue only if the mixer is in filteredForIssues
         setOpenMaintenanceIssues(
             filteredForIssues.filter(mixer =>
                 mixer.issues?.some(issue => !issue.time_completed)
@@ -110,7 +108,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setIsLoading(true);
         try {
             const mixersData = await MixerService.getAllMixers();
-            // Fetch open maintenance issues for all mixers
             let maintenanceIssues = [];
             try {
                 const { data, error } = await supabase
@@ -122,7 +119,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                 }
             } catch (maintenanceError) {}
 
-            // Attach issues array to each mixer
             const mixersWithMaintenance = mixersData.map(mixer => ({
                 ...mixer,
                 issues: maintenanceIssues.filter(issue => issue.mixer_id === mixer.id)
@@ -140,7 +136,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
 
                 if (operatorsError) throw operatorsError;
 
-                // Filter out tractor operators
                 const operatorsData = operatorsRawData
                     .filter(op => !op.position || !op.position.toLowerCase().includes('tractor'))
                     .map(op => ({
@@ -291,7 +286,7 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                 )}
             </div>
 
-            {/* Show active operators for selected plant if plant filter is applied */}
+            {}
             {selectedPlant && (
                 <div className="active-operators-list" style={{marginTop: 32}}>
                     <h2 style={{fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)'}}>
@@ -310,7 +305,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                 {operators
                                     .filter(op => op.plantCode === selectedPlant && op.status === 'Active')
                                     .map(op => {
-                                        // Find assigned truck number from filteredMixers if present, else all mixers
                                         const mixerSource = filteredMixers || mixers;
                                         const assignedMixer = mixerSource.find(m =>
                                             m.assignedOperator === op.employeeId &&

@@ -62,7 +62,6 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const daysSinceService = getDaysSince(mixer.lastServiceDate);
     const daysSinceChip = getDaysSince(mixer.lastChipDate);
 
-    // Helper for icon margin
     const getIconMargin = () => {
         let margin = 0;
         if (openIssuesCount > 0) margin += 30;
@@ -75,17 +74,17 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
             <div className="card-status-indicator"
                  style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}}
                  title={mixer.status || 'Unknown'}></div>
-            {/* Comments icon - leftmost or in issues spot if no issues */}
+            {}
             {commentsCount > 0 && (
                 <div
                     className="comments-badge"
                     style={{
                         position: 'absolute',
-                        top: '12px', // moved up 2px
+                        top: '12px',
                         right: openIssuesCount > 0 ? '92px' : '42px',
                         zIndex: 4,
-                        background: '#FFD600', // yellow background
-                        color: '#7a5c00',      // dark yellow/brown text
+                        background: '#FFD600',
+                        color: '#7a5c00',
                         borderRadius: '12px',
                         padding: '2px 8px',
                         display: 'flex',
@@ -106,7 +105,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                     style={{
                         position: 'absolute',
                         top: '12px',
-                        right: '42px', // moved 5px more to the right
+                        right: '42px',
                         zIndex: 4,
                         backgroundColor: '#e74c3c',
                         color: 'white',

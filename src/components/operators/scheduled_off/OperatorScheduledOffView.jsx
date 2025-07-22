@@ -63,7 +63,6 @@ function RequestOffModal({ operator, daysOff, onClose, onSave }) {
         setSubmitting(false);
     };
 
-    // Improved popup layout
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -165,15 +164,14 @@ function UpcomingDaysOffModal({ fetchUpcomingDaysOff, onClose }) {
                 supabase.from(SCHEDULED_OFF_TABLE).select('id, days_off')
             ]);
             const today = new Date();
-            today.setHours(0,0,0,0); // Ensure midnight for today
+            today.setHours(0,0,0,0);
             const summary = [];
             (offData || []).forEach(row => {
                 if (Array.isArray(row.days_off)) {
                     row.days_off.forEach(dateStr => {
-                        // Parse date only (ignore time zone issues)
                         const [year, month, day] = dateStr.split('-');
                         const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
-                        dateObj.setHours(0,0,0,0); // Ensure midnight for comparison
+                        dateObj.setHours(0,0,0,0);
                         if (dateObj >= today) {
                             const operator = (ops || []).find(op => op.employee_id === row.id);
                             if (operator) {
@@ -203,13 +201,11 @@ function UpcomingDaysOffModal({ fetchUpcomingDaysOff, onClose }) {
         const tomorrow = new Date(now);
         tomorrow.setDate(now.getDate() + 1);
 
-        // Get start/end of this week (Sunday-Saturday)
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-        // Get start/end of next week
         const startOfNextWeek = new Date(endOfWeek);
         startOfNextWeek.setDate(endOfWeek.getDate() + 1);
         const endOfNextWeek = new Date(startOfNextWeek);
@@ -244,7 +240,6 @@ function UpcomingDaysOffModal({ fetchUpcomingDaysOff, onClose }) {
 
     const grouped = groupUpcomingDaysOff(upcomingDaysOff);
 
-    // Section icons for Today, Tomorrow, This Week, Next Week, Future
     const sectionIcons = {
         Today: <i className="fas fa-sun section-icon" />,
         Tomorrow: <i className="fas fa-arrow-right section-icon" />,
@@ -321,7 +316,6 @@ export default function OperatorScheduledOffView() {
     const [modalDaysOff, setModalDaysOff] = useState([]);
     const [showUpcoming, setShowUpcoming] = useState(false);
 
-    // Permission logic
     const [currentUser, setCurrentUser] = useState(null);
     const [userPlant, setUserPlant] = useState('');
     const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false);
@@ -362,7 +356,6 @@ export default function OperatorScheduledOffView() {
         fetchData();
     }, []);
 
-    // Only allow editing for assigned plant unless bypass permission
     const canEditPlant = canBypassPlantRestriction || (selectedPlant === userPlant && selectedPlant !== '');
 
     const filteredOperators = operators
@@ -376,7 +369,6 @@ export default function OperatorScheduledOffView() {
         );
 
     const handleOperatorCardClick = (operator) => {
-        // Only allow editing if user can edit plant
         if (!canEditPlant) return;
         setSelectedOperator(operator);
         setModalDaysOff(scheduledOff[operator.employee_id] || []);
@@ -480,7 +472,6 @@ export default function OperatorScheduledOffView() {
                             value={selectedPlant}
                             onChange={e => setSelectedPlant(e.target.value)}
                             aria-label="Filter by plant"
-                            // Always enabled so user can view other plants
                         >
                             <option value="">All Plants</option>
                             {plants

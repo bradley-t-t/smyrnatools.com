@@ -26,7 +26,7 @@ function getUpcomingSaturday(date = new Date()) {
 }
 
 function getTeamWorkingThisSaturday() {
-    const referenceSaturday = new Date(2025, 6, 26); // Month is 0-indexed
+    const referenceSaturday = new Date(2025, 6, 26);
     referenceSaturday.setHours(0, 0, 0, 0);
     const upcomingSaturday = getUpcomingSaturday();
     const msPerWeek = 7 * 24 * 60 * 60 * 1000;
@@ -109,7 +109,6 @@ function TeamsView() {
                 .from(OPERATORS_TABLE)
                 .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
                 .eq('plant_code', selectedPlant);
-            // Only include filtered status and Mixer Operators
             const filteredOps = (ops || [])
                 .filter(op =>
                     (!statusFilter || op.status === statusFilter)
@@ -119,7 +118,6 @@ function TeamsView() {
                 .from(OPERATORS_TEAMS_TABLE)
                 .select('employee_id, team')
                 .in('employee_id', filteredOps.map(o => o.employee_id));
-            // Insert missing filtered operators into teams table as team 'A'
             const opsWithoutTeam = filteredOps.filter(op => !(teamData || []).some(t => t.employee_id === op.employee_id));
             if (opsWithoutTeam.length > 0) {
                 await supabase
@@ -168,7 +166,6 @@ function TeamsView() {
         fetchScheduledOff();
     }, [selectedPlant]);
 
-    // Restrict editing unless user has bypass permission or is on their assigned plant
     const canEditPlant = canBypassPlantRestriction || (selectedPlant === userPlant && selectedPlant !== '');
 
     const handleDragStart = (operator, team) => {
@@ -189,13 +186,11 @@ function TeamsView() {
             .eq('employee_id', draggedOperator.employee_id);
         setDraggedOperator(null);
         setDragOverTeam(null);
-        // Refresh teams
         const { data: ops } = await supabase
             .from(OPERATORS_TABLE)
             .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
             .eq('plant_code', selectedPlant);
-        // Only include filtered status and Mixer Operators after drag and drop
-        const filteredOps = (ops || [])
+         const filteredOps = (ops || [])
             .filter(op =>
                 (!statusFilter || op.status === statusFilter)
             )
@@ -218,21 +213,18 @@ function TeamsView() {
         setLoading(false);
     };
 
-    // Helper: does operator have time off for the upcoming Saturday?
     function hasTimeOffForSaturday(operator) {
         const daysOff = scheduledOff[operator.employee_id] || [];
         const saturday = getUpcomingSaturday();
-        const saturdayStr = saturday.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+        const saturdayStr = saturday.toISOString().slice(0, 10);
         return daysOff.includes(saturdayStr);
     }
 
-    // Only show operators NOT scheduled off for Saturday
     const filteredTeams = {
         A: teams.A.filter(op => !hasTimeOffForSaturday(op)),
         B: teams.B.filter(op => !hasTimeOffForSaturday(op))
     };
 
-    // For overview, also exclude scheduled-off operators
     const teamsForOverview = {
         A: filteredTeams.A,
         B: filteredTeams.B
@@ -242,7 +234,7 @@ function TeamsView() {
 
     return (
         <div className="dashboard-container teams-view">
-            {/* Restriction message at top */}
+            {}
             {!canEditPlant && selectedPlant !== '' && (
                 <div style={{
                     background: '#fffbe6',
@@ -266,7 +258,7 @@ function TeamsView() {
                     margin: 0
                 }}>Teams</h1>
                 <div className="dashboard-actions">
-                    {/* Add any actions if needed */}
+                    {}
                 </div>
             </div>
             <div className="search-filters">
@@ -312,7 +304,7 @@ function TeamsView() {
                             ))}
                         </select>
                     </div>
-                    {/* Overview button */}
+                    {}
                     <button className="ios-button" onClick={() => setShowOverview(true)}>
                         <i className="fas fa-chart-bar"></i>
                         Overview
@@ -335,7 +327,7 @@ function TeamsView() {
                     <LoadingScreen message="Loading teams..." inline={true} />
                 ) : (
                     <div className="teams-split-cards">
-                        {/* Team A Card */}
+                        {}
                         <div
                             className={`team-card team-A${dragOverTeam === 'A' ? ' drag-over' : ''}`}
                             onDragOver={e => { e.preventDefault(); handleDragOver('A'); }}
@@ -397,7 +389,7 @@ function TeamsView() {
                                 ))}
                             </div>
                         </div>
-                        {/* Team B Card */}
+                        {}
                         <div
                             className={`team-card team-B${dragOverTeam === 'B' ? ' drag-over' : ''}`}
                             onDragOver={e => { e.preventDefault(); handleDragOver('B'); }}
@@ -473,7 +465,7 @@ function TeamsView() {
                     </em>
                 </div>
             </div>
-            {/* Use TeamsOverview modal */}
+            {}
             {showOverview && (
                 <TeamsOverview
                     onClose={() => setShowOverview(false)}

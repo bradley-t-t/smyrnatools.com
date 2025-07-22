@@ -11,7 +11,7 @@ function OperatorSelectModal({isOpen, onClose, onSelect, currentValue, mixers = 
   const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
   const accentColorRGB = preferences.accentColor === 'red' ? '184, 0, 23' : '0, 56, 150';
   const [searchText, setSearchText] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // always false now
+  const [isLoading, setIsLoading] = useState(false);
   const [filterPlant, setFilterPlant] = useState(assignedPlant);
   const [filterPosition, setFilterPosition] = useState('');
   const [sortAvailableFirst, setSortAvailableFirst] = useState(true);

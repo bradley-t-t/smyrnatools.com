@@ -65,7 +65,6 @@ const menuItems = [
     {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
     {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
-    // Removed Archive
 ];
 
 export default function Navigation({

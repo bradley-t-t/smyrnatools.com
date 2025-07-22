@@ -302,7 +302,6 @@ function MixerDetailView({mixerId, onClose}) {
                 setTimeout(() => setMessage(''), 3000);
             }
 
-            // Ensure unsaved changes are cleared after verify
             setHasUnsavedChanges(false);
 
         } catch (error) {
@@ -334,10 +333,8 @@ function MixerDetailView({mixerId, onClose}) {
         return date instanceof Date ? date.toISOString().split('T')[0] : date;
     }
 
-    // Add a function to fetch operators for the modal, always from DB
     async function fetchOperatorsForModal() {
         let dbOperators = await OperatorService.fetchOperators();
-        // If we have a last unassigned operator, ensure it's in the list
         if (lastUnassignedOperatorId) {
             const alreadyIncluded = dbOperators.some(op => op.employeeId === lastUnassignedOperatorId);
             if (!alreadyIncluded) {
@@ -348,10 +345,8 @@ function MixerDetailView({mixerId, onClose}) {
             }
         }
         setOperatorModalOperators(dbOperators);
-        // Do NOT reset lastUnassignedOperatorId here
     }
 
-    // Add a function to always fetch the latest operators
     async function refreshOperators() {
         const updatedOperators = await OperatorService.fetchOperators();
         setOperators(updatedOperators);
@@ -564,7 +559,7 @@ function MixerDetailView({mixerId, onClose}) {
                                                         });
                                                         setAssignedOperator(null);
                                                         setStatus('Spare');
-                                                        setLastUnassignedOperatorId(prevOperator); // Track last unassigned
+                                                        setLastUnassignedOperatorId(prevOperator);
                                                         await refreshOperators();
                                                         await fetchOperatorsForModal();
                                                         const updatedMixer = await MixerService.fetchMixerById(mixerId);
@@ -600,7 +595,7 @@ function MixerDetailView({mixerId, onClose}) {
                                                             });
                                                             setAssignedOperator(lastUnassignedOperatorId);
                                                             setStatus('Active');
-                                                            setLastUnassignedOperatorId(null); // Reset undo state ONLY after undo
+                                                            setLastUnassignedOperatorId(null);
                                                             await refreshOperators();
                                                             await fetchOperatorsForModal();
                                                             const updatedMixer = await MixerService.fetchMixerById(mixerId);
@@ -618,8 +613,8 @@ function MixerDetailView({mixerId, onClose}) {
                                                         backgroundColor: '#10b981',
                                                         color: '#fff',
                                                         marginLeft: '8px',
-                                                        height: '38px', // Match default input/button height
-                                                        minWidth: '140px', // Match width of Unassign Operator button
+                                                        height: '38px',
+                                                        minWidth: '140px',
                                                         fontSize: '1rem',
                                                         borderRadius: '4px',
                                                         border: 'none',
@@ -627,7 +622,7 @@ function MixerDetailView({mixerId, onClose}) {
                                                         cursor: 'pointer',
                                                         boxSizing: 'border-box'
                                                     }}
-                                                    className="unassign-operator-button" // Use same class for consistent styling
+                                                    className="unassign-operator-button"
                                                 >
                                                     Undo
                                                 </button>
@@ -650,7 +645,7 @@ function MixerDetailView({mixerId, onClose}) {
                                                     });
                                                     setAssignedOperator(newOperator);
                                                     setStatus(newStatus);
-                                                    setLastUnassignedOperatorId(null); // Reset after assignment
+                                                    setLastUnassignedOperatorId(null);
                                                     await refreshOperators();
                                                     const updatedMixer = await MixerService.fetchMixerById(mixerId);
                                                     setMixer(updatedMixer);
