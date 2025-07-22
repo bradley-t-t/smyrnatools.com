@@ -23,6 +23,7 @@ import TipBanner from '../components/common/TipBanner';
 import '../styles/Theme.css';
 import '../styles/Global.css';
 import TeamsView from '../components/teams/TeamsView';
+import OperatorScheduledOffView from '../components/operators/scheduled_off/OperatorScheduledOffView';
 
 function AppContent() {
     const [selectedView, setSelectedView] = useState('Mixers');
@@ -311,6 +312,8 @@ function AppContent() {
                 return <SettingsView/>;
             case 'Teams':
                 return <TeamsView />;
+            case 'ScheduledOff':
+                return <OperatorScheduledOffView operatorId={userId} />;
             default:
                 return (
                     <div className="coming-soon">

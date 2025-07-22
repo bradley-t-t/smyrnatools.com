@@ -2,6 +2,8 @@
     padding: 1rem;
     max-width: 1200px;
     margin: 0 auto;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #212122);
 }
 
 .filtered-indicator {
@@ -9,6 +11,9 @@
     color: var(--text-secondary);
     font-weight: normal;
     margin-left: 10px;
+    background-color: var(--bg-tertiary, #f5f5f5);
+    padding: 3px 8px;
+    border-radius: 4px;
 }
 
 .filter-indicator {
@@ -16,9 +21,10 @@
     color: var(--text-secondary);
     margin-bottom: 15px;
     padding: 5px 10px;
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-tertiary, #f5f5f5);
     border-radius: 4px;
     display: inline-block;
+    text-align: center;
 }
 
 .operators-overview h1 {
@@ -35,7 +41,8 @@
 }
 
 .overview-card {
-    background: var(--bg-primary);
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #212122);
     border-radius: 12px;
     box-shadow: var(--shadow);
     padding: 1.25rem;
@@ -51,8 +58,8 @@
 .overview-card h2 {
     font-size: 1.3rem;
     margin-bottom: 1rem;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary, #212122);
+    border-bottom: 1px solid var(--border-light, #eee);
     padding-bottom: 0.75rem;
 }
 
@@ -67,6 +74,8 @@
     padding: 0.75rem;
     border-radius: 8px;
     transition: transform 0.2s ease;
+    background-color: var(--bg-tertiary, #f9f9f9);
+    color: var(--text-primary, #212122);
 }
 
 .status-item:hover {
@@ -77,11 +86,12 @@
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
+    color: var(--accent, #2563eb);
 }
 
 .status-label {
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--text-secondary, #666);
 }
 
 .positions-grid {
@@ -95,6 +105,8 @@
     padding: 0.75rem;
     border-radius: 8px;
     transition: transform 0.2s ease;
+    background-color: var(--bg-tertiary, #f9f9f9);
+    color: var(--text-primary, #212122);
 }
 
 .position-item:hover {
@@ -105,11 +117,12 @@
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
+    color: var(--accent, #2563eb);
 }
 
 .position-label {
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--text-secondary, #666);
 }
 
 .plant-distribution-table {
@@ -169,7 +182,8 @@
 }
 
 .distribution-table th {
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-tertiary, #f5f5f5);
+    color: var(--text-primary, #212122);
     font-weight: 500;
     position: sticky;
     top: 0;
@@ -179,6 +193,11 @@
 .distribution-table td.plant-name {
     text-align: left;
     font-weight: 500;
+    color: var(--text-primary, #212122);
+}
+
+.distribution-table td {
+    color: var(--text-secondary, #666);
 }
 
 .distribution-table tr:hover {
@@ -193,4 +212,68 @@
     .plant-card, .position-distribution-card {
         grid-column: span 1;
     }
+}
+
+/* Dark mode support */
+.dark-mode .operators-overview {
+    background: var(--bg-primary, #18181b);
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .overview-card {
+    background: var(--bg-primary, #23232a);
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .overview-card h2 {
+    color: var(--text-primary, #f5f5f5);
+    border-bottom: 1px solid var(--border-light, #333);
+}
+
+.dark-mode .status-item,
+.dark-mode .position-item {
+    background-color: var(--bg-tertiary, #23232a);
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .status-label,
+.dark-mode .position-label {
+    color: var(--text-secondary, #b5b5b5);
+}
+
+.dark-mode .status-count,
+.dark-mode .position-count {
+    color: var(--accent, #63b3ed);
+}
+
+.dark-mode .distribution-table th {
+    background-color: var(--bg-tertiary, #23232a);
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .distribution-table td {
+    color: var(--text-secondary, #b5b5b5);
+}
+
+.dark-mode .plant-name {
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .filtered-indicator,
+.dark-mode .filter-indicator {
+    background-color: var(--bg-tertiary, #23232a);
+    color: var(--text-secondary, #b5b5b5);
+}
+
+.overview-modal,
+.modal-content.overview-modal {
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #212122);
+}
+
+/* Dark mode support for modal background */
+.dark-mode .overview-modal,
+.dark-mode .modal-content.overview-modal {
+    background: var(--bg-primary, #18181b) !important;
+    color: var(--text-primary, #f5f5f5) !important;
 }

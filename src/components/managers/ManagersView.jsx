@@ -157,36 +157,51 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
 
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
+            <div
+                className="modal-content overview-modal managers-overview-modal"
+                onClick={e => e.stopPropagation()}
+            >
                 <div className="modal-header">
                     <h2>Managers Overview</h2>
                     <button className="close-button" onClick={() => setShowOverview(false)}>
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
-                <div className="modal-body">
-                    <div className="overview-metrics">
-                        <h3>Role Breakdown</h3>
-                        <div className="metrics-row">
+                <div className="overview-grid">
+                    <div className="overview-card status-card">
+                        <h2>Role Breakdown</h2>
+                        <div className="status-grid">
                             {roleCounts.map(({role, count}) => (
-                                <div className="metric-card" key={role}>
-                                    <div className="metric-title">{role}</div>
-                                    <div className="metric-value">{count}</div>
-                                </div>
-                            ))}
-                        </div>
-                        <h3 className="section-title">Plants</h3>
-                        <div className="metrics-row">
-                            {plants.map(plant => (
-                                <div className="metric-card" key={plant.plant_code}>
-                                    <div className="metric-title">{plant.plant_name}</div>
-                                    <div className="metric-value">{managers.filter(m => m.plantCode === plant.plant_code).length}</div>
+                                <div className="status-item" key={role}>
+                                    <div className="status-count">{count}</div>
+                                    <div className="status-label">{role}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
+                    <div className="overview-card plant-card">
+                        <h2>Plant Distribution</h2>
+                        <div className="plant-distribution-table">
+                            <table className="distribution-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Managers</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {plants.map(plant => (
+                                        <tr key={plant.plant_code}>
+                                            <td className="plant-name">{plant.plant_name}</td>
+                                            <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer" style={{marginTop: 24, textAlign: 'right'}}>
                     <button className="primary-button" onClick={() => setShowOverview(false)}>
                         Close
                     </button>
@@ -316,3 +331,4 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
 }
 
 export default ManagersView;
+

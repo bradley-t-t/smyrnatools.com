@@ -55,15 +55,17 @@ const getIconForMenuItem = (id) => {
 
 const menuItems = [
     {text: 'Mixers', id: 'Mixers', permission: 'mixers.view', alwaysVisible: false},
+    {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
     {text: 'Tractors', id: 'Tractors', permission: 'tractors.view', alwaysVisible: false},
     {text: 'Trailers', id: 'Trailers', permission: 'trailers.view', alwaysVisible: false},
     {text: 'Heavy Equipment', id: 'Heavy Equipment', permission: 'heavy_equipment.view', alwaysVisible: false},
     {text: 'Operators', id: 'Operators', permission: 'operators.view', alwaysVisible: false},
+    {text: 'Scheduled Off', id: 'ScheduledOff', permission: 'operators_scheduled_off.view', alwaysVisible: false},
     {text: 'Managers', id: 'Managers', permission: 'managers.view', alwaysVisible: false},
     {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
     {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
-    {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
+    // Removed Archive
 ];
 
 export default function Navigation({
@@ -193,6 +195,7 @@ export default function Navigation({
                                 </li>
                             );
                         })}
+                        {/* Only show Settings and MyAccount once, outside of visibleMenuItems */}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}
                             onClick={() => onSelectView('Settings')}

@@ -33,23 +33,26 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
     }, [filteredMixers, operators]);
 
     const updateStatistics = (mixersData) => {
-        const statusCounts = MixerUtility.getStatusCounts(mixersData);
+        // Use filteredMixers if provided, otherwise mixersData
+        const statsMixers = filteredMixers || mixersData;
+
+        const statusCounts = MixerUtility.getStatusCounts(statsMixers);
         setStatusCounts(statusCounts);
-        setPlantCounts(MixerUtility.getPlantCounts(mixersData));
-        setCleanlinessAvg(MixerUtility.getCleanlinessAverage(mixersData));
-        setNeedServiceCount(MixerUtility.getNeedServiceCount(mixersData));
+        setPlantCounts(MixerUtility.getPlantCounts(statsMixers));
+        setCleanlinessAvg(MixerUtility.getCleanlinessAverage(statsMixers));
+        setNeedServiceCount(MixerUtility.getNeedServiceCount(statsMixers));
 
-        const totalNonRetired = mixersData.filter(mixer => mixer.status !== 'Retired').length;
+        const totalNonRetired = statsMixers.filter(mixer => mixer.status !== 'Retired').length;
 
-        const verified = mixersData.filter(mixer => {
+        const verified = statsMixers.filter(mixer => {
             return MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy);
         }).length;
-        const notVerified = mixersData.length - verified;
+        const notVerified = statsMixers.length - verified;
         setVerifiedCount(verified);
         setNotVerifiedCount(notVerified);
 
         const assignedOperatorIds = new Set();
-        mixersData
+        statsMixers
             .filter(mixer => mixer.assignedOperator && mixer.assignedOperator !== '0')
             .forEach(mixer => assignedOperatorIds.add(mixer.assignedOperator));
 
@@ -60,10 +63,20 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setTrainingCount(trainingCount);
         setTrainersCount(trainersCount);
 
-        calculatePlantDistributionByStatus(mixersData);
+        calculatePlantDistributionByStatus(statsMixers);
 
-        // Set total count (excluding retired)
         setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }));
+
+        let filteredForIssues = statsMixers;
+        if (selectedPlant) {
+            filteredForIssues = statsMixers.filter(mixer => mixer.assignedPlant === selectedPlant);
+        }
+        // Fix: count openMaintenanceIssue only if the mixer is in filteredForIssues
+        setOpenMaintenanceIssues(
+            filteredForIssues.filter(mixer =>
+                mixer.issues?.some(issue => !issue.time_completed)
+            ).length
+        );
     };
 
     const calculatePlantDistributionByStatus = (mixersData) => {
@@ -97,20 +110,29 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
         setIsLoading(true);
         try {
             const mixersData = await MixerService.getAllMixers();
+            // Fetch open maintenance issues for all mixers
+            let maintenanceIssues = [];
             try {
                 const { data, error } = await supabase
                     .from('mixers_maintenance')
-                    .select('id')
-                    .is('time_completed', null);
+                    .select('id, mixer_id, time_completed');
 
                 if (!error) {
-                    setOpenMaintenanceIssues(data?.length || 0);
+                    maintenanceIssues = data || [];
                 }
-            } catch (maintenanceError) {
-            }
-            setMixers(mixersData);
+            } catch (maintenanceError) {}
+
+            // Attach issues array to each mixer
+            const mixersWithMaintenance = mixersData.map(mixer => ({
+                ...mixer,
+                issues: maintenanceIssues.filter(issue => issue.mixer_id === mixer.id)
+            }));
+
+            setMixers(mixersWithMaintenance);
+
             const plantsData = await PlantService.fetchPlants();
             setPlants(plantsData);
+
             try {
                 const { data: operatorsRawData, error: operatorsError } = await supabase
                     .from('operators')
@@ -118,22 +140,24 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
 
                 if (operatorsError) throw operatorsError;
 
-                const operatorsData = operatorsRawData.map(op => ({
-                    employeeId: op.employee_id,
-                    smyrnaId: op.smyrna_id || '',
-                    name: op.name,
-                    plantCode: op.plant_code,
-                    status: op.status,
-                    isTrainer: op.is_trainer === true,
-                    assignedTrainer: op.assigned_trainer,
-                    position: op.position
-                }));
+                // Filter out tractor operators
+                const operatorsData = operatorsRawData
+                    .filter(op => !op.position || !op.position.toLowerCase().includes('tractor'))
+                    .map(op => ({
+                        employeeId: op.employee_id,
+                        smyrnaId: op.smyrna_id || '',
+                        name: op.name,
+                        plantCode: op.plant_code,
+                        status: op.status,
+                        isTrainer: op.is_trainer === true,
+                        assignedTrainer: op.assigned_trainer,
+                        position: op.position
+                    }));
 
                 setOperators(operatorsData || []);
-            } catch (operatorsError) {
-            }
+            } catch (operatorsError) {}
             if (!filteredMixers) {
-                updateStatistics(mixersData);
+                updateStatistics(mixersWithMaintenance);
             }
         } catch (error) {
         } finally {
@@ -266,6 +290,52 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                     </div>
                 )}
             </div>
+
+            {/* Show active operators for selected plant if plant filter is applied */}
+            {selectedPlant && (
+                <div className="active-operators-list" style={{marginTop: 32}}>
+                    <h2 style={{fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)'}}>
+                        Active Operators ({getPlantName(selectedPlant)})
+                    </h2>
+                    <div style={{overflowX: 'auto'}}>
+                        <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '1rem'}}>
+                            <thead>
+                                <tr>
+                                    <th style={{textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>Name</th>
+                                    <th style={{textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>Position</th>
+                                    <th style={{textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>Truck #</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {operators
+                                    .filter(op => op.plantCode === selectedPlant && op.status === 'Active')
+                                    .map(op => {
+                                        // Find assigned truck number from filteredMixers if present, else all mixers
+                                        const mixerSource = filteredMixers || mixers;
+                                        const assignedMixer = mixerSource.find(m =>
+                                            m.assignedOperator === op.employeeId &&
+                                            m.assignedPlant === selectedPlant
+                                        );
+                                        return (
+                                            <tr key={op.employeeId}>
+                                                <td style={{padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>{op.name}</td>
+                                                <td style={{padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>{op.position || ''}</td>
+                                                <td style={{padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>
+                                                    {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : <span style={{color: 'var(--text-secondary)'}}>—</span>}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                {operators.filter(op => op.plantCode === selectedPlant && op.status === 'Active').length === 0 && (
+                                    <tr>
+                                        <td colSpan={3} style={{color: 'var(--text-secondary)', fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for this plant.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

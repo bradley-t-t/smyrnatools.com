@@ -3,6 +3,22 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #212122);
+}
+
+/* Modal container for overview */
+.overview-modal,
+.modal-content.overview-modal {
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #212122);
+}
+
+/* Dark mode support for modal background */
+.dark-mode .overview-modal,
+.dark-mode .modal-content.overview-modal {
+    background: var(--bg-primary, #18181b) !important;
+    color: var(--text-primary, #f5f5f5) !important;
 }
 
 .list-overview h1 {
@@ -14,8 +30,9 @@
 
 .filter-indicator {
     font-size: 16px;
-    color: var(--text-secondary);
+    color: var(--text-secondary, #666);
     font-weight: 500;
+    background-color: var(--bg-tertiary, #f5f5f5);
 }
 
 .overview-grid {
@@ -26,18 +43,19 @@
 }
 
 .overview-card {
-    background-color: var(--card-bg);
+    background-color: var(--card-bg, #fff);
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     padding: 20px;
+    color: var(--text-primary, #212122);
 }
 
 .overview-card h2 {
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 20px;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--divider);
+    color: var(--text-primary, #212122);
+    border-bottom: 1px solid var(--divider, #eee);
     padding-bottom: 10px;
 }
 
@@ -53,6 +71,7 @@
     background-color: rgba(0, 0, 0, 0.02);
     border-radius: 8px;
     transition: transform 0.2s, box-shadow 0.2s;
+    color: var(--text-primary, #212122);
 }
 
 .status-item:hover {
@@ -63,7 +82,7 @@
 .status-count {
     font-size: 32px;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent, #2563eb);
     margin-bottom: 8px;
 }
 
@@ -78,7 +97,7 @@
 .status-label {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-secondary, #666);
 }
 
 .plant-distribution-table {
@@ -99,17 +118,17 @@
 
 .distribution-table th {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-primary, #212122);
     background-color: rgba(0, 0, 0, 0.02);
 }
 
 .distribution-table td {
-    color: var(--text-secondary);
+    color: var(--text-secondary, #666);
 }
 
 .plant-name {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-primary, #212122);
 }
 
 .chart-container {
@@ -178,4 +197,51 @@
     .distribution-table td {
         padding: 10px 8px;
     }
+}
+
+/* Dark mode support */
+.dark-mode .list-overview {
+    background: var(--bg-primary, #18181b);
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .overview-card {
+    background-color: var(--card-bg, #23232a);
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .overview-card h2 {
+    color: var(--text-primary, #f5f5f5);
+    border-bottom: 1px solid var(--divider, #333);
+}
+
+.dark-mode .status-item {
+    background-color: #23232a;
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .status-count {
+    color: var(--accent, #63b3ed);
+}
+
+.dark-mode .status-label {
+    color: var(--text-secondary, #b5b5b5);
+}
+
+.dark-mode .distribution-table th {
+    background-color: #23232a;
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .distribution-table td {
+    color: var(--text-secondary, #b5b5b5);
+}
+
+.dark-mode .plant-name {
+    color: var(--text-primary, #f5f5f5);
+}
+
+.dark-mode .filter-indicator {
+    color: var(--text-secondary, #b5b5b5);
+    background-color: var(--bg-tertiary, #23232a);
 }

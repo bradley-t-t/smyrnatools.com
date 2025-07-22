@@ -6,7 +6,13 @@ import { UserService } from '../../services/UserService';
 import '../../styles/FilterStyles.css';
 import './TeamsView.css';
 import LoadingScreen from '../common/LoadingScreen';
-import TeamsOverview from './TeamsOverview'; // Import the overview component
+import TeamsOverview from './TeamsOverview';
+
+const PLANTS_TABLE = 'plants';
+const OPERATORS_TABLE = 'operators';
+const TEAMS_TABLE = 'teams';
+const OPERATORS_TEAMS_TABLE = 'operators_teams';
+const SCHEDULED_OFF_TABLE = 'operators_scheduled_off';
 
 const filterOptions = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training']; // Removed "All Plants"
 
@@ -52,6 +58,7 @@ function TeamsView() {
     const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false);
     const [currentUserId, setCurrentUserId] = useState('');
     const [showOverview, setShowOverview] = useState(false);
+    const [scheduledOff, setScheduledOff] = useState({});
     const defaultPlantSet = useRef(false);
 
     useEffect(() => {
@@ -69,7 +76,7 @@ function TeamsView() {
 
     useEffect(() => {
         async function fetchPlantsAndUserPlant() {
-            const { data: plantData } = await supabase.from('plants').select('plant_code, plant_name');
+            const { data: plantData } = await supabase.from(PLANTS_TABLE).select('plant_code, plant_name');
             setPlants(plantData || []);
             if (currentUserId) {
                 const plant = await UserService.getUserPlant(currentUserId);
@@ -99,7 +106,7 @@ function TeamsView() {
         setLoading(true);
         async function fetchOperatorsAndTeams() {
             const { data: ops } = await supabase
-                .from('operators')
+                .from(OPERATORS_TABLE)
                 .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
                 .eq('plant_code', selectedPlant);
             // Only include filtered status and Mixer Operators
@@ -109,20 +116,20 @@ function TeamsView() {
                 )
                 .filter(op => op.position && op.position.toLowerCase().includes('mixer'));
             const { data: teamData } = await supabase
-                .from('teams')
+                .from(OPERATORS_TEAMS_TABLE)
                 .select('employee_id, team')
                 .in('employee_id', filteredOps.map(o => o.employee_id));
             // Insert missing filtered operators into teams table as team 'A'
             const opsWithoutTeam = filteredOps.filter(op => !(teamData || []).some(t => t.employee_id === op.employee_id));
             if (opsWithoutTeam.length > 0) {
                 await supabase
-                    .from('teams')
+                    .from(TEAMS_TABLE)
                     .insert(opsWithoutTeam.map(op => ({
                         employee_id: op.employee_id,
                         team: 'A'
                     })));
                 const { data: newTeamData } = await supabase
-                    .from('teams')
+                    .from(TEAMS_TABLE)
                     .select('employee_id, team')
                     .in('employee_id', filteredOps.map(o => o.employee_id));
                 buildTeams(filteredOps, newTeamData);
@@ -147,6 +154,20 @@ function TeamsView() {
         fetchOperatorsAndTeams();
     }, [selectedPlant, statusFilter]);
 
+    useEffect(() => {
+        async function fetchScheduledOff() {
+            const { data: offData } = await supabase
+                .from(SCHEDULED_OFF_TABLE)
+                .select('id, days_off');
+            const offMap = {};
+            (offData || []).forEach(row => {
+                offMap[row.id] = row.days_off || [];
+            });
+            setScheduledOff(offMap);
+        }
+        fetchScheduledOff();
+    }, [selectedPlant]);
+
     // Restrict editing unless user has bypass permission or is on their assigned plant
     const canEditPlant = canBypassPlantRestriction || (selectedPlant === userPlant && selectedPlant !== '');
 
@@ -163,14 +184,14 @@ function TeamsView() {
         if (!canEditPlant || !draggedOperator) return;
         setLoading(true);
         await supabase
-            .from('teams')
+            .from(TEAMS_TABLE)
             .update({ team: toTeam })
             .eq('employee_id', draggedOperator.employee_id);
         setDraggedOperator(null);
         setDragOverTeam(null);
         // Refresh teams
         const { data: ops } = await supabase
-            .from('operators')
+            .from(OPERATORS_TABLE)
             .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
             .eq('plant_code', selectedPlant);
         // Only include filtered status and Mixer Operators after drag and drop
@@ -180,7 +201,7 @@ function TeamsView() {
             )
             .filter(op => op.position && op.position.toLowerCase().includes('mixer'));
         const { data: teamData } = await supabase
-            .from('teams')
+            .from(TEAMS_TABLE)
             .select('employee_id, team')
             .in('employee_id', filteredOps.map(o => o.employee_id));
         const teamsObj = { A: [], B: [] };
@@ -195,6 +216,26 @@ function TeamsView() {
         setOperators(filteredOps);
         setTeams(teamsObj);
         setLoading(false);
+    };
+
+    // Helper: does operator have time off for the upcoming Saturday?
+    function hasTimeOffForSaturday(operator) {
+        const daysOff = scheduledOff[operator.employee_id] || [];
+        const saturday = getUpcomingSaturday();
+        const saturdayStr = saturday.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+        return daysOff.includes(saturdayStr);
+    }
+
+    // Only show operators NOT scheduled off for Saturday
+    const filteredTeams = {
+        A: teams.A.filter(op => !hasTimeOffForSaturday(op)),
+        B: teams.B.filter(op => !hasTimeOffForSaturday(op))
+    };
+
+    // For overview, also exclude scheduled-off operators
+    const teamsForOverview = {
+        A: filteredTeams.A,
+        B: filteredTeams.B
     };
 
     const saturdayStatus = getTeamWorkingThisSaturday();
@@ -303,17 +344,19 @@ function TeamsView() {
                         >
                             <div className="team-card-header">
                                 A Team
-                                <span style={{
-                                    marginLeft: 12,
-                                    fontSize: 14,
-                                    color: 'var(--accent)', // accent color
-                                    fontWeight: 500
-                                }}>
+                                <span
+                                    className="team-saturday-status"
+                                    style={{
+                                        marginLeft: 12,
+                                        fontSize: 14,
+                                        fontWeight: 500
+                                    }}
+                                >
                                     {saturdayStatus.A}
                                 </span>
                             </div>
                             <div className="team-card-body">
-                                {teams.A.filter(op =>
+                                {filteredTeams.A.filter(op =>
                                     (!searchText ||
                                         op.name.toLowerCase().includes(searchText.toLowerCase()) ||
                                         (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
@@ -326,7 +369,7 @@ function TeamsView() {
                                         </span>
                                     </div>
                                 )}
-                                {teams.A.filter(op =>
+                                {filteredTeams.A.filter(op =>
                                     (!searchText ||
                                         op.name.toLowerCase().includes(searchText.toLowerCase()) ||
                                         (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
@@ -363,17 +406,19 @@ function TeamsView() {
                         >
                             <div className="team-card-header">
                                 B Team
-                                <span style={{
-                                    marginLeft: 12,
-                                    fontSize: 14,
-                                    color: 'var(--accent)', // accent color
-                                    fontWeight: 500
-                                }}>
+                                <span
+                                    className="team-saturday-status"
+                                    style={{
+                                        marginLeft: 12,
+                                        fontSize: 14,
+                                        fontWeight: 500
+                                    }}
+                                >
                                     {saturdayStatus.B}
                                 </span>
                             </div>
                             <div className="team-card-body">
-                                {teams.B.filter(op =>
+                                {filteredTeams.B.filter(op =>
                                     (!searchText ||
                                         op.name.toLowerCase().includes(searchText.toLowerCase()) ||
                                         (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
@@ -386,7 +431,7 @@ function TeamsView() {
                                         </span>
                                     </div>
                                 )}
-                                {teams.B.filter(op =>
+                                {filteredTeams.B.filter(op =>
                                     (!searchText ||
                                         op.name.toLowerCase().includes(searchText.toLowerCase()) ||
                                         (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
@@ -419,8 +464,12 @@ function TeamsView() {
                 {/* Add reference date annotation below the teams */}
                 <div style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: '#888' }}>
                     <em>
-                        Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to Work</b> Saturday. Teams alternate weekly.<br />
-                        Information does not account for time off requests.
+                        Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to Work</b> Saturday. Teams alternate weekly.
+                    </em>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#888' }}>
+                    <em>
+                        Operators scheduled off for this Saturday will not be listed.
                     </em>
                 </div>
             </div>
@@ -428,7 +477,7 @@ function TeamsView() {
             {showOverview && (
                 <TeamsOverview
                     onClose={() => setShowOverview(false)}
-                    teams={teams}
+                    teams={teamsForOverview}
                 />
             )}
         </div>

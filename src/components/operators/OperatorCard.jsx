@@ -17,7 +17,7 @@ function formatDate(dateStr) {
     return formatted.replace(`${day}`, `${day}${suffix}`);
 }
 
-function OperatorCard({operator, plantName, onSelect, onDelete, trainers}) {
+function OperatorCard({operator, plantName, onSelect, onDelete, trainers, children}) {
     const {preferences} = usePreferences();
     const statusColor = ThemeUtility.operatorStatusColors[operator.status] || ThemeUtility.operatorStatusColors.default;
 
@@ -40,12 +40,20 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers}) {
     const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
     return (
-        <div className="operator-card" {...cardProps}>
+        <div
+            className="operator-card"
+            {...cardProps}
+            style={{
+                position: 'relative',
+                ...cardProps?.style
+            }}
+        >
             <div className="card-status-indicator"
                  style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}}
                  title={operator.status || 'Unknown'}>
             </div>
             <div className="card-content">
+                {children}
                 <div className="card-header">
                     <h3 className="operator-name"
                         style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>

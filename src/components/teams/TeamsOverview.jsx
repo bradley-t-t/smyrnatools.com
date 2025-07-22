@@ -1,6 +1,8 @@
 import React from 'react';
 import './TeamsOverview.css';
 
+const TEAMS_TABLE = 'operators_teams';
+
 function TeamsOverview({ onClose, teams }) {
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -23,11 +25,6 @@ function TeamsOverview({ onClose, teams }) {
                                 <div className="metric-value">{teams.B.filter(op => op.status === 'Active').length}</div>
                             </div>
                         </div>
-                        <div className="overview-notation">
-                            <em>
-                                Information does not account for operators who have requested off or have time off.
-                            </em>
-                        </div>
                     </div>
                 </div>
                 <div className="modal-footer">
@@ -41,4 +38,3 @@ function TeamsOverview({ onClose, teams }) {
 }
 
 export default TeamsOverview;
-
