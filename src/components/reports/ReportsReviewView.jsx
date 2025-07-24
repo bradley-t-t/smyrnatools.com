@@ -1,48 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import './ReportsSubmitView.css'
 import './ReportsReviewView.css'
-import { UserService } from '../../services/UserService'
 import { supabase } from '../../services/DatabaseService'
-
-function getMondayAndSaturday(date) {
-    const d = new Date(date)
-    const day = d.getDay()
-    const monday = new Date(d)
-    monday.setDate(d.getDate() - ((day + 6) % 7))
-    monday.setHours(0, 0, 0, 0)
-    const saturday = new Date(monday)
-    saturday.setDate(monday.getDate() + 5)
-    saturday.setHours(23, 59, 59, 999)
-    return { monday, saturday }
-}
-
-function formatDateMMDDYY(date) {
-    const mm = date.getMonth() + 1
-    const dd = date.getDate()
-    const yy = date.getFullYear().toString().slice(-2)
-    return `${mm}-${dd}-${yy}`
-}
-
-function getWeekRangeString(start, end) {
-    return `${formatDateMMDDYY(start)} through ${formatDateMMDDYY(end)}`
-}
+import { UserService } from '../../services/UserService'
+import { getWeekRangeFromIso, getMondayAndSaturday } from './ReportsView'
 
 function formatDateTime(dt) {
     if (!dt) return ''
     const date = new Date(dt)
-    const mm = date.getMonth() + 1
-    const dd = date.getDate()
-    const yyyy = date.getFullYear()
-    let h = date.getHours()
-    const m = date.getMinutes().toString().padStart(2, '0')
-    const ampm = h >= 12 ? 'PM' : 'AM'
-    h = h % 12
-    if (h === 0) h = 12
-    return `${mm}/${dd}/${yyyy} ${h}:${m} ${ampm}`
+    return date.toLocaleString()
 }
 
 function ReportsReviewView({ report, initialData, onBack, user, completedByUser }) {
-    const [form, setForm] = useState(initialData || {})
+    const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
     const [ownerName, setOwnerName] = useState('')
     const [weekRange, setWeekRange] = useState('')
@@ -50,78 +20,43 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
 
     useEffect(() => {
         async function fetchOwnerName() {
-            let ownerId = null
-            if (completedByUser && completedByUser.id) ownerId = completedByUser.id
-            else if (initialData && initialData.user_id) ownerId = initialData.user_id
-            else if (report && report.userId) ownerId = report.userId
-            else if (user && user.id) ownerId = user.id
+            const ownerId = completedByUser?.id || initialData?.user_id || report?.userId || user?.id
             if (!ownerId) {
                 setOwnerName('')
                 return
             }
-            let name = ''
-            if (completedByUser && (completedByUser.first_name || completedByUser.last_name)) {
-                name = `${completedByUser.first_name || ''} ${completedByUser.last_name || ''}`.trim()
-            } else {
-                name = await UserService.getUserDisplayName(ownerId)
-            }
-            setOwnerName(name || ownerId.slice(0, 8))
+            const name = completedByUser && (completedByUser.first_name || completedByUser.last_name)
+                ? `${completedByUser.first_name || ''} ${completedByUser.last_name || ''}`.trim()
+                : await UserService.getUserDisplayName(ownerId) || ownerId.slice(0, 8)
+            setOwnerName(name)
         }
         fetchOwnerName()
     }, [report, user, initialData, completedByUser])
 
     useEffect(() => {
-        let weekStart, weekEnd
-        if (report.name === 'district_manager') {
-            let weekIso = report.weekIso
-            if (!weekIso && form.week) weekIso = form.week
-            if (!weekIso && initialData && initialData.week) weekIso = initialData.week
-            if (weekIso) {
-                const { monday, saturday } = getMondayAndSaturday(weekIso)
-                weekStart = monday
-                weekEnd = saturday
-            }
-        } else if (report.frequency === 'weekly') {
-            let weekOf = form.week_of || (initialData && initialData.week_of)
-            if (weekOf) {
-                const { monday, saturday } = getMondayAndSaturday(weekOf)
-                weekStart = monday
-                weekEnd = saturday
-            }
+        let weekIso = report.weekIso || initialData?.week
+        if (weekIso) {
+            setWeekRange(getWeekRangeFromIso(weekIso))
+        } else if (report.report_date_range_start && report.report_date_range_end) {
+            setWeekRange(getWeekRangeFromIso(report.report_date_range_start.toISOString().slice(0, 10)))
         }
-        if (weekStart && weekEnd) {
-            setWeekRange(getWeekRangeString(weekStart, weekEnd))
-        } else {
-            setWeekRange('')
-        }
-    }, [report, form, initialData])
+    }, [report, initialData])
 
     useEffect(() => {
         async function fetchMaintenanceItems() {
-            let weekStart, weekEnd
-            if (report.name === 'district_manager') {
-                let weekIso = report.weekIso
-                if (!weekIso && form.week) weekIso = form.week
-                if (!weekIso && initialData && initialData.week) weekIso = initialData.week
-                if (!weekIso) return
-                const { monday, saturday } = getMondayAndSaturday(weekIso)
-                weekStart = monday
-                weekEnd = saturday
-            } else if (report.frequency === 'weekly') {
-                let weekOf = form.week_of || (initialData && initialData.week_of)
-                if (!weekOf) return
-                const { monday, saturday } = getMondayAndSaturday(weekOf)
-                weekStart = monday
-                weekEnd = saturday
-            } else {
-                return
-            }
+            let weekIso = report.weekIso || initialData?.week
+            if (!weekIso) return
+            const monday = new Date(weekIso)
+            monday.setDate(monday.getDate() + 1)
+            monday.setHours(0, 0, 0, 0)
+            const saturday = new Date(monday)
+            saturday.setDate(monday.getDate() + 5)
             const { data, error } = await supabase
                 .from('list_items')
                 .select('*')
                 .eq('completed', true)
-                .gte('completed_at', weekStart.toISOString())
-                .lte('completed_at', weekEnd.toISOString())
+                .gte('completed_at', monday.toISOString())
+                .lte('completed_at', saturday.toISOString())
             if (!error && Array.isArray(data)) {
                 setMaintenanceItems(data)
             } else {
@@ -129,95 +64,102 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
             }
         }
         fetchMaintenanceItems()
-    }, [report, form, initialData])
+    }, [report.weekIso, initialData?.week])
 
     useEffect(() => {
-        let dt = initialData && (initialData.submitted_at || initialData.created_at)
-        setSubmittedAt(dt ? formatDateTime(dt) : '')
+        setSubmittedAt(initialData?.submitted_at ? formatDateTime(initialData.submitted_at) : '')
+    }, [initialData])
+
+    useEffect(() => {
+        if (initialData?.data) {
+            setForm(initialData.data)
+        } else if (initialData) {
+            setForm(initialData)
+        }
     }, [initialData])
 
     function getPlantName(plantCode) {
         return plantCode || 'No Plant'
     }
 
-    function truncateText(text, maxLength, byWords = false) {
+    function truncateText(text, maxLength) {
         if (!text) return ''
-        if (byWords) {
-            const words = text.split(' ')
-            return words.length > maxLength ? `${words.slice(0, maxLength).join(' ')}...` : text
-        }
         return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
     }
 
+    let weekRangeHeader = weekRange
+    let reportTitle = report.title || 'Report Review'
+
     return (
-        <>
-            <button className="report-form-back" onClick={onBack} type="button">
-                <i className="fas fa-arrow-left"></i>
-                Back
-            </button>
-            <div className="report-form-body-wide">
-                <div className="review-user-card">
-                    <div className="review-user-avatar">
-                        <span>
-                            {ownerName ? ownerName[0].toUpperCase() : '?'}
-                        </span>
+        <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
+            <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
+                <button className="report-form-back" onClick={onBack} type="button" style={{ marginBottom: 24, marginLeft: 0 }}>
+                    <i className="fas fa-arrow-left"></i> Back
+                </button>
+                <div className="report-form-header-row" style={{ marginTop: 0 }}>
+                    <div className="report-form-title">
+                        {reportTitle}
                     </div>
-                    <div className="review-user-details">
-                        <div className="review-user-name">
-                            {ownerName ? `Completed By ${ownerName}` : 'Completed By Unknown'}
+                    {weekRangeHeader && (
+                        <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
+                            {weekRangeHeader}
                         </div>
-                        {weekRange && (
-                            <div className="review-user-week-badge">{weekRange}</div>
-                        )}
-                        {submittedAt && (
-                            <div className="review-user-submitted">
-                                Submitted: {submittedAt}
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
-                <div className="review-divider"></div>
-                <div className="report-form-fields-grid">
-                    {report.fields.map(field => (
-                        <div key={field.name} className="report-form-field-wide">
-                            <label>
-                                {field.label}
-                                {field.required && <span className="report-modal-required">*</span>}
-                            </label>
-                            {field.type === 'textarea' ? (
-                                <textarea
-                                    value={form[field.name]}
-                                    readOnly
-                                    disabled
-                                />
-                            ) : field.type === 'select' ? (
-                                <select
-                                    value={form[field.name]}
-                                    readOnly
-                                    disabled
-                                >
-                                    <option value="">Select...</option>
-                                    {field.options && field.options.map(opt => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input
-                                    type={field.type}
-                                    value={form[field.name]}
-                                    readOnly
-                                    disabled
-                                />
-                            )}
+                <div className="report-form-body-wide">
+                    <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 18 }}>
+                        <div style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: '50%',
+                            background: 'var(--accent)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '2.1rem',
+                            fontWeight: 700,
+                            color: 'var(--text-light)',
+                            boxShadow: '0 2px 8px var(--shadow-sm, rgba(49,130,206,0.13))',
+                            flexShrink: 0
+                        }}>
+                            <span>{ownerName ? ownerName[0].toUpperCase() : '?'}</span>
                         </div>
-                    ))}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.01em' }}>
+                                Completed By {ownerName || 'Unknown'}
+                            </div>
+                            {submittedAt && <div style={{ marginTop: 3, fontSize: '0.98rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.01em' }}>Submitted: {submittedAt}</div>}
+                        </div>
+                    </div>
+                    <div className="report-form-fields-grid">
+                        {report.fields.map(field => (
+                            <div key={field.name} className="report-form-field-wide">
+                                <label>
+                                    {field.label}
+                                    {field.required && <span className="report-modal-required">*</span>}
+                                </label>
+                                {field.type === 'textarea' ? (
+                                    <textarea value={form[field.name] || ''} readOnly disabled />
+                                ) : field.type === 'select' ? (
+                                    <select value={form[field.name] || ''} readOnly disabled>
+                                        <option value="">Select...</option>
+                                        {field.options?.map(opt => (
+                                            <option key={opt} value={opt}>{opt}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input type={field.type} value={form[field.name] || ''} readOnly disabled />
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
                 {maintenanceItems.length > 0 && (
-                    <div style={{marginTop: 32, marginBottom: 16}}>
-                        <div style={{fontWeight: 700, fontSize: 17, marginBottom: 8}}>
-                            Maintenance Items Completed This Week
+                    <div style={{ marginTop: 32, marginBottom: 16 }}>
+                        <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
+                            Items Completed This Week
                         </div>
-                        <div className="list-view-table" style={{marginTop: 0}}>
+                        <div className="list-view-table">
                             <div className="list-view-header">
                                 <div className="list-column description">Description</div>
                                 <div className="list-column plant">Plant</div>
@@ -226,13 +168,10 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                             </div>
                             <div className="list-view-rows">
                                 {maintenanceItems.map(item => (
-                                    <div
-                                        key={item.id}
-                                        className={`list-view-row ${item.completed ? 'completed' : ''}`}
-                                    >
+                                    <div key={item.id} className={`list-view-row ${item.completed ? 'completed' : ''}`}>
                                         <div className="list-column description left-align" title={item.description}>
                                             <div style={{
-                                                backgroundColor: item.completed ? 'var(--success)' : item.isOverdue ? 'var(--error)' : 'var(--accent)',
+                                                backgroundColor: item.completed ? '#38a169' : item.isOverdue ? '#e53e3e' : '#3182ce',
                                                 width: 10,
                                                 height: 10,
                                                 borderRadius: '50%',
@@ -246,9 +185,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                                             {truncateText(getPlantName(item.plant_code), 20)}
                                         </div>
                                         <div className="list-column deadline">
-                                            <span>
-                                                {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
-                                            </span>
+                                            {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
                                         </div>
                                         <div className="list-column completed-date">
                                             {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'N/A'}
@@ -260,7 +197,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                     </div>
                 )}
             </div>
-        </>
+        </div>
     )
 }
 

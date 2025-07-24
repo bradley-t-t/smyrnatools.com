@@ -6,9 +6,25 @@ import ReportsReviewView from './ReportsReviewView'
 import { supabase } from '../../services/DatabaseService'
 import { UserService } from '../../services/UserService'
 
-const REPORTS_START_DATE = new Date('2025-07-23')
+const HARDCODED_TODAY = new Date()
+const REPORTS_START_DATE = new Date('2025-07-20')
 
-function getMondayAndSaturday(date = new Date()) {
+export function getWeekRangeFromIso(weekIso) {
+    const monday = new Date(weekIso)
+    monday.setDate(monday.getDate() + 1)
+    monday.setHours(0, 0, 0, 0)
+    const saturday = new Date(monday)
+    saturday.setDate(monday.getDate() + 5)
+    function formatDateMMDDYY(date) {
+        const mm = date.getMonth() + 1
+        const dd = date.getDate()
+        const yy = date.getFullYear().toString().slice(-2)
+        return `${mm}-${dd}-${yy}`
+    }
+    return `${formatDateMMDDYY(monday)} through ${formatDateMMDDYY(saturday)}`
+}
+
+export function getMondayAndSaturday(date = new Date()) {
     const d = new Date(date)
     const day = d.getDay()
     const monday = new Date(d)
@@ -36,106 +52,16 @@ function getWeekRangeString(start, end) {
     return `${formatDateMMDDYY(start)} through ${formatDateMMDDYY(end)}`
 }
 
-function getReportWeekRange(report) {
-    let monday, saturday
-    if (report.data && report.data.week) {
-        monday = new Date(report.data.week)
-        const ms = getMondayAndSaturday(monday)
-        monday = ms.monday
-        saturday = ms.saturday
-    } else if (report.completedDate) {
-        const completed = new Date(report.completedDate)
-        const ms = getMondayAndSaturday(completed)
-        monday = ms.monday
-        saturday = ms.saturday
-    } else {
-        return ''
-    }
-    return getWeekRangeString(monday, saturday)
-}
-
-function getAllDueDistrictManagerWeeks(localReports, user) {
-    const today = new Date()
-    const { monday: firstMonday } = getMondayAndSaturday(today)
-    let weeks = []
-    let weekCursor = new Date(firstMonday)
-    while (true) {
-        if (weekCursor < REPORTS_START_DATE) break
-        const weekIso = weekCursor.toISOString().slice(0, 10)
-        const alreadySubmitted = localReports.some(
-            r => r.name === 'district_manager' && r.userId === user.id && r.data && r.data.week === weekIso
-        )
-        const saturday = new Date(weekCursor)
-        saturday.setDate(weekCursor.getDate() + 5)
-        const lastDay = new Date(saturday)
-        const overdueCutoff = new Date(lastDay)
-        overdueCutoff.setDate(lastDay.getDate() + 7)
-        if (!alreadySubmitted && today >= weekCursor && today <= overdueCutoff) {
-            weeks.push(weekIso)
-        }
-        weekCursor.setDate(weekCursor.getDate() - 7)
-        if (today < weekCursor) break
-    }
-    weeks.reverse()
-    let nextWeek = new Date(firstMonday)
-    nextWeek.setDate(firstMonday.getDate() + 7)
-    if (nextWeek >= REPORTS_START_DATE) {
-        const nextWeekIso = nextWeek.toISOString().slice(0, 10)
-        const nextAlreadySubmitted = localReports.some(
-            r => r.name === 'district_manager' && r.userId === user.id && r.data && r.data.week === nextWeekIso
-        )
-        if (!nextAlreadySubmitted) {
-            weeks.push(nextWeekIso)
-        }
-    }
-    return weeks
-}
-
-function getDueReportRanges(report, localReports, user) {
-    if (report.name === 'district_manager') {
-        const dueWeeks = getAllDueDistrictManagerWeeks(localReports, user)
-        return dueWeeks.map(weekIso => {
-            const monday = new Date(weekIso)
-            const ms = getMondayAndSaturday(monday)
-            return { weekIso, range: getWeekRangeString(ms.monday, ms.saturday) }
-        })
-    }
-    if (report.frequency === 'weekly') {
-        const { monday, saturday } = getMondayAndSaturday(new Date())
-        if (monday < REPORTS_START_DATE) return []
-        const lastDay = new Date(saturday)
-        const overdueCutoff = new Date(lastDay)
-        overdueCutoff.setDate(lastDay.getDate() + 7)
-        const today = new Date()
-        let due = []
-        if (today <= overdueCutoff) {
-            due.push({ weekIso: getMondayISO(new Date()), range: getWeekRangeString(monday, saturday) })
-        }
-        let nextMonday = new Date(monday)
-        nextMonday.setDate(monday.getDate() + 7)
-        if (nextMonday >= REPORTS_START_DATE) {
-            const alreadySubmitted = localReports.some(r => r.name === report.name && r.userId === user.id && r.completed && r.week === nextMonday.toISOString().slice(0, 10))
-            if (!alreadySubmitted) {
-                const nextSaturday = new Date(nextMonday)
-                nextSaturday.setDate(nextMonday.getDate() + 5)
-                due.push({ weekIso: nextMonday.toISOString().slice(0, 10), range: getWeekRangeString(nextMonday, nextSaturday) })
-            }
-        }
-        return due
-    }
-    return []
-}
-
 function ReportsView() {
-    const [search, setSearch] = useState('')
     const [localReports, setLocalReports] = useState([])
     const [showForm, setShowForm] = useState(null)
     const [showReview, setShowReview] = useState(null)
     const [reviewData, setReviewData] = useState(null)
-    const [tab, setTab] = useState('due')
+    const [tab, setTab] = useState('all')
     const [loadError, setLoadError] = useState('')
     const [user, setUser] = useState(null)
     const [userProfiles, setUserProfiles] = useState({})
+    const [hasAssigned, setHasAssigned] = useState({})
 
     useEffect(() => {
         async function fetchUserAndReports() {
@@ -143,7 +69,7 @@ function ReportsView() {
             try {
                 u = await UserService.getCurrentUser()
             } catch (err) {
-                setLoadError(err && err.message ? err.message : '')
+                setLoadError(err?.message || 'Error fetching user')
                 return
             }
             if (!u || typeof u.id !== 'string') {
@@ -156,17 +82,17 @@ function ReportsView() {
             try {
                 const res = await supabase
                     .from('reports')
-                    .select('id,report_name,user_id,submitted_at,data,completed')
+                    .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
                 data = res.data
                 error = res.error
             } catch (err) {
-                setLoadError(err && err.message ? err.message : '')
+                setLoadError(err?.message || 'Error fetching reports')
                 setLocalReports([])
                 return
             }
             if (error) {
+                setLoadError(error.message || 'Error fetching reports')
                 setLocalReports([])
-                setLoadError(error.message ? error.message : '')
                 return
             }
             setLocalReports(
@@ -179,7 +105,9 @@ function ReportsView() {
                         completedDate: r.submitted_at,
                         data: r.data,
                         userId: r.user_id,
-                        week: r.data && r.data.week ? r.data.week : null
+                        week: r.week || r.data?.week || null,
+                        report_date_range_start: r.report_date_range_start ? new Date(r.report_date_range_start) : null,
+                        report_date_range_end: r.report_date_range_end ? new Date(r.report_date_range_end) : null
                     }))
                     : []
             )
@@ -190,31 +118,13 @@ function ReportsView() {
                     .select('id, first_name, last_name')
                     .in('id', userIds)
                 if (!profileError && Array.isArray(profiles)) {
-                    const map = {}
-                    profiles.forEach(p => {
-                        map[p.id] = p
-                    })
-                    setUserProfiles(map)
+                    setUserProfiles(profiles.reduce((map, p) => ({ ...map, [p.id]: p }), {}))
                 }
             }
         }
         fetchUserAndReports()
     }, [])
 
-    const completedReports = localReports
-        .filter(r =>
-            r.completed &&
-            user &&
-            r.userId === user.id &&
-            (!r.week || new Date(r.week) >= REPORTS_START_DATE)
-        )
-        .sort((a, b) => {
-            const aDate = a.completedDate ? new Date(a.completedDate).getTime() : 0
-            const bDate = b.completedDate ? new Date(b.completedDate).getTime() : 0
-            return bDate - aDate
-        })
-
-    const [hasAssigned, setHasAssigned] = useState('')
     useEffect(() => {
         async function checkAssigned() {
             let u
@@ -228,150 +138,126 @@ function ReportsView() {
                 setHasAssigned({})
                 return
             }
-            let assigned = {}
+            const assigned = {}
             for (const rt of reportTypes) {
-                try {
-                    assigned[rt.name] = await UserService.hasPermission(u.id, `reports.assigned.${rt.name}`)
-                } catch {
-                    assigned[rt.name] = false
-                }
+                assigned[rt.name] = await UserService.hasPermission(u.id, `reports.assigned.${rt.name}`)
             }
             setHasAssigned(assigned)
         }
         checkAssigned()
     }, [])
 
-    let dueReports = []
-    reportTypes.forEach(rt => {
-        if (!user) return
-        if (!hasAssigned[rt.name]) return
-        if (rt.name === 'district_manager') {
-            const dueRanges = getDueReportRanges(rt, localReports, user)
-            dueRanges.forEach(({ weekIso, range }) => {
-                if (new Date(weekIso) >= REPORTS_START_DATE) {
-                    dueReports.push({
-                        ...rt,
-                        weekIso,
-                        range
-                    })
-                }
-            })
-        } else {
-            const { monday, saturday } = getMondayAndSaturday(new Date())
-            if (monday < REPORTS_START_DATE) return
-            const lastDay = new Date(saturday)
-            const overdueCutoff = new Date(lastDay)
-            overdueCutoff.setDate(lastDay.getDate() + 7)
-            const today = new Date()
-            let added = false
-            if (today <= overdueCutoff) {
-                const alreadySubmitted = localReports.some(r => r.name === rt.name && r.userId === user.id && r.completed && r.week === getMondayISO(new Date()))
-                if (!alreadySubmitted) {
-                    dueReports.push({
-                        ...rt,
-                        weekIso: getMondayISO(new Date()),
-                        range: getWeekRangeString(monday, saturday)
-                    })
-                    added = true
-                }
-            }
-            let nextMonday = new Date(monday)
-            nextMonday.setDate(monday.getDate() + 7)
-            if (nextMonday >= REPORTS_START_DATE) {
-                const alreadySubmittedNext = localReports.some(r => r.name === rt.name && r.userId === user.id && r.completed && r.week === nextMonday.toISOString().slice(0, 10))
-                if (!alreadySubmittedNext) {
-                    const nextSaturday = new Date(nextMonday)
-                    nextSaturday.setDate(nextMonday.getDate() + 5)
-                    dueReports.push({
-                        ...rt,
-                        weekIso: nextMonday.toISOString().slice(0, 10),
-                        range: getWeekRangeString(nextMonday, nextSaturday)
-                    })
-                }
-            }
+    function getDueWeeks(startDate) {
+        const weeks = []
+        const today = HARDCODED_TODAY
+        const currentMonday = getMondayAndSaturday(today).monday
+        let monday = getMondayAndSaturday(startDate).monday
+        while (monday <= currentMonday) {
+            weeks.push({ weekIso: getMondayISO(monday), monday: new Date(monday) })
+            monday.setDate(monday.getDate() + 7)
         }
+        return weeks
+    }
+
+    const allWeeks = []
+    reportTypes.forEach(rt => {
+        if (!user || !hasAssigned[rt.name]) return
+        getDueWeeks(REPORTS_START_DATE).forEach(({ weekIso, monday }) => {
+            const saturday = new Date(monday)
+            saturday.setDate(monday.getDate() + 5)
+            const existing = localReports.find(r =>
+                r.name === rt.name &&
+                r.userId === user.id &&
+                r.week &&
+                new Date(r.week).toISOString().slice(0, 10) === weekIso
+            )
+            allWeeks.push({
+                ...rt,
+                weekIso,
+                range: getWeekRangeString(monday, saturday),
+                completed: !!(existing && existing.completed),
+                report: existing || null
+            })
+        })
     })
-    dueReports.sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
+    allWeeks.sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
 
     const reviewableReports = localReports
-        .filter(r =>
-            r.completed &&
-            (!user || r.userId !== user.id) &&
-            (!r.week || new Date(r.week) >= REPORTS_START_DATE)
-        )
-        .sort((a, b) => {
-            const aDate = a.completedDate ? new Date(a.completedDate).getTime() : 0
-            const bDate = b.completedDate ? new Date(b.completedDate).getTime() : 0
-            return bDate - aDate
-        })
+        .filter(r => r.completed && user && r.userId !== user.id && r.week && new Date(r.week) >= REPORTS_START_DATE)
+        .sort((a, b) => new Date(b.completedDate).getTime() - new Date(a.completedDate).getTime())
 
     function getUserName(userId) {
         const profile = userProfiles[userId]
         if (profile && (profile.first_name || profile.last_name)) {
             return `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
         }
-        if (typeof userId === 'string' && userId.length > 0) {
-            return userId.slice(0, 8)
-        }
-        return ''
+        return typeof userId === 'string' && userId.length > 0 ? userId.slice(0, 8) : ''
     }
 
     async function handleSubmitReport(formData) {
-        let u
-        try {
-            u = await UserService.getCurrentUser()
-        } catch (err) {
-            return
-        }
-        if (!showForm) return
-        if (!u || typeof u.id !== 'string') {
+        if (!showForm || !user || typeof user.id !== 'string') {
             setLoadError('User not found')
             return
         }
-        if (showForm.weekIso && new Date(showForm.weekIso) < REPORTS_START_DATE) {
-            return
-        }
-        if (showForm.frequency === 'weekly') {
-            const { monday } = getMondayAndSaturday(new Date())
-            if (monday < REPORTS_START_DATE) {
-                return
-            }
-        }
-        let data, error
-        let insertData = {
+        const existingReport = localReports.find(r =>
+            r.name === showForm.name &&
+            r.userId === user.id &&
+            r.week &&
+            new Date(r.week).toISOString().slice(0, 10) === showForm.weekIso
+        )
+        let monday = showForm.weekIso ? new Date(showForm.weekIso) : null
+        let saturday = monday ? new Date(monday) : null
+        if (saturday) saturday.setDate(monday.getDate() + 5)
+        const upsertData = {
             report_name: showForm.name,
-            user_id: u.id,
-            data: formData,
-            completed: true
+            user_id: user.id,
+            data: { ...formData, week: showForm.weekIso },
+            week: monday ? monday.toISOString() : null,
+            completed: true,
+            submitted_at: new Date().toISOString(),
+            report_date_range_start: monday?.toISOString() || null,
+            report_date_range_end: saturday?.toISOString() || null
         }
-        if (showForm.name === 'district_manager') {
-            insertData.data = { ...formData, week: showForm.weekIso }
+        let response
+        if (existingReport) {
+            response = await supabase
+                .from('reports')
+                .update(upsertData)
+                .eq('id', existingReport.id)
+                .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
+                .single()
+        } else {
+            response = await supabase
+                .from('reports')
+                .insert([upsertData])
+                .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
+                .single()
         }
-        try {
-            const res = await supabase.from('reports').insert([insertData]).select('id,submitted_at,user_id,completed,data').single()
-            data = res.data
-            error = res.error
-        } catch (err) {
-            setLoadError(err && err.message ? err.message : 'Error submitting report')
-            return
-        }
+        const { data, error } = response
         if (error) {
-            setLoadError(error.message ? error.message : 'Error submitting report')
+            setLoadError(error.message || 'Error submitting report')
             return
         }
         if (data && data.id) {
-            setLocalReports(prev => [
-                ...prev,
-                {
-                    id: data.id,
-                    name: showForm.name,
-                    title: showForm.title,
-                    completed: !!data.completed,
-                    completedDate: data.submitted_at,
-                    data: data.data,
-                    userId: data.user_id
-                }
-            ])
+            setLocalReports(prev => {
+                const filtered = prev.filter(r => r.id !== data.id)
+                return [
+                    ...filtered,
+                    {
+                        id: data.id,
+                        name: data.report_name,
+                        title: (reportTypes.find(rt => rt.name === data.report_name) || {}).title || data.report_name,
+                        completed: !!data.completed,
+                        completedDate: data.submitted_at,
+                        data: data.data,
+                        userId: data.user_id,
+                        week: data.week || data.data?.week || showForm.weekIso,
+                        report_date_range_start: data.report_date_range_start ? new Date(data.report_date_range_start) : monday,
+                        report_date_range_end: data.report_date_range_end ? new Date(data.report_date_range_end) : saturday
+                    }
+                ]
+            })
+            setShowForm(null)
         }
     }
 
@@ -382,7 +268,7 @@ function ReportsView() {
 
     return (
         <div className="reports-root">
-            {loadError && <div style={{color: 'var(--error, red)', padding: 16}}>{typeof loadError === 'string' ? loadError : 'Error'}</div>}
+            {loadError && <div style={{ color: 'var(--error, red)', padding: 16 }}>{loadError}</div>}
             {!showForm && !showReview && (
                 <>
                     <div className="reports-toolbar">
@@ -390,71 +276,59 @@ function ReportsView() {
                             <i className="fas fa-file-alt"></i>
                             <span>Reports</span>
                         </div>
-                        <div style={{ flex: 1 }} />
                         <div className="reports-tabs">
-                            <button className={tab === 'due' ? 'active' : ''} onClick={() => setTab('due')}>
-                                Due
+                            <button
+                                className={tab === 'all' ? 'active' : ''}
+                                onClick={() => setTab('all')}
+                                type="button"
+                            >
+                                All
                             </button>
-                            <button className={tab === 'completed' ? 'active' : ''} onClick={() => setTab('completed')}>
-                                Completed
-                            </button>
-                            <button className={tab === 'review' ? 'active' : ''} onClick={() => setTab('review')}>
+                            <button
+                                className={tab === 'review' ? 'active' : ''}
+                                onClick={() => setTab('review')}
+                                type="button"
+                            >
                                 Review
                             </button>
                         </div>
                     </div>
                     <div className="reports-content">
-                        {tab === 'due' && (
+                        {tab === 'all' && (
                             <div className="reports-list">
-                                {dueReports.length === 0 ? (
+                                {allWeeks.length === 0 ? (
                                     <div className="reports-empty">
                                         <i className="fas fa-check-circle"></i>
-                                        <div>No reports due</div>
+                                        <div>No reports</div>
                                     </div>
-                                ) : dueReports.map(report => (
-                                    <div className="reports-list-item" key={report.name + report.weekIso}>
-                                        <div className="reports-list-title">
-                                            {report.title}
-                                            {report.range && (
+                                ) : (
+                                    allWeeks.map(item => (
+                                        <div className="reports-list-item" key={item.name + item.weekIso}>
+                                            <div className="reports-list-title">
+                                                {item.title}
                                                 <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                    ({report.range})
+                                                    ({item.range})
                                                 </span>
+                                                <span style={{
+                                                    marginLeft: 12,
+                                                    color: item.completed ? 'var(--success, #38a169)' : 'var(--error, #e53e3e)',
+                                                    fontWeight: 600
+                                                }}>
+                                                    {item.completed ? 'Completed' : 'Due'}
+                                                </span>
+                                            </div>
+                                            {item.completed ? (
+                                                <button className="reports-list-action" onClick={() => setShowForm(item)}>
+                                                    View
+                                                </button>
+                                            ) : (
+                                                <button className="reports-list-action" onClick={() => setShowForm(item)}>
+                                                    Submit
+                                                </button>
                                             )}
                                         </div>
-                                        <button className="reports-list-action" onClick={() => setShowForm(report)}>
-                                            Submit
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        {tab === 'completed' && (
-                            <div className="reports-list">
-                                {completedReports.length === 0 ? (
-                                    <div className="reports-empty">
-                                        <i className="fas fa-folder-open"></i>
-                                        <div>No completed reports</div>
-                                    </div>
-                                ) : completedReports.map(report => {
-                                    let weekRange = getReportWeekRange(report)
-                                    return (
-                                        <div className="reports-list-item" key={report.id || report.name}>
-                                            <div className="reports-list-title">
-                                                {report.title}
-                                                {weekRange && (
-                                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                        ({weekRange})
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
-                                            <div className="reports-list-date">Completed By: {user && user.id === report.userId ? 'You' : getUserName(report.userId)}</div>
-                                            <button className="reports-list-action" onClick={() => handleReview(report)}>
-                                                Edit
-                                            </button>
-                                        </div>
-                                    )
-                                })}
+                                    ))
+                                )}
                             </div>
                         )}
                         {tab === 'review' && (
@@ -464,16 +338,30 @@ function ReportsView() {
                                         <i className="fas fa-user-check"></i>
                                         <div>No reports to review</div>
                                     </div>
-                                ) : reviewableReports.map(report => (
-                                    <div className="reports-list-item" key={report.id}>
-                                        <div className="reports-list-title">{report.title}</div>
-                                        <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
-                                        <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
-                                        <button className="reports-list-action" onClick={() => handleReview(report)}>
-                                            Review
-                                        </button>
-                                    </div>
-                                ))}
+                                ) : (
+                                    reviewableReports.map(report => {
+                                        let weekRange = report.report_date_range_start && report.report_date_range_end
+                                            ? getWeekRangeString(report.report_date_range_start, report.report_date_range_end)
+                                            : ''
+                                        return (
+                                            <div className="reports-list-item" key={report.id}>
+                                                <div className="reports-list-title">
+                                                    {report.title}
+                                                    {weekRange && (
+                                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
+                                                            ({weekRange})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
+                                                <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
+                                                <button className="reports-list-action" onClick={() => handleReview(report)}>
+                                                    Review
+                                                </button>
+                                            </div>
+                                        )
+                                    })
+                                )}
                             </div>
                         )}
                     </div>
@@ -482,44 +370,27 @@ function ReportsView() {
             {showForm && (
                 <ReportsSubmitView
                     report={showForm}
+                    initialData={localReports.find(r =>
+                        r.name === showForm.name &&
+                        r.userId === user?.id &&
+                        r.week &&
+                        new Date(r.week).toISOString().slice(0, 10) === showForm.weekIso
+                    )?.data || null}
                     onBack={() => setShowForm(null)}
                     onSubmit={handleSubmitReport}
                     user={user}
                 />
             )}
-            {showReview && tab === 'review' && (
+            {showReview && (
                 <ReportsReviewView
                     report={showReview}
-                    initialData={reviewData && reviewData.data}
+                    initialData={reviewData}
                     onBack={() => {
                         setShowReview(null)
                         setReviewData(null)
                     }}
                     user={user}
-                    completedByUser={reviewData && reviewData.userId ? userProfiles[reviewData.userId] && { ...userProfiles[reviewData.userId], id: reviewData.userId } : undefined}
-                />
-            )}
-            {showReview && tab !== 'review' && (
-                <ReportsSubmitView
-                    report={showReview}
-                    initialData={reviewData && reviewData.data}
-                    onBack={() => {
-                        setShowReview(null)
-                        setReviewData(null)
-                    }}
-                    onSubmit={formData => {
-                        setLocalReports(reports =>
-                            reports.map(r =>
-                                r.id === reviewData.id
-                                    ? { ...r, data: formData }
-                                    : r
-                            )
-                        )
-                        setShowReview(null)
-                        setReviewData(null)
-                    }}
-                    readOnly={false}
-                    user={user}
+                    completedByUser={reviewData?.userId ? userProfiles[reviewData.userId] : undefined}
                 />
             )}
         </div>
