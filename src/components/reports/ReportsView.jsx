@@ -62,6 +62,7 @@ function ReportsView() {
     const [user, setUser] = useState(null)
     const [userProfiles, setUserProfiles] = useState({})
     const [hasAssigned, setHasAssigned] = useState({})
+    const [hasReviewPermission, setHasReviewPermission] = useState({})
 
     useEffect(() => {
         async function fetchUserAndReports() {
@@ -126,25 +127,30 @@ function ReportsView() {
     }, [])
 
     useEffect(() => {
-        async function checkAssigned() {
+        async function checkAssignedAndReview() {
             let u
             try {
                 u = await UserService.getCurrentUser()
             } catch {
                 setHasAssigned({})
+                setHasReviewPermission({})
                 return
             }
-            if (!u || typeof u.id !== 'string') {
+            if (!u) {
                 setHasAssigned({})
+                setHasReviewPermission({})
                 return
             }
             const assigned = {}
+            const review = {}
             for (const rt of reportTypes) {
                 assigned[rt.name] = await UserService.hasPermission(u.id, `reports.assigned.${rt.name}`)
+                review[rt.name] = await UserService.hasPermission(u.id, `reports.review.${rt.name}`)
             }
             setHasAssigned(assigned)
+            setHasReviewPermission(review)
         }
-        checkAssigned()
+        checkAssignedAndReview()
     }, [])
 
     function getDueWeeks(startDate) {
@@ -183,7 +189,12 @@ function ReportsView() {
     allWeeks.sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
 
     const reviewableReports = localReports
-        .filter(r => r.completed && user && r.userId !== user.id && r.week && new Date(r.week) >= REPORTS_START_DATE)
+        .filter(r =>
+            r.completed &&
+            r.week &&
+            hasReviewPermission[r.name] &&
+            r.userId !== user?.id
+        )
         .sort((a, b) => new Date(b.completedDate).getTime() - new Date(a.completedDate).getTime())
 
     function getUserName(userId) {
@@ -267,133 +278,159 @@ function ReportsView() {
     }
 
     return (
-        <div className="reports-root">
-            {loadError && <div style={{ color: 'var(--error, red)', padding: 16 }}>{loadError}</div>}
-            {!showForm && !showReview && (
-                <>
-                    <div className="reports-toolbar">
-                        <div className="reports-toolbar-title">
-                            <i className="fas fa-file-alt"></i>
-                            <span>Reports</span>
-                        </div>
-                        <div className="reports-tabs">
-                            <button
-                                className={tab === 'all' ? 'active' : ''}
-                                onClick={() => setTab('all')}
-                                type="button"
-                            >
-                                All
-                            </button>
-                            <button
-                                className={tab === 'review' ? 'active' : ''}
-                                onClick={() => setTab('review')}
-                                type="button"
-                            >
-                                Review
-                            </button>
-                        </div>
-                    </div>
-                    <div className="reports-content">
-                        {tab === 'all' && (
-                            <div className="reports-list">
-                                {allWeeks.length === 0 ? (
-                                    <div className="reports-empty">
-                                        <i className="fas fa-check-circle"></i>
-                                        <div>No reports</div>
-                                    </div>
-                                ) : (
-                                    allWeeks.map(item => (
-                                        <div className="reports-list-item" key={item.name + item.weekIso}>
-                                            <div className="reports-list-title">
-                                                {item.title}
-                                                <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                    ({item.range})
-                                                </span>
-                                                <span style={{
-                                                    marginLeft: 12,
-                                                    color: item.completed ? 'var(--success, #38a169)' : 'var(--error, #e53e3e)',
-                                                    fontWeight: 600
-                                                }}>
-                                                    {item.completed ? 'Completed' : 'Due'}
-                                                </span>
-                                            </div>
-                                            {item.completed ? (
-                                                <button className="reports-list-action" onClick={() => setShowForm(item)}>
-                                                    View
-                                                </button>
-                                            ) : (
-                                                <button className="reports-list-action" onClick={() => setShowForm(item)}>
-                                                    Submit
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))
-                                )}
+        <>
+            <div className="reports-root">
+                {loadError && <div style={{ color: 'var(--error, red)', padding: 16 }}>{loadError}</div>}
+                {!showForm && !showReview && (
+                    <>
+                        <div className="reports-toolbar">
+                            <div className="reports-toolbar-title">
+                                <i className="fas fa-file-alt"></i>
+                                <span>Reports</span>
                             </div>
-                        )}
-                        {tab === 'review' && (
-                            <div className="reports-list">
-                                {reviewableReports.length === 0 ? (
-                                    <div className="reports-empty">
-                                        <i className="fas fa-user-check"></i>
-                                        <div>No reports to review</div>
-                                    </div>
-                                ) : (
-                                    reviewableReports.map(report => {
-                                        let weekRange = report.report_date_range_start && report.report_date_range_end
-                                            ? getWeekRangeString(report.report_date_range_start, report.report_date_range_end)
-                                            : ''
-                                        return (
-                                            <div className="reports-list-item" key={report.id}>
-                                                <div className="reports-list-title">
-                                                    {report.title}
-                                                    {weekRange && (
+                            <div className="reports-tabs">
+                                <button
+                                    className={tab === 'all' ? 'active' : ''}
+                                    onClick={() => setTab('all')}
+                                    type="button"
+                                >
+                                    My Reports
+                                </button>
+                                <button
+                                    className={tab === 'review' ? 'active' : ''}
+                                    onClick={() => setTab('review')}
+                                    type="button"
+                                >
+                                    Review
+                                </button>
+                            </div>
+                        </div>
+                        <div className="reports-content">
+                            {tab === 'all' && (
+                                <div className="reports-list">
+                                    {allWeeks.length === 0 ? (
+                                        <div className="reports-empty">
+                                            <i className="fas fa-check-circle"></i>
+                                            <div>No reports</div>
+                                        </div>
+                                    ) : (
+                                        allWeeks.map(item => {
+                                            const today = new Date()
+                                            const endDateStr = item.range.split(' through ')[1]
+                                            const [mm, dd, yy] = endDateStr.split('-')
+                                            const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
+                                            let statusText
+                                            let statusColor
+                                            if (item.completed) {
+                                                statusText = 'Completed'
+                                                statusColor = 'var(--success, #38a169)'
+                                            } else if (endDate >= today) {
+                                                statusText = 'Current Week'
+                                                statusColor = '#166534'
+                                            } else {
+                                                statusText = 'Past Due'
+                                                statusColor = 'var(--error, #e53e3e)'
+                                            }
+                                            return (
+                                                <div className="reports-list-item" key={item.name + item.weekIso}>
+                                                    <div className="reports-list-title">
+                                                        {item.title}
                                                         <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                            ({weekRange})
+                                                            ({item.range})
                                                         </span>
+                                                        <span style={{
+                                                            marginLeft: 12,
+                                                            color: statusColor,
+                                                            fontWeight: 600
+                                                        }}>
+                                                            {statusText}
+                                                        </span>
+                                                    </div>
+                                                    {item.completed ? (
+                                                        <button className="reports-list-action" onClick={() => setShowForm(item)}>
+                                                            View
+                                                        </button>
+                                                    ) : (
+                                                        <button className="reports-list-action" onClick={() => setShowForm(item)}>
+                                                            Submit
+                                                        </button>
                                                     )}
                                                 </div>
-                                                <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
-                                                <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
-                                                <button className="reports-list-action" onClick={() => handleReview(report)}>
-                                                    Review
-                                                </button>
-                                            </div>
-                                        )
-                                    })
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </>
-            )}
-            {showForm && (
-                <ReportsSubmitView
-                    report={showForm}
-                    initialData={localReports.find(r =>
-                        r.name === showForm.name &&
-                        r.userId === user?.id &&
-                        r.week &&
-                        new Date(r.week).toISOString().slice(0, 10) === showForm.weekIso
-                    )?.data || null}
-                    onBack={() => setShowForm(null)}
-                    onSubmit={handleSubmitReport}
-                    user={user}
-                />
-            )}
-            {showReview && (
-                <ReportsReviewView
-                    report={showReview}
-                    initialData={reviewData}
-                    onBack={() => {
-                        setShowReview(null)
-                        setReviewData(null)
-                    }}
-                    user={user}
-                    completedByUser={reviewData?.userId ? userProfiles[reviewData.userId] : undefined}
-                />
-            )}
-        </div>
+                                            )
+                                        })
+                                    )}
+                                </div>
+                            )}
+                            {tab === 'review' && (
+                                <div className="reports-list">
+                                    {reviewableReports.length === 0 ? (
+                                        <div className="reports-empty">
+                                            <i className="fas fa-user-check"></i>
+                                            <div>No reports to review</div>
+                                        </div>
+                                    ) : (
+                                        reviewableReports.map(report => {
+                                            let weekRange = report.report_date_range_start && report.report_date_range_end
+                                                ? getWeekRangeString(
+                                                    new Date(report.report_date_range_start.getTime() + 86400000),
+                                                    new Date(report.report_date_range_end.getTime() + 86400000)
+                                                )
+                                                : ''
+                                            return (
+                                                <div className="reports-list-item" key={report.id}>
+                                                    <div className="reports-list-title">
+                                                        {report.title}
+                                                        {weekRange && (
+                                                            <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
+                                                                ({weekRange})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
+                                                    <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
+                                                    <button className="reports-list-action" onClick={() => handleReview(report)}>
+                                                        Review
+                                                    </button>
+                                                </div>
+                                            )
+                                        })
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+                {showForm && (
+                    <ReportsSubmitView
+                        report={showForm}
+                        initialData={localReports.find(r =>
+                            r.name === showForm.name &&
+                            r.userId === user?.id &&
+                            r.week &&
+                            new Date(r.week).toISOString().slice(0, 10) === showForm.weekIso
+                        )?.data || null}
+                        onBack={() => setShowForm(null)}
+                        onSubmit={handleSubmitReport}
+                        user={user}
+                    />
+                )}
+                {showReview && (
+                    <ReportsReviewView
+                        report={showReview}
+                        initialData={reviewData}
+                        onBack={() => {
+                            setShowReview(null)
+                            setReviewData(null)
+                        }}
+                        user={user}
+                        completedByUser={reviewData?.userId ? userProfiles[reviewData.userId] : undefined}
+                    />
+                )}
+            </div>
+            <div style={{ width: '100%', textAlign: 'center', marginTop: 48, marginBottom: 32, fontWeight: 600, color: 'var(--text-secondary)', paddingBottom: 32 }}>
+                Weekly Reports are due on Saturdays
+            </div>
+        </>
     )
 }
 

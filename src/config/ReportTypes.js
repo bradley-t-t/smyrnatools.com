@@ -2,7 +2,7 @@ export const reportTypes = [
   {
     name: "district_manager",
     title: "District Manager Report",
-    frequency: "daily",
+    frequency: "weekly",
     assignment: ["reports.assigned.district_manager"],
     manage: ["reports.manage.district_manager"],
     fields: [
@@ -17,7 +17,7 @@ export const reportTypes = [
   {
     name: "plant_manager",
     title: "Plant Manager Report",
-    frequency: "daily",
+    frequency: "weekly",
     assignment: ["reports.assigned.plant_manager"],
     manage: ["reports.manage.plant_manager"],
     fields: [

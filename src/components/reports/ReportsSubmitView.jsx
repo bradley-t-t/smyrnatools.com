@@ -67,7 +67,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     }
 
     function getPlantName(plantCode) {
-        return plantCode || 'No Plant'
+        return plantCode || ''
     }
 
     function truncateText(text, maxLength) {
@@ -88,7 +88,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 </button>
                 <div className="report-form-header-row" style={{ marginTop: 0 }}>
                     <div className="report-form-title">
-                        {report.title || 'Submit Report'}
+                        {report.title || ''}
                     </div>
                     {weekRange && (
                         <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
@@ -169,7 +169,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                 {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
                                             </div>
                                             <div className="list-column completed-date">
-                                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'N/A'}
+                                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : ''}
                                             </div>
                                         </div>
                                     ))}
