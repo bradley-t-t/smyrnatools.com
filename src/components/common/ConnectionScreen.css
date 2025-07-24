@@ -1,0 +1,86 @@
+.loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-screen.full-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background);
+    color: var(--text-primary);
+}
+
+.loading-screen.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: var(--text-primary);
+}
+
+.loading-screen.inline {
+    position: relative;
+    width: 100%;
+    padding: 20px 0;
+    margin: 0 auto;
+    background: none;
+    color: var(--text-primary);
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 90%;
+    width: 320px;
+    transform: none;
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-lg);
+    color: var(--text-primary);
+}
+
+.loading-animation {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.bouncing-logo {
+    width: 80px;
+    height: 80px;
+    animation: bounce 0.8s ease-in-out infinite alternate;
+    will-change: transform;
+}
+
+.loading-message {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(-5px);
+    }
+    to {
+        transform: translateY(5px);
+    }
+}
+

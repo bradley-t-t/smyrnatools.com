@@ -1,57 +1,59 @@
-import React, {useEffect, useState} from 'react';
-import './Navigation.css';
-import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
-import {usePreferences} from '../../context/PreferencesContext';
-import {UserService} from "../../services/UserService";
+import React, {useEffect, useState} from 'react'
+import './Navigation.css'
+import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png'
+import {usePreferences} from '../../context/PreferencesContext'
+import {UserService} from "../../services/UserService"
 
 const ensureFontAwesome = () => {
     if (!document.getElementById('font-awesome-stylesheet')) {
-        const link = document.createElement('link');
-        link.id = 'font-awesome-stylesheet';
-        link.rel = 'stylesheet';
-        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
-        link.integrity = 'sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==';
-        link.crossOrigin = 'anonymous';
-        document.head.appendChild(link);
+        const link = document.createElement('link')
+        link.id = 'font-awesome-stylesheet'
+        link.rel = 'stylesheet'
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css'
+        link.integrity = 'sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=='
+        link.crossOrigin = 'anonymous'
+        document.head.appendChild(link)
     }
-};
+}
 
 const getIconForMenuItem = (id) => {
     switch (id) {
         case 'Dashboard':
-            return <i className="fas fa-tachometer-alt"></i>;
+            return <i className="fas fa-tachometer-alt"></i>
         case 'Mixers':
-            return <i className="fas fa-truck"></i>;
+            return <i className="fas fa-truck"></i>
         case 'Tractors':
-            return <i className="fas fa-tractor"></i>;
+            return <i className="fas fa-tractor"></i>
         case 'Trailers':
-            return <i className="fas fa-trailer"></i>;
+            return <i className="fas fa-trailer"></i>
         case 'Heavy Equipment':
-            return <i className="fas fa-snowplow"></i>;
+            return <i className="fas fa-snowplow"></i>
         case 'Operators':
-            return <i className="fas fa-users"></i>;
+            return <i className="fas fa-users"></i>
         case 'Managers':
-            return <i className="fas fa-user-tie"></i>;
+            return <i className="fas fa-user-tie"></i>
         case 'Plants':
-            return <i className="fas fa-industry"></i>;
+            return <i className="fas fa-industry"></i>
         case 'Regions':
-            return <i className="fas fa-map-marker-alt"></i>;
+            return <i className="fas fa-map-marker-alt"></i>
         case 'List':
-            return <i className="fas fa-list"></i>;
+            return <i className="fas fa-list"></i>
         case 'Archive':
-            return <i className="fas fa-archive"></i>;
+            return <i className="fas fa-archive"></i>
         case 'Settings':
-            return <i className="fas fa-cog"></i>;
+            return <i className="fas fa-cog"></i>
         case 'MyAccount':
-            return <i className="fas fa-user"></i>;
+            return <i className="fas fa-user"></i>
         case 'Logout':
-            return <i className="fas fa-sign-out-alt"></i>;
+            return <i className="fas fa-sign-out-alt"></i>
         case 'Teams':
-            return <i className="fas fa-people-arrows"></i>;
+            return <i className="fas fa-people-arrows"></i>
+        case 'Reports':
+            return <i className="fas fa-file-alt"></i>
         default:
-            return <i className="fas fa-clipboard-list"></i>;
+            return <i className="fas fa-clipboard-list"></i>
     }
-};
+}
 
 const menuItems = [
     {text: 'Mixers', id: 'Mixers', permission: 'mixers.view', alwaysVisible: false},
@@ -65,7 +67,8 @@ const menuItems = [
     {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
     {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
-];
+    {text: 'Reports', id: 'Reports', permission: 'reports.view', alwaysVisible: false}
+]
 
 export default function Navigation({
                                          selectedView,
@@ -78,78 +81,78 @@ export default function Navigation({
                                          userId = null,
                                          listStatusFilter = ''
                                      }) {
-    const {preferences, toggleNavbarMinimized} = usePreferences();
-    const [collapsed, setCollapsed] = useState(preferences.navbarMinimized);
-    const [userPermissions, setUserPermissions] = useState([]);
-    const [visibleMenuItems, setVisibleMenuItems] = useState([]);
+    const {preferences, toggleNavbarMinimized} = usePreferences()
+    const [collapsed, setCollapsed] = useState(preferences.navbarMinimized)
+    const [userPermissions, setUserPermissions] = useState([])
+    const [visibleMenuItems, setVisibleMenuItems] = useState([])
 
     useEffect(() => {
-        ensureFontAwesome();
+        ensureFontAwesome()
 
         const handleStatusFilterChange = (event) => {
-            const { statusFilter } = event.detail;
+            const { statusFilter } = event.detail
             if (statusFilter === 'completed' || listStatusFilter === 'completed') {
-                setVisibleMenuItems([...visibleMenuItems]);
+                setVisibleMenuItems([...visibleMenuItems])
             }
-        };
+        }
 
-        window.addEventListener('list-status-filter-change', handleStatusFilterChange);
+        window.addEventListener('list-status-filter-change', handleStatusFilterChange)
 
         return () => {
-            window.removeEventListener('list-status-filter-change', handleStatusFilterChange);
-        };
-    }, [listStatusFilter, visibleMenuItems]);
+            window.removeEventListener('list-status-filter-change', handleStatusFilterChange)
+        }
+    }, [listStatusFilter, visibleMenuItems])
 
     useEffect(() => {
         async function fetchUserPermissions() {
             if (userId) {
                 try {
-                    const permissions = await UserService.getUserPermissions(userId);
-                    setUserPermissions(permissions);
+                    const permissions = await UserService.getUserPermissions(userId)
+                    setUserPermissions(permissions)
                 } catch (error) {
-                    setUserPermissions([]);
+                    setUserPermissions([])
                 }
             } else {
-                setUserPermissions([]);
+                setUserPermissions([])
             }
         }
 
-        fetchUserPermissions();
-    }, [userId]);
+        fetchUserPermissions()
+    }, [userId])
 
     useEffect(() => {
         async function filterMenuItems() {
             if (!userId) {
-                setVisibleMenuItems([]);
-                return;
+                setVisibleMenuItems([])
+                return
             }
 
             try {
-                const permissions = await UserService.getUserPermissions(userId);
+                const permissions = await UserService.getUserPermissions(userId)
                 const filtered = menuItems.filter(item => {
                     if (item.permission) {
-                        return permissions.includes(item.permission);
+                        return permissions.includes(item.permission)
                     }
-                    return item.permission === null;
-                });
+                    return item.permission === null
+                })
 
-                setVisibleMenuItems(filtered);
+                setVisibleMenuItems(filtered)
             } catch (error) {
-                setVisibleMenuItems([]);
+                setVisibleMenuItems([])
             }
         }
 
-        filterMenuItems();
-    }, [userId]);
+        filterMenuItems()
+    }, [userId])
 
     const toggleCollapse = () => {
-        setCollapsed(!collapsed);
-        toggleNavbarMinimized();
-    };
+        setCollapsed(!collapsed)
+        toggleNavbarMinimized()
+    }
 
     useEffect(() => {
-        setCollapsed(preferences.navbarMinimized);
-    }, [preferences.navbarMinimized]);
+        setCollapsed(preferences.navbarMinimized)
+    }, [preferences.navbarMinimized])
 
     return (
         <div className="app-container">
@@ -166,12 +169,12 @@ export default function Navigation({
                 <nav className="navbar-menu">
                     <ul>
                         {visibleMenuItems.map((item) => {
-                            let isActive = false;
+                            let isActive = false
 
                             if (item.id === 'List') {
-                                isActive = selectedView === 'List';
+                                isActive = selectedView === 'List'
                             } else {
-                                isActive = selectedView === item.id;
+                                isActive = selectedView === item.id
                             }
 
                             return (
@@ -180,9 +183,9 @@ export default function Navigation({
                                     className={`menu-item ${isActive ? 'active' : ''}`}
                                     onClick={() => {
                                         if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) {
-                                            window.appSwitchView(item.id);
+                                            window.appSwitchView(item.id)
                                         } else {
-                                            onSelectView(item.id);
+                                            onSelectView(item.id)
                                         }
                                     }}
                                 >
@@ -192,9 +195,8 @@ export default function Navigation({
                                     </span>
                                     {!collapsed && <span className="menu-text">{item.text}</span>}
                                 </li>
-                            );
+                            )
                         })}
-                        {/* Only show Settings and MyAccount once, outside of visibleMenuItems */}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}
                             onClick={() => onSelectView('Settings')}
@@ -228,5 +230,5 @@ export default function Navigation({
                 {children}
             </div>
         </div>
-    );
+    )
 }

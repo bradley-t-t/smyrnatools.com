@@ -221,7 +221,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                         </div>
                     </div>
                 </div>
-
                 <div className="overview-card maintenance-card">
                     <h2>Maintenance</h2>
                     <div className="maintenance-stats">
@@ -254,7 +253,6 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                         </div>
                     </div>
                 </div>
-
                 {(!selectedPlant || Object.keys(plantCounts).length > 1) && (
                     <div className="overview-card plant-card">
                         <h2>Plant Distribution</h2>
@@ -286,19 +284,16 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                 )}
             </div>
 
-            {}
             {selectedPlant && (
-                <div className="active-operators-list" style={{marginTop: 32}}>
-                    <h2 style={{fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)'}}>
-                        Active Operators ({getPlantName(selectedPlant)})
-                    </h2>
-                    <div style={{overflowX: 'auto'}}>
-                        <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '1rem'}}>
+                <div className="active-operators-section" style={{marginTop: 32}}>
+                    <h2>Active Operators ({getPlantName(selectedPlant)})</h2>
+                    <div className="plant-distribution-table" style={{padding: 0, marginTop: 0}}>
+                        <table className="distribution-table">
                             <thead>
                                 <tr>
-                                    <th style={{textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>Name</th>
-                                    <th style={{textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>Position</th>
-                                    <th style={{textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>Truck #</th>
+                                    <th>Name</th>
+                                    <th>Position</th>
+                                    <th>Truck #</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -312,9 +307,9 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                         );
                                         return (
                                             <tr key={op.employeeId}>
-                                                <td style={{padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>{op.name}</td>
-                                                <td style={{padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>{op.position || ''}</td>
-                                                <td style={{padding: '8px 12px', borderBottom: '1px solid var(--border-light)'}}>
+                                                <td className="plant-name">{op.name}</td>
+                                                <td>{op.position || ''}</td>
+                                                <td>
                                                     {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : <span style={{color: 'var(--text-secondary)'}}>—</span>}
                                                 </td>
                                             </tr>

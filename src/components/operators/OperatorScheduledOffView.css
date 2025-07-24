@@ -1,7 +1,7 @@
 .operator-request-off-view {
     max-width: 1200px; /* Increased width for a wider container */
     margin: 0 auto;
-    background: #fff;
+    background: var(--bg-primary);
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(49,130,206,0.07);
     padding: 32px 24px;
@@ -120,7 +120,7 @@
     right: 12px;
     font-size: 1.2rem;
     color: var(--accent-secondary, #3182ce);
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, var(--bg-primary));
     border-radius: 50%;
     padding: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -135,7 +135,7 @@
 
 .operator-card-wrapper:hover .time-off-icon {
     box-shadow: 0 8px 24px rgba(49,130,206,0.18);
-    background: var(--accent-light-theme, #f7fafc);
+    background: var(--accent-light-theme, var(--bg-tertiary));
     color: var(--accent, #2563eb);
 }
 
@@ -163,7 +163,7 @@
 }
 
 .modal-content.overview-modal {
-    background: #fff;
+    background: var(--bg-primary);
     border-radius: 16px;
     max-width: 480px;
     width: 98%;
@@ -219,7 +219,7 @@
 
 .modal-body, .request-off-form {
     padding: 32px;
-    background: #f7fafc;
+    background: var(--bg-tertiary);
     border-bottom-left-radius: 16px;
     border-bottom-right-radius: 16px;
 }
@@ -240,7 +240,7 @@
     border-radius: 10px;
     border: 1.5px solid var(--accent-light, #63b3ed);
     font-size: 16px;
-    background: #f8fafc;
+    background: var(--bg-primary);
     color: var(--text-primary);
     transition: border 0.2s, box-shadow 0.2s;
     box-shadow: 0 2px 8px rgba(49,130,206,0.06);
@@ -250,12 +250,12 @@
 .request-off-form .date-input-row input[type="date"]:focus {
     border-color: var(--accent, #3182ce);
     box-shadow: 0 0 0 2px rgba(49,130,206,0.15);
-    background: #fff;
+    background: var(--bg-primary);
 }
 
 .request-off-form .date-input-row input[type="date"]:hover {
     border-color: var(--accent, #3182ce);
-    background: #fff;
+    background: var(--bg-primary);
 }
 
 .request-off-form .add-date-btn, .request-off-form .submit-btn {
@@ -362,7 +362,7 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    background: #f8fafc;
+    background: var(--bg-tertiary);
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(49,130,206,0.07);
     padding: 14px 18px;
@@ -372,7 +372,7 @@
 
 .upcoming-day-row:hover {
     box-shadow: 0 6px 18px rgba(49,130,206,0.13);
-    background: #e6f0fa;
+    background: var(--accent-light-theme, var(--bg-tertiary));
 }
 
 .upcoming-day-date {

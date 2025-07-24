@@ -13,8 +13,6 @@ class UserServiceImpl {
     async getCurrentUser() {
         const userId = sessionStorage.getItem('userId');
         if (userId) {
-            console.log('Found user ID in session storage:', userId);
-
             try {
                 const { data, error } = await supabase
                     .from(USERS_TABLE)
@@ -25,7 +23,6 @@ class UserServiceImpl {
                 if (data && data.id) {
                     return { id: userId };
                 } else {
-                    console.warn('User ID in session storage not found in database:', userId);
                     sessionStorage.removeItem('userId');
                 }
             } catch (err) {
@@ -46,7 +43,6 @@ class UserServiceImpl {
 
             return data.user;
         } catch (err) {
-            console.error('Error getting authenticated user:', err);
             return null;
         }
     }
@@ -342,25 +338,19 @@ UserService.deleteRole = async function (roleId) {
 
 UserService.getUserPlant = async function (userId) {
     if (!userId) {
-        console.warn('getUserPlant: userId is null or undefined');
         return null;
     }
     const id = typeof userId === 'object' && userId.id ? userId.id : userId;
-    console.log('getUserPlant: querying users_profiles for id:', id);
     const { data, error } = await supabase
         .from(PROFILES_TABLE)
         .select('plant_code')
         .eq('id', id)
         .single();
-    console.log('getUserPlant: query result:', { data, error });
     if (error) {
-        console.error('Error fetching user plant:', error, 'userId:', id);
         return null;
     }
     if (!data?.plant_code) {
-        console.warn('No plant_code found for user:', id, 'data:', data);
         return null;
     }
-    console.log('getUserPlant: found plant_code:', data.plant_code);
     return data.plant_code;
 };

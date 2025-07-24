@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../../services/DatabaseService';
-import LoadingScreen from '../../common/LoadingScreen';
-import OperatorCard from '../OperatorCard';
-import { UserService } from '../../../services/UserService';
+import { supabase } from '../../services/DatabaseService';
+import LoadingScreen from '../common/LoadingScreen';
+import OperatorCard from './OperatorCard';
+import { UserService } from '../../services/UserService';
 import './OperatorScheduledOffView.css';
 
 const OPERATORS_TABLE = 'operators';

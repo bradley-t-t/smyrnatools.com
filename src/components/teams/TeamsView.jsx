@@ -10,7 +10,7 @@ import TeamsOverview from './TeamsOverview';
 
 const PLANTS_TABLE = 'plants';
 const OPERATORS_TABLE = 'operators';
-const TEAMS_TABLE = 'teams';
+const TEAMS_TABLE = 'operators_teams';
 const OPERATORS_TEAMS_TABLE = 'operators_teams';
 const SCHEDULED_OFF_TABLE = 'operators_scheduled_off';
 
@@ -304,12 +304,7 @@ function TeamsView() {
                             ))}
                         </select>
                     </div>
-                    {}
-                    <button className="ios-button" onClick={() => setShowOverview(true)}>
-                        <i className="fas fa-chart-bar"></i>
-                        Overview
-                    </button>
-                    {(searchText || (statusFilter && statusFilter !== 'Active')) && (
+                    {(selectedPlant && selectedPlant !== userPlant) || (statusFilter && statusFilter !== 'Active') ? (
                         <button className="filter-reset-button" onClick={() => {
                             setSearchText('');
                             setSelectedPlant(userPlant || '');
@@ -317,7 +312,11 @@ function TeamsView() {
                         }}>
                             <i className="fas fa-undo"></i> Reset Filters
                         </button>
-                    )}
+                    ) : null}
+                    <button className="ios-button" onClick={() => setShowOverview(true)}>
+                        <i className="fas fa-chart-bar"></i>
+                        Overview
+                    </button>
                 </div>
             </div>
             <div className="content-container teams-split-table">
@@ -453,7 +452,7 @@ function TeamsView() {
                         </div>
                     </div>
                 )}
-                {/* Add reference date annotation below the teams */}
+                {}
                 <div style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: '#888' }}>
                     <em>
                         Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to Work</b> Saturday. Teams alternate weekly.

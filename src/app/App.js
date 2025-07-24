@@ -23,91 +23,129 @@ import TipBanner from '../components/common/TipBanner';
 import '../styles/Theme.css';
 import '../styles/Global.css';
 import TeamsView from '../components/teams/TeamsView';
-import OperatorScheduledOffView from '../components/operators/scheduled_off/OperatorScheduledOffView';
+import OperatorScheduledOffView from '../components/operators/OperatorScheduledOffView';
+import ReportsView from '../components/reports/ReportsView';
+import ConnectionScreen from '../components/common/ConnectionScreen'
 
 function AppContent() {
-    const [selectedView, setSelectedView] = useState('Mixers');
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const [userRole, setUserRole] = useState('');
+    const [userId, setUserId] = useState(null)
+    const [selectedView, setSelectedView] = useState('Mixers')
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+    const [userRole, setUserRole] = useState('')
+    const [connectionLost, setConnectionLost] = useState(false)
+    const [userCheckFailed, setUserCheckFailed] = useState(false)
+    const [title, setTitle] = useState('Mixers')
+    const [selectedMixer, setSelectedMixer] = useState(null)
+    const [selectedTractor, setSelectedTractor] = useState(null)
+    const [webViewURL, setWebViewURL] = useState(null)
+    const [unreadMessageCount, setUnreadMessageCount] = useState(0)
+    const [loading, setLoading] = useState(true)
+    const [session, setSession] = useState(null)
+    const [userDisplayName, setUserDisplayName] = useState('')
+
+    useEffect(() => {
+        async function checkCurrentUser() {
+            try {
+                const user = await UserService.getCurrentUser()
+                if (!user) {
+                    setUserCheckFailed(true)
+                } else {
+                    setUserCheckFailed(false)
+                }
+            } catch {
+                setUserCheckFailed(true)
+            }
+        }
+        checkCurrentUser()
+    }, [userId])
+
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
+            setIsMobile(window.innerWidth <= 768)
+        }
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-    const [title, setTitle] = useState('Mixers');
-    const [selectedMixer, setSelectedMixer] = useState(null);
-    const [selectedTractor, setSelectedTractor] = useState(null);
-    const [webViewURL, setWebViewURL] = useState(null);
-    const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [session, setSession] = useState(null);
-    const [userId, setUserId] = useState(null);
+    useEffect(() => {
+        let timeoutId
+        function updateOnlineStatus() {
+            if (!navigator.onLine) {
+                timeoutId = setTimeout(() => {
+                    setConnectionLost(true)
+                }, 5000)
+            } else {
+                clearTimeout(timeoutId)
+                setConnectionLost(false)
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus)
+        window.addEventListener('offline', updateOnlineStatus)
+        updateOnlineStatus()
+        return () => {
+            window.removeEventListener('online', updateOnlineStatus)
+            window.removeEventListener('offline', updateOnlineStatus)
+            clearTimeout(timeoutId)
+        }
+    }, [])
+
     useEffect(() => {
         const handleSignOut = () => {
-            setUserId(null);
-            setUserRole('');
-            setSelectedView('Mixers');
-        };
-
-        window.addEventListener('authSignOut', handleSignOut);
-
+            setUserId(null)
+            setUserRole('')
+            setSelectedView('Mixers')
+        }
+        window.addEventListener('authSignOut', handleSignOut)
         return () => {
-            window.removeEventListener('authSignOut', handleSignOut);
-        };
-    }, []);
+            window.removeEventListener('authSignOut', handleSignOut)
+        }
+    }, [])
+
     useEffect(() => {
         const checkAuth = async () => {
-            setLoading(true);
+            setLoading(true)
             try {
-                const {data, error} = await supabase.auth.getSession();
+                const {data, error} = await supabase.auth.getSession()
                 if (error) {
-                    return;
+                    return
                 }
-
-                setSession(data.session);
-
+                setSession(data.session)
                 if (data.session?.user?.id) {
-                    setUserId(data.session.user.id);
-                    sessionStorage.setItem('userId', data.session.user.id);
+                    setUserId(data.session.user.id)
+                    sessionStorage.setItem('userId', data.session.user.id)
                 } else {
-                    const storedUserId = sessionStorage.getItem('userId');
+                    const storedUserId = sessionStorage.getItem('userId')
                     if (storedUserId) {
-                        setUserId(storedUserId);
+                        setUserId(storedUserId)
                     } else {
-                        setUserId(null);
-                        setUserRole('');
+                        setUserId(null)
+                        setUserRole('')
                     }
                 }
             } catch (error) {
-                setUserId(null);
-                setUserRole('');
+                setUserId(null)
+                setUserRole('')
             } finally {
-                setLoading(false);
+                setLoading(false)
             }
-        };
-
-        checkAuth();
-
+        }
+        checkAuth()
         const {data: authListener} = supabase.auth.onAuthStateChange((event, session) => {
-            setSession(session);
+            setSession(session)
             if (session?.user?.id) {
-                setUserId(session.user.id);
-                sessionStorage.setItem('userId', session.user.id);
+                setUserId(session.user.id)
+                sessionStorage.setItem('userId', session.user.id)
             } else if (event === 'SIGNED_OUT') {
-                setUserId(null);
-                sessionStorage.removeItem('userId');
+                setUserId(null)
+                sessionStorage.removeItem('userId')
             }
-        });
-
+        })
         return () => {
             if (authListener?.subscription) {
-                authListener.subscription.unsubscribe();
+                authListener.subscription.unsubscribe()
             }
-        };
-    }, []);
+        }
+    }, [])
 
     const fetchUserProfile = async (user) => {
         try {
@@ -115,41 +153,36 @@ function AppContent() {
                 .from('users_profiles')
                 .select('first_name, last_name')
                 .eq('id', user.id)
-                .single();
-
+                .single()
             if (error) {
-                return;
+                return
             }
-
             if (data && (data.first_name || data.last_name)) {
-                setTitle(`Welcome, ${data.first_name || ''} ${data.last_name || ''}`.trim());
+                setTitle(`Welcome, ${data.first_name || ''} ${data.last_name || ''}`.trim())
             }
         } catch (error) {
         }
-    };
+    }
 
     useEffect(() => {
         if (userId) {
-            fetchUserProfile(userId);
-            fetchUserRole(userId);
+            fetchUserProfile(userId)
+            fetchUserRole(userId)
         }
-    }, [userId]);
+    }, [userId])
 
     const fetchUserRole = async (userId) => {
         try {
-            const highestRole = await UserService.getHighestRole(userId);
-
+            const highestRole = await UserService.getHighestRole(userId)
             if (highestRole && highestRole.name) {
-                setUserRole(highestRole.name.toLowerCase());
+                setUserRole(highestRole.name.toLowerCase())
             } else {
-                setUserRole('');
+                setUserRole('')
             }
         } catch (error) {
-            setUserRole('');
+            setUserRole('')
         }
-    };
-
-    const [userDisplayName, setUserDisplayName] = useState('');
+    }
 
     useEffect(() => {
         if (userId) {
@@ -159,63 +192,62 @@ function AppContent() {
                         .from('users_profiles')
                         .select('first_name, last_name')
                         .eq('id', userId)
-                        .single();
-
+                        .single()
                     if (error) {
-                        return;
+                        return
                     }
-
                     if (data && (data.first_name || data.last_name)) {
-                        setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim());
+                        setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim())
                     } else {
-                        setUserDisplayName(userId.substring(0, 8));
+                        setUserDisplayName(userId.substring(0, 8))
                     }
                 } catch (error) {
                 }
-            };
-
-            getUserData();
+            }
+            getUserData()
         }
-    }, [userId]);
+    }, [userId])
 
+    if (connectionLost) {
+        return <ConnectionScreen />
+    }
     if (loading) {
-        return <LoadingScreen message="Loading application..." fullPage={true}/>;
+        return <LoadingScreen message="Loading application..." fullPage={true}/>
     }
-
     if (!userId) {
-        return <LoginView/>;
+        return <LoginView/>
     }
-
     if (userRole.toLowerCase() === 'guest') {
-        return <GuestView/>;
+        return <GuestView/>
+    }
+    if (userCheckFailed) {
+        return <LoginView/>
     }
 
     const handleViewSelection = (viewId) => {
-        setSelectedView(viewId);
-        setTitle(viewId);
-
+        setSelectedView(viewId)
+        setTitle(viewId)
         if (viewId === 'MyAccount') {
             supabase.auth.getSession().then(({data}) => {
                 if (data?.session?.user?.id) {
-                    setUserId(data.session.user.id);
-                    sessionStorage.setItem('userId', data.session.user.id);
-                    setSession(data.session);
+                    setUserId(data.session.user.id)
+                    sessionStorage.setItem('userId', data.session.user.id)
+                    setSession(data.session)
                 }
             }).catch(error => {
-            });
+            })
         }
-
         if (selectedMixer && viewId !== 'Mixers') {
-            setSelectedMixer(null);
+            setSelectedMixer(null)
         }
         if (selectedTractor && viewId !== 'Tractors') {
-            setSelectedTractor(null);
+            setSelectedTractor(null)
         }
-    };
+    }
 
     const handleExternalLink = (url) => {
-        setWebViewURL(url);
-    };
+        setWebViewURL(url)
+    }
 
     const renderCurrentView = () => {
         if (webViewURL) {
@@ -224,9 +256,8 @@ function AppContent() {
                     url={webViewURL}
                     onClose={() => setWebViewURL(null)}
                 />
-            );
+            )
         }
-
         switch (selectedView) {
             case 'Mixers':
                 if (selectedMixer) {
@@ -235,36 +266,36 @@ function AppContent() {
                             <MixerDetailView
                                 mixerId={selectedMixer}
                                 onClose={() => {
-                                    setSelectedMixer(null);
-                                    setTitle('Mixers');
+                                    setSelectedMixer(null)
+                                    setTitle('Mixers')
                                 }}
                             />
-                        );
+                        )
                     } catch (error) {
-                        setSelectedMixer(null);
-                        setTitle('Mixers');
+                        setSelectedMixer(null)
+                        setTitle('Mixers')
                         return (
                             <MixersView
                                 onSelectMixer={(mixerId) => {
                                     if (mixerId) {
-                                        setSelectedMixer(mixerId);
-                                        setTitle('Mixer Details');
+                                        setSelectedMixer(mixerId)
+                                        setTitle('Mixer Details')
                                     }
                                 }}
                             />
-                        );
+                        )
                     }
                 }
                 return (
                     <MixersView
                         onSelectMixer={(mixerId) => {
                             if (mixerId) {
-                                setSelectedMixer(mixerId);
-                                setTitle('Mixer Details');
+                                setSelectedMixer(mixerId)
+                                setTitle('Mixer Details')
                             }
                         }}
                     />
-                );
+                )
             case 'Operators':
                 return (
                     <OperatorsView
@@ -273,7 +304,7 @@ function AppContent() {
                         setShowSidebar={() => {
                         }}
                     />
-                );
+                )
             case 'Managers':
                 return (
                     <ManagersView
@@ -282,7 +313,7 @@ function AppContent() {
                         setShowSidebar={() => {
                         }}
                     />
-                );
+                )
             case 'List':
                 return (
                     <ListView
@@ -290,8 +321,8 @@ function AppContent() {
                         showSidebar={false}
                         setShowSidebar={() => {}}
                     />
-                );
-                            case 'Archive':
+                )
+            case 'Archive':
                 return (
                     <ListView
                         title="Archived Items"
@@ -299,30 +330,30 @@ function AppContent() {
                         setShowSidebar={() => {}}
                         showArchived={true}
                     />
-                );
+                )
             case 'MyAccount':
-                const effectiveUserId = userId || sessionStorage.getItem('userId') || session?.user?.id;
-
+                const effectiveUserId = userId || sessionStorage.getItem('userId') || session?.user?.id
                 if (effectiveUserId) {
-                    return <MyAccountView userId={effectiveUserId}/>;
+                    return <MyAccountView userId={effectiveUserId}/>
                 }
-
-                return <LoginView/>;
+                return <LoginView/>
             case 'Settings':
-                return <SettingsView/>;
+                return <SettingsView/>
             case 'Teams':
-                return <TeamsView />;
+                return <TeamsView />
             case 'ScheduledOff':
-                return <OperatorScheduledOffView operatorId={userId} />;
+                return <OperatorScheduledOffView operatorId={userId} />
+            case 'Reports':
+                return <ReportsView />
             default:
                 return (
                     <div className="coming-soon">
                         <h2>{selectedView} view is coming soon!</h2>
                         <p>This feature is under development.</p>
                     </div>
-                );
+                )
         }
-    };
+    }
 
     return (
         <div className="App">
@@ -339,20 +370,18 @@ function AppContent() {
                 {renderCurrentView()}
             </Navigation>
         </div>
-    );
+    )
 }
 
 function App() {
     React.useEffect(() => {
-        document.documentElement.style.overflowX = 'hidden';
-        document.body.style.overflowX = 'hidden';
-
+        document.documentElement.style.overflowX = 'hidden'
+        document.body.style.overflowX = 'hidden'
         return () => {
-            document.documentElement.style.overflowX = '';
-            document.body.style.overflowX = '';
-        };
-    }, []);
-
+            document.documentElement.style.overflowX = ''
+            document.body.style.overflowX = ''
+        }
+    }, [])
     return (
         <AuthProvider>
             <PreferencesProvider>
@@ -363,8 +392,7 @@ function App() {
                 </div>
             </PreferencesProvider>
         </AuthProvider>
-    );
+    )
 }
 
-export default App;
-
+export default App

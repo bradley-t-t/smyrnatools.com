@@ -1190,17 +1190,101 @@
     }
 }
 
-.mixers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    padding: 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
+.active-operators-section {
+    margin-top: 32px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(49,130,206,0.10);
+    padding: 0 0 32px 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1.5px solid var(--divider);
+    overflow: hidden;
 }
 
-@media (max-width: 768px) {
-    .mixers-grid {
-        grid-template-columns: 1fr;
+.active-operators-section h2 {
+    font-size: 1.2rem;
+    margin: 0;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: left;
+    background: var(--background);
+    padding: 20px 28px 16px 28px;
+    border-bottom: 1px solid var(--divider);
+    letter-spacing: 0.01em;
+}
+
+.active-operators-table-container {
+    max-height: 320px;
+    overflow-y: auto;
+    border-radius: 0 0 16px 16px;
+    background: var(--card-bg);
+    box-shadow: none;
+    border: none;
+}
+
+.active-operators-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 1rem;
+    background: var(--card-bg);
+    min-width: 420px;
+}
+
+.active-operators-table th,
+.active-operators-table td {
+    padding: 13px 22px;
+    text-align: left;
+    border-bottom: 1px solid var(--divider);
+}
+
+.active-operators-table th {
+    background: var(--background);
+    color: var(--primary);
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    letter-spacing: 0.01em;
+    font-size: 1rem;
+}
+
+.active-operators-table tr:last-child td {
+    border-bottom: none;
+}
+
+.active-operators-table tbody tr {
+    transition: background 0.15s;
+}
+
+.active-operators-table tbody tr:hover {
+    background: rgba(49,130,206,0.06);
+}
+
+.active-operators-table td {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    vertical-align: middle;
+}
+
+@media (max-width: 900px) {
+    .active-operators-section {
+        padding: 0 0 18px 0;
+        max-width: 100vw;
+        border-radius: 10px;
+    }
+    .active-operators-table {
+        min-width: 320px;
+        font-size: 0.93rem;
+    }
+    .active-operators-table th,
+    .active-operators-table td {
+        padding: 8px 10px;
+    }
+    .active-operators-section h2 {
+        padding: 14px 12px 10px 12px;
+        font-size: 1rem;
     }
 }
