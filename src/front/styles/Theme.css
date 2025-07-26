@@ -41,6 +41,9 @@
     --status-spare: #a259e6;
     --status-inshop: #2563eb;
     --status-retired: #7c1d1d;
+    --comments-badge-bg: #ffe066;
+    --comments-badge-text: #fff;
+    --comments-badge-icon: #fff;
 }
 
 .dark-mode {
@@ -81,6 +84,9 @@
     --accent-border: #5865f2;
     --accent-primary-rgb: 88, 101, 242;
     --detail-header-bg: #181a20;
+    --comments-badge-bg: #bfae3c;
+    --comments-badge-text: #fff;
+    --comments-badge-icon: #fff;
 }
 
 .accent-red {

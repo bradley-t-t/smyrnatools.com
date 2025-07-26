@@ -100,19 +100,11 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         position: 'absolute',
                         top: '12px',
                         right: openIssuesCount > 0 ? '92px' : '42px',
-                        zIndex: 4,
-                        background: 'goldenrod',
-                        color: 'var(--accent-dark)',
-                        borderRadius: '12px',
-                        padding: '2px 8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        fontSize: '0.95rem',
-                        fontWeight: 'bold'
+                        zIndex: 4
                     }}
                     title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}
                 >
-                    <i className="fas fa-comments" style={{marginRight: '4px', fontSize: '0.9rem'}}></i>
+                    <i className="fas fa-comments comment-icon"></i>
                     <span>{commentsCount}</span>
                 </div>
             )}

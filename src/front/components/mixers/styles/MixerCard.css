@@ -101,17 +101,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: goldenrod;
-    color: var(--accent-dark);
+    background-color: var(--comments-badge-bg);
+    color: var(--comments-badge-text);
     border-radius: 12px;
     padding: 2px 8px;
     font-size: 0.95rem;
     font-weight: bold;
 }
 
-.comments-badge i {
+.comment-icon {
     margin-right: 4px;
     font-size: 0.9rem;
+    color: var(--comments-badge-icon);
 }
 
 .issues-badge {
