@@ -2,8 +2,8 @@
     padding: 1rem;
     max-width: 1200px;
     margin: 0 auto;
-    background: var(--bg-primary, #fff);
-    color: var(--text-primary, #212122);
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .filtered-indicator {
@@ -11,7 +11,7 @@
     color: var(--text-secondary);
     font-weight: normal;
     margin-left: 10px;
-    background-color: var(--bg-tertiary, #f5f5f5);
+    background-color: var(--bg-tertiary);
     padding: 3px 8px;
     border-radius: 4px;
 }
@@ -21,7 +21,7 @@
     color: var(--text-secondary);
     margin-bottom: 15px;
     padding: 5px 10px;
-    background-color: var(--bg-tertiary, #f5f5f5);
+    background-color: var(--bg-tertiary);
     border-radius: 4px;
     display: inline-block;
     text-align: center;
@@ -36,13 +36,13 @@
 
 .overview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: 1fr;
     gap: 1.5rem;
 }
 
 .overview-card {
-    background: var(--bg-primary, #fff);
-    color: var(--text-primary, #212122);
+    background: var(--bg-primary);
+    color: var(--text-primary);
     border-radius: 12px;
     box-shadow: var(--shadow);
     padding: 1.25rem;
@@ -58,8 +58,8 @@
 .overview-card h2 {
     font-size: 1.3rem;
     margin-bottom: 1rem;
-    color: var(--text-primary, #212122);
-    border-bottom: 1px solid var(--border-light, #eee);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
     padding-bottom: 0.75rem;
 }
 
@@ -74,8 +74,8 @@
     padding: 0.75rem;
     border-radius: 8px;
     transition: transform 0.2s ease;
-    background-color: var(--bg-tertiary, #f9f9f9);
-    color: var(--text-primary, #212122);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .status-item:hover {
@@ -86,12 +86,12 @@
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
-    color: var(--accent, #2563eb);
+    color: var(--text-primary);
 }
 
 .status-label {
     font-size: 0.9rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-secondary);
 }
 
 .positions-grid {
@@ -105,8 +105,8 @@
     padding: 0.75rem;
     border-radius: 8px;
     transition: transform 0.2s ease;
-    background-color: var(--bg-tertiary, #f9f9f9);
-    color: var(--text-primary, #212122);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .position-item:hover {
@@ -117,18 +117,18 @@
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
-    color: var(--accent, #2563eb);
+    color: var(--text-primary);
 }
 
 .position-label {
     font-size: 0.9rem;
-    color: var(--text-secondary, #666);
+    color: var(--text-secondary);
 }
 
 .plant-distribution-table {
-    overflow-x: auto;
-    max-height: 300px;
-    overflow-y: auto;
+    width: 100%;
+    padding: 0;
+    margin: 0;
 }
 
 .distribution-table {
@@ -137,41 +137,19 @@
     font-size: 0.9rem;
 }
 
-.operators-overview {
-    padding: 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
+.plant-card,
+.position-distribution-card {
+    grid-column: 1 / -1;
 }
 
-.operators-overview h1 {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    color: var(--text-primary);
-    text-align: center;
+.position-distribution-card .plant-distribution-table {
+    width: 100%;
+    padding: 0;
+    margin: 0;
 }
 
-.filtered-indicator {
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    font-weight: normal;
-    display: inline-block;
-    padding: 3px 8px;
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
-}
-
-.filter-indicator {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    padding: 5px 10px;
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
-    display: inline-block;
-    text-align: center;
-}
-
-.plant-card, .position-distribution-card {
-    grid-column: span 2;
+.position-distribution-card .distribution-table {
+    width: 100%;
 }
 
 .distribution-table th,
@@ -182,8 +160,8 @@
 }
 
 .distribution-table th {
-    background-color: var(--bg-tertiary, #f5f5f5);
-    color: var(--text-primary, #212122);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
     font-weight: 500;
     position: sticky;
     top: 0;
@@ -193,11 +171,11 @@
 .distribution-table td.plant-name {
     text-align: left;
     font-weight: 500;
-    color: var(--text-primary, #212122);
+    color: var(--text-primary);
 }
 
 .distribution-table td {
-    color: var(--text-secondary, #666);
+    color: var(--text-secondary);
 }
 
 .distribution-table tr:hover {
@@ -208,72 +186,76 @@
     .overview-grid {
         grid-template-columns: 1fr;
     }
-
-    .plant-card, .position-distribution-card {
-        grid-column: span 1;
+    .plant-card,
+    .position-distribution-card {
+        grid-column: 1 / -1;
+    }
+    .plant-distribution-table,
+    .position-distribution-card .plant-distribution-table,
+    .position-distribution-card .distribution-table,
+    .distribution-table {
+        width: 100%;
     }
 }
 
-/* Dark mode support */
 .dark-mode .operators-overview {
-    background: var(--bg-primary, #18181b);
-    color: var(--text-primary, #f5f5f5);
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .dark-mode .overview-card {
-    background: var(--bg-primary, #23232a);
-    color: var(--text-primary, #f5f5f5);
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .dark-mode .overview-card h2 {
-    color: var(--text-primary, #f5f5f5);
-    border-bottom: 1px solid var(--border-light, #333);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .dark-mode .status-item,
 .dark-mode .position-item {
-    background-color: var(--bg-tertiary, #23232a);
-    color: var(--text-primary, #f5f5f5);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .dark-mode .status-label,
 .dark-mode .position-label {
-    color: var(--text-secondary, #b5b5b5);
+    color: var(--text-secondary);
 }
 
 .dark-mode .status-count,
 .dark-mode .position-count {
-    color: var(--accent, #63b3ed);
+    color: var(--text-primary);
 }
 
 .dark-mode .distribution-table th {
-    background-color: var(--bg-tertiary, #23232a);
-    color: var(--text-primary, #f5f5f5);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .dark-mode .distribution-table td {
-    color: var(--text-secondary, #b5b5b5);
+    color: var(--text-secondary);
 }
 
 .dark-mode .plant-name {
-    color: var(--text-primary, #f5f5f5);
+    color: var(--text-primary);
 }
 
 .dark-mode .filtered-indicator,
 .dark-mode .filter-indicator {
-    background-color: var(--bg-tertiary, #23232a);
-    color: var(--text-secondary, #b5b5b5);
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 
 .overview-modal,
 .modal-content.overview-modal {
-    background: var(--bg-primary, #fff);
-    color: var(--text-primary, #212122);
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
-/* Dark mode support for modal background */
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary, #18181b) !important;
-    color: var(--text-primary, #f5f5f5) !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
 }

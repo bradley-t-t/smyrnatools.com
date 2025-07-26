@@ -168,19 +168,8 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                     </button>
                 </div>
                 <div className="overview-grid">
-                    <div className="overview-card status-card">
-                        <h2>Role Breakdown</h2>
-                        <div className="status-grid">
-                            {roleCounts.map(({role, count}) => (
-                                <div className="status-item" key={role}>
-                                    <div className="status-count">{count}</div>
-                                    <div className="status-label">{role}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                     <div className="overview-card plant-card">
-                        <h2>Plant Distribution</h2>
+                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>
@@ -331,4 +320,3 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
 }
 
 export default ManagersView;
-

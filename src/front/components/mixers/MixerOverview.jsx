@@ -255,7 +255,7 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                 </div>
                 {(!selectedPlant || Object.keys(plantCounts).length > 1) && (
                     <div className="overview-card plant-card">
-                        <h2>Plant Distribution</h2>
+                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>
@@ -283,11 +283,10 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                     </div>
                 )}
             </div>
-
             {selectedPlant && (
-                <div className="active-operators-section" style={{marginTop: 32}}>
-                    <h2>Active Operators ({getPlantName(selectedPlant)})</h2>
-                    <div className="plant-distribution-table" style={{padding: 0, marginTop: 0}}>
+                <div className="overview-card plant-card full-width-operators" style={{marginTop: 32}}>
+                    <h2 style={{marginLeft: 10}}>Active Operators ({getPlantName(selectedPlant)})</h2>
+                    <div className="plant-distribution-table">
                         <table className="distribution-table">
                             <thead>
                                 <tr>
@@ -310,14 +309,14 @@ const MixerOverview = ({filteredMixers = null, selectedPlant = '', unverifiedCou
                                                 <td className="plant-name">{op.name}</td>
                                                 <td>{op.position || ''}</td>
                                                 <td>
-                                                    {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : <span style={{color: 'var(--text-secondary)'}}>—</span>}
+                                                    {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : <span className="inactive-dash">—</span>}
                                                 </td>
                                             </tr>
                                         );
                                     })}
                                 {operators.filter(op => op.plantCode === selectedPlant && op.status === 'Active').length === 0 && (
                                     <tr>
-                                        <td colSpan={3} style={{color: 'var(--text-secondary)', fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for this plant.</td>
+                                        <td colSpan={3} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for this plant.</td>
                                     </tr>
                                 )}
                             </tbody>

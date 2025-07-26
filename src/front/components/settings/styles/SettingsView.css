@@ -255,23 +255,15 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.color-option.blue .color-preview {
+.color-option.blue .color-preview.blue {
     background-color: #003896;
 }
 
-.color-option.red .color-preview {
+.color-option.red .color-preview.red {
     background-color: #b80017;
 }
 
-.color-option.orange .color-preview {
-    background-color: #ff6600;
-}
-
-.color-option.green .color-preview {
-    background-color: #38a169;
-}
-
-.color-option.darkgrey .color-preview {
+.color-option.grey .color-preview.grey {
     background-color: #23272a;
 }
 

@@ -41,7 +41,7 @@ function ListOverview({totalItems = 0, overdueItems = 0, listItems = [], selecte
             <div className="overview-grid">
                 {(!selectedPlant || Object.keys(plantDistribution).length > 1) && (
                     <div className="overview-card plant-card">
-                        <h2>Plant Distribution</h2>
+                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>

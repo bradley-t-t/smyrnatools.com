@@ -8,7 +8,7 @@
 
 .filtered-indicator {
     font-size: 0.85em;
-    color: #666;
+    color: var(--text-secondary);
     font-weight: normal;
     display: inline-block;
     padding: 3px 8px;
@@ -18,7 +18,7 @@
 
 .filter-indicator {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: 15px;
     padding: 5px 10px;
     background-color: var(--bg-tertiary);
@@ -68,8 +68,8 @@
     font-size: 1.3rem;
     margin-bottom: 18px;
     font-weight: 500;
-    color: var(--text-primary, #333);
-    border-bottom: 1px solid var(--border-light, #eee);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
     padding-bottom: 8px;
 }
 
@@ -104,13 +104,13 @@
 .stat-icon {
     font-size: 2.2rem;
     margin-right: 18px;
-    color: var(--accent, #2563eb);
+    color: var(--accent);
     width: 54px;
     height: 54px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--accent-light-theme, #e6f0fa);
+    background-color: var(--accent-light-theme);
     border-radius: 50%;
 }
 
@@ -169,8 +169,8 @@
     font-size: 1.3rem;
     margin-bottom: 15px;
     font-weight: 500;
-    color: var(--text-primary, #333);
-    border-bottom: 1px solid var(--border-light, #eee);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
     padding-bottom: 8px;
 }
 
@@ -199,7 +199,7 @@
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
-    color: var(--accent, #2563eb);
+    color: var(--accent);
 }
 
 .status-label {
@@ -248,7 +248,7 @@
 .distribution-table td {
     padding: 8px 12px;
     text-align: center;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .distribution-table th {
@@ -364,4 +364,39 @@
     font-size: 0.9rem;
     min-width: 0;
     table-layout: auto;
+}
+
+.full-width-operators {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.full-width-operators .plant-distribution-table {
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-top: 10px;
+    box-sizing: border-box;
+}
+
+.full-width-operators .distribution-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    min-width: 0;
+    table-layout: auto;
+}
+
+.inactive-dash {
+    color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+    .full-width-operators .plant-distribution-table {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
 }

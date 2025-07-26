@@ -102,30 +102,6 @@
     --accent-primary-rgb: 0, 56, 150;
 }
 
-.accent-orange {
-    --accent: #ff6600;
-    --accent-light: #ff944d;
-    --accent-dark: #cc5200;
-    --accent-primary: #ff6600;
-    --accent-secondary: #ff8800;
-    --accent-hover: #e65100;
-    --accent-light-theme: #ffe5cc;
-    --accent-border: #ffb380;
-    --accent-primary-rgb: 255, 102, 0;
-}
-
-.accent-green {
-    --accent: #38a169;
-    --accent-light: #68d391;
-    --accent-dark: #276749;
-    --accent-primary: #38a169;
-    --accent-secondary: #48bb78;
-    --accent-hover: #2f855a;
-    --accent-light-theme: #e6fffa;
-    --accent-border: #9ae6b4;
-    --accent-primary-rgb: 56, 161, 105;
-}
-
 .accent-darkgrey {
     --accent: #23272a;
     --accent-light: #36393f;

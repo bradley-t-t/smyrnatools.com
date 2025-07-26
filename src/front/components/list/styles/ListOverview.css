@@ -82,7 +82,7 @@
 .status-count {
     font-size: 32px;
     font-weight: 700;
-    color: var(--accent, #2563eb);
+    color: var(--text-primary);
     margin-bottom: 8px;
 }
 
@@ -221,7 +221,7 @@
 }
 
 .dark-mode .status-count {
-    color: var(--accent, #63b3ed);
+    color: var(--text-primary);
 }
 
 .dark-mode .status-label {

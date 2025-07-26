@@ -3,6 +3,12 @@ import {usePreferences} from '../../../app/context/PreferencesContext';
 import {supabase} from '../../../services/DatabaseService';
 import './styles/SettingsView.css';
 
+const ACCENT_OPTIONS = [
+    { key: 'red', label: 'Red', className: 'red' },
+    { key: 'blue', label: 'Blue', className: 'blue' },
+    { key: 'darkgrey', label: 'Grey', className: 'grey' }
+];
+
 function SettingsView() {
     const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, setThemeMode, setAccentColor} = usePreferences();
     const [showFeedback, setShowFeedback] = useState(false);
@@ -16,7 +22,6 @@ function SettingsView() {
                     setUserId(data.session.user.id);
                     return;
                 }
-
                 const sessionUserId = sessionStorage.getItem('userId');
                 if (sessionUserId) {
                     setUserId(sessionUserId);
@@ -25,7 +30,6 @@ function SettingsView() {
             } catch (error) {
             }
         };
-
         getCurrentUser();
     }, []);
 
@@ -46,7 +50,6 @@ function SettingsView() {
                 <h1>Settings</h1>
                 <p>Customize your application experience</p>
             </div>
-
             <div className="settings-content">
                 <div className="settings-card">
                     <div className="settings-card-header">
@@ -55,7 +58,6 @@ function SettingsView() {
                         </h2>
                         <p>Customize how the application looks</p>
                     </div>
-
                     <div className="settings-section">
                         <h3>Theme Mode</h3>
                         <div className="theme-selector">
@@ -72,7 +74,6 @@ function SettingsView() {
                                 </div>
                                 <span>Light</span>
                             </div>
-
                             <div
                                 className={`theme-option ${preferences.themeMode === 'dark' ? 'active' : ''}`}
                                 onClick={() => handleSettingChange(setThemeMode, 'dark')}
@@ -88,49 +89,22 @@ function SettingsView() {
                             </div>
                         </div>
                     </div>
-
                     <div className="settings-section">
                         <h3>Accent Color</h3>
                         <div className="color-selector">
-                            <div
-                                className={`color-option red ${preferences.accentColor === 'red' ? 'active' : ''}`}
-                                onClick={() => handleSettingChange(setAccentColor, 'red')}
-                            >
-                                <div className="color-preview"></div>
-                                <span>Red</span>
-                            </div>
-                            <div
-                                className={`color-option blue ${preferences.accentColor === 'blue' ? 'active' : ''}`}
-                                onClick={() => handleSettingChange(setAccentColor, 'blue')}
-                            >
-                                <div className="color-preview"></div>
-                                <span>Blue</span>
-                            </div>
-                            <div
-                                className={`color-option orange ${preferences.accentColor === 'orange' ? 'active' : ''}`}
-                                onClick={() => handleSettingChange(setAccentColor, 'orange')}
-                            >
-                                <div className="color-preview"></div>
-                                <span>Orange</span>
-                            </div>
-                            <div
-                                className={`color-option green ${preferences.accentColor === 'green' ? 'active' : ''}`}
-                                onClick={() => handleSettingChange(setAccentColor, 'green')}
-                            >
-                                <div className="color-preview"></div>
-                                <span>Green</span>
-                            </div>
-                            <div
-                                className={`color-option darkgrey ${preferences.accentColor === 'darkgrey' ? 'active' : ''}`}
-                                onClick={() => handleSettingChange(setAccentColor, 'darkgrey')}
-                            >
-                                <div className="color-preview"></div>
-                                <span>Dark Grey</span>
-                            </div>
+                            {ACCENT_OPTIONS.map(opt => (
+                                <div
+                                    key={opt.key}
+                                    className={`color-option ${opt.className} ${preferences.accentColor === opt.key ? 'active' : ''}`}
+                                    onClick={() => handleSettingChange(setAccentColor, opt.key)}
+                                >
+                                    <div className={`color-preview ${opt.className}`}></div>
+                                    <span>{opt.label}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
-
                 <div className="settings-card">
                     <div className="settings-card-header">
                         <h2>
@@ -138,7 +112,6 @@ function SettingsView() {
                         </h2>
                         <p>Customize the navigation experience</p>
                     </div>
-
                     <div className="settings-section">
                         <h3>Sidebar State</h3>
                         <div className="toggle-setting">
@@ -151,11 +124,9 @@ function SettingsView() {
                                 />
                                 <span className="slider round"></span>
                             </label>
-                            <span
-                                className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
+                            <span className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
                         </div>
                     </div>
-
                     <div className="settings-section">
                         <h3>Interface Elements</h3>
                         <div className="toggle-setting">

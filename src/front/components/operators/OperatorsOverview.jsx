@@ -177,7 +177,9 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
 
                 {(!selectedPlant || Object.keys(plantDistributionByStatus).length > 1) && (
                     <div className="overview-card plant-card">
-                        <h2>Plant Distribution</h2>
+                        <div style={{display: 'flex', alignItems: 'center'}}>
+                            <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
+                        </div>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>
@@ -209,8 +211,10 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                     </div>
                 )}
 
-                <div className="overview-card position-distribution-card">
-                    <h2>Position Distribution by Plant</h2>
+                <div className="overview-card plant-card">
+                    <div style={{display: 'flex', alignItems: 'center'}}>
+                        <h2 style={{marginLeft: 10}}>Position Distribution by Plant</h2>
+                    </div>
                     <div className="plant-distribution-table">
                         <table className="distribution-table">
                             <thead>
