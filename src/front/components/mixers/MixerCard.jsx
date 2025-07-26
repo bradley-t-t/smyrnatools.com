@@ -12,7 +12,6 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     const isVerified = typeof mixer.isVerified === 'function'
         ? mixer.isVerified(mixer.latestHistoryDate)
         : MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
-    const statusColor = ThemeUtility.statusColor(mixer.status);
     const {preferences} = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
     const [commentsCount, setCommentsCount] = useState(0);
@@ -69,12 +68,31 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
         return margin > 0 ? `${margin}px` : undefined;
     };
 
+    const accentColor = preferences.accentColor === 'red'
+        ? 'var(--accent)'
+        : preferences.accentColor === 'darkgrey'
+            ? 'var(--accent)'
+            : 'var(--accent)';
+
+    let statusColor = 'var(--accent)';
+    if (mixer.status === 'Active') statusColor = 'var(--status-active)';
+    else if (mixer.status === 'Spare') statusColor = 'var(--status-spare)';
+    else if (mixer.status === 'In Shop') statusColor = 'var(--status-inshop)';
+    else if (mixer.status === 'Retired') statusColor = 'var(--status-retired)';
+    else if (MixerUtility.isServiceOverdue(mixer.lastServiceDate)) statusColor = 'var(--error)';
+
     return (
         <div className="mixer-card" {...cardProps}>
-            <div className="card-status-indicator"
-                 style={{backgroundColor: statusColor, top: 0, left: 0, right: 0, height: '4px', position: 'absolute'}}
-                 title={mixer.status || 'Unknown'}></div>
-            {}
+            <div style={{
+                height: 4,
+                width: '100%',
+                background: statusColor,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10
+            }} />
             {commentsCount > 0 && (
                 <div
                     className="comments-badge"
@@ -83,8 +101,8 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         top: '12px',
                         right: openIssuesCount > 0 ? '92px' : '42px',
                         zIndex: 4,
-                        background: '#FFD600',
-                        color: '#7a5c00',
+                        background: 'var(--accent-light-theme)',
+                        color: 'var(--accent-dark)',
                         borderRadius: '12px',
                         padding: '2px 8px',
                         display: 'flex',
@@ -98,7 +116,6 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                     <span>{commentsCount}</span>
                 </div>
             )}
-            {/* Issues icon - middle */}
             {openIssuesCount > 0 && (
                 <div
                     className="issues-badge"
@@ -106,22 +123,13 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         position: 'absolute',
                         top: '12px',
                         right: '42px',
-                        zIndex: 4,
-                        backgroundColor: '#e74c3c',
-                        color: 'white',
-                        borderRadius: '12px',
-                        padding: '2px 8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        fontSize: '0.95rem',
-                        fontWeight: 'bold'
+                        zIndex: 4
                     }}
                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-tools" style={{marginRight: '4px', fontSize: '0.9rem'}}></i>
                     <span>{openIssuesCount}</span>
                 </div>
             )}
-            {/* Flag/check - rightmost */}
             {isVerified ? (
                 <div
                     className="verification-flag"
@@ -158,7 +166,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
             <div className="card-content">
                 <div className="card-header">
                     <h3 className="mixer-name"
-                        style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                        style={{color: accentColor}}>
                         Mixer #{mixer.truckNumber || 'Not Assigned'}
                     </h3>
                 </div>
@@ -214,7 +222,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                                     {[...Array(5)].map((_, i) => (
                                         <i key={i}
                                            className={`fas fa-star ${i < mixer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
-                                           style={i < mixer.cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}
+                                           style={i < mixer.cleanlinessRating ? {color: accentColor} : {}}
                                            aria-hidden="true"
                                         ></i>
                                     ))}

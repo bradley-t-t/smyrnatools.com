@@ -36,6 +36,11 @@
     --accent-border: #93c5fd;
     --accent-primary-rgb: 0, 56, 150;
     --detail-header-bg: #ffffff;
+    --spare: #a259e6;
+    --status-active: #38a169;
+    --status-spare: #a259e6;
+    --status-inshop: #2563eb;
+    --status-retired: #7c1d1d;
 }
 
 .dark-mode {
@@ -112,6 +117,10 @@
     --accent-light-theme: #e3e5e8;
     --accent-border: #b9bbbe;
     --accent-primary-rgb: 35, 39, 42;
+    --status-active: #38a169;
+    --status-spare: #a259e6;
+    --status-inshop: #2563eb;
+    --status-retired: #7c1d1d;
 }
 
 body {

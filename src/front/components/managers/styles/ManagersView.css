@@ -22,16 +22,22 @@
     background-color: var(--warning);
 }
 
+.manager-card .manager-name {
+    color: var(--accent) !important;
+    font-weight: 600;
+}
+
 .manager-card .detail-value {
     max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--accent);
 }
 
 .manager-card:hover {
     border-color: var(--border-light);
     box-shadow: var(--shadow-hover);
-    color: var(--text-primary);
+    color: var(--accent);
     background: var(--card-bg);
 }
 
