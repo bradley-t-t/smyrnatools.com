@@ -101,7 +101,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         top: '12px',
                         right: openIssuesCount > 0 ? '92px' : '42px',
                         zIndex: 4,
-                        background: 'var(--accent-light-theme)',
+                        background: 'goldenrod',
                         color: 'var(--accent-dark)',
                         borderRadius: '12px',
                         padding: '2px 8px',

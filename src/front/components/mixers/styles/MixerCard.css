@@ -101,7 +101,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--accent-light-theme);
+    background-color: goldenrod;
     color: var(--accent-dark);
     border-radius: 12px;
     padding: 2px 8px;
