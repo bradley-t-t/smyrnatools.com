@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import './styles/Navigation.css'
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png'
+import FlagSmyrnaLogo from '../../assets/images/FlagSmyrnaLogo.png'
 import {usePreferences} from '../../../app/context/PreferencesContext'
 import {UserService} from "../../../services/UserService"
 
@@ -71,16 +72,16 @@ const menuItems = [
 ]
 
 export default function Navigation({
-                                         selectedView,
-                                         onSelectView,
-                                         children,
-                                         userName = '',
-                                         showLogout = false,
-                                         unreadMessageCount = 0,
-                                         onExternalLink,
-                                         userId = null,
-                                         listStatusFilter = ''
-                                     }) {
+    selectedView,
+    onSelectView,
+    children,
+    userName = '',
+    showLogout = false,
+    unreadMessageCount = 0,
+    onExternalLink,
+    userId = null,
+    listStatusFilter = ''
+}) {
     const {preferences, toggleNavbarMinimized} = usePreferences()
     const [collapsed, setCollapsed] = useState(preferences.navbarMinimized)
     const [userPermissions, setUserPermissions] = useState([])
@@ -88,16 +89,13 @@ export default function Navigation({
 
     useEffect(() => {
         ensureFontAwesome()
-
         const handleStatusFilterChange = (event) => {
             const { statusFilter } = event.detail
             if (statusFilter === 'completed' || listStatusFilter === 'completed') {
                 setVisibleMenuItems([...visibleMenuItems])
             }
         }
-
         window.addEventListener('list-status-filter-change', handleStatusFilterChange)
-
         return () => {
             window.removeEventListener('list-status-filter-change', handleStatusFilterChange)
         }
@@ -116,7 +114,6 @@ export default function Navigation({
                 setUserPermissions([])
             }
         }
-
         fetchUserPermissions()
     }, [userId])
 
@@ -126,7 +123,6 @@ export default function Navigation({
                 setVisibleMenuItems([])
                 return
             }
-
             try {
                 const permissions = await UserService.getUserPermissions(userId)
                 const filtered = menuItems.filter(item => {
@@ -135,13 +131,11 @@ export default function Navigation({
                     }
                     return item.permission === null
                 })
-
                 setVisibleMenuItems(filtered)
             } catch (error) {
                 setVisibleMenuItems([])
             }
         }
-
         filterMenuItems()
     }, [userId])
 
@@ -159,24 +153,47 @@ export default function Navigation({
             <div className={`vertical-navbar ${collapsed ? 'collapsed' : ''}`}>
                 <div className="navbar-header">
                     <div className="logo-container">
-                        <img src={SmyrnaLogo} alt="Smyrna Logo" className="navbar-logo" title="Smyrna Ready Mix"/>
+                        {collapsed ? (
+                            <img
+                                src={FlagSmyrnaLogo}
+                                alt="Smyrna Logo"
+                                className="navbar-logo"
+                                title="Smyrna Ready Mix"
+                                width={35}
+                                height={35}
+                                style={{imageRendering: 'auto'}}
+                                draggable={false}
+                                decoding="async"
+                                loading="eager"
+                            />
+                        ) : (
+                            <img
+                                src={SmyrnaLogo}
+                                alt="Smyrna Logo"
+                                className="navbar-logo large"
+                                title="Smyrna Ready Mix"
+                                width={360}
+                                height={160}
+                                style={{imageRendering: 'auto'}}
+                                draggable={false}
+                                decoding="async"
+                                loading="eager"
+                            />
+                        )}
                     </div>
                 </div>
                 <button className="collapse-btn" onClick={toggleCollapse}>
                     <i className="fas fa-chevron-right collapse-icon"></i>
                 </button>
-
                 <nav className="navbar-menu">
                     <ul>
                         {visibleMenuItems.map((item) => {
                             let isActive = false
-
                             if (item.id === 'List') {
                                 isActive = selectedView === 'List'
                             } else {
                                 isActive = selectedView === item.id
                             }
-
                             return (
                                 <li
                                     key={item.id}
@@ -189,8 +206,7 @@ export default function Navigation({
                                         }
                                     }}
                                 >
-                                    <span className="menu-icon"
-                                          title={item.text}>
+                                    <span className="menu-icon" title={item.text}>
                                         {getIconForMenuItem(item.id)}
                                     </span>
                                     {!collapsed && <span className="menu-text">{item.text}</span>}
@@ -201,8 +217,7 @@ export default function Navigation({
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}
                             onClick={() => onSelectView('Settings')}
                         >
-                            <span className="menu-icon"
-                                  title="Settings">
+                            <span className="menu-icon" title="Settings">
                                 {getIconForMenuItem('Settings')}
                             </span>
                             {!collapsed && <span className="menu-text">Settings</span>}
@@ -211,8 +226,7 @@ export default function Navigation({
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''}`}
                             onClick={() => onSelectView('MyAccount')}
                         >
-                            <span className="menu-icon"
-                                  title="My Account">
+                            <span className="menu-icon" title="My Account">
                                 {getIconForMenuItem('MyAccount')}
                             </span>
                             {!collapsed && (
