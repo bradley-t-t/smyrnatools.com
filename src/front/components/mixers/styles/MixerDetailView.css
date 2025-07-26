@@ -98,16 +98,9 @@
     font-weight: 500;
 }
 
-.history-button {
-    background-color: var(--accent);
-    color: var(--text-light);
-}
-
-.history-button:hover {
-    background-color: var(--accent-dark);
-}
-
-.issues-button, .comments-button {
+.history-button,
+.issues-button,
+.comments-button {
     background-color: var(--accent);
     color: var(--text-light);
     border-radius: 6px;
@@ -124,7 +117,9 @@
     font-weight: 500;
 }
 
-.issues-button:hover, .comments-button:hover {
+.history-button:hover,
+.issues-button:hover,
+.comments-button:hover {
     background-color: var(--accent-dark);
 }
 

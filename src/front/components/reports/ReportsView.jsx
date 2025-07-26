@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { reportTypes } from '../../../config/ReportTypes'
+import { reportTypes } from '../../../config/types/ReportTypes'
 import './styles/ReportsView.css'
 import ReportsSubmitView from './ReportsSubmitView'
 import ReportsReviewView from './ReportsReviewView'

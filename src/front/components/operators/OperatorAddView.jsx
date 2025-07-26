@@ -71,8 +71,6 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                 pending_start_date: status === 'Pending Start' ? pendingStartDate : null
             };
 
-            console.log('Submitting operator data:', JSON.stringify(newOperator, null, 2));
-
             const savedOperator = await OperatorService.createOperator(newOperator);
 
             if (savedOperator) {
@@ -82,7 +80,6 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                 throw new Error('Failed to add operator - no data returned from server');
             }
         } catch (error) {
-            console.error('Error adding operator:', error);
             setError(`Failed to add operator: ${error.message || 'Unknown error. Check console for details.'}`);
         } finally {
             setIsSaving(false);
@@ -96,10 +93,8 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                     <h2>Add New Operator</h2>
                     <button className="ios-button" onClick={onClose}>Cancel</button>
                 </div>
-
                 <div className="add-operator-content">
                     {error && <div className="error-message">{error}</div>}
-
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="name">Name*</label>
@@ -113,45 +108,44 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                                 required
                             />
                         </div>
-
-                        <div className="form-group">
-                            <label htmlFor="assignedPlant">Assigned Plant*</label>
-                            <select
-                                id="assignedPlant"
-                                className="ios-select"
-                                value={assignedPlant}
-                                onChange={(e) => setAssignedPlant(e.target.value)}
-                                required
-                            >
-                                <option value="">Select Plant</option>
-                                {plants.sort((a, b) => {
-                                    const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
-                                    const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
-                                    return aCode - bCode;
-                                }).map(plant => (
-                                    <option key={plant.plant_code} value={plant.plant_code}>
-                                        ({plant.plant_code}) {plant.plant_name} {/* Ensure plant_name is displayed */}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="form-row-horizontal">
+                            <div className="form-group">
+                                <label htmlFor="assignedPlant">Assigned Plant*</label>
+                                <select
+                                    id="assignedPlant"
+                                    className="ios-select"
+                                    value={assignedPlant}
+                                    onChange={(e) => setAssignedPlant(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Select Plant</option>
+                                    {plants.sort((a, b) => {
+                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
+                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
+                                        return aCode - bCode;
+                                    }).map(plant => (
+                                        <option key={plant.plant_code} value={plant.plant_code}>
+                                            ({plant.plant_code}) {plant.plant_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="status">Status</label>
+                                <select
+                                    id="status"
+                                    className="ios-select"
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                >
+                                    <option value="Active">Active</option>
+                                    <option value="Light Duty">Light Duty</option>
+                                    <option value="Terminated">Terminated</option>
+                                    {hasTrainingPermission && <option value="Pending Start">Pending Start</option>}
+                                    {hasTrainingPermission && <option value="Training">Training</option>}
+                                </select>
+                            </div>
                         </div>
-
-                        <div className="form-group">
-                            <label htmlFor="status">Status</label>
-                            <select
-                                id="status"
-                                className="ios-select"
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                            >
-                                <option value="Active">Active</option>
-                                <option value="Light Duty">Light Duty</option>
-                                <option value="Terminated">Terminated</option>
-                                {hasTrainingPermission && <option value="Pending Start">Pending Start</option>}
-                                {hasTrainingPermission && <option value="Training">Training</option>}
-                            </select>
-                        </div>
-
                         {status === 'Pending Start' && (
                             <div className="form-group">
                                 <label htmlFor="pendingStartDate">Pending Start Date</label>
@@ -164,23 +158,21 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                                 />
                             </div>
                         )}
-
-                        <div className="form-group">
-                            <label htmlFor="position">Position</label>
-                            <select
-                                id="position"
-                                className="ios-select"
-                                value={position}
-                                onChange={(e) => setPosition(e.target.value)}
-                            >
-                                <option value="">Select Position</option>
-                                <option value="Mixer Operator">Mixer Operator</option>
-                                <option value="Tractor Operator">Tractor Operator</option>
-                            </select>
-                        </div>
-
-                        {hasTrainingPermission && (
-                            <>
+                        <div className="form-row-horizontal">
+                            <div className="form-group">
+                                <label htmlFor="position">Position</label>
+                                <select
+                                    id="position"
+                                    className="ios-select"
+                                    value={position}
+                                    onChange={(e) => setPosition(e.target.value)}
+                                >
+                                    <option value="">Select Position</option>
+                                    <option value="Mixer Operator">Mixer Operator</option>
+                                    <option value="Tractor Operator">Tractor Operator</option>
+                                </select>
+                            </div>
+                            {hasTrainingPermission && (
                                 <div className="form-group">
                                     <label htmlFor="isTrainer">Trainer Status</label>
                                     <select
@@ -199,35 +191,34 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                                         <option value="true">Trainer</option>
                                     </select>
                                 </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="assignedTrainer">Assigned Trainer</label>
-                                    <select
-                                        id="assignedTrainer"
-                                        className="ios-select"
-                                        value={assignedTrainer}
-                                        onChange={(e) => setAssignedTrainer(e.target.value)}
-                                        disabled={isTrainer}
-                                    >
-                                        <option value="0">None</option>
-                                        {operators
-                                            .filter(operator => operator.isTrainer)
-                                            .map(trainer => (
-                                                <option key={trainer.employeeId} value={trainer.employeeId}>
-                                                    {trainer.name}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    {operators.filter(op => op.isTrainer).length === 0 && (
-                                        <div className="warning-message"
-                                             style={{ marginTop: '5px', fontSize: '12px', color: '#FF9500' }}>
-                                            No trainers available
-                                        </div>
-                                    )}
-                                </div>
-                            </>
+                            )}
+                        </div>
+                        {hasTrainingPermission && (
+                            <div className="form-group">
+                                <label htmlFor="assignedTrainer">Assigned Trainer</label>
+                                <select
+                                    id="assignedTrainer"
+                                    className="ios-select"
+                                    value={assignedTrainer}
+                                    onChange={(e) => setAssignedTrainer(e.target.value)}
+                                    disabled={isTrainer}
+                                >
+                                    <option value="0">None</option>
+                                    {operators
+                                        .filter(operator => operator.isTrainer)
+                                        .map(trainer => (
+                                            <option key={trainer.employeeId} value={trainer.employeeId}>
+                                                {trainer.name}
+                                            </option>
+                                        ))}
+                                </select>
+                                {operators.filter(op => op.isTrainer).length === 0 && (
+                                    <div className="warning-message">
+                                        No trainers available
+                                    </div>
+                                )}
+                            </div>
                         )}
-
                         <button
                             type="submit"
                             className="ios-button-primary"

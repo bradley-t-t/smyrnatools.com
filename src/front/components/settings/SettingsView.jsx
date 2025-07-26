@@ -5,8 +5,7 @@ import './styles/SettingsView.css';
 
 const ACCENT_OPTIONS = [
     { key: 'red', label: 'Red', className: 'red' },
-    { key: 'blue', label: 'Blue', className: 'blue' },
-    { key: 'darkgrey', label: 'Grey', className: 'grey' }
+    { key: 'blue', label: 'Blue', className: 'blue' }
 ];
 
 function SettingsView() {

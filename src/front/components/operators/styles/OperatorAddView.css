@@ -118,6 +118,18 @@
     color: var(--text-secondary);
 }
 
+.form-row-horizontal {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.form-row-horizontal .form-group {
+    flex: 1 1 0;
+    min-width: 180px;
+    margin-bottom: 0;
+}
+
 .ios-input, .ios-select {
     width: 100%;
     padding: 12px 15px;
@@ -212,5 +224,9 @@
 
     .add-operator-header {
         padding-top: 20px;
+    }
+    .form-row-horizontal {
+        flex-direction: column;
+        gap: 0;
     }
 }
