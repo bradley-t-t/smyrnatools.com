@@ -1,5 +1,5 @@
 import supabase from './DatabaseService';
-import { Operator } from '../models/operators/Operator';
+import { Operator } from '../config/models/operators/Operator';
 import { generateUUID, isValidUUID, safeUUID } from '../utils/UUIDUtility';
 
 const OPERATORS_TABLE = 'operators';

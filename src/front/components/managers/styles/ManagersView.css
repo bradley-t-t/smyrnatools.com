@@ -1,0 +1,265 @@
+@import '../../operators/styles/OperatorsView.css';
+
+.manager-role-badge {
+    background-color: var(--accent);
+    color: var(--text-light);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.manager-role-badge.admin {
+    background-color: var(--accent-dark);
+}
+
+.manager-role-badge.supervisor {
+    background-color: var(--success);
+}
+
+.manager-role-badge.manager {
+    background-color: var(--warning);
+}
+
+.manager-card .detail-value {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.manager-card:hover {
+    border-color: var(--border-light);
+    box-shadow: var(--shadow-hover);
+    color: var(--text-primary);
+    background: var(--card-bg);
+}
+
+.modal-body .form-group.role-selection {
+    margin-top: 16px;
+}
+
+.empty-roles-message {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.role-selection .role-options {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.role-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.role-option:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.role-option.selected {
+    border-color: var(--accent);
+    background-color: var(--accent-light-theme);
+    box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+.role-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+
+.role-option.selected .role-icon {
+    color: var(--accent);
+}
+
+.role-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.role-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 4px;
+}
+.managers-overview-modal {
+    min-width: 0;
+    max-width: 700px;
+    width: 100%;
+    padding: 36px 32px 28px 32px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.managers-overview-body {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.overview-section {
+    width: 100%;
+}
+
+.metrics-row {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.metric-card {
+    flex: 1 1 120px;
+    min-width: 120px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 18px 12px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.metric-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.overview-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.overview-card {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 1.25rem 1rem;
+    margin: 0 auto;
+    max-width: 600px;
+    width: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: visible;
+}
+
+.overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.overview-card h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.5rem;
+}
+
+.status-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+.status-item {
+    flex: 1 1 120px;
+    min-width: 120px;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: var(--bg-tertiary);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.status-count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    color: var(--accent);
+}
+
+.status-label {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.plant-distribution-table {
+    margin-top: 10px;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.distribution-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background: transparent;
+}
+
+.distribution-table th,
+.distribution-table td {
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+}
+
+.distribution-table th {
+    background-color: var(--bg-tertiary);
+    font-weight: 500;
+}
+
+.distribution-table td.plant-name {
+    text-align: left;
+    font-weight: 500;
+}
+
+.distribution-table tr:hover {
+    background-color: var(--bg-tertiary);
+}
+
+@media (max-width: 800px) {
+    .managers-overview-modal {
+        max-width: 98vw;
+        padding: 16px 8px 14px 8px;
+    }
+    .overview-card {
+        max-width: 98vw;
+        padding: 1rem 0.5rem;
+    }
+    .status-item {
+        min-width: 90px;
+        padding: 0.5rem;
+    }
+    .distribution-table th,
+    .distribution-table td {
+        padding: 6px 4px;
+    }
+}

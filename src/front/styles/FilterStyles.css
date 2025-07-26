@@ -1,0 +1,37 @@
+:root {
+  --select-active-border: var(--accent);
+  --select-focus-border: var(--accent);
+}
+
+.filter-wrapper .ios-select:focus,
+.filter-wrapper .ios-select:active {
+  border-color: var(--select-active-border);
+  box-shadow: 0 0 0 2px rgba(var(--accent-primary-rgb), 0.25);
+  outline: none;
+}
+
+.filter-wrapper .ios-select option:checked {
+  background-color: var(--select-active-border);
+  color: var(--text-light);
+}
+
+.filter-button.active {
+  background-color: var(--select-active-border) !important;
+  border-color: var(--select-active-border) !important;
+  color: var(--text-light) !important;
+}
+
+.cancel-button:hover {
+  border-color: var(--select-active-border) !important;
+  color: var(--select-active-border) !important;
+}
+
+.accent-red {
+  --select-active-border: var(--accent);
+  --select-focus-border: var(--accent);
+}
+
+.accent-blue {
+  --select-active-border: var(--accent);
+  --select-focus-border: var(--accent);
+}

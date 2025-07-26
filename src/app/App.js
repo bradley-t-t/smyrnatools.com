@@ -2,30 +2,30 @@ import React, {useEffect, useState} from 'react';
 import './index.css';
 import './App.css';
 import {supabase} from '../services/DatabaseService';
-import MobileNavigation from '../components/common/MobileNavigation';
-import MixersView from '../components/mixers/MixersView';
-import ManagersView from '../components/managers/ManagersView';
-import SettingsView from '../components/settings/SettingsView';
-import MixerDetailView from '../components/mixers/MixerDetailView';
-import OperatorsView from '../components/operators/OperatorsView';
-import LoginView from '../components/auth/LoginView';
-import LoadingScreen from '../components/common/LoadingScreen';
-import MyAccountView from '../components/users/MyAccountView';
-import Navigation from "../components/common/Navigation";
-import GuestView from '../components/auth/GuestView';
-import ListView from '../components/list/ListView';
-import {AuthProvider} from '../context/AuthContext';
-import {PreferencesProvider} from '../context/PreferencesContext';
-import WebView from "../components/common/WebView";
+import MobileNavigation from '../front/components/common/MobileNavigation';
+import MixersView from '../front/components/mixers/MixersView';
+import ManagersView from '../front/components/managers/ManagersView';
+import SettingsView from '../front/components/settings/SettingsView';
+import MixerDetailView from '../front/components/mixers/MixerDetailView';
+import OperatorsView from '../front/components/operators/OperatorsView';
+import LoginView from '../front/components/auth/LoginView';
+import LoadingScreen from '../front/components/common/LoadingScreen';
+import MyAccountView from '../front/components/users/MyAccountView';
+import Navigation from "../front/components/common/Navigation";
+import GuestView from '../front/components/auth/GuestView';
+import ListView from '../front/components/list/ListView';
+import {AuthProvider} from './context/AuthContext';
+import {PreferencesProvider} from './context/PreferencesContext';
+import WebView from "../front/components/common/WebView";
 import {UserService} from "../services/UserService";
-import OnlineUsersOverlay from '../components/common/OnlineUsersOverlay';
-import TipBanner from '../components/common/TipBanner';
-import '../styles/Theme.css';
-import '../styles/Global.css';
-import TeamsView from '../components/teams/TeamsView';
-import OperatorScheduledOffView from '../components/operators/OperatorScheduledOffView';
-import ReportsView from '../components/reports/ReportsView';
-import ConnectionScreen from '../components/common/ConnectionScreen'
+import OnlineUsersOverlay from '../front/components/common/OnlineUsersOverlay';
+import TipBanner from '../front/components/common/TipBanner';
+import '../front/styles/Theme.css';
+import '../front/styles/Global.css';
+import TeamsView from '../front/components/teams/TeamsView';
+import OperatorScheduledOffView from '../front/components/operators/OperatorScheduledOffView';
+import ReportsView from '../front/components/reports/ReportsView';
+import ConnectionScreen from '../front/components/common/ConnectionScreen'
 
 function AppContent() {
     const [userId, setUserId] = useState(null)

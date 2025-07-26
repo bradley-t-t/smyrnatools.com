@@ -1,5 +1,5 @@
 import supabase from './DatabaseService';
-import {MixerImage} from '../models/mixers/MixerImage';
+import {MixerImage} from '../config/models/mixers/MixerImage';
 
 const BUCKET_NAME = 'smyrna';
 

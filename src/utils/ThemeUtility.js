@@ -5,7 +5,7 @@ const ThemeUtility = {
         blue: '#002F6C',
         red: '#E31837',
         white: '#ffffff',
-        black: '#2a2a2a',
+        black: '#000000',
         gray: '#cccccc'
     },
 
@@ -40,17 +40,17 @@ const ThemeUtility = {
         text: {
             primary: '#f5f5f5',
             secondary: '#aaaaaa',
-            light: '#f5f5f5'
+            light: '#ffffff'
         },
         background: {
-            primary: '#000b1e',
-            secondary: '#000b1e',
-            tertiary: '#002c78',
-            navbar: '#000b1e',
-            main: '#000b1e'
+            primary: '#000000',
+            secondary: '#121212',
+            tertiary: '#1a1a1a',
+            navbar: '#000000',
+            main: '#000000'
         },
         border: {
-            light: '#333333',
+            light: '#222222',
             medium: '#333333'
         }
     },
@@ -100,7 +100,7 @@ const ThemeUtility = {
             red: '#b80017',
             blue: '#003896',
             white: '#ffffff',
-            black: '#2a2a2a',
+            black: '#000000',
             gray: '#cccccc'
         };
         return accentColors[selection.toLowerCase()] ?? accentColors.blue;
@@ -129,7 +129,7 @@ const ThemeUtility = {
             content: {
                 backgroundColor: theme.background.primary,
                 color: theme.text.primary,
-                boxShadow: mode === 'dark' ? '0 4px 8px rgba(0, 0, 0, 0.7)' : '0 4px 6px rgba(0, 0, 0, 0.1)'
+                boxShadow: mode === 'dark' ? '0 4px 8px rgba(0, 0, 0, 0.9)' : '0 4px 6px rgba(0, 0, 0, 0.1)'
             },
             background: {
                 backgroundColor: theme.background.main

@@ -1,0 +1,51 @@
+.guest-view-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--bg-secondary);
+}
+
+.guest-view-content {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+}
+
+.guest-logo {
+    width: 150px;
+    margin-bottom: 30px;
+}
+
+.guest-view-content h1 {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+.guest-message {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.sign-out-button {
+    background-color: var(--error);
+    color: var(--text-light);
+    border: none;
+    border-radius: 5px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.sign-out-button:hover {
+    background-color: var(--error);
+    opacity: 0.85;
+}

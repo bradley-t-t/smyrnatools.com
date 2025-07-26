@@ -1,0 +1,213 @@
+.list-item-card {
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    cursor: pointer;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-light);
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 220px;
+    display: flex;
+}
+
+.list-item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--accent);
+}
+
+.list-item-card:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--bg-secondary);
+}
+
+.list-item-card.completed {
+    background-color: var(--bg-tertiary);
+}
+
+.card-content {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-light);
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: nowrap;
+}
+
+.item-description {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 1px 0;
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.detail-value.deadline {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+
+.detail-value.comments {
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-width: 200px;
+}
+
+.comments-row {
+    margin-top: 4px;
+}
+
+.overdue-indicator {
+    color: var(--error);
+    font-size: 0.9em;
+}
+
+.completed-badge {
+    background-color: var(--success);
+    color: var(--text-light);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+}
+
+.pending-badge {
+    background-color: var(--warning);
+    color: var(--text-light);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+}
+
+.overdue-badge {
+    background-color: var(--error);
+    color: var(--text-light);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+}
+
+.card-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.toggle-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.toggle-button.complete {
+    background-color: var(--accent-light);
+    color: var(--accent);
+}
+
+.toggle-button.complete:hover {
+    background-color: var(--accent-light-theme);
+}
+
+.toggle-button.undo {
+    background-color: var(--success);
+    color: var(--text-light);
+}
+
+.toggle-button.undo:hover {
+    background-color: var(--success);
+    opacity: 0.85;
+}
+
+.toggle-button:active {
+    transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+    .list-item-card .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .list-item-card .item-description {
+        margin-bottom: 8px;
+    }
+}

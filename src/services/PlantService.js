@@ -1,5 +1,5 @@
 import supabase from './DatabaseService';
-import {Plant} from '../models/plants/Plant';
+import {Plant} from '../config/models/plants/Plant';
 
 const PLANTS_TABLE = 'plants';
 const PROFILES_TABLE = 'users_profiles';

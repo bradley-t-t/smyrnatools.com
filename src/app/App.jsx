@@ -15,9 +15,9 @@ import AuthLayout from './components/layout/AuthLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import MyAccountPage from './pages/account/MyAccountPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
-import { PreferencesProvider } from '../context/PreferencesContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 import { AccountProvider } from './context/AccountContext';
-import ListView from '../components/list/ListView';
+import ListView from '../front/components/list/ListView';
 
 function App() {
   return (

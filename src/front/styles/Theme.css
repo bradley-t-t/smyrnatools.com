@@ -1,0 +1,296 @@
+:root {
+    --text-primary: #212122;
+    --text-secondary: #666666;
+    --text-light: #ffffff;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f6f4;
+    --bg-tertiary: #e5e5ea;
+    --bg-navbar: #f5f5f5;
+    --background: #f4f6f4;
+    --border-light: #e5e5ea;
+    --border-medium: #c7c7cc;
+    --primary: #2d3748;
+    --primary-dark: #1a202c;
+    --primary-light: #4a5568;
+    --secondary: #718096;
+    --success: #38a169;
+    --warning: #ecc94b;
+    --error: #e53e3e;
+    --info: #4299e1;
+    --card-bg: #ffffff;
+    --card-border: #edf2f7;
+    --card-border-hover: #e2e8f0;
+    --divider: #e2e8f0;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-hover: 0 15px 30px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --accent: #003896;
+    --accent-light: #0048c3;
+    --accent-dark: #002c78;
+    --accent-primary: #003896;
+    --accent-secondary: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light-theme: #dbeafe;
+    --accent-border: #93c5fd;
+    --accent-primary-rgb: 0, 56, 150;
+    --detail-header-bg: #ffffff;
+}
+
+.dark-mode {
+    --text-primary: #e3e5e8;
+    --text-secondary: #b9bbbe;
+    --text-light: #ffffff;
+    --bg-primary: #181a20;
+    --bg-secondary: #20232a;
+    --bg-tertiary: #23272a;
+    --bg-navbar: #181a20;
+    --background: #181a20;
+    --border-light: #23272a;
+    --border-medium: #5865f2;
+    --primary: #181a20;
+    --primary-dark: #14151a;
+    --primary-light: #23272a;
+    --secondary: #5865f2;
+    --success: #43b581;
+    --warning: #faa61a;
+    --error: #f04747;
+    --info: #7289da;
+    --card-bg: #20232a;
+    --card-border: #23272a;
+    --card-border-hover: #5865f2;
+    --divider: #23272a;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.8);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.85), 0 4px 6px -2px rgba(0, 0, 0, 0.7);
+    --shadow-hover: 0 15px 30px -5px rgba(0, 0, 0, 0.85), 0 10px 10px -5px rgba(0, 0, 0, 0.7);
+    --accent: #5865f2;
+    --accent-light: #7289da;
+    --accent-dark: #4752c4;
+    --accent-primary: #5865f2;
+    --accent-secondary: #7289da;
+    --accent-hover: #4752c4;
+    --accent-light-theme: #99aab5;
+    --accent-border: #5865f2;
+    --accent-primary-rgb: 88, 101, 242;
+    --detail-header-bg: #181a20;
+}
+
+.accent-red {
+    --accent: #b80017;
+    --accent-light: #d4001b;
+    --accent-dark: #980013;
+    --accent-primary: #b80017;
+    --accent-secondary: #dc2626;
+    --accent-hover: #b91c1c;
+    --accent-light-theme: #fee2e2;
+    --accent-border: #fca5a5;
+    --accent-primary-rgb: 184, 0, 23;
+}
+
+.accent-blue {
+    --accent: #003896;
+    --accent-light: #0048c3;
+    --accent-dark: #002c78;
+    --accent-primary: #003896;
+    --accent-secondary: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light-theme: #dbeafe;
+    --accent-border: #93c5fd;
+    --accent-primary-rgb: 0, 56, 150;
+}
+
+.accent-orange {
+    --accent: #ff6600;
+    --accent-light: #ff944d;
+    --accent-dark: #cc5200;
+    --accent-primary: #ff6600;
+    --accent-secondary: #ff8800;
+    --accent-hover: #e65100;
+    --accent-light-theme: #ffe5cc;
+    --accent-border: #ffb380;
+    --accent-primary-rgb: 255, 102, 0;
+}
+
+.accent-green {
+    --accent: #38a169;
+    --accent-light: #68d391;
+    --accent-dark: #276749;
+    --accent-primary: #38a169;
+    --accent-secondary: #48bb78;
+    --accent-hover: #2f855a;
+    --accent-light-theme: #e6fffa;
+    --accent-border: #9ae6b4;
+    --accent-primary-rgb: 56, 161, 105;
+}
+
+.accent-darkgrey {
+    --accent: #23272a;
+    --accent-light: #36393f;
+    --accent-dark: #181a20;
+    --accent-primary: #23272a;
+    --accent-secondary: #36393f;
+    --accent-hover: #181a20;
+    --accent-light-theme: #e3e5e8;
+    --accent-border: #b9bbbe;
+    --accent-primary-rgb: 35, 39, 42;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+input, select, textarea, button {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border-color: var(--divider);
+}
+
+input::placeholder, select::placeholder, textarea::placeholder {
+    color: var(--text-light);
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    outline-color: var(--accent);
+}
+
+button.primary {
+    background-color: var(--accent);
+    color: white;
+}
+
+button.primary:hover {
+    background-color: var(--accent-dark);
+}
+
+.back-button {
+    background: none;
+    color: var(--text-primary);
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.back-button:hover {
+    color: var(--text-primary);
+}
+
+.dark-mode .back-button {
+    color: var(--text-light);
+}
+
+.dark-mode .back-button:hover {
+    color: var(--text-light);
+}
+
+.dark-mode .card,
+.dark-mode .modal-content,
+.dark-mode .search-filters,
+.dark-mode .mixer-card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    color: var(--text-primary);
+}
+
+.dark-mode .ios-search-input,
+.dark-mode .ios-select {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--card-border);
+}
+
+.dark-mode .ios-search-input:hover,
+.dark-mode .ios-select:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dark-mode .ios-search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.dark-mode .ios-select option {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dark-mode .ios-select option:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dark-mode .dashboard-container,
+.dark-mode .mixers-content,
+.dark-mode .App {
+    background-color: var(--background);
+}
+
+.dark-mode .no-results-container {
+    background-color: var(--card-bg);
+}
+
+.dark-mode table {
+    border-color: var(--divider);
+    color: var(--text-primary);
+}
+
+.dark-mode th,
+.dark-mode td {
+    border-color: var(--divider);
+}
+
+.dark-mode tr:nth-child(even) {
+    background-color: var(--bg-tertiary);
+}
+
+.dark-mode .dashboard-header h1,
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5, .dark-mode h6 {
+    color: var(--text-primary);
+}
+
+.dark-mode p, .dark-mode span, .dark-mode div, .dark-mode label,
+.dark-mode .detail-value,
+.dark-mode .truck-info h3 {
+    color: var(--text-primary);
+}
+
+.dark-mode .detail-label,
+.dark-mode .detail-icon,
+.dark-mode .plant-badge {
+    color: var(--text-secondary);
+}
+
+
+.dark-mode .loading-screen.full-page {
+    background-color: var(--background);
+}
+
+.dark-mode .loading-content {
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-md);
+}
+
+.dark-mode .loading-message {
+    color: var(--text-primary);
+}
+
+.dark-mode .navbar-arrow:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dark-mode .collapse-btn:hover,
+.dark-mode .collapse-icon:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dark-mode .filter-reset-button {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
