@@ -45,6 +45,7 @@ function MixerAddView({plants, onClose, onMixerAdded}) {
                 truck_number: truckNumber,
                 assigned_plant: assignedPlant,
                 assigned_operator: '0',
+                cleanliness_rating: 5,
                 status,
                 created_at: now,
                 updated_at: now,

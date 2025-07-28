@@ -17,7 +17,7 @@ function formatDate(dateStr) {
     return formatted.replace(`${day}`, `${day}${suffix}`);
 }
 
-function OperatorCard({operator, plantName, onSelect, onDelete, trainers, children}) {
+function OperatorCard({operator, plantName, onSelect, onDelete, trainers, children, rating}) {
     const {preferences} = usePreferences();
     if (!operator) return null;
     const statusColor = ThemeUtility.operatorStatusColors[operator.status] || ThemeUtility.operatorStatusColors.default;
@@ -37,6 +37,7 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers, childr
     }
     const cardProps = onSelect ? {onClick: handleCardClick} : {};
     const hasScheduledOff = Array.isArray(operator.daysOff) && operator.daysOff.length > 0;
+    const displayRating = typeof rating === 'number' ? rating : (typeof operator.rating === 'number' ? operator.rating : Number(operator.rating) || 0);
 
     return (
         <div
@@ -66,16 +67,16 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers, childr
                 </div>
                 <div className="card-details">
                     <div className="detail-row">
-                        <div className="detail-label">Employee ID</div>
-                        <div className="detail-value">{operator.smyrnaId || 'Not Assigned'}</div>
-                    </div>
-                    <div className="detail-row">
                         <div className="detail-label">Plant</div>
                         <div className="detail-value">{plantName || 'None'}</div>
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Status</div>
                         <div className="detail-value">{operator.status || 'Unknown'}</div>
+                    </div>
+                    <div className="detail-row">
+                        <div className="detail-label">Employee ID</div>
+                        <div className="detail-value">{operator.smyrnaId || 'Not Assigned'}</div>
                     </div>
                     {operator.status === 'Pending Start' && (
                         <div className="detail-row">
@@ -107,6 +108,20 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers, childr
                             <div className="detail-value">{trainerName}</div>
                         </div>
                     )}
+                    <div className="detail-row">
+                        <div className="detail-label">Rating</div>
+                        <div className="detail-value">
+                            <div className="stars-container">
+                                {[...Array(5)].map((_, i) => (
+                                    <i
+                                        key={i}
+                                        className={`fas fa-star ${i < displayRating ? 'filled-star' : 'empty-star'}`}
+                                        aria-hidden="true"
+                                    ></i>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

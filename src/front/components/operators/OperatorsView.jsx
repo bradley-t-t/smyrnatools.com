@@ -87,7 +87,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                 isTrainer: op.is_trainer,
                 assignedTrainer: op.assigned_trainer,
                 position: op.position,
-                pendingStartDate: op.pending_start_date || ''
+                pendingStartDate: op.pending_start_date || '',
+                rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0
             }));
             setOperators(formattedOperators);
             localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators));
@@ -417,6 +418,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                         plantName={getPlantName(operator.plantCode)}
                                         trainers={trainers}
                                         onSelect={handleSelectOperator}
+                                        rating={operator.rating}
                                     />
                                 ))}
                             </div>

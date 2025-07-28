@@ -32,6 +32,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [scheduledOffDays, setScheduledOffDays] = useState([]);
     const [trainers, setTrainers] = useState([]);
+    const [rating, setRating] = useState(0);
 
     useEffect(() => {
         document.body.classList.add('in-detail-view');
@@ -63,6 +64,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             setIsTrainer(data.is_trainer || false);
             setAssignedTrainer(data.assigned_trainer || '');
             setHasTrainingPermission(true);
+            setRating(typeof data.rating === 'number' ? data.rating : Number(data.rating) || 0);
         } catch (error) {
         }
         setIsLoading(false);
@@ -95,6 +97,35 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     };
 
     const handleSave = async () => {
+        setIsSaving(true);
+        setMessage('');
+        let updateObj = {
+            smyrna_id: smyrnaId,
+            name: name,
+            status: status,
+            plant_code: assignedPlant,
+            position: position,
+            is_trainer: isTrainer,
+            assigned_trainer: assignedTrainer,
+            pending_start_date: status === 'Pending Start' ? pendingStartDate : null,
+            rating: typeof rating === 'number' ? rating : Number(rating) || 0
+        }
+        try {
+            const { error } = await supabase
+                .from('operators')
+                .update(updateObj)
+                .eq('employee_id', operatorId);
+            if (error) {
+                setMessage('Error saving changes. Please try again.');
+            } else {
+                setMessage('Changes saved successfully!');
+                fetchData();
+            }
+        } catch (e) {
+            setMessage('Error saving changes. Please try again.');
+        }
+        setIsSaving(false);
+        setTimeout(() => setMessage(''), 3000);
     };
 
     if (isLoading) {
@@ -143,6 +174,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                         operator={operator}
                         plantName={getPlantName(operator && operator.plantCode)}
                         showOperatorWarning={false}
+                        rating={rating}
                     />
                 </div>
                 <div className="detail-card">
@@ -150,6 +182,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                         <h2>Edit Information</h2>
                     </div>
                     <p className="edit-instructions">Make changes below and click Save when finished.</p>
+                    <style>{`.form-group { margin-bottom: 25px !important; }`}</style>
                     <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
                             <span className="metadata-label">Created:</span>
@@ -239,6 +272,29 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                             <option value="Mixer Operator">Mixer Operator</option>
                             <option value="Tractor Operator">Tractor Operator</option>
                         </select>
+                    </div>
+                    <div className="form-group">
+                        <label>Rating</label>
+                        <div style={{display: 'flex', alignItems: 'center', gap: 4}}>
+                            {[1,2,3,4,5].map(star => (
+                                <span
+                                    key={star}
+                                    style={{
+                                        cursor: 'pointer',
+                                        fontSize: 24,
+                                        lineHeight: 1,
+                                        userSelect: 'none'
+                                    }}
+                                    onClick={() => setRating(star)}
+                                    onKeyDown={e => { if (e.key === 'Enter') setRating(star); }}
+                                    tabIndex={0}
+                                    aria-label={`Set rating to ${star} star${star > 1 ? 's' : ''}`}
+                                    role="button"
+                                >
+                                    {star <= rating ? '★' : '☆'}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 {hasTrainingPermission && (

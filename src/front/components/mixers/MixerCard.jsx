@@ -162,10 +162,15 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         Mixer #{mixer.truckNumber || 'Not Assigned'}
                     </h3>
                 </div>
+
                 <div className="card-details">
                     <div className="detail-row">
                         <div className="detail-label">Plant</div>
                         <div className="detail-value">{plantName}</div>
+                    </div>
+                    <div className="detail-row">
+                        <div className="detail-label">Status</div>
+                        <div className="detail-value">{mixer.status || 'Unknown'}</div>
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Operator</div>
@@ -221,10 +226,6 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                                 </div>
                             ) : 'Not Rated'}
                         </div>
-                    </div>
-                    <div className="detail-row">
-                        <div className="detail-label">Status</div>
-                        <div className="detail-value">{mixer.status || 'Unknown'}</div>
                     </div>
                 </div>
             </div>

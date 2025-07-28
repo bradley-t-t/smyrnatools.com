@@ -36,18 +36,17 @@ export class MixerUtility {
       const today = new Date();
 
       if (lastUpdated > lastVerified) return false;
-
-      const checkForSunday = (start, end) => {
+      const checkForTuesday = (start, end) => {
         const current = new Date(start);
         current.setDate(current.getDate() + 1);
         while (current <= end) {
-          if (current.getDay() === 0) return true;
+          if (current.getDay() === 2) return true;
           current.setDate(current.getDate() + 1);
         }
         return false;
       };
 
-      return !checkForSunday(lastVerified, today);
+      return !checkForTuesday(lastVerified, today);
     } catch (error) {
       console.error('Error checking verification status:', error);
       return false;

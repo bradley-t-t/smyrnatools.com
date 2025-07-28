@@ -490,7 +490,7 @@ function MixerDetailView({mixerId, onClose}) {
                         </button>
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
-                            <p>Assets require verification after any changes are made and are reset weekly. <strong>Due: Every Friday at 10:00 AM.</strong></p>
+                            <p>Assets require verification after any changes are made and are reset weekly. <strong>Due: Every Friday at 10:00 AM.</strong> Resets on Mondays at 5pm.</p>
                         </div>
                     </div>
                 </div>

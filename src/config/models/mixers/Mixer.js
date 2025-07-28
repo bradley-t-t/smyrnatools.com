@@ -112,7 +112,6 @@ export class Mixer {
     getFormattedChipDate() {
         return this.lastChipDate ? new Date(this.lastChipDate).toLocaleDateString() : 'Not available';
     }
-
     isVerified(latestHistoryDate) {
         try {
             return MixerUtility.isVerified(
@@ -126,17 +125,17 @@ export class Mixer {
 
             const lastVerified = new Date(this.updatedLast);
             const today = new Date();
-            const hasSunday = () => {
+            const hasTuesday = () => {
                 const current = new Date(lastVerified);
                 current.setDate(current.getDate() + 1);
                 while (current <= today) {
-                    if (current.getDay() === 0) return true;
+                    if (current.getDay() === 2) return true;
                     current.setDate(current.getDate() + 1);
                 }
                 return false;
             };
 
-            if (hasSunday()) return false;
+            if (hasTuesday()) return false;
             if (latestHistoryDate && new Date(latestHistoryDate) > lastVerified) return false;
             return true;
         }

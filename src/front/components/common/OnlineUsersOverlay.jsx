@@ -23,23 +23,8 @@ function OnlineUsersOverlay() {
         }
     }, [onlineUsers.length, loading]);
 
-    const getRelativeTime = (timestamp) => {
-        if (!timestamp) return 'Now';
-        const now = new Date();
-        const lastSeen = new Date(timestamp);
-        const diffMs = now - lastSeen;
-        if (diffMs < 60000) {
-            return 'Just now';
-        } else if (diffMs < 3600000) {
-            const minutes = Math.floor(diffMs / 60000);
-            return `${minutes}m ago`;
-        } else if (diffMs < 86400000) {
-            const hours = Math.floor(diffMs / 3600000);
-            return `${hours}h ago`;
-        } else {
-            const days = Math.floor(diffMs / 86400000);
-            return `${days}d ago`;
-        }
+    const getRelativeTime = () => {
+        return 'Online';
     };
 
     const toggleExpand = () => setIsExpanded(!isExpanded);
@@ -93,7 +78,7 @@ function OnlineUsersOverlay() {
                                     <div className="user-name">{user.name || 'Unknown User'}</div>
                                     <div className="user-status">
                                         <span className="status-indicator"></span>
-                                        <span className="status-text">Online • {getRelativeTime(user.lastSeen)}</span>
+                                        <span className="status-text">{getRelativeTime()}</span>
                                     </div>
                                 </div>
                             </div>
