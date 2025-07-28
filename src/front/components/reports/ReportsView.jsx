@@ -171,6 +171,11 @@ function ReportsView() {
         getDueWeeks(REPORTS_START_DATE).forEach(({ weekIso, monday }) => {
             const saturday = new Date(monday)
             saturday.setDate(monday.getDate() + 5)
+            // Fix: add 1 day to monday for the divider range only
+            const dividerMonday = new Date(monday)
+            dividerMonday.setDate(dividerMonday.getDate() + 1)
+            const dividerSaturday = new Date(dividerMonday)
+            dividerSaturday.setDate(dividerMonday.getDate() + 5)
             const existing = localReports.find(r =>
                 r.name === rt.name &&
                 r.userId === user.id &&
@@ -180,13 +185,20 @@ function ReportsView() {
             allWeeks.push({
                 ...rt,
                 weekIso,
-                range: getWeekRangeString(monday, saturday),
+                range: getWeekRangeString(dividerMonday, dividerSaturday),
                 completed: !!(existing && existing.completed),
                 report: existing || null
             })
         })
     })
     allWeeks.sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
+
+    const myReportsByWeek = {}
+    allWeeks.forEach(item => {
+        if (!myReportsByWeek[item.weekIso]) myReportsByWeek[item.weekIso] = []
+        myReportsByWeek[item.weekIso].push(item)
+    })
+    const sortedMyWeeks = Object.keys(myReportsByWeek).sort((a, b) => new Date(b) - new Date(a))
 
     const reviewableReports = localReports
         .filter(r =>
@@ -196,6 +208,16 @@ function ReportsView() {
             r.userId !== user?.id
         )
         .sort((a, b) => new Date(b.completedDate).getTime() - new Date(a.completedDate).getTime())
+
+    const reviewReportsByWeek = {}
+    reviewableReports.forEach(report => {
+        const weekIso = report.week ? new Date(report.week).toISOString().slice(0, 10) : ''
+        if (!reviewReportsByWeek[weekIso]) reviewReportsByWeek[weekIso] = []
+        reviewReportsByWeek[weekIso].push(report)
+    })
+
+    const sortedReviewWeeks = Object.keys(reviewReportsByWeek)
+        .sort((a, b) => new Date(b) - new Date(a))
 
     function getUserName(userId) {
         const profile = userProfiles[userId]
@@ -308,53 +330,75 @@ function ReportsView() {
                         <div className="reports-content">
                             {tab === 'all' && (
                                 <div className="reports-list">
-                                    {allWeeks.length === 0 ? (
+                                    {sortedMyWeeks.length === 0 ? (
                                         <div className="reports-empty">
                                             <i className="fas fa-check-circle"></i>
                                             <div>No reports</div>
                                         </div>
                                     ) : (
-                                        allWeeks.map(item => {
-                                            const today = new Date()
-                                            const endDateStr = item.range.split(' through ')[1]
-                                            const [mm, dd, yy] = endDateStr.split('-')
-                                            const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
-                                            let statusText
-                                            let statusColor
-                                            if (item.completed) {
-                                                statusText = 'Completed'
-                                                statusColor = 'var(--success, #38a169)'
-                                            } else if (endDate >= today) {
-                                                statusText = 'Current Week'
-                                                statusColor = '#166534'
-                                            } else {
-                                                statusText = 'Past Due'
-                                                statusColor = 'var(--error, #e53e3e)'
-                                            }
+                                        sortedMyWeeks.map(weekIso => {
+                                            const weekItems = myReportsByWeek[weekIso]
+                                            // Fix: add 1 day to monday for the divider range only
+                                            const weekStart = new Date(weekIso)
+                                            weekStart.setDate(weekStart.getDate() + 1)
+                                            const weekEnd = new Date(weekStart)
+                                            weekEnd.setDate(weekStart.getDate() + 5)
+                                            const weekRange = getWeekRangeString(weekStart, weekEnd)
                                             return (
-                                                <div className="reports-list-item" key={item.name + item.weekIso}>
-                                                    <div className="reports-list-title">
-                                                        {item.title}
-                                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                            ({item.range})
-                                                        </span>
-                                                        <span style={{
-                                                            marginLeft: 12,
-                                                            color: statusColor,
-                                                            fontWeight: 600
-                                                        }}>
-                                                            {statusText}
-                                                        </span>
+                                                <div key={weekIso} style={{ marginBottom: 32 }}>
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 700,
+                                                            fontSize: '1.08rem',
+                                                            color: 'var(--accent)',
+                                                            margin: '18px 0 8px 0',
+                                                            letterSpacing: '0.01em',
+                                                            paddingLeft: 24
+                                                        }}
+                                                    >
+                                                        {weekRange}
                                                     </div>
-                                                    {item.completed ? (
-                                                        <button className="reports-list-action" onClick={() => setShowForm(item)}>
-                                                            View
-                                                        </button>
-                                                    ) : (
-                                                        <button className="reports-list-action" onClick={() => setShowForm(item)}>
-                                                            Submit
-                                                        </button>
-                                                    )}
+                                                    {weekItems.map(item => {
+                                                        const today = new Date()
+                                                        const endDateStr = item.range.split(' through ')[1]
+                                                        const [mm, dd, yy] = endDateStr.split('-')
+                                                        const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
+                                                        let statusText
+                                                        let statusColor
+                                                        if (item.completed) {
+                                                            statusText = 'Completed'
+                                                            statusColor = 'var(--success, #38a169)'
+                                                        } else if (endDate >= today) {
+                                                            statusText = 'Current Week'
+                                                            statusColor = '#166534'
+                                                        } else {
+                                                            statusText = 'Past Due'
+                                                            statusColor = 'var(--error, #e53e3e)'
+                                                        }
+                                                        return (
+                                                            <div className="reports-list-item" key={item.name + item.weekIso}>
+                                                                <div className="reports-list-title">
+                                                                    {item.title}
+                                                                    <span style={{
+                                                                        marginLeft: 12,
+                                                                        color: statusColor,
+                                                                        fontWeight: 600
+                                                                    }}>
+                                                                        {statusText}
+                                                                    </span>
+                                                                </div>
+                                                                {item.completed ? (
+                                                                    <button className="reports-list-action" onClick={() => setShowForm(item)}>
+                                                                        View
+                                                                    </button>
+                                                                ) : (
+                                                                    <button className="reports-list-action" onClick={() => setShowForm(item)}>
+                                                                        Submit
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })}
                                                 </div>
                                             )
                                         })
@@ -363,34 +407,46 @@ function ReportsView() {
                             )}
                             {tab === 'review' && (
                                 <div className="reports-list">
-                                    {reviewableReports.length === 0 ? (
+                                    {sortedReviewWeeks.length === 0 ? (
                                         <div className="reports-empty">
                                             <i className="fas fa-user-check"></i>
                                             <div>No reports to review</div>
                                         </div>
                                     ) : (
-                                        reviewableReports.map(report => {
-                                            let weekRange = report.report_date_range_start && report.report_date_range_end
-                                                ? getWeekRangeString(
-                                                    new Date(report.report_date_range_start.getTime() + 86400000),
-                                                    new Date(report.report_date_range_end.getTime() + 86400000)
-                                                )
-                                                : ''
+                                        sortedReviewWeeks.map(weekIso => {
+                                            const weekReports = reviewReportsByWeek[weekIso]
+                                            // Fix: add 1 day to monday for the divider range only
+                                            const weekStart = new Date(weekIso)
+                                            weekStart.setDate(weekStart.getDate() + 1)
+                                            const weekEnd = new Date(weekStart)
+                                            weekEnd.setDate(weekStart.getDate() + 5)
+                                            const weekRange = getWeekRangeString(weekStart, weekEnd)
                                             return (
-                                                <div className="reports-list-item" key={report.id}>
-                                                    <div className="reports-list-title">
-                                                        {report.title}
-                                                        {weekRange && (
-                                                            <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                                ({weekRange})
-                                                            </span>
-                                                        )}
+                                                <div key={weekIso} style={{ marginBottom: 32 }}>
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 700,
+                                                            fontSize: '1.08rem',
+                                                            color: 'var(--accent)',
+                                                            margin: '18px 0 8px 0',
+                                                            letterSpacing: '0.01em',
+                                                            paddingLeft: 24
+                                                        }}
+                                                    >
+                                                        {weekRange}
                                                     </div>
-                                                    <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
-                                                    <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
-                                                    <button className="reports-list-action" onClick={() => handleReview(report)}>
-                                                        Review
-                                                    </button>
+                                                    {weekReports.map(report => (
+                                                        <div className="reports-list-item" key={report.id}>
+                                                            <div className="reports-list-title">
+                                                                {report.title}
+                                                            </div>
+                                                            <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
+                                                            <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
+                                                            <button className="reports-list-action" onClick={() => handleReview(report)}>
+                                                                Review
+                                                            </button>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )
                                         })
