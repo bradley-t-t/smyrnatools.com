@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {supabase} from '../../../services/DatabaseService';
 import './styles/OperatorsOverview.css';
 
-const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => {
+const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '', onStatusClick }) => {
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [statusCounts, setStatusCounts] = useState({});
@@ -27,7 +27,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
             const {data, error} = await supabase
                 .from('plants')
                 .select('*');
-
             if (error) throw error;
             setPlants(data);
         } catch (error) {
@@ -66,7 +65,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
     const calculatePlantDistributionByStatus = (operatorsData) => {
         const distribution = {};
         const uniquePlants = [...new Set(operatorsData.map(op => op.plantCode || 'Unassigned'))];
-
         uniquePlants.forEach(plant => {
             distribution[plant] = {
                 Total: 0,
@@ -80,27 +78,21 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                 'Trainers': 0
             };
         });
-
         operatorsData.forEach(operator => {
             const plant = operator.plantCode || 'Unassigned';
             const status = operator.status || 'Unknown';
             const position = operator.position || 'Unknown';
-
             distribution[plant].Total++;
-
             if (['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'].includes(status)) {
                 distribution[plant][status]++;
             }
-
             if (['Mixer Operator', 'Tractor Operator'].includes(position)) {
                 distribution[plant][position]++;
             }
-
             if (operator.isTrainer === true) {
                 distribution[plant]['Trainers']++;
             }
         });
-
         setPlantDistributionByStatus(distribution);
     };
 
@@ -119,38 +111,66 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                     </div>
                 </div>
             )}
-
             <div className="overview-grid">
                 <div className="overview-card status-card">
                     <h2>Status Overview</h2>
                     <div className="status-grid">
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('All Statuses')}
+                            tabIndex={0}
+                            role="button"
+                        >
                             <div className="status-count">{statusCounts.Total || 0}</div>
                             <div className="status-label">Total Operators</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Active')}
+                            tabIndex={0}
+                            role="button"
+                        >
                             <div className="status-count">{statusCounts.Active || 0}</div>
                             <div className="status-label">Active</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Light Duty')}
+                            tabIndex={0}
+                            role="button"
+                        >
                             <div className="status-count">{statusCounts['Light Duty'] || 0}</div>
                             <div className="status-label">Light Duty</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Pending Start')}
+                            tabIndex={0}
+                            role="button"
+                        >
                             <div className="status-count">{statusCounts['Pending Start'] || 0}</div>
                             <div className="status-label">Pending Start</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Training')}
+                            tabIndex={0}
+                            role="button"
+                        >
                             <div className="status-count">{statusCounts.Training || 0}</div>
                             <div className="status-label">Training</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Terminated')}
+                            tabIndex={0}
+                            role="button"
+                        >
                             <div className="status-count">{statusCounts.Terminated || 0}</div>
                             <div className="status-label">Terminated</div>
                         </div>
                     </div>
                 </div>
-
                 <div className="overview-card positions-card">
                     <h2>Positions Overview</h2>
                     <div className="positions-grid">
@@ -174,7 +194,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                         )}
                     </div>
                 </div>
-
                 {(!selectedPlant || Object.keys(plantDistributionByStatus).length > 1) && (
                     <div className="overview-card plant-card">
                         <div style={{display: 'flex', alignItems: 'center'}}>

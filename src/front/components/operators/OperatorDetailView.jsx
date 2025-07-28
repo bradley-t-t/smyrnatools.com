@@ -294,6 +294,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                                     {star <= rating ? '★' : '☆'}
                                 </span>
                             ))}
+                            <span style={{marginLeft: 8}}>{rating > 0 ? `${rating} / 5` : 'Not Rated'}</span>
                         </div>
                     </div>
                 </div>

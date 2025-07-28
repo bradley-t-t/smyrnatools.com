@@ -25,7 +25,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [selectedOperator, setSelectedOperator] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [trainers, setTrainers] = useState([]);
-    const [scheduledOffMap, setScheduledOffMap] = useState({});
+    const [scheduledOffMap, setScheduledOffMap] = useState([]);
+    const [reloadFlag, setReloadFlag] = useState(false);
 
     const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
     const filterOptions = [
@@ -46,7 +47,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
 
     useEffect(() => {
         fetchAllData();
-    }, []);
+    }, [reloadFlag]);
 
     useEffect(() => {
         if (preferences.operatorFilters) {
@@ -218,7 +219,20 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         }
     };
 
-    const statusCounts = statuses.map(status => ({
+    function handleStatusClick(status) {
+        if (status === 'All Statuses') {
+            setStatusFilter('');
+            updateOperatorFilter('statusFilter', '');
+        } else {
+            setStatusFilter(status);
+            updateOperatorFilter('statusFilter', status);
+        }
+        setShowOverview(false);
+        setReloadFlag(flag => !flag);
+    }
+
+    const statusesForCounts = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
+    const statusCounts = statusesForCounts.map(status => ({
         status,
         count: operators.filter(op => op.status === status).length
     }));
@@ -238,6 +252,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                     <OperatorsOverview
                         filteredOperators={filteredOperators}
                         selectedPlant={selectedPlant}
+                        onStatusClick={handleStatusClick}
                     />
                 </div>
                 <div className="modal-footer">

@@ -400,3 +400,71 @@
         padding-right: 6px;
     }
 }
+
+:root {
+    --warning-yellow: #FFD600;
+}
+
+.trainer-warning-tooltip {
+    pointer-events: none;
+    max-width: 250px;
+    word-wrap: break-word;
+    white-space: normal;
+    background-color: var(--warning-yellow);
+    color: #000;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 1;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.dark-mode .trainer-warning-tooltip {
+    color: #000;
+    background-color: var(--warning-yellow);
+}
+
+.right-tooltip {
+    left: 110%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0;
+    margin-top: 0;
+}
+
+td > span[tabIndex="0"]:hover .trainer-warning-tooltip,
+td > span[tabIndex="0"]:focus .trainer-warning-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+td > span[tabIndex="0"] .fa-exclamation-triangle {
+    color: var(--warning-yellow);
+}
+
+.tractor-warning-icon {
+    color: var(--warning-yellow);
+}
+
+.duplicate-warning-icon {
+    color: var(--warning-yellow);
+}
+
+span:hover .trainer-warning-tooltip, span:focus .trainer-warning-tooltip {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.clickable {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.clickable:hover,
+.clickable:focus {
+    background: var(--bg-tertiary);
+    outline: none;
+}

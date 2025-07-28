@@ -13,7 +13,6 @@ export class Operator {
         this.createdAt = data.created_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
         this.updatedAt = data.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
         this.pendingStartDate = data.pending_start_date ?? data.pendingStartDate ?? null;
-        this.rating = typeof data.rating === 'number' ? data.rating : Number(data.rating) || 0;
     }
 
     static fromApiFormat(data) {
@@ -29,8 +28,7 @@ export class Operator {
             position: data.position ?? null,
             created_at: data.created_at ?? data.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
             updated_at: data.updated_at ?? data.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            pending_start_date: data.pending_start_date ?? data.pendingStartDate ?? null,
-            rating: typeof data.rating === 'number' ? data.rating : Number(data.rating) || 0
+            pending_start_date: data.pending_start_date ?? data.pendingStartDate ?? null
         });
     }
 
@@ -56,8 +54,7 @@ export class Operator {
             position: this.position ?? null,
             created_at: this.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
             updated_at: this.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            pending_start_date: this.pendingStartDate ?? null,
-            rating: typeof this.rating === 'number' ? this.rating : Number(this.rating) || 0
+            pending_start_date: this.pendingStartDate ?? null
         };
     }
 }

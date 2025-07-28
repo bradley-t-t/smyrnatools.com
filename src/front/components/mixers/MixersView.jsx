@@ -119,6 +119,17 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         }
     }
 
+    function handleStatusClick(status) {
+        if (status === 'All Statuses') {
+            setStatusFilter('');
+            updateMixerFilter('statusFilter', '');
+        } else {
+            setStatusFilter(status);
+            updateMixerFilter('statusFilter', status);
+        }
+        setShowOverview(false);
+    }
+
     const filteredMixers = mixers
         .filter(mixer => {
             const matchesSearch = !searchText.trim() ||
@@ -180,6 +191,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         selectedPlant={selectedPlant}
                         unverifiedCount={unverifiedCount}
                         neverVerifiedCount={neverVerifiedCount}
+                        onStatusClick={handleStatusClick}
                     />
                 </div>
                 <div className="modal-footer">
