@@ -31,10 +31,10 @@ const MixerOverview = ({
     const [notVerifiedCount, setNotVerifiedCount] = useState(0)
     const [duplicateOperatorNames, setDuplicateOperatorNames] = useState(new Set())
     const [plantReportMetrics, setPlantReportMetrics] = useState(null)
-    const [plantReportNote, setPlantReportNote] = useState('')
     const [plantReportRange, setPlantReportRange] = useState('')
     const [lastReport, setLastReport] = useState(null)
     const [lastReportRange, setLastReportRange] = useState('')
+    const [notation, setNotation] = useState('')
 
     useEffect(() => {
         fetchData()
@@ -62,19 +62,19 @@ const MixerOverview = ({
             fetchPlantManagerMetrics(selectedPlant)
         } else {
             setPlantReportMetrics(null)
-            setPlantReportNote('')
             setPlantReportRange('')
             setLastReport(null)
             setLastReportRange('')
+            setNotation('')
         }
     }, [selectedPlant, plants])
 
     const fetchPlantManagerMetrics = async (plantCode) => {
         setPlantReportMetrics(null)
-        setPlantReportNote('')
         setPlantReportRange('')
         setLastReport(null)
         setLastReportRange('')
+        setNotation('')
         const today = new Date()
         const day = today.getDay()
         const monday = new Date(today)
@@ -104,7 +104,7 @@ const MixerOverview = ({
                 lost: null,
                 lostLabel: ''
             })
-            setPlantReportNote('Plant manager has not completed their weekly report. Click here to view the last report found.')
+            setNotation('This information has not been reported and has no history.')
             return
         }
         const { data: reportsData, error } = await supabase
@@ -165,72 +165,70 @@ const MixerOverview = ({
                 lost = Number(form['yardage_lost'])
             }
             let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
-            let yphGrade = ''
-            if (yph !== null) {
-                if (yph >= 6) yphGrade = 'excellent'
-                else if (yph >= 4) yphGrade = 'good'
-                else if (yph >= 3) yphGrade = 'average'
-                else yphGrade = 'poor'
-            }
             let yphLabel = ''
-            if (yphGrade === 'excellent') yphLabel = 'Excellent'
-            else if (yphGrade === 'good') yphLabel = 'Good'
-            else if (yphGrade === 'average') yphLabel = 'Average'
-            else if (yphGrade === 'poor') yphLabel = 'Poor'
-            let lostGrade = ''
-            if (lost !== null) {
-                if (lost === 0) lostGrade = 'excellent'
-                else if (lost < 5) lostGrade = 'good'
-                else if (lost < 10) lostGrade = 'average'
-                else lostGrade = 'poor'
+            if (yph !== null) {
+                if (yph >= 6) yphLabel = 'Excellent'
+                else if (yph >= 4) yphLabel = 'Good'
+                else if (yph >= 3) yphLabel = 'Average'
+                else yphLabel = 'Poor'
             }
             let lostLabel = ''
-            if (lostGrade === 'excellent') lostLabel = 'Excellent'
-            else if (lostGrade === 'good') lostLabel = 'Good'
-            else if (lostGrade === 'average') lostLabel = 'Average'
-            else if (lostGrade === 'poor') lostLabel = 'Poor'
+            if (lost !== null) {
+                if (lost === 0) lostLabel = 'Excellent'
+                else if (lost < 5) lostLabel = 'Good'
+                else if (lost < 10) lostLabel = 'Average'
+                else lostLabel = 'Poor'
+            }
             setPlantReportMetrics({
                 yph,
                 yphLabel,
                 lost,
                 lostLabel
             })
-            setPlantReportNote('')
-        } else {
-            let last = null
-            let lastWeekIso = ''
-            if (Array.isArray(reportsData) && reportsData.length > 0) {
-                let sorted = reportsData
-                    .map(r => {
-                        let weekField = r.data?.week || r.week
-                        let weekIso = ''
-                        if (weekField instanceof Date) {
-                            weekIso = weekField.toISOString().slice(0, 10)
-                        } else if (typeof weekField === 'string') {
-                            const d = new Date(weekField)
-                            if (!isNaN(d)) {
-                                weekIso = d.toISOString().slice(0, 10)
-                            }
-                        }
-                        return { ...r, weekIso }
-                    })
-                    .filter(r => r.weekIso)
-                    .sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
-                if (sorted.length > 0) {
-                    last = sorted[0]
-                    lastWeekIso = last.weekIso
-                }
+            if (yph === null || lost === null) {
+                setNotation('This information has been reported but is incompelte.')
+            } else {
+                setNotation('The plant manager has reported these metrics.')
             }
-            setPlantReportMetrics({
-                yph: null,
-                yphLabel: '',
-                lost: null,
-                lostLabel: ''
-            })
-            setPlantReportNote('Plant manager has not completed their weekly report. Click here to view the last report found.')
-            setLastReport(last)
-            setLastReportRange(lastWeekIso ? getWeekRangeFromIso(lastWeekIso) : '')
+            return
         }
+        let last = null
+        let lastWeekIso = ''
+        if (Array.isArray(reportsData) && reportsData.length > 0) {
+            let sorted = reportsData
+                .map(r => {
+                    let weekField = r.data?.week || r.week
+                    let weekIso = ''
+                    if (weekField instanceof Date) {
+                        weekIso = weekField.toISOString().slice(0, 10)
+                    } else if (typeof weekField === 'string') {
+                        const d = new Date(weekField)
+                        if (!isNaN(d)) {
+                            weekIso = d.toISOString().slice(0, 10)
+                        }
+                    }
+                    return { ...r, weekIso }
+                })
+                .filter(r => r.weekIso)
+                .sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
+            if (sorted.length > 0) {
+                last = sorted[0]
+                lastWeekIso = last.weekIso
+            }
+        }
+        setPlantReportMetrics({
+            yph: null,
+            yphLabel: '',
+            lost: null,
+            lostLabel: ''
+        })
+        if (last) {
+            setNotation('The plant manager has not reported the metrics. Click here to see the previous metrics.')
+        } else {
+            setNotation('This information has not been reported and has no history.')
+        }
+        setLastReport(last)
+        setLastReportRange(lastWeekIso ? getWeekRangeFromIso(lastWeekIso) : '')
     }
 
     const handleShowLastReport = () => {
@@ -270,30 +268,20 @@ const MixerOverview = ({
             lost = Number(form['yardage_lost'])
         }
         let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
-        let yphGrade = ''
-        if (yph !== null) {
-            if (yph >= 6) yphGrade = 'excellent'
-            else if (yph >= 4) yphGrade = 'good'
-            else if (yph >= 3) yphGrade = 'average'
-            else yphGrade = 'poor'
-        }
         let yphLabel = ''
-        if (yphGrade === 'excellent') yphLabel = 'Excellent'
-        else if (yphGrade === 'good') yphLabel = 'Good'
-        else if (yphGrade === 'average') yphLabel = 'Average'
-        else if (yphGrade === 'poor') yphLabel = 'Poor'
-        let lostGrade = ''
-        if (lost !== null) {
-            if (lost === 0) lostGrade = 'excellent'
-            else if (lost < 5) lostGrade = 'good'
-            else if (lost < 10) lostGrade = 'average'
-            else lostGrade = 'poor'
+        if (yph !== null) {
+            if (yph >= 6) yphLabel = 'Excellent'
+            else if (yph >= 4) yphLabel = 'Good'
+            else if (yph >= 3) yphLabel = 'Average'
+            else yphLabel = 'Poor'
         }
         let lostLabel = ''
-        if (lostGrade === 'excellent') lostLabel = 'Excellent'
-        else if (lostGrade === 'good') lostLabel = 'Good'
-        else if (lostGrade === 'average') lostLabel = 'Average'
-        else if (lostGrade === 'poor') lostLabel = 'Poor'
+        if (lost !== null) {
+            if (lost === 0) lostLabel = 'Excellent'
+            else if (lost < 5) lostLabel = 'Good'
+            else if (lost < 10) lostLabel = 'Average'
+            else lostLabel = 'Poor'
+        }
         setPlantReportMetrics({
             yph,
             yphLabel,
@@ -301,7 +289,11 @@ const MixerOverview = ({
             lostLabel
         })
         setPlantReportRange(lastReportRange)
-        setPlantReportNote('')
+        if (yph === null || lost === null) {
+            setNotation('This information has been reported but is incompelte.')
+        } else {
+            setNotation('The plant manager has reported these metrics.')
+        }
     }
 
     const updateStatistics = (mixersData) => {
@@ -429,7 +421,7 @@ const MixerOverview = ({
             filteredTrainers = filteredTrainers.filter(op => op.plantCode === selectedPlant || relevantOperatorIds.has(op.employeeId))
         }
         let filteredTrainees = operators.filter(
-            op => op.assignedTrainer && op.assignedTrainer !== '0' && op.status === 'Training'
+            op => op.status === 'Training'
         )
         if (selectedPlant) {
             filteredTrainees = filteredTrainees.filter(op => op.plantCode === selectedPlant || relevantOperatorIds.has(op.employeeId))
@@ -438,7 +430,9 @@ const MixerOverview = ({
         const trainerTraineeCount = {}
         filteredTrainees.forEach(trainee => {
             const trainerId = trainee.assignedTrainer
-            trainerTraineeCount[trainerId] = (trainerTraineeCount[trainerId] || 0) + 1
+            if (trainerId) {
+                trainerTraineeCount[trainerId] = (trainerTraineeCount[trainerId] || 0) + 1
+            }
         })
         filteredTrainers.forEach(trainer => {
             const assignedMixer = relevantMixers.find(
@@ -469,6 +463,18 @@ const MixerOverview = ({
                     })
                 })
             }
+        })
+        const traineesWithoutTrainer = filteredTrainees.filter(t => !t.assignedTrainer)
+        traineesWithoutTrainer.forEach(trainee => {
+            rows.push({
+                truckNumber: '',
+                trainer: '',
+                trainerPlant: trainee.plantCode,
+                trainerPosition: '',
+                trainee: trainee.name,
+                traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '',
+                hasMultipleTrainees: false
+            })
         })
         rows.sort((a, b) => {
             if (a.trainerPlant < b.trainerPlant) return -1
@@ -504,46 +510,36 @@ const MixerOverview = ({
                 </div>
             )}
             {selectedPlant && (
-                <div style={{margin: '24px 0 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                <div className="plant-metrics-container">
                     <div style={{fontWeight: 600, color: 'var(--accent)', marginBottom: 8, fontSize: '1.08rem'}}>
                         {plantReportRange && `Metrics for ${plantReportRange}`}
                     </div>
                     <div style={{display: 'flex', gap: 18, width: '100%', maxWidth: 700, justifyContent: 'center'}}>
-                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0 }}>
+                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0, background: 'var(--background)' }}>
                             <div className="summary-metric-title">Yards per Man-Hour</div>
-                            <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
+                            <div className="summary-metric-value">
                                 {plantReportMetrics && plantReportMetrics.yph !== null ? plantReportMetrics.yph.toFixed(2) : '--'}
                             </div>
-                            <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
+                            <div className="summary-metric-grade">
                                 {plantReportMetrics && plantReportMetrics.yphLabel}
                             </div>
                         </div>
-                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0 }}>
+                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0, background: 'var(--background)' }}>
                             <div className="summary-metric-title">Yardage Lost</div>
-                            <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
+                            <div className="summary-metric-value">
                                 {plantReportMetrics && plantReportMetrics.lost !== null ? plantReportMetrics.lost : '--'}
                             </div>
-                            <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
+                            <div className="summary-metric-grade">
                                 {plantReportMetrics && plantReportMetrics.lostLabel}
                             </div>
                         </div>
                     </div>
-                    {plantReportNote && (
-                        <div
-                            style={{
-                                marginTop: 8,
-                                color: 'var(--text-secondary)',
-                                fontWeight: 500,
-                                fontSize: '1rem',
-                                cursor: lastReport ? 'pointer' : 'default',
-                                textDecoration: lastReport ? 'underline' : 'none'
-                            }}
-                            onClick={lastReport ? handleShowLastReport : undefined}
-                            tabIndex={lastReport ? 0 : -1}
-                        >
-                            {plantReportNote}
-                        </div>
-                    )}
+                    <div style={{marginTop: 8, color: 'var(--text-secondary)', fontWeight: 500, fontSize: '1rem', cursor: lastReport ? 'pointer' : 'default', textDecoration: lastReport ? 'underline' : 'none'}}
+                        onClick={notation === 'The plant manager has not reported the metrics. click here to see previous metrics.' && lastReport ? handleShowLastReport : undefined}
+                        tabIndex={notation === 'The plant manager has not reported the metrics. click here to see previous metrics.' && lastReport ? 0 : -1}
+                    >
+                        {notation}
+                    </div>
                 </div>
             )}
             <div className="overview-grid">

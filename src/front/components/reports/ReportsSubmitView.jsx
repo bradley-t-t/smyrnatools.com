@@ -278,12 +278,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                             </div>
                             {summaryTab === 'summary' && (
                                 <div className="summary-content" style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, alignItems: 'stretch' }}>
-                                    <div className="summary-metric-card" style={{ borderColor: yphColor, flex: 1, marginRight: 0 }}>
+                                    <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0 }}>
                                         <div className="summary-metric-title">Yards per Man-Hour</div>
-                                        <div className="summary-metric-value" style={{ color: yphColor }}>
+                                        <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
                                             {yph !== null ? yph.toFixed(2) : '--'}
                                         </div>
-                                        <div className="summary-metric-grade" style={{ color: yphColor }}>
+                                        <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
                                             {yphLabel}
                                         </div>
                                         <div className="summary-metric-scale">
@@ -293,12 +293,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                             <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
                                         </div>
                                     </div>
-                                    <div className="summary-metric-card" style={{ borderColor: lostColor, flex: 1, marginLeft: 0 }}>
+                                    <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0 }}>
                                         <div className="summary-metric-title">Yardage Lost</div>
-                                        <div className="summary-metric-value" style={{ color: lostColor }}>
+                                        <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
                                             {lost !== null ? lost : '--'}
                                         </div>
-                                        <div className="summary-metric-grade" style={{ color: lostColor }}>
+                                        <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
                                             {lostLabel}
                                         </div>
                                         <div className="summary-metric-scale">
@@ -331,3 +331,4 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
 }
 
 export default ReportsSubmitView
+

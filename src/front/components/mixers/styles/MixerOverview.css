@@ -468,3 +468,59 @@ span:hover .trainer-warning-tooltip, span:focus .trainer-warning-tooltip {
     background: var(--bg-tertiary);
     outline: none;
 }
+
+.plant-metrics-container {
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(49,130,206,0.07);
+    border: 1.5px solid var(--divider);
+    padding: 28px 32px 24px 32px;
+    margin: 24px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 840px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 12px;
+}
+
+.summary-metric-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 7px;
+    letter-spacing: 0.01em;
+}
+
+.summary-metric-value {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+    color: var(--primary);
+}
+
+.summary-metric-grade {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+    color: var(--primary);
+}
+
+.dark-mode .summary-metric-title,
+.dark-mode .summary-metric-value,
+.dark-mode .summary-metric-grade {
+    color: #fff;
+}
+
+@media (max-width: 900px) {
+    .plant-metrics-container {
+        padding: 14px 8px 12px 8px;
+        max-width: 99vw;
+    }
+}
