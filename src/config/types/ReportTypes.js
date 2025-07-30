@@ -32,5 +32,26 @@ export const reportTypes = [
       { name: "friday_recap", label: "Friday Recap", type: "textarea", required: false },
       { name: "saturday_recap", label: "Saturday Recap", type: "textarea", required: false }
     ]
+  },
+  {
+    name: "plant_production",
+    title: "Weekly Plant Production Report",
+    frequency: "weekly",
+    assignment: ["reports.assigned.plant_production"],
+    manage: ["reports.manage.plant_production"],
+    fields: [
+      {
+        name: "report_date",
+        label: "Report Date",
+        type: "date",
+        required: true
+      },
+      {
+        name: "rows",
+        label: "Production Rows",
+        type: "table",
+        required: false
+      }
+    ]
   }
 ]

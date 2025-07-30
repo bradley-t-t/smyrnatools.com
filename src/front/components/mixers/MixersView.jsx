@@ -64,9 +64,21 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 mixer.latestHistoryDate = latestHistoryDate;
                 return mixer;
             }));
+            await fixActiveMixersWithoutOperator(processedData);
             setMixers(processedData);
         } catch (error) {
             console.error('Error fetching mixers:', error);
+        }
+    }
+
+    async function fixActiveMixersWithoutOperator(mixersList) {
+        const updates = mixersList
+            .filter(m => m.status === 'Active' && (!m.assignedOperator || m.assignedOperator === '0'));
+        for (const mixer of updates) {
+            try {
+                await MixerService.updateMixer(mixer.id, {...mixer, status: 'Spare'}, undefined, mixer);
+                mixer.status = 'Spare';
+            } catch (e) {}
         }
     }
 

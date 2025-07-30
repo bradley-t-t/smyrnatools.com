@@ -4,6 +4,15 @@ import './styles/ReportsReviewView.css'
 import { supabase } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
 import { getWeekRangeFromIso, getMondayAndSaturday } from './ReportsView'
+import { PlantManagerReviewPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
+import { DistrictManagerReviewPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
+import { PlantProductionReviewPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
+
+const plugins = {
+    plant_manager: PlantManagerReviewPlugin,
+    district_manager: DistrictManagerReviewPlugin,
+    plant_production: PlantProductionReviewPlugin
+}
 
 function formatDateTime(dt) {
     if (!dt) return ''
@@ -133,6 +142,9 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
     ) {
         lost = Number(form['yardage_lost'])
     }
+    if (lost !== null && lost < 0) {
+        lost = 0
+    }
 
     let lostGrade = ''
     if (lost !== null) {
@@ -153,6 +165,8 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
     else if (lostGrade === 'average') lostLabel = 'Average'
     else if (lostGrade === 'poor') lostLabel = 'Poor'
 
+    const PluginComponent = plugins[report.name]
+
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
             <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
@@ -170,35 +184,32 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                     )}
                 </div>
                 <div className="report-form-body-wide">
-                    <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 18 }}>
-                        <div style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: '50%',
-                            background: 'var(--accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '2.1rem',
-                            fontWeight: 700,
-                            color: 'var(--text-light)',
-                            boxShadow: '0 2px 8px var(--shadow-sm, rgba(49,130,206,0.13))',
-                            flexShrink: 0
-                        }}>
-                            <span>{ownerName ? ownerName[0].toUpperCase() : '?'}</span>
+                    {report.name === 'plant_production' && (
+                        <div className="report-form-field-wide" style={{ marginBottom: 18 }}>
+                            <label>Report Date</label>
+                            <input
+                                type="date"
+                                value={form.report_date || ''}
+                                readOnly
+                                disabled
+                                style={{
+                                    background: 'var(--background)',
+                                    border: '1px solid var(--divider)',
+                                    borderRadius: 6,
+                                    fontSize: 15,
+                                    width: 180,
+                                    padding: '7px 10px',
+                                    color: 'var(--text-primary)'
+                                }}
+                                className="plant-prod-input"
+                            />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.01em' }}>
-                                Completed By {ownerName || 'Unknown'}
-                            </div>
-                            {submittedAt && <div style={{ marginTop: 3, fontSize: '0.98rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.01em' }}>Submitted: {submittedAt}</div>}
-                        </div>
-                    </div>
+                    )}
                     <div className="report-form-fields-grid">
                         {report.fields.map(field => (
                             <div key={field.name} className="report-form-field-wide">
                                 <label>
-                                    {field.label}
+                                    {field.name === 'yardage' ? 'Total Yardage' : field.label}
                                     {field.required && <span className="report-modal-required">*</span>}
                                 </label>
                                 {field.type === 'textarea' ? (
@@ -216,94 +227,19 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                             </div>
                         ))}
                     </div>
-                    {report.name === 'district_manager' && maintenanceItems.length > 0 && (
-                        <div style={{ marginTop: 32, marginBottom: 16 }}>
-                            <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
-                                Items Completed This Week
-                            </div>
-                            <div className="list-view-table">
-                                <div className="list-view-header">
-                                    <div className="list-column description">Description</div>
-                                    <div className="list-column plant">Plant</div>
-                                    <div className="list-column deadline">Deadline</div>
-                                    <div className="list-column completed-date">Completed</div>
-                                </div>
-                                <div className="list-view-rows">
-                                    {maintenanceItems.map(item => (
-                                        <div key={item.id} className={`list-view-row ${item.completed ? 'completed' : ''}`}>
-                                            <div className="list-column description left-align" title={item.description}>
-                                                <div style={{
-                                                    background: item.completed ? 'var(--success)' : item.isOverdue ? 'var(--error)' : 'var(--accent)',
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: '50%',
-                                                    display: 'inline-block',
-                                                    marginRight: 8,
-                                                    verticalAlign: 'middle'
-                                                }}></div>
-                                                {truncateText(item.description, 60)}
-                                            </div>
-                                            <div className="list-column plant" title={getPlantName(item.plant_code)}>
-                                                {truncateText(getPlantName(item.plant_code), 20)}
-                                            </div>
-                                            <div className="list-column deadline">
-                                                {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
-                                            </div>
-                                            <div className="list-column completed-date">
-                                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'N/A'}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {report.name === 'plant_manager' && (
-                        <div className="summary-tabs-container">
-                            <div className="summary-tabs">
-                                <button
-                                    type="button"
-                                    className={summaryTab === 'summary' ? 'active' : ''}
-                                    onClick={() => setSummaryTab('summary')}
-                                >
-                                    Summary
-                                </button>
-                            </div>
-                            {summaryTab === 'summary' && (
-                                <div className="summary-content" style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, alignItems: 'stretch' }}>
-                                    <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0 }}>
-                                        <div className="summary-metric-title">Yards per Man-Hour</div>
-                                        <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
-                                            {yph !== null ? yph.toFixed(2) : '--'}
-                                        </div>
-                                        <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
-                                            {yphLabel}
-                                        </div>
-                                        <div className="summary-metric-scale">
-                                            <span className={yphGrade === 'excellent' ? 'active' : ''}>Excellent</span>
-                                            <span className={yphGrade === 'good' ? 'active' : ''}>Good</span>
-                                            <span className={yphGrade === 'average' ? 'active' : ''}>Average</span>
-                                            <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
-                                        </div>
-                                    </div>
-                                    <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0 }}>
-                                        <div className="summary-metric-title">Yardage Lost</div>
-                                        <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
-                                            {lost !== null ? lost : '--'}
-                                        </div>
-                                        <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
-                                            {lostLabel}
-                                        </div>
-                                        <div className="summary-metric-scale">
-                                            <span className={lostGrade === 'excellent' ? 'active' : ''}>Excellent</span>
-                                            <span className={lostGrade === 'good' ? 'active' : ''}>Good</span>
-                                            <span className={lostGrade === 'average' ? 'active' : ''}>Average</span>
-                                            <span className={lostGrade === 'poor' ? 'active' : ''}>Poor</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                    {PluginComponent && (
+                        <PluginComponent
+                            form={form}
+                            yph={yph}
+                            yphGrade={yphGrade}
+                            yphLabel={yphLabel}
+                            lost={lost}
+                            lostGrade={lostGrade}
+                            lostLabel={lostLabel}
+                            summaryTab={summaryTab}
+                            setSummaryTab={setSummaryTab}
+                            maintenanceItems={maintenanceItems}
+                        />
                     )}
                 </div>
             </div>

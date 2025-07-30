@@ -44,6 +44,8 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     useEffect(() => {
         fetchData();
         fetchScheduledOff();
+        fetchPlants();
+        fetchTrainers();
     }, [operatorId]);
 
     const fetchData = async () => {
@@ -68,6 +70,27 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
         } catch (error) {
         }
         setIsLoading(false);
+    };
+
+    const fetchPlants = async () => {
+        try {
+            const data = await PlantService.fetchPlants();
+            setPlants(Array.isArray(data) ? data : []);
+        } catch (error) {
+            setPlants([]);
+        }
+    };
+
+    const fetchTrainers = async () => {
+        try {
+            const allOperators = await OperatorService.fetchOperators();
+            const filtered = Array.isArray(allOperators)
+                ? allOperators.filter(op => op.isTrainer || op.is_trainer)
+                : [];
+            setTrainers(filtered);
+        } catch (error) {
+            setTrainers([]);
+        }
     };
 
     const fetchScheduledOff = async () => {

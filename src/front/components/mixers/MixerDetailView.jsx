@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {MixerService} from '../../../services/MixerService';
 import {PlantService} from '../../../services/PlantService';
 import {OperatorService} from '../../../services/OperatorService';
@@ -51,6 +51,9 @@ function MixerDetailView({mixerId, onClose}) {
     const [year, setYear] = useState('');
     const [operatorModalOperators, setOperatorModalOperators] = useState([]);
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null);
+    const [comments, setComments] = useState([]);
+    const [issues, setIssues] = useState([]);
+    const mixerCardRef = useRef(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -196,6 +199,20 @@ function MixerDetailView({mixerId, onClose}) {
                 ? overrideValues.assignedOperator
                 : assignedOperator;
 
+            let statusValue = overrideValues.hasOwnProperty('status')
+                ? overrideValues.status
+                : status;
+
+            if ((!assignedOperatorValue || assignedOperatorValue === '' || assignedOperatorValue === null) && statusValue === 'Active') {
+                statusValue = 'Spare';
+            }
+            if (assignedOperatorValue && statusValue !== 'Active') {
+                statusValue = 'Active';
+            }
+            if (['In Shop', 'Retired', 'Spare'].includes(statusValue) && assignedOperatorValue) {
+                assignedOperatorValue = null;
+            }
+
             let mixerForHistory = {
                 ...mixer,
                 assignedOperator: overrideValues.hasOwnProperty('prevAssignedOperator')
@@ -209,7 +226,7 @@ function MixerDetailView({mixerId, onClose}) {
                 truckNumber: overrideValues.truckNumber ?? truckNumber,
                 assignedOperator: assignedOperatorValue || null,
                 assignedPlant: overrideValues.assignedPlant ?? assignedPlant,
-                status: overrideValues.status ?? status,
+                status: statusValue,
                 cleanlinessRating: (overrideValues.cleanlinessRating ?? cleanlinessRating) || null,
                 lastServiceDate: formatDate(overrideValues.lastServiceDate ?? lastServiceDate),
                 lastChipDate: formatDate(overrideValues.lastChipDate ?? lastChipDate),
@@ -336,12 +353,9 @@ function MixerDetailView({mixerId, onClose}) {
     async function fetchOperatorsForModal() {
         let dbOperators = await OperatorService.fetchOperators();
         if (lastUnassignedOperatorId) {
-            const alreadyIncluded = dbOperators.some(op => op.employeeId === lastUnassignedOperatorId);
-            if (!alreadyIncluded) {
-                const unassignedOperator = await OperatorService.fetchOperatorById(lastUnassignedOperatorId);
-                if (unassignedOperator) {
-                    dbOperators = [...dbOperators, unassignedOperator];
-                }
+            const unassignedOperator = dbOperators.find(op => op.employeeId === lastUnassignedOperatorId);
+            if (unassignedOperator) {
+                dbOperators = [...dbOperators, unassignedOperator];
             }
         }
         setOperatorModalOperators(dbOperators);
@@ -350,6 +364,62 @@ function MixerDetailView({mixerId, onClose}) {
     async function refreshOperators() {
         const updatedOperators = await OperatorService.fetchOperators();
         setOperators(updatedOperators);
+    }
+
+    useEffect(() => {
+        async function fetchCommentsAndIssues() {
+            if (!mixerId) return;
+            const { data: commentData } = await supabase
+                .from('mixers_comments')
+                .select('*')
+                .eq('mixer_id', mixerId)
+                .order('created_at', { ascending: false });
+            setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
+            const { data: issueData } = await supabase
+                .from('mixers_maintenance')
+                .select('*')
+                .eq('mixer_id', mixerId)
+                .order('created_at', { ascending: false });
+            setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
+        }
+        fetchCommentsAndIssues();
+    }, [mixerId]);
+
+    function handleExportEmail() {
+        if (!mixer) return;
+        const hasComments = comments && comments.length > 0;
+        const openIssues = (issues || []).filter(issue => !issue.time_completed);
+        let summary = `Mixer Summary for Truck #${mixer.truckNumber || ''}
+
+Basic Information
+Status: ${mixer.status || ''}
+Assigned Plant: ${getPlantName(mixer.assignedPlant)}
+Assigned Operator: ${getOperatorName(mixer.assignedOperator)}
+Cleanliness Rating: ${mixer.cleanlinessRating || 'N/A'}
+Last Service Date: ${mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'N/A'}
+Last Chip Date: ${mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'N/A'}
+VIN: ${mixer.vin || ''}
+Make: ${mixer.make || ''}
+Model: ${mixer.model || ''}
+Year: ${mixer.year || ''}
+
+Comments
+${hasComments
+        ? comments.map(c =>
+            `- ${c.author || 'Unknown'}: ${c.comment || c.text} (${new Date(c.created_at || c.createdAt).toLocaleString()})`
+        ).join('\n')
+        : 'No comments.'}
+
+Issues (${openIssues.length})
+${openIssues.length > 0
+        ? openIssues.map(i =>
+            `- ${i.issue || i.title || i.description || ''} (${new Date(i.time_created || i.created_at).toLocaleString()})`
+        ).join('\n')
+        : 'No open issues.'}
+`;
+        const subject = encodeURIComponent(`Mixer Summary for Truck #${mixer.truckNumber || ''}`);
+        const body = encodeURIComponent(summary);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
     if (isLoading) {
@@ -404,6 +474,9 @@ function MixerDetailView({mixerId, onClose}) {
                 </div>
                 <h1>Truck #{mixer.truckNumber || 'Not Assigned'}</h1>
                 <div className="header-actions">
+                    <button className="issues-button" style={{marginRight: 0}} onClick={handleExportEmail}>
+                        <i className="fas fa-envelope"></i> Email
+                    </button>
                     {canEditMixer && (
                         <>
                             <button className="issues-button" onClick={() => setShowIssues(true)}>
@@ -433,7 +506,9 @@ function MixerDetailView({mixerId, onClose}) {
                     </div>
                 )}
                 <div className="mixer-card-preview" style={{ position: 'relative', zIndex: 0 }}>
-                    <MixerCard mixer={mixer} operatorName={getOperatorName(mixer.assignedOperator)} plantName={getPlantName(mixer.assignedPlant)} showOperatorWarning={false} />
+                    <div ref={mixerCardRef}>
+                        <MixerCard mixer={mixer} operatorName={getOperatorName(mixer.assignedOperator)} plantName={getPlantName(mixer.assignedPlant)} showOperatorWarning={false} />
+                    </div>
                 </div>
                 <div className="detail-card">
                     <div className="card-header">
@@ -510,7 +585,13 @@ function MixerDetailView({mixerId, onClose}) {
                                 <label>Status</label>
                                 <select value={status} onChange={e => setStatus(e.target.value)} disabled={!canEditMixer} className="form-control">
                                     <option value="">Select Status</option>
-                                    <option value="Active">Active</option>
+                                    <option
+                                        value="Active"
+                                        disabled={!assignedOperator}
+                                        style={!assignedOperator ? {color: 'var(--text-disabled)', backgroundColor: 'var(--background-disabled)'} : {}}
+                                    >
+                                        Active{!assignedOperator ? ' (Cannot set without an operator assigned)' : ''}
+                                    </option>
                                     <option value="Spare">Spare</option>
                                     <option value="In Shop">In Shop</option>
                                     <option value="Retired">Retired</option>

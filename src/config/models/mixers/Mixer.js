@@ -113,31 +113,11 @@ export class Mixer {
         return this.lastChipDate ? new Date(this.lastChipDate).toLocaleDateString() : 'Not available';
     }
     isVerified(latestHistoryDate) {
-        try {
-            return MixerUtility.isVerified(
-                this.updatedLast,
-                this.updatedAt,
-                this.updatedBy,
-                latestHistoryDate
-            );
-        } catch (error) {
-            if (!this.updatedLast || !this.updatedBy) return false;
-
-            const lastVerified = new Date(this.updatedLast);
-            const today = new Date();
-            const hasTuesday = () => {
-                const current = new Date(lastVerified);
-                current.setDate(current.getDate() + 1);
-                while (current <= today) {
-                    if (current.getDay() === 2) return true;
-                    current.setDate(current.getDate() + 1);
-                }
-                return false;
-            };
-
-            if (hasTuesday()) return false;
-            if (latestHistoryDate && new Date(latestHistoryDate) > lastVerified) return false;
-            return true;
-        }
+        return MixerUtility.isVerified(
+            this.updatedLast,
+            this.updatedAt,
+            this.updatedBy,
+            latestHistoryDate
+        );
     }
 }

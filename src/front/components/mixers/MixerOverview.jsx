@@ -11,8 +11,6 @@ import { UserService } from '../../../services/UserService'
 const MixerOverview = ({
     filteredMixers = null,
     selectedPlant = '',
-    unverifiedCount = 0,
-    neverVerifiedCount = 0,
     onStatusClick
 }) => {
     const [mixers, setMixers] = useState([])
@@ -164,6 +162,9 @@ const MixerOverview = ({
             ) {
                 lost = Number(form['yardage_lost'])
             }
+            if (lost !== null && lost < 0) {
+                lost = 0
+            }
             let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
             let yphLabel = ''
             if (yph !== null) {
@@ -223,7 +224,7 @@ const MixerOverview = ({
             lostLabel: ''
         })
         if (last) {
-            setNotation('The plant manager has not reported the metrics. Click here to see the previous metrics.')
+            setNotation('The plant manager has not reported the metrics. Click here to see previous metrics.')
         } else {
             setNotation('This information has not been reported and has no history.')
         }
@@ -266,6 +267,9 @@ const MixerOverview = ({
             typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
         ) {
             lost = Number(form['yardage_lost'])
+        }
+        if (lost !== null && lost < 0) {
+            lost = 0
         }
         let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
         let yphLabel = ''
@@ -404,8 +408,7 @@ const MixerOverview = ({
     }
 
     const getPlantName = (plantCode) => {
-        const plant = plants.find(p => p.plantCode === plantCode)
-        return plant ? plant.plantName : plantCode
+        return plantCode
     }
 
     const getTrainerTraineeRows = () => {
@@ -420,11 +423,14 @@ const MixerOverview = ({
         if (selectedPlant) {
             filteredTrainers = filteredTrainers.filter(op => op.plantCode === selectedPlant || relevantOperatorIds.has(op.employeeId))
         }
-        let filteredTrainees = operators.filter(
-            op => op.status === 'Training'
-        )
+        let allTrainees = operators.filter(op => op.status === 'Training')
+        let filteredTrainees
         if (selectedPlant) {
-            filteredTrainees = filteredTrainees.filter(op => op.plantCode === selectedPlant || relevantOperatorIds.has(op.employeeId))
+            filteredTrainees = allTrainees.filter(
+                op => filteredTrainers.some(tr => tr.employeeId === op.assignedTrainer)
+            )
+        } else {
+            filteredTrainees = allTrainees
         }
         const rows = []
         const trainerTraineeCount = {}
@@ -448,6 +454,7 @@ const MixerOverview = ({
                     trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '',
                     trainee: '',
                     traineePosition: '',
+                    traineePlant: '',
                     hasMultipleTrainees: false
                 })
             } else {
@@ -459,6 +466,7 @@ const MixerOverview = ({
                         trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '',
                         trainee: trainee.name,
                         traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '',
+                        traineePlant: trainee.plantCode,
                         hasMultipleTrainees
                     })
                 })
@@ -473,6 +481,7 @@ const MixerOverview = ({
                 trainerPosition: '',
                 trainee: trainee.name,
                 traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '',
+                traineePlant: trainee.plantCode,
                 hasMultipleTrainees: false
             })
         })
@@ -534,9 +543,17 @@ const MixerOverview = ({
                             </div>
                         </div>
                     </div>
-                    <div style={{marginTop: 8, color: 'var(--text-secondary)', fontWeight: 500, fontSize: '1rem', cursor: lastReport ? 'pointer' : 'default', textDecoration: lastReport ? 'underline' : 'none'}}
-                        onClick={notation === 'The plant manager has not reported the metrics. click here to see previous metrics.' && lastReport ? handleShowLastReport : undefined}
-                        tabIndex={notation === 'The plant manager has not reported the metrics. click here to see previous metrics.' && lastReport ? 0 : -1}
+                    <div
+                        style={{
+                            marginTop: 8,
+                            color: 'var(--text-secondary)',
+                            fontWeight: 500,
+                            fontSize: '1rem',
+                            cursor: notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? 'pointer' : 'default',
+                            textDecoration: notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? 'underline' : 'none'
+                        }}
+                        onClick={notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? handleShowLastReport : undefined}
+                        tabIndex={notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? 0 : -1}
                     >
                         {notation}
                     </div>
@@ -753,12 +770,13 @@ const MixerOverview = ({
                             <th>Trainer</th>
                             <th>Trainee</th>
                             <th>Trainee Position</th>
+                            <th>-> Plant</th>
                         </tr>
                         </thead>
                         <tbody>
                         {getTrainerTraineeRows().length === 0 && (
                             <tr>
-                                <td colSpan={6} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No trainers or trainees found.</td>
+                                <td colSpan={7} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No trainers or trainees found.</td>
                             </tr>
                         )}
                         {getTrainerTraineeRows().map((row, idx) => (
@@ -781,6 +799,7 @@ const MixerOverview = ({
                                 </td>
                                 <td>{row.trainee || <span className="inactive-dash">—</span>}</td>
                                 <td>{row.traineePosition || <span className="inactive-dash">—</span>}</td>
+                                <td>{row.traineePlant ? getPlantName(row.traineePlant) : <span className="inactive-dash">—</span>}</td>
                             </tr>
                         ))}
                         </tbody>

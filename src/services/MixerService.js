@@ -182,10 +182,23 @@ export class MixerService {
         const currentMixer = prevMixerState || await this.getMixerById(id);
         if (!currentMixer) throw new Error(`Mixer with ID ${id} not found`);
 
+        let assignedOperator = mixer.assignedOperator ?? null;
+        let status = mixer.status;
+
+        if ((!assignedOperator || assignedOperator === '' || assignedOperator === '0') && status === 'Active') {
+            status = 'Spare';
+        }
+        if (assignedOperator && status !== 'Active') {
+            status = 'Active';
+        }
+        if (['In Shop', 'Retired', 'Spare'].includes(status) && assignedOperator) {
+            assignedOperator = null;
+        }
+
         const apiData = {
             truck_number: mixer.truckNumber,
             assigned_plant: mixer.assignedPlant,
-            assigned_operator: mixer.assignedOperator ?? null,
+            assigned_operator: assignedOperator,
             last_service_date: formatDate(mixer.lastServiceDate),
             last_chip_date: formatDate(mixer.lastChipDate),
             cleanliness_rating: mixer.cleanlinessRating,
@@ -193,19 +206,11 @@ export class MixerService {
             make: mixer.make,
             model: mixer.model,
             year: mixer.year,
-            status: mixer.status,
+            status: status,
             updated_at: new Date().toISOString(),
             updated_by: userId,
             updated_last: mixer.updatedLast ?? currentMixer.updatedLast
         };
-
-        if (apiData.assigned_operator && apiData.assigned_operator !== currentMixer.assignedOperator && apiData.status !== 'Active') {
-            apiData.status = 'Active';
-        }
-
-        if (['In Shop', 'Retired', 'Spare'].includes(apiData.status) && apiData.assigned_operator) {
-            apiData.assigned_operator = null;
-        }
 
         const {data, error} = await supabase
             .from(MIXERS_TABLE)
@@ -219,7 +224,7 @@ export class MixerService {
             throw error;
         }
 
-        const historyEntries = this._createHistoryEntries(id, currentMixer, mixer, userId);
+        const historyEntries = this._createHistoryEntries(id, currentMixer, {...mixer, assignedOperator, status}, userId);
         if (historyEntries.length) {
             const {error: historyError} = await supabase
                 .from(HISTORY_TABLE)

@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import './styles/ReportsSubmitView.css'
 import { supabase } from '../../../services/DatabaseService'
-import { getWeekRangeFromIso, getMondayAndSaturday } from './ReportsView'
+import { getWeekRangeFromIso } from './ReportsView'
+import { PlantManagerSubmitPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
+import { DistrictManagerSubmitPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
+import { PlantProductionSubmitPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
+import { UserService } from '../../../services/UserService'
+
+const plugins = {
+    plant_manager: PlantManagerSubmitPlugin,
+    district_manager: DistrictManagerSubmitPlugin,
+    plant_production: PlantProductionSubmitPlugin
+}
 
 const REPORTS_START_DATE = new Date('2025-07-20')
 
 function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly }) {
-    const [form, setForm] = useState(initialData || Object.fromEntries(report.fields.map(f => [f.name, ''])))
+    const [form, setForm] = useState(initialData || Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])))
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
@@ -20,6 +30,36 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [lostGrade, setLostGrade] = useState('')
     const [lostColor, setLostColor] = useState('')
     const [lostLabel, setLostLabel] = useState('')
+    const [carouselIndex, setCarouselIndex] = useState(0)
+    const [rowStep, setRowStep] = useState(0)
+    const [operatorOptions, setOperatorOptions] = useState([])
+    const [mixers, setMixers] = useState([])
+    const [plants, setPlants] = useState([])
+
+    useEffect(() => {
+        async function fetchPlants() {
+            const { data, error } = await supabase
+                .from('plants')
+                .select('plant_code,plant_name')
+                .order('plant_code', { ascending: true })
+            if (!error && Array.isArray(data)) {
+                const sorted = data
+                    .filter(p => p.plant_code && p.plant_name)
+                    .sort((a, b) => {
+                        const aNum = parseInt(a.plant_code, 10)
+                        const bNum = parseInt(b.plant_code, 10)
+                        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+                        return String(a.plant_code).localeCompare(String(b.plant_code))
+                    })
+                setPlants(sorted)
+            } else {
+                setPlants([])
+            }
+        }
+        if (report.name === 'plant_production') {
+            fetchPlants()
+        }
+    }, [report.name])
 
     useEffect(() => {
         async function fetchMaintenanceItems() {
@@ -49,6 +89,78 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         }
         fetchMaintenanceItems()
     }, [report.weekIso])
+
+    useEffect(() => {
+        if (report.name === 'plant_production' && !form.plant && user && plants.length > 0) {
+            setForm(f => ({ ...f, plant: plants[0]?.plant_code || '' }))
+        }
+    }, [report.name, form.plant, user, plants])
+
+    useEffect(() => {
+        async function fetchOperatorsAndMixers(plantCode) {
+            if (!plantCode) {
+                setOperatorOptions([])
+                setMixers([])
+                setForm(f => ({ ...f, rows: [] }))
+                return
+            }
+            const { data: operatorsData, error: opError } = await supabase
+                .from('operators')
+                .select('employee_id, name, status, plant_code, position')
+                .eq('plant_code', plantCode)
+                .eq('status', 'Active')
+                .eq('position', 'Mixer Operator')
+            let activeOperators = []
+            if (!opError && Array.isArray(operatorsData)) {
+                activeOperators = operatorsData
+                setOperatorOptions(
+                    operatorsData.map(u => ({
+                        value: u.employee_id,
+                        label: u.name
+                    }))
+                )
+            } else {
+                setOperatorOptions([])
+            }
+            const { data: mixersData, error: mixError } = await supabase
+                .from('mixers')
+                .select('assigned_operator, truck_number')
+                .eq('assigned_plant', plantCode)
+            let assignedMixers = []
+            if (!mixError && Array.isArray(mixersData)) {
+                assignedMixers = mixersData
+                setMixers(mixersData)
+            } else {
+                setMixers([])
+            }
+            if (report.name === 'plant_production' && !readOnly) {
+                const rows = []
+                activeOperators.forEach(op => {
+                    const mixer = assignedMixers.find(m => m.assigned_operator === op.employee_id)
+                    rows.push({
+                        name: op.employee_id,
+                        truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
+                        start_time: '',
+                        first_load: '',
+                        eod_in_yard: '',
+                        punch_out: '',
+                        loads: '',
+                        comments: ''
+                    })
+                })
+                setForm(f => ({ ...f, rows }))
+                setCarouselIndex(0)
+            }
+        }
+        if (report.name === 'plant_production') {
+            let plantCode = form.plant
+            if (!plantCode) {
+                setForm(f => ({ ...f, rows: [] }))
+                return
+            }
+            fetchOperatorsAndMixers(plantCode)
+        }
+    }, [report.name, form.plant, user, readOnly, plants])
 
     useEffect(() => {
         let yards = null
@@ -81,6 +193,19 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             ) {
                 lostVal = Number(form['yardage_lost'])
             }
+        }
+
+        if (lostVal !== null && lostVal < 0) {
+            lostVal = 0
+            let updatedForm = { ...form }
+            if (report.name === 'plant_manager' && typeof form.total_yards_lost !== 'undefined') {
+                updatedForm.total_yards_lost = 0
+            }
+            if (typeof form.yardage_lost !== 'undefined') updatedForm.yardage_lost = 0
+            if (typeof form.lost_yardage !== 'undefined') updatedForm.lost_yardage = 0
+            if (typeof form['Yardage Lost'] !== 'undefined') updatedForm['Yardage Lost'] = 0
+            if (typeof form['yardage_lost'] !== 'undefined') updatedForm['yardage_lost'] = 0
+            setForm(updatedForm)
         }
 
         const yphVal = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
@@ -129,8 +254,27 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setLostLabel(lostLabelVal)
     }, [form, report.name])
 
-    function handleChange(e, name) {
-        setForm({ ...form, [name]: e.target.value })
+    function handleChange(e, name, idx, colName) {
+        if (report.name === 'plant_production' && name === 'rows') {
+            const updatedRows = [...(form.rows || [])]
+            if (colName === 'name' || colName === 'truck_number') {
+                return
+            } else {
+                updatedRows[idx][colName] = e.target.value
+            }
+            setForm({ ...form, rows: updatedRows })
+            return
+        }
+        let value = e.target.value
+        if (
+            ['total_yards_lost', 'yardage_lost', 'lost_yardage', 'Yardage Lost', 'yardage_lost'].includes(name)
+            && value !== ''
+            && !isNaN(Number(value))
+            && Number(value) < 0
+        ) {
+            value = 0
+        }
+        setForm({ ...form, [name]: value })
     }
 
     async function handleSubmit(e) {
@@ -163,10 +307,20 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
     }
 
+    function getTruckNumberForOperator(row) {
+        if (row && row.truck_number) return row.truck_number
+        if (!row || !row.name) return ''
+        const mixer = mixers.find(m => m.assigned_operator === row.name)
+        if (mixer && mixer.truck_number) return mixer.truck_number
+        return ''
+    }
+
     let weekRange = ''
     if (report.weekIso) {
         weekRange = getWeekRangeFromIso(report.weekIso)
     }
+
+    const PluginComponent = plugins[report.name]
 
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
@@ -186,131 +340,388 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 </div>
                 <form className="report-form-body-wide" onSubmit={handleSubmit}>
                     <div className="report-form-fields-grid">
-                        {report.fields.map(field => (
-                            <div key={field.name} className="report-form-field-wide">
-                                <label>
-                                    {field.label}
-                                    {field.required && <span className="report-modal-required">*</span>}
-                                </label>
-                                {field.type === 'textarea' ? (
-                                    <textarea
-                                        value={form[field.name] || ''}
-                                        onChange={e => handleChange(e, field.name)}
-                                        required={field.required}
-                                        disabled={readOnly}
-                                    />
-                                ) : field.type === 'select' ? (
+                        {report.name === 'plant_production' ? (
+                            <>
+                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
+                                    <label>
+                                        Plant
+                                        <span className="report-modal-required">*</span>
+                                    </label>
                                     <select
-                                        value={form[field.name] || ''}
-                                        onChange={e => handleChange(e, field.name)}
-                                        required={field.required}
+                                        value={form.plant || ''}
+                                        onChange={e => setForm(f => ({ ...f, plant: e.target.value }))}
+                                        required
                                         disabled={readOnly}
+                                        style={{
+                                            background: 'var(--background)',
+                                            border: '1px solid var(--divider)',
+                                            borderRadius: 6,
+                                            fontSize: 15,
+                                            width: 220,
+                                            padding: '7px 10px',
+                                            color: 'var(--text-primary)',
+                                            marginBottom: 18
+                                        }}
+                                        className="plant-prod-input"
                                     >
-                                        <option value="">Select...</option>
-                                        {field.options?.map(opt => (
-                                            <option key={opt} value={opt}>{opt}</option>
+                                        <option value="">Select Plant...</option>
+                                        {plants.map(p => (
+                                            <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
                                         ))}
                                     </select>
-                                ) : (
+                                </div>
+                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
+                                    <label>
+                                        Report Date
+                                        <span className="report-modal-required">*</span>
+                                    </label>
                                     <input
-                                        type={field.type}
-                                        value={form[field.name] || ''}
-                                        onChange={e => handleChange(e, field.name)}
-                                        required={field.required}
+                                        type="date"
+                                        value={form.report_date || ''}
+                                        onChange={e => setForm(f => ({ ...f, report_date: e.target.value }))}
+                                        required
                                         disabled={readOnly}
+                                        style={{
+                                            background: 'var(--background)',
+                                            border: '1px solid var(--divider)',
+                                            borderRadius: 6,
+                                            fontSize: 15,
+                                            width: 180,
+                                            padding: '7px 10px',
+                                            color: 'var(--text-primary)',
+                                            marginBottom: 18
+                                        }}
+                                        className="plant-prod-input"
                                     />
-                                )}
-                            </div>
-                        ))}
+                                </div>
+                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
+                                    <label>Production Rows</label>
+                                    <div>
+                                        {form.plant && (form.rows || []).length === 0 && (
+                                            <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
+                                                No active operators for this plant.
+                                            </div>
+                                        )}
+                                        {!form.plant && (
+                                            <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
+                                                Please wait, loading plant assignment...
+                                            </div>
+                                        )}
+                                        {(form.rows || []).length > 0 && (
+                                            <div style={{ marginBottom: 18 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                    {form.rows.map((row, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            onClick={() => { setCarouselIndex(idx); setRowStep(0) }}
+                                                            style={{
+                                                                minWidth: 32,
+                                                                height: 32,
+                                                                borderRadius: 16,
+                                                                background: idx === carouselIndex ? 'var(--accent)' : 'var(--divider)',
+                                                                color: idx === carouselIndex ? 'var(--text-light)' : 'var(--text-secondary)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                cursor: 'pointer',
+                                                                border: idx === carouselIndex ? '2px solid var(--accent)' : '1px solid var(--divider)',
+                                                                transition: 'background 0.2s'
+                                                            }}
+                                                        >
+                                                            {idx + 1}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        border: '1px solid var(--divider)',
+                                                        borderRadius: 10,
+                                                        background: 'var(--background-elevated)',
+                                                        boxShadow: '0 1px 4px var(--shadow-sm)',
+                                                        padding: 0,
+                                                        color: 'var(--text-primary)',
+                                                        maxWidth: 600,
+                                                        margin: '0 auto'
+                                                    }}
+                                                >
+                                                    {form.rows[carouselIndex] && (
+                                                        <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Name</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={operatorOptions.find(opt => opt.value === form.rows[carouselIndex]?.name)?.label || ''}
+                                                                        disabled
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ width: 120 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Truck #</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={getTruckNumberForOperator(form.rows[carouselIndex])}
+                                                                        disabled
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Start Time</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="Start Time"
+                                                                        value={form.rows[carouselIndex]?.start_time || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>1st Load</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="1st Load"
+                                                                        value={form.rows[carouselIndex]?.first_load || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>EOD In Yard</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="EOD"
+                                                                        value={form.rows[carouselIndex]?.eod_in_yard || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Punch Out</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="Punch Out"
+                                                                        value={form.rows[carouselIndex]?.punch_out || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Total Loads</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        placeholder="Total Loads"
+                                                                        value={form.rows[carouselIndex]?.loads || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'loads')}
+                                                                        disabled={readOnly}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label style={{ fontWeight: 600, fontSize: 15 }}>Comments</label>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Comments"
+                                                                    value={form.rows[carouselIndex]?.comments || ''}
+                                                                    onChange={e => handleChange(e, 'rows', carouselIndex, 'comments')}
+                                                                    disabled={readOnly}
+                                                                    style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }}
+                                                                    className="plant-prod-input"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px 18px 24px' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
+                                                            disabled={carouselIndex === 0}
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                background: 'var(--accent)',
+                                                                color: 'var(--text-light)',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                padding: '6px 18px',
+                                                                cursor: carouselIndex === 0 ? 'not-allowed' : 'pointer',
+                                                                opacity: carouselIndex === 0 ? 0.5 : 1
+                                                            }}
+                                                        >
+                                                            &#8592; Prev Row
+                                                        </button>
+                                                        <span style={{ fontWeight: 600, fontSize: 15 }}>
+                                                            Row {carouselIndex + 1} of {form.rows.length}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCarouselIndex(i => Math.min(i + 1, form.rows.length - 1))}
+                                                            disabled={carouselIndex === form.rows.length - 1}
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                background: 'var(--accent)',
+                                                                color: 'var(--text-light)',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                padding: '6px 18px',
+                                                                cursor: carouselIndex === form.rows.length - 1 ? 'not-allowed' : 'pointer',
+                                                                opacity: carouselIndex === form.rows.length - 1 ? 0.5 : 1
+                                                            }}
+                                                        >
+                                                            Next Row &#8594;
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <style>
+                                    {`
+                                    .plant-prod-input::placeholder {
+                                        color: var(--text-primary);
+                                        opacity: 1;
+                                    }
+                                    `}
+                                </style>
+                            </>
+                        ) : (
+                            report.fields.map(field => (
+                                <div key={field.name} className="report-form-field-wide">
+                                    <label>
+                                        {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                        {field.required && <span className="report-modal-required">*</span>}
+                                    </label>
+                                    {field.type === 'textarea' ? (
+                                        <textarea
+                                            value={form[field.name] || ''}
+                                            onChange={e => handleChange(e, field.name)}
+                                            required={field.required}
+                                            disabled={readOnly}
+                                        />
+                                    ) : field.type === 'select' ? (
+                                        <select
+                                            value={form[field.name] || ''}
+                                            onChange={e => handleChange(e, field.name)}
+                                            required={field.required}
+                                            disabled={readOnly}
+                                        >
+                                            <option value="">Select...</option>
+                                            {field.options?.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type={field.type}
+                                            value={form[field.name] || ''}
+                                            onChange={e => handleChange(e, field.name)}
+                                            required={field.required}
+                                            disabled={readOnly}
+                                        />
+                                    )}
+                                </div>
+                            ))
+                        )}
                     </div>
-                    {report.name === 'district_manager' && maintenanceItems.length > 0 && (
-                        <div style={{ marginTop: 32, marginBottom: 16 }}>
-                            <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
-                                Items Completed This Week
-                            </div>
-                            <div className="list-view-table">
-                                <div className="list-view-header">
-                                    <div className="list-column description">Description</div>
-                                    <div className="list-column plant">Plant</div>
-                                    <div className="list-column deadline">Deadline</div>
-                                    <div className="list-column completed-date">Completed</div>
-                                </div>
-                                <div className="list-view-rows">
-                                    {maintenanceItems.map(item => (
-                                        <div key={item.id} className={`list-view-row ${item.completed ? 'completed' : ''}`}>
-                                            <div className="list-column description left-align" title={item.description}>
-                                                <div style={{
-                                                    background: item.completed ? 'var(--success)' : item.isOverdue ? 'var(--error)' : 'var(--accent)',
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: '50%',
-                                                    display: 'inline-block',
-                                                    marginRight: 8,
-                                                    verticalAlign: 'middle'
-                                                }}></div>
-                                                {truncateText(item.description, 60)}
-                                            </div>
-                                            <div className="list-column plant" title={getPlantName(item.plant_code)}>
-                                                {truncateText(getPlantName(item.plant_code), 20)}
-                                            </div>
-                                            <div className="list-column deadline">
-                                                {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
-                                            </div>
-                                            <div className="list-column completed-date">
-                                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : ''}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {report.name === 'plant_manager' && (
-                        <div className="summary-tabs-container">
-                            <div className="summary-tabs">
-                                <button
-                                    type="button"
-                                    className={summaryTab === 'summary' ? 'active' : ''}
-                                    onClick={() => setSummaryTab('summary')}
-                                >
-                                    Summary
-                                </button>
-                            </div>
-                            {summaryTab === 'summary' && (
-                                <div className="summary-content" style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, alignItems: 'stretch' }}>
-                                    <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0 }}>
-                                        <div className="summary-metric-title">Yards per Man-Hour</div>
-                                        <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
-                                            {yph !== null ? yph.toFixed(2) : '--'}
-                                        </div>
-                                        <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
-                                            {yphLabel}
-                                        </div>
-                                        <div className="summary-metric-scale">
-                                            <span className={yphGrade === 'excellent' ? 'active' : ''}>Excellent</span>
-                                            <span className={yphGrade === 'good' ? 'active' : ''}>Good</span>
-                                            <span className={yphGrade === 'average' ? 'active' : ''}>Average</span>
-                                            <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
-                                        </div>
-                                    </div>
-                                    <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0 }}>
-                                        <div className="summary-metric-title">Yardage Lost</div>
-                                        <div className="summary-metric-value" style={{ color: 'var(--primary)' }}>
-                                            {lost !== null ? lost : '--'}
-                                        </div>
-                                        <div className="summary-metric-grade" style={{ color: 'var(--primary)' }}>
-                                            {lostLabel}
-                                        </div>
-                                        <div className="summary-metric-scale">
-                                            <span className={lostGrade === 'excellent' ? 'active' : ''}>Excellent</span>
-                                            <span className={lostGrade === 'good' ? 'active' : ''}>Good</span>
-                                            <span className={lostGrade === 'average' ? 'active' : ''}>Average</span>
-                                            <span className={lostGrade === 'poor' ? 'active' : ''}>Poor</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                    {PluginComponent && (
+                        <PluginComponent
+                            form={form}
+                            yph={yph}
+                            yphGrade={yphGrade}
+                            yphLabel={yphLabel}
+                            lost={lost}
+                            lostGrade={lostGrade}
+                            lostLabel={lostLabel}
+                            summaryTab={summaryTab}
+                            setSummaryTab={setSummaryTab}
+                            maintenanceItems={maintenanceItems}
+                            operatorOptions={operatorOptions}
+                        />
                     )}
                     {error && <div className="report-modal-error">{error}</div>}
                     {success && <div style={{ color: 'var(--success)', marginBottom: 8 }}>Report submitted successfully.</div>}
@@ -331,4 +742,3 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
 }
 
 export default ReportsSubmitView
-
