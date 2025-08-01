@@ -1,19 +1,19 @@
 import React, {useEffect, useState} from 'react'
-import {MixerService} from '../../../services/MixerService'
-import {MixerUtility} from '../../../utils/MixerUtility'
+import {TractorService} from '../../../services/TractorService'
+import {TractorUtility} from '../../../utils/TractorUtility'
 import {PlantService} from '../../../services/PlantService'
 import {supabase} from '../../../services/DatabaseService'
 import LoadingScreen from '../common/LoadingScreen'
-import './styles/MixerOverview.css'
+import './styles/TractorOverview.css'
 import { getWeekRangeFromIso } from '../reports/ReportsView'
 import { UserService } from '../../../services/UserService'
 
-const MixerOverview = ({
-    filteredMixers = null,
-    selectedPlant = '',
-    onStatusClick
-}) => {
-    const [mixers, setMixers] = useState([])
+const TractorOverview = ({
+                             filteredTractors = null,
+                             selectedPlant = '',
+                             onStatusClick
+                         }) => {
+    const [tractors, setTractors] = useState([])
     const [plants, setPlants] = useState([])
     const [operators, setOperators] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -36,13 +36,13 @@ const MixerOverview = ({
 
     useEffect(() => {
         fetchData()
-    }, [filteredMixers])
+    }, [filteredTractors])
 
     useEffect(() => {
-        if (filteredMixers && operators.length > 0) {
-            updateStatistics(filteredMixers)
+        if (filteredTractors && operators.length > 0) {
+            updateStatistics(filteredTractors)
         }
-    }, [filteredMixers, operators])
+    }, [filteredTractors, operators])
 
     useEffect(() => {
         const nameCount = {}
@@ -187,7 +187,7 @@ const MixerOverview = ({
                 lostLabel
             })
             if (yph === null || lost === null) {
-                setNotation('This information has been reported but is incompelte.')
+                setNotation('This information has been reported but is incomplete.')
             } else {
                 setNotation('The plant manager has reported these metrics.')
             }
@@ -294,51 +294,51 @@ const MixerOverview = ({
         })
         setPlantReportRange(lastReportRange)
         if (yph === null || lost === null) {
-            setNotation('This information has been reported but is incompelte.')
+            setNotation('This information has been reported but is incomplete.')
         } else {
             setNotation('The plant manager has reported these metrics.')
         }
     }
 
-    const updateStatistics = (mixersData) => {
-        const statsMixers = filteredMixers || mixersData
-        const statusCounts = MixerUtility.getStatusCounts(statsMixers)
+    const updateStatistics = (tractorsData) => {
+        const statsTractors = filteredTractors || tractorsData
+        const statusCounts = TractorUtility.getStatusCounts(statsTractors)
         setStatusCounts(statusCounts)
-        setPlantCounts(MixerUtility.getPlantCounts(statsMixers))
-        setCleanlinessAvg(MixerUtility.getCleanlinessAverage(statsMixers))
-        setNeedServiceCount(MixerUtility.getNeedServiceCount(statsMixers))
-        const totalNonRetired = statsMixers.filter(mixer => mixer.status !== 'Retired').length
-        const verified = statsMixers.filter(mixer => {
-            return MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy)
+        setPlantCounts(TractorUtility.getPlantCounts(statsTractors))
+        setCleanlinessAvg(TractorUtility.getCleanlinessAverage(statsTractors))
+        setNeedServiceCount(TractorUtility.getNeedServiceCount(statsTractors))
+        const totalNonRetired = statsTractors.filter(tractor => tractor.status !== 'Retired').length
+        const verified = statsTractors.filter(tractor => {
+            return TractorUtility.isVerified(tractor.updatedLast, tractor.updatedAt, tractor.updatedBy)
         }).length
-        const notVerified = statsMixers.length - verified
+        const notVerified = statsTractors.length - verified
         setVerifiedCount(verified)
         setNotVerifiedCount(notVerified)
         const assignedOperatorIds = new Set()
-        statsMixers
-            .filter(mixer => mixer.assignedOperator && mixer.assignedOperator !== '0')
-            .forEach(mixer => assignedOperatorIds.add(mixer.assignedOperator))
+        statsTractors
+            .filter(tractor => tractor.assignedOperator && tractor.assignedOperator !== '0')
+            .forEach(tractor => assignedOperatorIds.add(tractor.assignedOperator))
         const assignedOperators = operators.filter(op => assignedOperatorIds.has(op.employeeId))
         const trainingCount = assignedOperators.filter(op => op.assignedTrainer && op.assignedTrainer !== '0').length
         const trainersCount = assignedOperators.filter(op => op.isTrainer === true).length
         setTrainingCount(trainingCount)
         setTrainersCount(trainersCount)
-        calculatePlantDistributionByStatus(statsMixers)
+        calculatePlantDistributionByStatus(statsTractors)
         setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }))
-        let filteredForIssues = statsMixers
+        let filteredForIssues = statsTractors
         if (selectedPlant) {
-            filteredForIssues = statsMixers.filter(mixer => mixer.assignedPlant === selectedPlant)
+            filteredForIssues = statsTractors.filter(tractor => tractor.assignedPlant === selectedPlant)
         }
         setOpenMaintenanceIssues(
-            filteredForIssues.filter(mixer =>
-                mixer.issues?.some(issue => !issue.time_completed)
+            filteredForIssues.filter(tractor =>
+                tractor.issues?.some(issue => !issue.time_completed)
             ).length
         )
     }
 
-    const calculatePlantDistributionByStatus = (mixersData) => {
+    const calculatePlantDistributionByStatus = (tractorsData) => {
         const distribution = {}
-        const uniquePlants = [...new Set(mixersData.map(mixer => mixer.assignedPlant || 'Unassigned'))]
+        const uniquePlants = [...new Set(tractorsData.map(tractor => tractor.assignedPlant || 'Unassigned'))]
         uniquePlants.forEach(plant => {
             distribution[plant] = {
                 Total: 0,
@@ -347,9 +347,9 @@ const MixerOverview = ({
                 'In Shop': 0
             }
         })
-        mixersData.forEach(mixer => {
-            const plant = mixer.assignedPlant || 'Unassigned'
-            const status = mixer.status || 'Unknown'
+        tractorsData.forEach(tractor => {
+            const plant = tractor.assignedPlant || 'Unassigned'
+            const status = tractor.status || 'Unknown'
             distribution[plant].Total++
             if (['Active', 'Spare', 'In Shop', 'Retired'].includes(status)) {
                 distribution[plant][status]++
@@ -363,21 +363,21 @@ const MixerOverview = ({
     const fetchData = async () => {
         setIsLoading(true)
         try {
-            const mixersData = await MixerService.getAllMixers()
+            const tractorsData = await TractorService.getAllTractors()
             let maintenanceIssues = []
             try {
                 const { data, error } = await supabase
-                    .from('mixers_maintenance')
-                    .select('id, mixer_id, time_completed')
+                    .from('tractors_maintenance')
+                    .select('id, tractor_id, time_completed')
                 if (!error) {
                     maintenanceIssues = data || []
                 }
             } catch (maintenanceError) {}
-            const mixersWithMaintenance = mixersData.map(mixer => ({
-                ...mixer,
-                issues: maintenanceIssues.filter(issue => issue.mixer_id === mixer.id)
+            const tractorsWithMaintenance = tractorsData.map(tractor => ({
+                ...tractor,
+                issues: maintenanceIssues.filter(issue => issue.tractor_id === tractor.id)
             }))
-            setMixers(mixersWithMaintenance)
+            setTractors(tractorsWithMaintenance)
             const plantsData = await PlantService.fetchPlants()
             setPlants(plantsData)
             try {
@@ -398,8 +398,8 @@ const MixerOverview = ({
                     }))
                 setOperators(operatorsData || [])
             } catch (operatorsError) {}
-            if (!filteredMixers) {
-                updateStatistics(mixersWithMaintenance)
+            if (!filteredTractors) {
+                updateStatistics(tractorsWithMaintenance)
             }
         } catch (error) {
         } finally {
@@ -412,11 +412,11 @@ const MixerOverview = ({
     }
 
     const getTrainerTraineeRows = () => {
-        const relevantMixers = filteredMixers || mixers
+        const relevantTractors = filteredTractors || tractors
         const relevantOperatorIds = new Set()
-        relevantMixers.forEach(mixer => {
-            if (mixer.assignedOperator && mixer.assignedOperator !== '0') {
-                relevantOperatorIds.add(mixer.assignedOperator)
+        relevantTractors.forEach(tractor => {
+            if (tractor.assignedOperator && tractor.assignedOperator !== '0') {
+                relevantOperatorIds.add(tractor.assignedOperator)
             }
         })
         let filteredTrainers = operators.filter(op => op.isTrainer)
@@ -441,14 +441,14 @@ const MixerOverview = ({
             }
         })
         filteredTrainers.forEach(trainer => {
-            const assignedMixer = relevantMixers.find(
+            const assignedTractor = relevantTractors.find(
                 m => m.assignedOperator === trainer.employeeId
             )
             const trainerTrainees = filteredTrainees.filter(t => t.assignedTrainer === trainer.employeeId)
             const hasMultipleTrainees = trainerTraineeCount[trainer.employeeId] > 1
             if (trainerTrainees.length === 0) {
                 rows.push({
-                    truckNumber: assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : '',
+                    truckNumber: assignedTractor ? assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id : '',
                     trainer: trainer.name,
                     trainerPlant: trainer.plantCode,
                     trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '',
@@ -460,7 +460,7 @@ const MixerOverview = ({
             } else {
                 trainerTrainees.forEach(trainee => {
                     rows.push({
-                        truckNumber: assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : '',
+                        truckNumber: assignedTractor ? assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id : '',
                         trainer: trainer.name,
                         trainerPlant: trainer.plantCode,
                         trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '',
@@ -495,23 +495,23 @@ const MixerOverview = ({
 
     if (isLoading) {
         return (
-            <div className="mixer-overview">
-                <LoadingScreen message="Loading mixer data..." inline={true} />
+            <div className="tractor-overview">
+                <LoadingScreen message="Loading tractor data..." inline={true} />
             </div>
         )
     }
 
     return (
-        <div className="mixer-overview">
-            {filteredMixers && mixers.length !== filteredMixers.length && (
+        <div className="tractor-overview">
+            {filteredTractors && tractors.length !== filteredTractors.length && (
                 <div style={{textAlign: 'center', marginBottom: '10px'}}>
-                    <span className="filtered-indicator">(Filtered: {filteredMixers.length}/{mixers.length})</span>
+                    <span className="filtered-indicator">(Filtered: {filteredTractors.length}/{tractors.length})</span>
                 </div>
             )}
-            {filteredMixers && (
+            {filteredTractors && (
                 <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
-                        Showing statistics for {filteredMixers.length} mixer{filteredMixers.length !== 1 ? 's' : ''}
+                        Showing statistics for {filteredTractors.length} tractor{filteredTractors.length !== 1 ? 's' : ''}
                     </div>
                 </div>
             )}
@@ -568,7 +568,7 @@ const MixerOverview = ({
                             style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{statusCounts.Total || 0}</div>
-                            <div className="status-label">Total Mixers</div>
+                            <div className="status-label">Total Tractors</div>
                         </div>
                         <div
                             className="status-item clickable"
@@ -703,13 +703,13 @@ const MixerOverview = ({
                                     const aIsTractor = a.position === 'Tractor Operator';
                                     const bIsTractor = b.position === 'Tractor Operator';
                                     if (aIsTractor !== bIsTractor) {
-                                        return aIsTractor ? 1 : -1;
+                                        return aIsTractor ? -1 : 1;
                                     }
                                     return a.name.localeCompare(b.name);
                                 })
                                 .map(op => {
-                                    const mixerSource = filteredMixers || mixers;
-                                    const assignedMixer = mixerSource.find(m =>
+                                    const tractorSource = filteredTractors || tractors;
+                                    const assignedTractor = tractorSource.find(m =>
                                         m.assignedOperator === op.employeeId &&
                                         m.assignedPlant === selectedPlant
                                     );
@@ -720,11 +720,11 @@ const MixerOverview = ({
                                             <td className="plant-name">
                                                 <span style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
                                                     {op.name}
-                                                    {isTractorOperator && assignedMixer && (
+                                                    {isTractorOperator && assignedTractor && (
                                                         <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '6px'}}>
                                                             <i className="fas fa-exclamation-triangle tractor-warning-icon"></i>
                                                             <span className="trainer-warning-tooltip right-tooltip">
-                                                                Tractor Operator assigned to a mixer
+                                                                Tractor Operator assigned to a tractor
                                                             </span>
                                                         </span>
                                                     )}
@@ -740,7 +740,7 @@ const MixerOverview = ({
                                             </td>
                                             <td>{op.position || ''}</td>
                                             <td>
-                                                {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : <span className="inactive-dash">—</span>}
+                                                {assignedTractor ? assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id : <span className="inactive-dash">—</span>}
                                             </td>
                                         </tr>
                                     );
@@ -807,4 +807,4 @@ const MixerOverview = ({
     )
 }
 
-export default MixerOverview
+export default TractorOverview

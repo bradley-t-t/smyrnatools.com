@@ -1,0 +1,148 @@
+/* EquipmentCard.css */
+.equipment-card {
+    background-color: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid var(--border-light);
+}
+
+.equipment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.equipment-card:active {
+    transform: translateY(0px);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--bg-tertiary);
+}
+
+.equipment-card-content {
+    padding: 16px;
+    background-color: var(--bg-primary);
+}
+
+.equipment-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    max-width: 60%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.equipment-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.equipment-status-dot {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+    box-shadow: var(--shadow-sm);
+    z-index: 2;
+}
+
+.equipment-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.equipment-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 4px 0;
+    align-items: center;
+}
+
+.equipment-detail-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.equipment-detail-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.equipment-detail-value.overdue {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.equipment-comments-badge {
+    position: absolute;
+    top: 12px;
+    right: 92px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--comments-badge-bg);
+    color: var(--comments-badge-text);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.equipment-comment-icon {
+    margin-right: 4px;
+    font-size: 0.9rem;
+    color: var(--comments-badge-icon);
+}
+
+.equipment-issues-badge {
+    position: absolute;
+    top: 12px;
+    right: 42px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--danger);
+    color: var(--text-light);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.equipment-issues-badge i {
+    margin-right: 4px;
+    font-size: 0.9rem;
+}
+
+.equipment-stars-container {
+    display: inline-flex;
+    align-items: center;
+}
+
+.equipment-filled-star {
+    color: var(--accent);
+    margin-right: 2px;
+}
+
+.equipment-empty-star {
+    color: var(--divider);
+    margin-right: 2px;
+}

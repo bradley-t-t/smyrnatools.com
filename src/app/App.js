@@ -26,6 +26,9 @@ import TeamsView from '../front/components/teams/TeamsView';
 import OperatorScheduledOffView from '../front/components/operators/OperatorScheduledOffView';
 import ReportsView from '../front/components/reports/ReportsView';
 import ConnectionScreen from '../front/components/common/ConnectionScreen'
+import TractorsView from '../front/components/tractors/TractorsView';
+import TrailersView from '../front/components/trailers/TrailersView';
+import EquipmentsView from '../front/components/equipment/EquipmentsView';
 
 function AppContent() {
     const [userId, setUserId] = useState(null)
@@ -345,6 +348,33 @@ function AppContent() {
                 return <OperatorScheduledOffView operatorId={userId} />
             case 'Reports':
                 return <ReportsView />
+            case 'Tractors':
+                return (
+                    <TractorsView
+                        title="Tractor Fleet"
+                        showSidebar={false}
+                        setShowSidebar={() => {}}
+                        onSelectTractor={setSelectedTractor}
+                    />
+                )
+            case 'Trailers':
+                return (
+                    <TrailersView
+                        title="Trailer Fleet"
+                        showSidebar={false}
+                        setShowSidebar={() => {}}
+                        onSelectTrailer={() => {}}
+                    />
+                )
+            case 'Heavy Equipment':
+                return (
+                    <EquipmentsView
+                        title="Equipment Fleet"
+                        showSidebar={false}
+                        setShowSidebar={() => {}}
+                        onSelectEquipment={() => {}}
+                    />
+                )
             default:
                 return (
                     <div className="coming-soon">

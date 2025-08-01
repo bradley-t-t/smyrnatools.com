@@ -58,10 +58,10 @@ const getIconForMenuItem = (id) => {
 
 const menuItems = [
     {text: 'Mixers', id: 'Mixers', permission: 'mixers.view', alwaysVisible: false},
-    {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
     {text: 'Tractors', id: 'Tractors', permission: 'tractors.view', alwaysVisible: false},
     {text: 'Trailers', id: 'Trailers', permission: 'trailers.view', alwaysVisible: false},
-    {text: 'Heavy Equipment', id: 'Heavy Equipment', permission: 'heavy_equipment.view', alwaysVisible: false},
+    {text: 'Heavy Equipment', id: 'Heavy Equipment', permission: 'equipment.view', alwaysVisible: false},
+    {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
     {text: 'Operators', id: 'Operators', permission: 'operators.view', alwaysVisible: false},
     {text: 'Scheduled Off', id: 'ScheduledOff', permission: 'operators_scheduled_off.view', alwaysVisible: false},
     {text: 'Managers', id: 'Managers', permission: 'managers.view', alwaysVisible: false},
@@ -159,8 +159,8 @@ export default function Navigation({
                                 alt="Smyrna Logo"
                                 className="navbar-logo"
                                 title="Smyrna Ready Mix"
-                                width={35}
-                                height={35}
+                                width={40}
+                                height={40}
                                 style={{imageRendering: 'auto'}}
                                 draggable={false}
                                 decoding="async"
@@ -172,9 +172,9 @@ export default function Navigation({
                                 alt="Smyrna Logo"
                                 className="navbar-logo large"
                                 title="Smyrna Ready Mix"
-                                width={360}
-                                height={160}
-                                style={{imageRendering: 'auto'}}
+                                width={260}
+                                height={90}
+                                style={{imageRendering: 'auto', maxWidth: 260, maxHeight: 90, margin: 0, padding: 0}}
                                 draggable={false}
                                 decoding="async"
                                 loading="eager"
@@ -186,7 +186,7 @@ export default function Navigation({
                     <i className="fas fa-chevron-right collapse-icon"></i>
                 </button>
                 <nav className="navbar-menu">
-                    <ul>
+                    <ul style={!collapsed ? {padding: 0, margin: 0, gap: 0, rowGap: 0} : {}}>
                         {visibleMenuItems.map((item) => {
                             let isActive = false
                             if (item.id === 'List') {
@@ -197,7 +197,7 @@ export default function Navigation({
                             return (
                                 <li
                                     key={item.id}
-                                    className={`menu-item ${isActive ? 'active' : ''}`}
+                                    className={`menu-item ${isActive ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                                     onClick={() => {
                                         if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) {
                                             window.appSwitchView(item.id)
@@ -205,33 +205,48 @@ export default function Navigation({
                                             onSelectView(item.id)
                                         }
                                     }}
+                                    style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
                                 >
-                                    <span className="menu-icon" title={item.text}>
+                                    <span
+                                        className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
+                                        title={item.text}
+                                        style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}
+                                    >
                                         {getIconForMenuItem(item.id)}
                                     </span>
-                                    {!collapsed && <span className="menu-text">{item.text}</span>}
+                                    {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>{item.text}</span>}
                                 </li>
                             )
                         })}
                         <li
-                            className={`menu-item ${selectedView === 'Settings' ? 'active' : ''}`}
+                            className={`menu-item ${selectedView === 'Settings' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                             onClick={() => onSelectView('Settings')}
+                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
                         >
-                            <span className="menu-icon" title="Settings">
+                            <span
+                                className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
+                                title="Settings"
+                                style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}
+                            >
                                 {getIconForMenuItem('Settings')}
                             </span>
-                            {!collapsed && <span className="menu-text">Settings</span>}
+                            {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
                         </li>
                         <li
-                            className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''}`}
+                            className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                             onClick={() => onSelectView('MyAccount')}
+                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
                         >
-                            <span className="menu-icon" title="My Account">
+                            <span
+                                className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
+                                title="My Account"
+                                style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}
+                            >
                                 {getIconForMenuItem('MyAccount')}
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text">My Account</span>
+                                    <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
                                     {userName && <span className="user-name" style={{ paddingLeft: 0 }}>{userName}</span>}
                                 </div>
                             )}

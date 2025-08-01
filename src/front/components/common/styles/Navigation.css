@@ -39,11 +39,11 @@
     padding: 12px 16px 8px;
     font-size: 12px;
     text-transform: uppercase;
-    color: #757575;
+    color: var(--text-secondary);
     letter-spacing: 0.5px;
     font-weight: 600;
-    background-color: #f9f9f9;
-    border-bottom: 1px solid #eee;
+    background: none;
+    border-bottom: none;
     margin-top: 8px;
 }
 
@@ -105,7 +105,7 @@
 .collapse-btn {
     background: none;
     border: none;
-    color: #718096;
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 18px;
     padding: 4px 8px;
@@ -114,7 +114,7 @@
 }
 
 .collapse-btn:hover {
-    background-color: #f7fafc;
+    background-color: var(--bg-navbar-hover);
 }
 
 .navbar-menu {
@@ -135,53 +135,54 @@
 .menu-item {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
+    padding: 7px 10px;
     cursor: pointer;
     transition: background-color 0.2s;
-    gap: 12px;
+    gap: 8px;
     border-left: 3px solid transparent;
 }
 
-.vertical-navbar:not(.collapsed) .menu-item {
-    display: flex;
+.menu-item-collapsed {
+    justify-content: center;
     align-items: center;
-}
-
-.menu-item:hover {
-    background-color: rgba(49, 130, 206, 0.05);
-}
-
-.menu-item.active {
-    background-color: rgba(var(--accent-primary-rgb, 0, 56, 150), 0.1);
-    border-left: 3px solid var(--accent-primary);
+    padding: 0;
+    margin: 10px 0;
+    height: 40px;
+    width: 100%;
 }
 
 .menu-icon {
-    font-size: 18px;
+    font-size: 17px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
+    width: 22px;
+}
+
+.menu-icon-collapsed {
+    font-size: 19px;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .vertical-navbar:not(.collapsed) .menu-icon {
-    color: #333333;
+    color: var(--text-primary);
     opacity: 1;
-    font-size: 18px;
-    margin-right: 5px;
+    font-size: 15px;
+    margin-right: 8px;
 }
 
 .menu-text {
-    font-size: 16px;
-    color: #4a5568;
+    font-size: 15px;
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
 .vertical-navbar:not(.collapsed) .menu-text {
-    display: inline-block;
-    opacity: 1;
-    visibility: visible;
-    font-weight: 500;
+    font-size: 14px;
 }
 
 .menu-item.active .menu-text {
@@ -201,29 +202,29 @@
 }
 
 .user-name {
-    font-size: 12px;
-    color: #bdc3c7;
-    margin-top: 5px;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     line-height: 1.2;
     display: block;
-    padding-left: 15px;
+    padding-left: 12px;
 }
 
 .navbar-menu ul li:nth-last-child(2) {
     margin-top: auto;
-    border-top: 1px solid #e0e0e0;
-    padding-top: 15px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
 }
 
 .content-area {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
-    background-color: #f7fafc;
+    padding: 18px;
+    background-color: var(--bg-content);
     transition: margin-left 0.3s ease;
 }
 

@@ -27,6 +27,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
     const [weekRange, setWeekRange] = useState('')
     const [submittedAt, setSubmittedAt] = useState('')
     const [summaryTab, setSummaryTab] = useState('summary')
+    const [operatorOptions, setOperatorOptions] = useState([])
 
     useEffect(() => {
         async function fetchOwnerName() {
@@ -87,6 +88,38 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
             setForm(initialData)
         }
     }, [initialData])
+
+    useEffect(() => {
+        async function fetchOperatorOptions() {
+            if (report.name !== 'plant_production') {
+                setOperatorOptions([])
+                return
+            }
+            let plantCode = form.plant
+            if (!plantCode && Array.isArray(form.rows) && form.rows.length > 0) {
+                plantCode = form.rows[0].plant_code
+            }
+            if (!plantCode) {
+                setOperatorOptions([])
+                return
+            }
+            const { data: operatorsData, error: opError } = await supabase
+                .from('operators')
+                .select('employee_id, name')
+                .eq('plant_code', plantCode)
+            if (!opError && Array.isArray(operatorsData)) {
+                setOperatorOptions(
+                    operatorsData.map(u => ({
+                        value: u.employee_id,
+                        label: u.name
+                    }))
+                )
+            } else {
+                setOperatorOptions([])
+            }
+        }
+        fetchOperatorOptions()
+    }, [report.name, form.plant, form.rows])
 
     function getPlantName(plantCode) {
         return plantCode || 'No Plant'
@@ -184,7 +217,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                     )}
                 </div>
                 <div className="report-form-body-wide">
-                    {report.name === 'plant_production' && (
+                    {report.name === 'plant_production' ? (
                         <div className="report-form-field-wide" style={{ marginBottom: 18 }}>
                             <label>Report Date</label>
                             <input
@@ -204,29 +237,30 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                                 className="plant-prod-input"
                             />
                         </div>
+                    ) : (
+                        <div className="report-form-fields-grid">
+                            {report.fields.map(field => (
+                                <div key={field.name} className="report-form-field-wide">
+                                    <label>
+                                        {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                        {field.required && <span className="report-modal-required">*</span>}
+                                    </label>
+                                    {field.type === 'textarea' ? (
+                                        <textarea value={form[field.name] || ''} readOnly disabled />
+                                    ) : field.type === 'select' ? (
+                                        <select value={form[field.name] || ''} readOnly disabled>
+                                            <option value="">Select...</option>
+                                            {field.options?.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input type={field.type} value={form[field.name] || ''} readOnly disabled />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     )}
-                    <div className="report-form-fields-grid">
-                        {report.fields.map(field => (
-                            <div key={field.name} className="report-form-field-wide">
-                                <label>
-                                    {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                    {field.required && <span className="report-modal-required">*</span>}
-                                </label>
-                                {field.type === 'textarea' ? (
-                                    <textarea value={form[field.name] || ''} readOnly disabled />
-                                ) : field.type === 'select' ? (
-                                    <select value={form[field.name] || ''} readOnly disabled>
-                                        <option value="">Select...</option>
-                                        {field.options?.map(opt => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <input type={field.type} value={form[field.name] || ''} readOnly disabled />
-                                )}
-                            </div>
-                        ))}
-                    </div>
                     {PluginComponent && (
                         <PluginComponent
                             form={form}
@@ -239,6 +273,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                             summaryTab={summaryTab}
                             setSummaryTab={setSummaryTab}
                             maintenanceItems={maintenanceItems}
+                            operatorOptions={operatorOptions}
                         />
                     )}
                 </div>

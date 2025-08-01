@@ -16,7 +16,12 @@ const plugins = {
 const REPORTS_START_DATE = new Date('2025-07-20')
 
 function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly }) {
-    const [form, setForm] = useState(initialData || Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])))
+    const [form, setForm] = useState(() => {
+        if (initialData) {
+            return { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData }
+        }
+        return Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : '']))
+    })
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
@@ -35,6 +40,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [operatorOptions, setOperatorOptions] = useState([])
     const [mixers, setMixers] = useState([])
     const [plants, setPlants] = useState([])
+    const [excludedOperators, setExcludedOperators] = useState([])
 
     useEffect(() => {
         async function fetchPlants() {
@@ -134,22 +140,24 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 setMixers([])
             }
             if (report.name === 'plant_production' && !readOnly) {
-                const rows = []
-                activeOperators.forEach(op => {
-                    const mixer = assignedMixers.find(m => m.assigned_operator === op.employee_id)
-                    rows.push({
-                        name: op.employee_id,
-                        truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
-                        start_time: '',
-                        first_load: '',
-                        eod_in_yard: '',
-                        punch_out: '',
-                        loads: '',
-                        comments: ''
+                if ((!initialData || !initialData.rows || initialData.rows.length === 0) && (!form.rows || form.rows.length === 0)) {
+                    const rows = []
+                    activeOperators.forEach(op => {
+                        const mixer = assignedMixers.find(m => m.assigned_operator === op.employee_id)
+                        rows.push({
+                            name: op.employee_id,
+                            truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
+                            start_time: '',
+                            first_load: '',
+                            eod_in_yard: '',
+                            punch_out: '',
+                            loads: '',
+                            comments: ''
+                        })
                     })
-                })
-                setForm(f => ({ ...f, rows }))
-                setCarouselIndex(0)
+                    setForm(f => ({ ...f, rows }))
+                    setCarouselIndex(0)
+                }
             }
         }
         if (report.name === 'plant_production') {
@@ -161,6 +169,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             fetchOperatorsAndMixers(plantCode)
         }
     }, [report.name, form.plant, user, readOnly, plants])
+
+    useEffect(() => {
+        if (initialData && initialData.rows && initialData.rows.length > 0) {
+            setForm(f => ({ ...f, rows: initialData.rows }))
+        }
+    }, [initialData])
 
     useEffect(() => {
         let yards = null
@@ -254,6 +268,15 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setLostLabel(lostLabelVal)
     }, [form, report.name])
 
+    useEffect(() => {
+        if (report.name === 'plant_production' && Array.isArray(form.rows) && Array.isArray(operatorOptions)) {
+            const excluded = operatorOptions
+                .filter(opt => !(form.rows || []).some(row => row.name === opt.value))
+                .map(opt => opt.value)
+            setExcludedOperators(excluded)
+        }
+    }, [form.rows, operatorOptions, report.name])
+
     function handleChange(e, name, idx, colName) {
         if (report.name === 'plant_production' && name === 'rows') {
             const updatedRows = [...(form.rows || [])]
@@ -321,6 +344,40 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     }
 
     const PluginComponent = plugins[report.name]
+
+    function handleExcludeOperator(idx) {
+        const updatedRows = [...(form.rows || [])]
+        if (updatedRows[idx]) {
+            updatedRows.splice(idx, 1)
+        }
+        let newIndex = carouselIndex
+        if (newIndex >= updatedRows.length) {
+            newIndex = Math.max(0, updatedRows.length - 1)
+        }
+        setForm({ ...form, rows: updatedRows })
+        setCarouselIndex(newIndex)
+    }
+
+    function handleReincludeOperator(operatorId) {
+        if (!operatorId) return
+        const op = operatorOptions.find(opt => opt.value === operatorId)
+        const mixer = mixers.find(m => m.assigned_operator === operatorId)
+        const newRow = {
+            name: operatorId,
+            truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
+            start_time: '',
+            first_load: '',
+            eod_in_yard: '',
+            punch_out: '',
+            loads: '',
+            comments: ''
+        }
+        setForm(f => ({
+            ...f,
+            rows: [...(f.rows || []), newRow]
+        }))
+        setCarouselIndex((form.rows || []).length)
+    }
 
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
@@ -617,6 +674,23 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px 18px 24px' }}>
                                                         <button
                                                             type="button"
+                                                            onClick={() => handleExcludeOperator(carouselIndex)}
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                background: 'var(--divider)',
+                                                                color: 'var(--text-primary)',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                padding: '6px 18px',
+                                                                cursor: 'pointer',
+                                                                marginRight: 12
+                                                            }}
+                                                        >
+                                                            Exclude Operator
+                                                        </button>
+                                                        <button
+                                                            type="button"
                                                             onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
                                                             disabled={carouselIndex === 0}
                                                             style={{
@@ -655,6 +729,37 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                             Next Row &#8594;
                                                         </button>
                                                     </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {excludedOperators.length > 0 && (
+                                            <div style={{ marginTop: 18, marginBottom: 18 }}>
+                                                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>
+                                                    Excluded Operators
+                                                </div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                    {excludedOperators.map(opId => {
+                                                        const op = operatorOptions.find(opt => opt.value === opId)
+                                                        return (
+                                                            <button
+                                                                key={opId}
+                                                                type="button"
+                                                                onClick={() => handleReincludeOperator(opId)}
+                                                                style={{
+                                                                    background: 'var(--divider)',
+                                                                    color: 'var(--text-primary)',
+                                                                    border: 'none',
+                                                                    borderRadius: 6,
+                                                                    padding: '6px 14px',
+                                                                    fontWeight: 600,
+                                                                    fontSize: 15,
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                {op ? op.label : opId} (Re-include)
+                                                            </button>
+                                                        )
+                                                    })}
                                                 </div>
                                             </div>
                                         )}

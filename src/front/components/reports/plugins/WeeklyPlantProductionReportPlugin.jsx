@@ -11,6 +11,12 @@ function getRows(form) {
     return Array.isArray(form.rows) ? form.rows : []
 }
 
+function isExcludedRow(row) {
+    if (!row) return true
+    const keys = Object.keys(row).filter(k => k !== 'name' && k !== 'truck_number')
+    return keys.every(k => row[k] === '' || row[k] === undefined || row[k] === null || row[k] === 0)
+}
+
 function getInsights(rows) {
     let totalLoads = 0
     let totalHours = 0
@@ -22,7 +28,9 @@ function getInsights(rows) {
     let loadsPerHourSum = 0
     let loadsPerHourCount = 0
 
-    rows.forEach((row, idx) => {
+    const includedRows = rows.filter(row => !isExcludedRow(row))
+
+    includedRows.forEach((row, idx) => {
         const start = parseTimeToMinutes(row.start_time)
         const firstLoad = parseTimeToMinutes(row.first_load)
         const punchOut = parseTimeToMinutes(row.punch_out)
@@ -44,7 +52,7 @@ function getInsights(rows) {
                 countElapsedStart++
                 if (elapsed > 15) {
                     warnings.push({
-                        row: idx,
+                        row: rows.indexOf(row),
                         message: `Start to 1st Load is ${elapsed} min (> 15 min)`
                     })
                 }
@@ -56,6 +64,12 @@ function getInsights(rows) {
             if (!isNaN(elapsed)) {
                 totalElapsedEnd += elapsed
                 countElapsedEnd++
+                if (elapsed > 15) {
+                    warnings.push({
+                        row: rows.indexOf(row),
+                        message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
+                    })
+                }
             }
         }
 
@@ -63,13 +77,41 @@ function getInsights(rows) {
             loadsPerHourSum += loads / hours
             loadsPerHourCount++
         }
+
+        if (!isNaN(loads) && loads < 3) {
+            warnings.push({
+                row: rows.indexOf(row),
+                message: `Total Loads is ${loads} (< 3)`
+            })
+        }
+
+        if (hours !== null && hours > 14) {
+            warnings.push({
+                row: rows.indexOf(row),
+                message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`
+            })
+        }
     })
 
     const avgElapsedStart = countElapsedStart ? totalElapsedStart / countElapsedStart : null
     const avgElapsedEnd = countElapsedEnd ? totalElapsedEnd / countElapsedEnd : null
-    const avgLoads = rows.length ? totalLoads / rows.length : null
-    const avgHours = rows.length ? totalHours / rows.length : null
+    const avgLoads = includedRows.length ? totalLoads / includedRows.length : null
+    const avgHours = includedRows.length ? totalHours / includedRows.length : null
     const avgLoadsPerHour = loadsPerHourCount ? loadsPerHourSum / loadsPerHourCount : null
+
+    let avgWarnings = []
+    if (avgElapsedStart !== null && avgElapsedStart > 15) {
+        avgWarnings.push(`Avg Start to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`)
+    }
+    if (avgElapsedEnd !== null && avgElapsedEnd > 15) {
+        avgWarnings.push(`Avg EOD to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`)
+    }
+    if (avgLoads !== null && avgLoads < 3) {
+        avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`)
+    }
+    if (avgHours !== null && avgHours > 14) {
+        avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`)
+    }
 
     return {
         totalLoads,
@@ -79,7 +121,8 @@ function getInsights(rows) {
         avgLoads,
         avgHours,
         avgLoadsPerHour,
-        warnings
+        warnings,
+        avgWarnings
     }
 }
 
@@ -133,13 +176,28 @@ function WarningCard({ message }) {
 
 function getOperatorName(row, operatorOptions) {
     if (!row || !row.name) return ''
-    const found = Array.isArray(operatorOptions)
-        ? operatorOptions.find(opt => opt.value === row.name)
-        : null
-    return found ? found.label : row.name
+    if (Array.isArray(operatorOptions)) {
+        const found = operatorOptions.find(opt => opt.value === row.name)
+        if (found) return found.label
+    }
+    if (row.displayName) return row.displayName
+    return row.name
 }
 
 function RowCard({ row, idx, elapsedStart, elapsedEnd, totalHours, warning, operatorOptions }) {
+    let warnings = []
+    if (elapsedStart !== null && elapsedStart > 15) {
+        warnings.push(`Start to 1st Load is ${elapsedStart} min (> 15 min)`)
+    }
+    if (elapsedEnd !== null && elapsedEnd > 15) {
+        warnings.push(`EOD to Punch Out is ${elapsedEnd} min (> 15 min)`)
+    }
+    if (totalHours !== null && totalHours > 14) {
+        warnings.push(`Total Hours is ${totalHours.toFixed(2)} (> 14 hours)`)
+    }
+    if (warning && !warnings.includes(warning.message)) {
+        warnings.push(warning.message)
+    }
     return (
         <div
             style={{
@@ -176,9 +234,9 @@ function RowCard({ row, idx, elapsedStart, elapsedEnd, totalHours, warning, oper
                 <StatCard label="Elapsed (Start→1st)" value={elapsedStart !== null ? `${elapsedStart} min` : '--'} highlight={elapsedStart > 15} />
                 <StatCard label="EOD In Yard" value={row.eod_in_yard || '--'} />
                 <StatCard label="Punch Out" value={row.punch_out || '--'} />
-                <StatCard label="Elapsed (EOD→Punch)" value={elapsedEnd !== null ? `${elapsedEnd} min` : '--'} />
-                <StatCard label="Total Loads" value={row.loads || '--'} />
-                <StatCard label="Total Hours" value={totalHours !== null ? totalHours.toFixed(2) : '--'} />
+                <StatCard label="Elapsed (EOD→Punch)" value={elapsedEnd !== null ? `${elapsedEnd} min` : '--'} highlight={elapsedEnd > 15} />
+                <StatCard label="Total Loads" value={row.loads || '--'} highlight={row.loads !== undefined && row.loads !== '' && Number(row.loads) < 3} />
+                <StatCard label="Total Hours" value={totalHours !== null ? totalHours.toFixed(2) : '--'} highlight={totalHours !== null && totalHours > 14} />
                 <StatCard label="Loads/Hour" value={(row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : '--'} />
             </div>
             {row.comments && (
@@ -190,30 +248,41 @@ function RowCard({ row, idx, elapsedStart, elapsedEnd, totalHours, warning, oper
                     <span style={{ fontWeight: 500 }}>Comments:</span> {row.comments}
                 </div>
             )}
-            {warning && <WarningCard message={warning.message} />}
+            {warnings.map((msg, i) => (
+                <WarningCard key={i} message={msg} />
+            ))}
         </div>
     )
 }
 
 function CardAverages({ insights }) {
     return (
-        <div
-            style={{
-                marginTop: 18,
-                marginBottom: 24,
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 0,
-                justifyContent: 'center'
-            }}
-        >
-            <StatCard label="Total Loads" value={insights.totalLoads} />
-            <StatCard label="Total Hours" value={insights.totalHours !== null ? insights.totalHours.toFixed(2) : '--'} />
-            <StatCard label="Avg Loads" value={insights.avgLoads !== null ? insights.avgLoads.toFixed(2) : '--'} />
-            <StatCard label="Avg Hours" value={insights.avgHours !== null ? insights.avgHours.toFixed(2) : '--'} />
-            <StatCard label="Avg Loads/Hour" value={insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'} />
-            <StatCard label="Avg Elapsed (Start→1st)" value={insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'} />
-            <StatCard label="Avg Elapsed (EOD→Punch)" value={insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'} />
+        <div>
+            {insights.avgWarnings && insights.avgWarnings.length > 0 && (
+                <div>
+                    {insights.avgWarnings.map((msg, i) => (
+                        <WarningCard key={i} message={msg} />
+                    ))}
+                </div>
+            )}
+            <div
+                style={{
+                    marginTop: 18,
+                    marginBottom: 24,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 0,
+                    justifyContent: 'center'
+                }}
+            >
+                <StatCard label="Total Loads" value={insights.totalLoads} />
+                <StatCard label="Total Hours" value={insights.totalHours !== null ? insights.totalHours.toFixed(2) : '--'} />
+                <StatCard label="Avg Loads" value={insights.avgLoads !== null ? insights.avgLoads.toFixed(2) : '--'} />
+                <StatCard label="Avg Hours" value={insights.avgHours !== null ? insights.avgHours.toFixed(2) : '--'} />
+                <StatCard label="Avg Loads/Hour" value={insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'} />
+                <StatCard label="Avg Elapsed (Start→1st)" value={insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'} />
+                <StatCard label="Avg Elapsed (EOD→Punch)" value={insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'} />
+            </div>
         </div>
     )
 }

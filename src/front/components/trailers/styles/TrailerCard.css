@@ -1,0 +1,217 @@
+/* TrailerCard.css */
+.trailer-card {
+    background-color: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid var(--border-light);
+}
+
+.trailer-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.trailer-card:active {
+    transform: translateY(0px);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--bg-tertiary);
+}
+
+.trailer-card-content {
+    padding: 16px;
+    background-color: var(--bg-primary);
+}
+
+.trailer-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    max-width: 60%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.trailer-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.trailer-status-dot {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+    box-shadow: var(--shadow-sm);
+    z-index: 2;
+}
+
+.trailer-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.trailer-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 4px 0;
+    align-items: center;
+}
+
+.trailer-detail-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.trailer-detail-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.trailer-detail-value.overdue {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.trailer-warning-badge {
+    color: var(--warning);
+    margin-left: 5px;
+}
+
+.trailer-comments-badge {
+    position: absolute;
+    top: 12px;
+    right: 92px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--comments-badge-bg);
+    color: var(--comments-badge-text);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.trailer-comment-icon {
+    margin-right: 4px;
+    font-size: 0.9rem;
+    color: var(--comments-badge-icon);
+}
+
+.trailer-issues-badge {
+    position: absolute;
+    top: 12px;
+    right: 42px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--danger);
+    color: var(--text-light);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.trailer-issues-badge i {
+    margin-right: 4px;
+    font-size: 0.9rem;
+}
+
+.trailer-verification-flag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: var(--danger);
+    font-size: 1.2rem;
+    z-index: 5;
+}
+
+.trailer-days-ago {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+.trailer-empty-star {
+    color: var(--divider);
+}
+
+.trailer-card-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.trailer-delete-button {
+    background-color: var(--danger-bg);
+    color: var(--danger);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.trailer-delete-button:hover {
+    background-color: var(--danger-bg-hover);
+}
+
+.trailer-stars-container {
+    display: inline-flex;
+    align-items: center;
+}
+
+.trailer-filled-star {
+    color: var(--accent);
+    margin-right: 2px;
+}
+
+.trailer-empty-star {
+    color: var(--divider);
+    margin-right: 2px;
+}
+
+.trailer-creation-info,
+.trailer-update-info {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-top: 1px dashed var(--divider);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.trailer-time-value {
+    font-size: 0.8rem;
+    max-width: 180px;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.trailer-status-value {
+    display: inline-block;
+    padding-right: 5px;
+}

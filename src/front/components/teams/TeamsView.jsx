@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../../services/DatabaseService';
 import ThemeUtility from '../../../utils/ThemeUtility';
 import OperatorCard from '../operators/OperatorCard';
@@ -59,33 +59,29 @@ function TeamsView() {
     const [currentUserId, setCurrentUserId] = useState('');
     const [showOverview, setShowOverview] = useState(false);
     const [scheduledOff, setScheduledOff] = useState({});
-    const defaultPlantSet = useRef(false);
 
     useEffect(() => {
-        async function fetchCurrentUser() {
+        async function fetchCurrentUserAndPlant() {
             const user = await UserService.getCurrentUser();
             if (user && user.id) {
                 setCurrentUserId(user.id);
+                const plant = await UserService.getUserPlant(user.id);
+                setUserPlant(plant || '');
+                setSelectedPlant(plant || '');
             } else {
                 setCurrentUserId('');
-                console.warn('TeamsView: getCurrentUser() did not return a valid user');
             }
         }
-        fetchCurrentUser();
+        fetchCurrentUserAndPlant();
     }, []);
 
     useEffect(() => {
-        async function fetchPlantsAndUserPlant() {
+        async function fetchPlants() {
             const { data: plantData } = await supabase.from(PLANTS_TABLE).select('plant_code, plant_name');
             setPlants(plantData || []);
-            if (currentUserId) {
-                const plant = await UserService.getUserPlant(currentUserId);
-                setUserPlant(plant || '');
-                setSelectedPlant(plant || '');
-            }
         }
-        fetchPlantsAndUserPlant();
-    }, [currentUserId]);
+        fetchPlants();
+    }, []);
 
     useEffect(() => {
         async function checkPermission() {
@@ -98,18 +94,22 @@ function TeamsView() {
     }, [currentUserId]);
 
     useEffect(() => {
-        if (!selectedPlant) {
-            setOperators([]);
-            setTeams({ A: [], B: [] });
-            return;
-        }
         setLoading(true);
         async function fetchOperatorsAndTeams() {
-            const { data: ops } = await supabase
-                .from(OPERATORS_TABLE)
-                .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
-                .eq('plant_code', selectedPlant);
-            const filteredOps = (ops || [])
+            let ops;
+            if (!selectedPlant) {
+                const { data } = await supabase
+                    .from(OPERATORS_TABLE)
+                    .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date');
+                ops = data || [];
+            } else {
+                const { data } = await supabase
+                    .from(OPERATORS_TABLE)
+                    .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
+                    .eq('plant_code', selectedPlant);
+                ops = data || [];
+            }
+            const filteredOps = ops
                 .filter(op =>
                     (!statusFilter || op.status === statusFilter)
                 )
@@ -186,11 +186,20 @@ function TeamsView() {
             .eq('employee_id', draggedOperator.employee_id);
         setDraggedOperator(null);
         setDragOverTeam(null);
-        const { data: ops } = await supabase
-            .from(OPERATORS_TABLE)
-            .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
-            .eq('plant_code', selectedPlant);
-         const filteredOps = (ops || [])
+        let ops;
+        if (!selectedPlant) {
+            const { data } = await supabase
+                .from(OPERATORS_TABLE)
+                .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date');
+            ops = data || [];
+        } else {
+            const { data } = await supabase
+                .from(OPERATORS_TABLE)
+                .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
+                .eq('plant_code', selectedPlant);
+            ops = data || [];
+        }
+        const filteredOps = ops
             .filter(op =>
                 (!statusFilter || op.status === statusFilter)
             )
@@ -234,32 +243,20 @@ function TeamsView() {
 
     return (
         <div className="dashboard-container teams-view">
-            {}
             {!canEditPlant && selectedPlant !== '' && (
-                <div style={{
-                    background: '#fffbe6',
-                    color: '#b7791f',
-                    border: '1px solid #f6e05e',
-                    borderRadius: 8,
-                    padding: '10px 16px',
-                    marginBottom: 12,
-                    fontSize: 15,
-                    fontWeight: 500
-                }}>
-                    <i className="fas fa-lock" style={{ marginRight: 8 }}></i>
+                <div className="teams-warning">
+                    <i className="fas fa-lock"></i>
                     You can only edit teams for your assigned plant.
                 </div>
             )}
             <div className="dashboard-header">
-                <h1 style={{
+                <h1 className="teams-title" style={{
                     color: ThemeUtility.color,
                     fontSize: 28,
                     fontWeight: 700,
                     margin: 0
                 }}>Teams</h1>
-                <div className="dashboard-actions">
-                    {}
-                </div>
+                <div className="dashboard-actions"></div>
             </div>
             <div className="search-filters">
                 <div className="search-bar">
@@ -284,6 +281,7 @@ function TeamsView() {
                             onChange={e => setSelectedPlant(e.target.value)}
                             aria-label="Filter by plant"
                         >
+                            <option value="">All Plants</option>
                             {plants
                                 .sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'))
                                 .map(plant => (
@@ -307,7 +305,7 @@ function TeamsView() {
                     {(selectedPlant && selectedPlant !== userPlant) || (statusFilter && statusFilter !== 'Active') ? (
                         <button className="filter-reset-button" onClick={() => {
                             setSearchText('');
-                            setSelectedPlant(userPlant || '');
+                            setSelectedPlant('');
                             setStatusFilter('Active');
                         }}>
                             <i className="fas fa-undo"></i> Reset Filters
@@ -322,12 +320,11 @@ function TeamsView() {
             <div className="content-container teams-split-table">
                 {loading ? (
                     <LoadingScreen message="Loading teams..." inline={true} />
-                ) : !selectedPlant ? (
+                ) : !selectedPlant && operators.length === 0 ? (
                     <LoadingScreen message="Loading teams..." inline={true} />
                 ) : (
                     <>
                         <div className="teams-split-cards">
-                            {}
                             <div
                                 className={`team-card team-A${dragOverTeam === 'A' ? ' drag-over' : ''}`}
                                 onDragOver={e => { e.preventDefault(); handleDragOver('A'); }}
@@ -354,10 +351,10 @@ function TeamsView() {
                                             (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
                                     ).length === 0 && (
                                         <div className="no-operators">
-                                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                                                <i className="fas fa-hand-pointer" style={{ fontSize: 28, color: '#3182ce' }}></i>
+                                            <span className="no-operators-inner">
+                                                <i className="fas fa-hand-pointer"></i>
                                                 No operators<br />
-                                                <span style={{ fontSize: 13, color: '#3182ce' }}>Drag and drop cards to move operators between teams.</span>
+                                                <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
                                             </span>
                                         </div>
                                     )}
@@ -389,7 +386,6 @@ function TeamsView() {
                                     ))}
                                 </div>
                             </div>
-                            {}
                             <div
                                 className={`team-card team-B${dragOverTeam === 'B' ? ' drag-over' : ''}`}
                                 onDragOver={e => { e.preventDefault(); handleDragOver('B'); }}
@@ -416,10 +412,10 @@ function TeamsView() {
                                             (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
                                     ).length === 0 && (
                                         <div className="no-operators">
-                                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                                                <i className="fas fa-hand-pointer" style={{ fontSize: 28, color: '#3182ce' }}></i>
+                                            <span className="no-operators-inner">
+                                                <i className="fas fa-hand-pointer"></i>
                                                 No operators<br />
-                                                <span style={{ fontSize: 13, color: '#3182ce' }}>Drag and drop cards to move operators between teams.</span>
+                                                <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
                                             </span>
                                         </div>
                                     )}
@@ -452,12 +448,12 @@ function TeamsView() {
                                 </div>
                             </div>
                         </div>
-                        <div style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: '#888' }}>
+                        <div className="teams-rotation-note">
                             <em>
                                 Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to Work</b> Saturday. Teams alternate weekly.
                             </em>
                         </div>
-                        <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#888' }}>
+                        <div className="teams-rotation-note">
                             <em>
                                 Operators scheduled off for this Saturday will not be listed.
                             </em>
@@ -465,7 +461,6 @@ function TeamsView() {
                     </>
                 )}
             </div>
-            {}
             {showOverview && (
                 <TeamsOverview
                     onClose={() => setShowOverview(false)}
