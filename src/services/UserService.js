@@ -169,28 +169,30 @@ UserService.getRoleByName = async function (roleName) {
 
 UserService.getUserRoles = async function (userId) {
     if (!userId) throw new Error('User ID is required');
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    if (this.userRolesCache.has(userId)) return this.userRolesCache.get(userId);
+    if (this.userRolesCache.has(id)) return this.userRolesCache.get(id);
 
     const { data, error } = await supabase
         .from(PERMISSIONS_TABLE)
         .select('role_id, users_roles(id, name, permissions, weight)')
-        .eq('user_id', userId);
+        .eq('user_id', id);
 
     if (error) {
-        console.error(`Error fetching roles for user ${userId}:`, error);
+        console.error(`Error fetching roles for user ${id}:`, error);
         throw error;
     }
 
     const roles = data?.map(item => item.users_roles) ?? [];
-    this.userRolesCache.set(userId, roles);
+    this.userRolesCache.set(id, roles);
     return roles;
 };
 
 UserService.getUserPermissions = async function (userId) {
     if (!userId) throw new Error('User ID is required');
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    const roles = await this.getUserRoles(userId);
+    const roles = await this.getUserRoles(id);
     const permissions = new Set();
     roles.forEach(role => role?.permissions?.forEach(perm => permissions.add(perm)));
     return Array.from(permissions);
@@ -199,29 +201,33 @@ UserService.getUserPermissions = async function (userId) {
 UserService.hasPermission = async function (userId, permission) {
     if (!userId || !permission) return false;
     if (permission === 'my_account.view') return true;
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    const permissions = await this.getUserPermissions(userId);
+    const permissions = await this.getUserPermissions(id);
     return permissions.includes(permission);
 };
 
 UserService.hasAnyPermission = async function (userId, permissions) {
     if (!userId || !permissions?.length) return false;
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    const userPermissions = await this.getUserPermissions(userId);
+    const userPermissions = await this.getUserPermissions(id);
     return permissions.some(perm => userPermissions.includes(perm));
 };
 
 UserService.hasAllPermissions = async function (userId, permissions) {
     if (!userId || !permissions?.length) return false;
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    const userPermissions = await this.getUserPermissions(userId);
+    const userPermissions = await this.getUserPermissions(id);
     return permissions.every(perm => userPermissions.includes(perm));
 };
 
 UserService.getMenuVisibility = async function (userId, requiredPermissions = {}) {
     if (!userId) return {};
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    const userPermissions = await this.getUserPermissions(userId);
+    const userPermissions = await this.getUserPermissions(id);
     return Object.fromEntries(
         Object.entries(requiredPermissions).map(([menuItem, permission]) => [
             menuItem,
@@ -232,22 +238,24 @@ UserService.getMenuVisibility = async function (userId, requiredPermissions = {}
 
 UserService.getHighestRole = async function (userId) {
     if (!userId) return null;
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
-    const roles = await this.getUserRoles(userId);
+    const roles = await this.getUserRoles(id);
     return roles.length ? roles.sort((a, b) => b.weight - a.weight)[0] : null;
 };
 
 UserService.assignRole = async function (userId, roleId) {
     if (!userId || !roleId) throw new Error('User ID and role ID are required');
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
     const { data: existing, error: checkError } = await supabase
         .from(PERMISSIONS_TABLE)
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', id)
         .eq('role_id', roleId);
 
     if (checkError) {
-        console.error(`Error checking role assignment for user ${userId}:`, checkError);
+        console.error(`Error checking role assignment for user ${id}:`, checkError);
         throw checkError;
     }
 
@@ -255,32 +263,33 @@ UserService.assignRole = async function (userId, roleId) {
 
     const { error } = await supabase
         .from(PERMISSIONS_TABLE)
-        .insert({ user_id: userId, role_id: roleId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+        .insert({ user_id: id, role_id: roleId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
 
     if (error) {
-        console.error(`Error assigning role ${roleId} to user ${userId}:`, error);
+        console.error(`Error assigning role ${roleId} to user ${id}:`, error);
         throw error;
     }
 
-    this.userRolesCache.delete(userId);
+    this.userRolesCache.delete(id);
     return true;
 };
 
 UserService.removeRole = async function (userId, roleId) {
     if (!userId || !roleId) throw new Error('User ID and role ID are required');
+    const id = typeof userId === 'object' && userId.id ? userId.id : userId;
 
     const { error } = await supabase
         .from(PERMISSIONS_TABLE)
         .delete()
-        .eq('user_id', userId)
+        .eq('user_id', id)
         .eq('role_id', roleId);
 
     if (error) {
-        console.error(`Error removing role ${roleId} from user ${userId}:`, error);
+        console.error(`Error removing role ${roleId} from user ${id}:`, error);
         throw error;
     }
 
-    this.userRolesCache.delete(userId);
+    this.userRolesCache.delete(id);
     return true;
 };
 

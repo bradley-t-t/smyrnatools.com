@@ -7,9 +7,6 @@ import './styles/TrailerCard.css';
 
 function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSelect }) {
     const isServiceOverdue = TrailerUtility.isServiceOverdue(trailer.lastServiceDate);
-    const isVerified = typeof trailer.isVerified === 'function'
-        ? trailer.isVerified(trailer.latestHistoryDate)
-        : TrailerUtility.isVerified(trailer.updatedLast, trailer.updatedAt, trailer.updatedBy, trailer.latestHistoryDate);
     const { preferences } = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
     const [commentsCount, setCommentsCount] = useState(0);
@@ -58,13 +55,6 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
 
     const daysSinceService = getDaysSince(trailer.lastServiceDate);
 
-    const getIconMargin = () => {
-        let margin = 0;
-        if (openIssuesCount > 0) margin += 30;
-        if (commentsCount > 0) margin += 30;
-        return margin > 0 ? `${margin}px` : undefined;
-    };
-
     const accentColor = preferences.accentColor === 'red'
         ? 'var(--accent)'
         : preferences.accentColor === 'darkgrey'
@@ -96,7 +86,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                     style={{
                         position: 'absolute',
                         top: '12px',
-                        right: openIssuesCount > 0 ? '92px' : '42px',
+                        right: openIssuesCount > 0 ? '62px' : '22px',
                         zIndex: 4
                     }}
                     title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}
@@ -111,45 +101,12 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                     style={{
                         position: 'absolute',
                         top: '12px',
-                        right: '42px',
+                        right: '22px',
                         zIndex: 4
                     }}
                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>
                     <span>{openIssuesCount}</span>
-                </div>
-            )}
-            {isVerified ? (
-                <div
-                    className="verification-flag"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '12px',
-                        color: '#10b981',
-                        fontSize: '1.2rem',
-                        zIndex: 5
-                    }}
-                    title="Verified"
-                >
-                    <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
-                </div>
-            ) : (
-                <div
-                    className="verification-flag"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '12px',
-                        color: '#dc2626',
-                        fontSize: '1.2rem',
-                        zIndex: 5
-                    }}
-                    title={!trailer.updatedLast || !trailer.updatedBy ? 'Trailer never verified' :
-                        trailer.latestHistoryDate && new Date(trailer.latestHistoryDate) > new Date(trailer.updatedLast) ? 'Changes recorded in history since last verification' :
-                            'Trailer not verified since last Sunday'}
-                >
-                    <i className="fas fa-flag" style={{ color: '#e74c3c' }}></i>
                 </div>
             )}
             <div className="card-content">

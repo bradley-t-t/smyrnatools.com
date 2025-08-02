@@ -8,6 +8,7 @@ import EquipmentCommentModal from './EquipmentCommentModal';
 import EquipmentIssueModal from './EquipmentIssueModal';
 import EquipmentCard from './EquipmentCard';
 import { EquipmentUtility } from '../../../utils/EquipmentUtility';
+import EquipmentHistoryView from './EquipmentHistoryView';
 import './styles/EquipmentDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';
 
@@ -19,6 +20,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
     const [isSaving, setIsSaving] = useState(false);
     const [showComments, setShowComments] = useState(false);
     const [showIssues, setShowIssues] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -336,6 +338,12 @@ ${openIssues.length > 0
         <div className="equipment-detail-view">
             {showComments && <EquipmentCommentModal equipmentId={equipmentId} equipmentNumber={equipment?.identifyingNumber} onClose={() => setShowComments(false)} />}
             {showIssues && <EquipmentIssueModal equipmentId={equipmentId} equipmentNumber={equipment?.identifyingNumber} onClose={() => setShowIssues(false)} />}
+            {showHistory && (
+                <EquipmentHistoryView
+                    equipment={equipment}
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
             {isSaving && (
                 <div className="saving-overlay">
                     <div className="saving-indicator"></div>
@@ -360,6 +368,9 @@ ${openIssues.length > 0
                             </button>
                             <button className="comments-button" onClick={() => setShowComments(true)}>
                                 <i className="fas fa-comments"></i> Comments
+                            </button>
+                            <button className="history-button" onClick={() => setShowHistory(true)}>
+                                <i className="fas fa-history"></i> History
                             </button>
                         </>
                     )}

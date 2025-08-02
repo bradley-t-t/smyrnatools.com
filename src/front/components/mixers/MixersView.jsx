@@ -146,46 +146,107 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         .filter(mixer => {
             const matchesSearch = !searchText.trim() ||
                 mixer.truckNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                (mixer.assignedOperator && operators.find(op => op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
-            const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant;
-            let matchesStatus = true;
+                (mixer.assignedOperator && operators.find(op => op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()))
+            const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
+            let matchesStatus = true
             if (statusFilter && statusFilter !== 'All Statuses') {
                 matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? mixer.status === statusFilter :
                     statusFilter === 'Past Due Service' ? MixerUtility.isServiceOverdue(mixer.lastServiceDate) :
                         statusFilter === 'Verified' ? mixer.isVerified() :
                             statusFilter === 'Not Verified' ? !mixer.isVerified() :
-                                statusFilter === 'Open Issues' ? mixer.issues?.some(issue => !issue.time_completed) : false;
+                                statusFilter === 'Open Issues' ? mixer.issues?.some(issue => !issue.time_completed) : false
             }
-            return matchesSearch && matchesPlant && matchesStatus;
+            return matchesSearch && matchesPlant && matchesStatus
         })
         .sort((a, b) => {
-            if (a.status === 'Active' && b.status !== 'Active') return -1;
-            if (a.status !== 'Active' && b.status === 'Active') return 1;
-            if (a.status === 'Spare' && b.status !== 'Spare') return -1;
-            if (a.status !== 'Spare' && b.status === 'Spare') return 1;
-            if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
-            if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
-            if (a.status === 'Retired' && b.status !== 'Retired') return 1;
-            if (a.status !== 'Retired' && b.status === 'Retired') return -1;
-            if (a.status !== b.status) return a.status.localeCompare(b.status);
-            const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0');
-            const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0');
-            return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '');
-        });
+            if (a.status === 'Active' && b.status !== 'Active') return -1
+            if (a.status !== 'Active' && b.status === 'Active') return 1
+            if (a.status === 'Spare' && b.status !== 'Spare') return -1
+            if (a.status !== 'Spare' && b.status === 'Spare') return 1
+            if (a.status === 'In Shop' && b.status !== 'In Shop') return -1
+            if (a.status !== 'In Shop' && b.status === 'In Shop') return 1
+            if (a.status === 'Retired' && b.status !== 'Retired') return 1
+            if (a.status !== 'Retired' && b.status === 'Retired') return -1
+            if (a.status !== b.status) return a.status.localeCompare(b.status)
+            const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0')
+            const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0')
+            return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '')
+        })
 
-    const statusCounts = ['Active', 'Spare', 'In Shop', 'Retired'].map(status => ({
-        status,
-        count: mixers.filter(m => m.status === status).length
-    }));
-    const pastDueServiceCount = mixers.filter(m => MixerUtility.isServiceOverdue(m.lastServiceDate)).length;
-    const verifiedCount = mixers.filter(m => m.isVerified()).length;
-    const unverifiedCount = mixers.length - verifiedCount;
-    const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length;
-    const openIssuesCount = mixers.filter(m => m.issues?.some(issue => !issue.time_completed)).length;
+    const unverifiedCount = mixers.filter(m => !m.isVerified()).length
+    const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length
 
-    function averageCleanliness() {
-        const ratings = mixers.filter(m => m.cleanlinessRating).map(m => m.cleanlinessRating);
-        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'Not Assigned';
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        const pad = n => n.toString().padStart(2, '0');
+        const yyyy = date.getFullYear();
+        const mm = pad(date.getMonth() + 1);
+        const dd = pad(date.getDate());
+        const hh = pad(date.getHours());
+        const min = pad(date.getMinutes());
+        return `${mm}/${dd}/${yyyy} ${hh}:${min}`;
+    }
+
+    function getFiltersAppliedString() {
+        const filters = [];
+        if (searchText) filters.push(`Search: ${searchText}`);
+        if (selectedPlant) {
+            const plant = plants.find(p => p.plantCode === selectedPlant);
+            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`);
+        }
+        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
+        return filters.length ? filters.join(', ') : 'No Filters';
+    }
+
+    function exportMixersToCSV(mixersToExport) {
+        if (!mixersToExport || mixersToExport.length === 0) return;
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const mm = pad(now.getMonth() + 1);
+        const dd = pad(now.getDate());
+        const hh = pad(now.getHours());
+        const min = pad(now.getMinutes());
+        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
+        const filtersApplied = getFiltersAppliedString();
+        const fileName = `Mixer Export - ${formattedNow} - ${filtersApplied}.csv`;
+        const topHeader = `Mixer Export - ${formattedNow} - ${filtersApplied}`;
+        const headers = [
+            'Truck Number',
+            'Status',
+            'Assigned Operator',
+            'Operator Smyrna ID',
+            'Assigned Plant',
+            'Last Service Date',
+            'Cleanliness Rating',
+            'Open Issues'
+        ];
+        const rows = mixersToExport.map(mixer => [
+            mixer.truckNumber || '',
+            mixer.status || '',
+            getOperatorName(mixer.assignedOperator),
+            getOperatorSmyrnaId(mixer.assignedOperator),
+            getPlantName(mixer.assignedPlant),
+            formatDate(mixer.lastServiceDate),
+            mixer.cleanlinessRating || '',
+            Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
+        ]);
+        const csvContent = [
+            `"${topHeader}"`,
+            headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
+            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     const OverviewPopup = () => (
@@ -223,7 +284,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             <i className="fas fa-bars"></i> Menu
                         </button>
                     )}
-                    <button 
+                    <button
+                        className="action-button primary rectangular-button"
+                        style={{marginRight: 8, minWidth: 210}}
+                        onClick={() => exportMixersToCSV(filteredMixers)}
+                    >
+                        <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
+                    </button>
+                    <button
                         className="action-button primary rectangular-button" 
                         onClick={() => setShowAddSheet(true)}
                         style={{ height: '44px', lineHeight: '1' }}

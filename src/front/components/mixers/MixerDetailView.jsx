@@ -290,42 +290,57 @@ function MixerDetailView({mixerId, onClose}) {
     }
 
     async function handleVerifyMixer() {
-        if (!mixer) return;
+        if (!mixer) return
 
-        setIsSaving(true);
+        const operatorName = getOperatorName(assignedOperator)
+        if (
+            status === 'Active' &&
+            (
+                assignedOperator === null ||
+                assignedOperator === undefined ||
+                assignedOperator === '0' ||
+                (assignedOperator && operatorName === 'Unknown')
+            )
+        ) {
+            setMessage('Cannot verify: Assigned operator is missing or invalid.')
+            setTimeout(() => setMessage(''), 4000)
+            return
+        }
+
+        setIsSaving(true)
         try {
             if (hasUnsavedChanges) {
                 await handleSave().catch(error => {
-                    console.error('Error saving changes before verification:', error);
-                    alert('Failed to save your changes before verification. Please try saving manually first.');
-                    throw new Error('Failed to save changes before verification');
-                });
+                    console.error('Error saving changes before verification:', error)
+                    alert('Failed to save your changes before verification. Please try saving manually first.')
+                    throw new Error('Failed to save changes before verification')
+                })
             }
 
-            let userObj = await UserService.getCurrentUser();
-            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
+            let userObj = await UserService.getCurrentUser()
+            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
 
-            const now = new Date().toISOString();
+            const now = new Date().toISOString()
             const {data, error} = await supabase
                 .from('mixers')
                 .update({updated_last: now, updated_by: userId})
                 .eq('id', mixer.id)
-                .select();
+                .select()
 
-            if (error) throw new Error(`Failed to verify mixer: ${error.message}`);
+            if (error) throw new Error(`Failed to verify mixer: ${error.message}`)
             if (data?.length) {
-                setMixer(Mixer.fromApiFormat(data[0]));
-                setMessage('Mixer verified successfully!');
-                setTimeout(() => setMessage(''), 3000);
+                setMixer(Mixer.fromApiFormat(data[0]))
+                setMessage('Mixer verified successfully!')
+                setTimeout(() => setMessage(''), 3000)
             }
 
-            setHasUnsavedChanges(false);
+            setHasUnsavedChanges(false)
 
         } catch (error) {
-            console.error('Error verifying mixer:', error);
-            alert(`Error verifying mixer: ${error.message}`);
+            console.error('Error verifying mixer:', error)
+            alert(`Error verifying mixer: ${error.message}`)
         } finally {
-            setIsSaving(false);
+            setIsSaving(false)
         }
     }
 

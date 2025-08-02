@@ -184,73 +184,98 @@ function getOperatorName(row, operatorOptions) {
     return row.name
 }
 
-function RowCard({ row, idx, elapsedStart, elapsedEnd, totalHours, warning, operatorOptions }) {
-    let warnings = []
-    if (elapsedStart !== null && elapsedStart > 15) {
-        warnings.push(`Start to 1st Load is ${elapsedStart} min (> 15 min)`)
-    }
-    if (elapsedEnd !== null && elapsedEnd > 15) {
-        warnings.push(`EOD to Punch Out is ${elapsedEnd} min (> 15 min)`)
-    }
-    if (totalHours !== null && totalHours > 14) {
-        warnings.push(`Total Hours is ${totalHours.toFixed(2)} (> 14 hours)`)
-    }
-    if (warning && !warnings.includes(warning.message)) {
-        warnings.push(warning.message)
-    }
+function RowCard({ row, idx, operatorOptions }) {
+    const start = parseTimeToMinutes(row.start_time)
+    const punch = parseTimeToMinutes(row.punch_out)
+    const firstLoad = parseTimeToMinutes(row.first_load)
+    const eod = parseTimeToMinutes(row.eod_in_yard)
+    const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : null
+    const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : null
+    const totalHours = (start !== null && punch !== null) ? (punch - start) / 60 : null
+    const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
     return (
         <div
             style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0,
                 border: '1px solid var(--divider)',
                 borderRadius: 10,
-                marginBottom: 18,
                 background: 'var(--background-elevated)',
+                marginBottom: 18,
                 boxShadow: '0 1px 4px var(--shadow-sm)',
-                padding: 0,
-                overflow: 'hidden'
+                padding: '0 0 0 0'
             }}
         >
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '12px 18px',
+                padding: '14px 18px',
                 borderBottom: '1px solid var(--divider)',
-                fontWeight: 600,
-                fontSize: 17,
                 background: 'var(--background)'
             }}>
-                <span style={{ flex: 1 }}>{getOperatorName(row, operatorOptions) || <span style={{ color: 'var(--text-secondary)' }}>No Name</span>}</span>
-                <span style={{ color: 'var(--text-secondary)', fontSize: 15 }}>{row.truck_number ? row.truck_number : ''}</span>
+                <div style={{ flex: 2, fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
+                    {getOperatorName(row, operatorOptions) || <span style={{ color: 'var(--text-secondary)' }}>No Name</span>}
+                </div>
+                <div style={{ flex: 1, fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>
+                    Truck #{row.truck_number || '--'}
+                </div>
             </div>
             <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: 0,
-                padding: '0 0 0 0',
-                fontSize: 15
+                padding: '14px 18px'
             }}>
-                <StatCard label="Start Time" value={row.start_time || '--'} />
-                <StatCard label="1st Load" value={row.first_load || '--'} />
-                <StatCard label="Elapsed (Start→1st)" value={elapsedStart !== null ? `${elapsedStart} min` : '--'} highlight={elapsedStart > 15} />
-                <StatCard label="EOD In Yard" value={row.eod_in_yard || '--'} />
-                <StatCard label="Punch Out" value={row.punch_out || '--'} />
-                <StatCard label="Elapsed (EOD→Punch)" value={elapsedEnd !== null ? `${elapsedEnd} min` : '--'} highlight={elapsedEnd > 15} />
-                <StatCard label="Total Loads" value={row.loads || '--'} highlight={row.loads !== undefined && row.loads !== '' && Number(row.loads) < 3} />
-                <StatCard label="Total Hours" value={totalHours !== null ? totalHours.toFixed(2) : '--'} highlight={totalHours !== null && totalHours > 14} />
-                <StatCard label="Loads/Hour" value={(row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : '--'} />
-            </div>
-            {row.comments && (
-                <div style={{
-                    padding: '8px 18px 14px 18px',
-                    color: 'var(--text-secondary)',
-                    fontSize: 15
-                }}>
-                    <span style={{ fontWeight: 500 }}>Comments:</span> {row.comments}
+                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Start</div>
+                    <div style={{ fontWeight: 600 }}>{row.start_time || '--'}</div>
                 </div>
-            )}
-            {warnings.map((msg, i) => (
-                <WarningCard key={i} message={msg} />
-            ))}
+                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>1st Load</div>
+                    <div style={{ fontWeight: 600 }}>{row.first_load || '--'}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Elapsed (Start→1st)</div>
+                    <div style={{ fontWeight: 600, color: elapsedStart > 15 ? 'var(--warning)' : undefined }}>
+                        {elapsedStart !== null ? `${elapsedStart} min` : '--'}
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>EOD In Yard</div>
+                    <div style={{ fontWeight: 600 }}>{row.eod_in_yard || '--'}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Punch Out</div>
+                    <div style={{ fontWeight: 600 }}>{row.punch_out || '--'}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Elapsed (EOD→Punch)</div>
+                    <div style={{ fontWeight: 600, color: elapsedEnd > 15 ? 'var(--warning)' : undefined }}>
+                        {elapsedEnd !== null ? `${elapsedEnd} min` : '--'}
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 120, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Total Loads</div>
+                    <div style={{ fontWeight: 600, color: row.loads !== undefined && row.loads !== '' && Number(row.loads) < 3 ? 'var(--warning)' : undefined }}>
+                        {row.loads || '--'}
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 120, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Total Hours</div>
+                    <div style={{ fontWeight: 600, color: totalHours !== null && totalHours > 14 ? 'var(--warning)' : undefined }}>
+                        {totalHours !== null ? totalHours.toFixed(2) : '--'}
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 120, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loads/Hour</div>
+                    <div style={{ fontWeight: 600 }}>{loadsPerHour || '--'}</div>
+                </div>
+                <div style={{ flex: 2, minWidth: 180, marginBottom: 10 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Comments</div>
+                    <div style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{row.comments || ''}</div>
+                </div>
+            </div>
         </div>
     )
 }
@@ -287,44 +312,164 @@ function CardAverages({ insights }) {
     )
 }
 
+function exportRowsToCSV(rows, operatorOptions, reportDate) {
+    if (!Array.isArray(rows) || rows.length === 0) return
+    const dateStr = reportDate ? ` - ${reportDate}` : ''
+    const title = `Plant Production Report${dateStr}`
+    const headers = [
+        title,
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
+    ]
+    const tableHeaders = [
+        'Operator Name',
+        'Truck Number',
+        'Start Time',
+        '1st Load',
+        'Elapsed (Start→1st)',
+        'EOD In Yard',
+        'Punch Out',
+        'Elapsed (EOD→Punch)',
+        'Total Loads',
+        'Total Hours',
+        'Loads/Hour',
+        'Comments'
+    ]
+    const csvRows = [headers, tableHeaders]
+    rows.forEach(row => {
+        const start = parseTimeToMinutes(row.start_time)
+        const firstLoad = parseTimeToMinutes(row.first_load)
+        const eod = parseTimeToMinutes(row.eod_in_yard)
+        const punch = parseTimeToMinutes(row.punch_out)
+        const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : ''
+        const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : ''
+        const totalHours = (start !== null && punch !== null) ? ((punch - start) / 60) : ''
+        const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
+        csvRows.push([
+            getOperatorName(row, operatorOptions),
+            row.truck_number || '',
+            row.start_time || '',
+            row.first_load || '',
+            elapsedStart !== '' ? `${elapsedStart} min` : '',
+            row.eod_in_yard || '',
+            row.punch_out || '',
+            elapsedEnd !== '' ? `${elapsedEnd} min` : '',
+            row.loads || '',
+            totalHours !== '' ? totalHours.toFixed(2) : '',
+            loadsPerHour,
+            row.comments || ''
+        ])
+    })
+    const csvContent = csvRows.map(r =>
+        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+    ).join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const safeDate = reportDate ? reportDate.replace(/[^0-9\-]/g, '') : ''
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Plant Production Report${safeDate ? ' - ' + safeDate : ''}.csv`
+    document.body.appendChild(a)
+    a.click()
+    setTimeout(() => {
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }, 0)
+}
+
 export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
     const rows = getRows(form)
     const insights = getInsights(rows)
+    const reportDate = form.report_date || ''
     if (!rows.length) return null
     return (
         <div style={{ marginTop: 32 }}>
-            <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
-                Weekly Plant Production
+            <div style={{
+                fontWeight: 700,
+                fontSize: 22,
+                marginBottom: 8,
+                letterSpacing: 0.2,
+                color: 'var(--accent)'
+            }}>
+                Plant Production Report{reportDate ? ` - ${reportDate}` : ''}
             </div>
             <CardAverages insights={insights} />
             <div>
-                {rows.map((row, i) => {
-                    const start = parseTimeToMinutes(row.start_time)
-                    const punch = parseTimeToMinutes(row.punch_out)
-                    const firstLoad = parseTimeToMinutes(row.first_load)
-                    const eod = parseTimeToMinutes(row.eod_in_yard)
-                    const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : null
-                    const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : null
-                    const totalHours = (start !== null && punch !== null) ? (punch - start) / 60 : null
-                    const warning = insights.warnings.find(w => w.row === i)
-                    return (
-                        <RowCard
-                            row={row}
-                            idx={i}
-                            elapsedStart={elapsedStart}
-                            elapsedEnd={elapsedEnd}
-                            totalHours={totalHours}
-                            warning={warning}
-                            key={i}
-                            operatorOptions={operatorOptions}
-                        />
-                    )
-                })}
+                {rows.map((row, i) => (
+                    <RowCard row={row} idx={i} key={i} operatorOptions={operatorOptions} />
+                ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+                <button
+                    type="button"
+                    style={{
+                        background: 'var(--accent)',
+                        color: 'var(--text-light)',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '10px 22px',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        cursor: 'pointer'
+                    }}
+                    onClick={() => exportRowsToCSV(rows, operatorOptions, reportDate)}
+                >
+                    Export to Spreadsheet
+                </button>
             </div>
         </div>
     )
 }
 
 export function PlantProductionReviewPlugin({ form, operatorOptions }) {
-    return <PlantProductionSubmitPlugin form={form} operatorOptions={operatorOptions} />
+    const rows = getRows(form)
+    const insights = getInsights(rows)
+    const reportDate = form.report_date || ''
+    if (!rows.length) return null
+    return (
+        <div style={{ marginTop: 32 }}>
+            <div style={{
+                fontWeight: 700,
+                fontSize: 22,
+                marginBottom: 8,
+                letterSpacing: 0.2,
+                color: 'var(--accent)'
+            }}>
+                Plant Production Report{reportDate ? ` - ${reportDate}` : ''}
+            </div>
+            <CardAverages insights={insights} />
+            <div>
+                {rows.map((row, i) => (
+                    <RowCard row={row} idx={i} key={i} operatorOptions={operatorOptions} />
+                ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+                <button
+                    type="button"
+                    style={{
+                        background: 'var(--accent)',
+                        color: 'var(--text-light)',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '10px 22px',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        cursor: 'pointer'
+                    }}
+                    onClick={() => exportRowsToCSV(rows, operatorOptions, reportDate)}
+                >
+                    Export to Spreadsheet
+                </button>
+            </div>
+        </div>
+    )
 }

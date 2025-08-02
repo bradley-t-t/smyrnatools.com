@@ -94,6 +94,77 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
         setShowOverview(false);
     }
 
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        const pad = n => n.toString().padStart(2, '0');
+        const yyyy = date.getFullYear();
+        const mm = pad(date.getMonth() + 1);
+        const dd = pad(date.getDate());
+        const hh = pad(date.getHours());
+        const min = pad(date.getMinutes());
+        return `${mm}/${dd}/${yyyy} ${hh}:${min}`;
+    }
+
+    function getFiltersAppliedString() {
+        const filters = [];
+        if (searchText) filters.push(`Search: ${searchText}`);
+        if (selectedPlant) {
+            const plant = plants.find(p => p.plantCode === selectedPlant);
+            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`);
+        }
+        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
+        return filters.length ? filters.join(', ') : 'No Filters';
+    }
+
+    function exportEquipmentsToCSV(equipmentsToExport) {
+        if (!equipmentsToExport || equipmentsToExport.length === 0) return;
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const mm = pad(now.getMonth() + 1);
+        const dd = pad(now.getDate());
+        const hh = pad(now.getHours());
+        const min = pad(now.getMinutes());
+        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
+        const filtersApplied = getFiltersAppliedString();
+        const fileName = `Equipment Export - ${formattedNow} - ${filtersApplied}.csv`;
+        const topHeader = `Equipment Export - ${formattedNow} - ${filtersApplied}`;
+        const headers = [
+            'Identifying Number',
+            'Status',
+            'Equipment Type',
+            'Assigned Plant',
+            'Last Service Date',
+            'Cleanliness Rating',
+            'Open Issues'
+        ];
+        const rows = equipmentsToExport.map(equipment => [
+            equipment.identifyingNumber || '',
+            equipment.status || '',
+            equipment.equipmentType || '',
+            getPlantName(equipment.assignedPlant),
+            formatDate(equipment.lastServiceDate),
+            equipment.cleanlinessRating || '',
+            Array.isArray(equipment.issues) ? equipment.issues.filter(issue => !issue.time_completed).length : 0
+        ]);
+        const csvContent = [
+            `"${topHeader}"`,
+            headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
+            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     const filteredEquipments = equipments
         .filter(equipment => {
             const matchesSearch = !searchText.trim() ||
@@ -174,6 +245,13 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                     <div className="dashboard-header">
                         <h1>{title}</h1>
                         <div className="dashboard-actions">
+                            <button
+                                className="action-button primary rectangular-button"
+                                style={{marginRight: 8, minWidth: 210}}
+                                onClick={() => exportEquipmentsToCSV(filteredEquipments)}
+                            >
+                                <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
+                            </button>
                             <button
                                 className="action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}

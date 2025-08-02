@@ -63,6 +63,7 @@ function ReportsView() {
     const [userProfiles, setUserProfiles] = useState({})
     const [hasAssigned, setHasAssigned] = useState({})
     const [hasReviewPermission, setHasReviewPermission] = useState({})
+    const [submitInitialData, setSubmitInitialData] = useState(null)
 
     useEffect(() => {
         async function fetchUserAndReports() {
@@ -171,7 +172,6 @@ function ReportsView() {
         getDueWeeks(REPORTS_START_DATE).forEach(({ weekIso, monday }) => {
             const saturday = new Date(monday)
             saturday.setDate(monday.getDate() + 5)
-            // Fix: add 1 day to monday for the divider range only
             const dividerMonday = new Date(monday)
             dividerMonday.setDate(dividerMonday.getDate() + 1)
             const dividerSaturday = new Date(dividerMonday)
@@ -232,19 +232,16 @@ function ReportsView() {
             setLoadError('User not found')
             return
         }
-        const existingReport = localReports.find(r =>
-            r.name === showForm.name &&
-            r.userId === user.id &&
-            r.week &&
-            new Date(r.week).toISOString().slice(0, 10) === showForm.weekIso
-        )
-        let monday = showForm.weekIso ? new Date(showForm.weekIso) : null
+        const weekIso = showForm.weekIso
+        const reportName = showForm.name
+        const userId = user.id
+        let monday = weekIso ? new Date(weekIso) : null
         let saturday = monday ? new Date(monday) : null
         if (saturday) saturday.setDate(monday.getDate() + 5)
         const upsertData = {
-            report_name: showForm.name,
-            user_id: user.id,
-            data: { ...formData, week: showForm.weekIso },
+            report_name: reportName,
+            user_id: userId,
+            data: { ...formData, week: weekIso },
             week: monday ? monday.toISOString() : null,
             completed: true,
             submitted_at: new Date().toISOString(),
@@ -252,11 +249,22 @@ function ReportsView() {
             report_date_range_end: saturday?.toISOString() || null
         }
         let response
-        if (existingReport) {
+        const { data: existing, error: findError } = await supabase
+            .from('reports')
+            .select('id')
+            .eq('report_name', reportName)
+            .eq('user_id', userId)
+            .eq('week', monday ? monday.toISOString() : null)
+            .maybeSingle()
+        if (findError) {
+            setLoadError(findError.message || 'Error checking for existing report')
+            return
+        }
+        if (existing && existing.id) {
             response = await supabase
                 .from('reports')
                 .update(upsertData)
-                .eq('id', existingReport.id)
+                .eq('id', existing.id)
                 .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
                 .single()
         } else {
@@ -284,7 +292,7 @@ function ReportsView() {
                         completedDate: data.submitted_at,
                         data: data.data,
                         userId: data.user_id,
-                        week: data.week || data.data?.week || showForm.weekIso,
+                        week: data.week || data.data?.week || weekIso,
                         report_date_range_start: data.report_date_range_start ? new Date(data.report_date_range_start) : monday,
                         report_date_range_end: data.report_date_range_end ? new Date(data.report_date_range_end) : saturday
                     }
@@ -297,6 +305,38 @@ function ReportsView() {
     function handleReview(report) {
         setReviewData(report)
         setShowReview(reportTypes.find(rt => rt.name === report.name))
+    }
+
+    async function handleShowForm(item) {
+        setSubmitInitialData(null)
+        if (!user || !item || !item.name || !item.weekIso) {
+            setShowForm(item)
+            return
+        }
+        const { data, error } = await supabase
+            .from('reports')
+            .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
+            .eq('report_name', item.name)
+            .eq('user_id', user.id)
+            .eq('week', new Date(item.weekIso).toISOString())
+            .maybeSingle()
+        if (!error && data) {
+            setSubmitInitialData({
+                id: data.id,
+                name: data.report_name,
+                title: (reportTypes.find(rt => rt.name === data.report_name) || {}).title || data.report_name,
+                completed: !!data.completed,
+                completedDate: data.submitted_at,
+                data: data.data,
+                userId: data.user_id,
+                week: data.week || data.data?.week || item.weekIso,
+                report_date_range_start: data.report_date_range_start ? new Date(data.report_date_range_start) : null,
+                report_date_range_end: data.report_date_range_end ? new Date(data.report_date_range_end) : null
+            })
+        } else {
+            setSubmitInitialData(null)
+        }
+        setShowForm(item)
     }
 
     return (
@@ -338,7 +378,6 @@ function ReportsView() {
                                     ) : (
                                         sortedMyWeeks.map(weekIso => {
                                             const weekItems = myReportsByWeek[weekIso]
-                                            // Fix: add 1 day to monday for the divider range only
                                             const weekStart = new Date(weekIso)
                                             weekStart.setDate(weekStart.getDate() + 1)
                                             const weekEnd = new Date(weekStart)
@@ -365,20 +404,30 @@ function ReportsView() {
                                                         const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
                                                         let statusText
                                                         let statusColor
+                                                        let hasSavedData = !!(item.report && item.report.data)
+                                                        let buttonLabel = item.completed ? 'View' : (hasSavedData ? 'Edit' : 'Submit')
                                                         if (item.completed) {
                                                             statusText = 'Completed'
-                                                            statusColor = 'var(--success, #38a169)'
+                                                            statusColor = 'var(--success)'
+                                                        } else if (hasSavedData) {
+                                                            statusText = 'Continue Editing'
+                                                            statusColor = 'var(--blue)'
                                                         } else if (endDate >= today) {
                                                             statusText = 'Current Week'
-                                                            statusColor = '#166534'
+                                                            statusColor = 'var(--accent)'
                                                         } else {
                                                             statusText = 'Past Due'
-                                                            statusColor = 'var(--error, #e53e3e)'
+                                                            statusColor = 'var(--error)'
                                                         }
                                                         return (
                                                             <div className="reports-list-item" key={item.name + item.weekIso}>
                                                                 <div className="reports-list-title">
                                                                     {item.title}
+                                                                    {item.name !== 'district_manager' && (
+                                                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
+                                                                            ({item.range})
+                                                                        </span>
+                                                                    )}
                                                                     <span style={{
                                                                         marginLeft: 12,
                                                                         color: statusColor,
@@ -387,15 +436,9 @@ function ReportsView() {
                                                                         {statusText}
                                                                     </span>
                                                                 </div>
-                                                                {item.completed ? (
-                                                                    <button className="reports-list-action" onClick={() => setShowForm(item)}>
-                                                                        View
-                                                                    </button>
-                                                                ) : (
-                                                                    <button className="reports-list-action" onClick={() => setShowForm(item)}>
-                                                                        Submit
-                                                                    </button>
-                                                                )}
+                                                                <button className="reports-list-action" onClick={() => handleShowForm(item)}>
+                                                                    {buttonLabel}
+                                                                </button>
                                                             </div>
                                                         )
                                                     })}
@@ -415,7 +458,6 @@ function ReportsView() {
                                     ) : (
                                         sortedReviewWeeks.map(weekIso => {
                                             const weekReports = reviewReportsByWeek[weekIso]
-                                            // Fix: add 1 day to monday for the divider range only
                                             const weekStart = new Date(weekIso)
                                             weekStart.setDate(weekStart.getDate() + 1)
                                             const weekEnd = new Date(weekStart)
@@ -459,12 +501,7 @@ function ReportsView() {
                 {showForm && (
                     <ReportsSubmitView
                         report={showForm}
-                        initialData={localReports.find(r =>
-                            r.name === showForm.name &&
-                            r.userId === user?.id &&
-                            r.week &&
-                            new Date(r.week).toISOString().slice(0, 10) === showForm.weekIso
-                        )?.data || null}
+                        initialData={submitInitialData}
                         onBack={() => setShowForm(null)}
                         onSubmit={handleSubmitReport}
                         user={user}

@@ -41,12 +41,6 @@ export const reportTypes = [
     manage: ["reports.manage.plant_production"],
     fields: [
       {
-        name: "report_date",
-        label: "Report Date",
-        type: "date",
-        required: true
-      },
-      {
         name: "rows",
         label: "Production Rows",
         type: "table",

@@ -15,14 +15,128 @@ const plugins = {
 
 const REPORTS_START_DATE = new Date('2025-07-20')
 
+function exportRowsToCSV(rows, operatorOptions, reportDate) {
+    if (!Array.isArray(rows) || rows.length === 0) return
+    const dateStr = reportDate ? ` - ${reportDate}` : ''
+    const title = `Plant Production Report${dateStr}`
+    const headers = [
+        title,
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
+    ]
+    const tableHeaders = [
+        'Operator Name',
+        'Truck Number',
+        'Start Time',
+        '1st Load',
+        'Elapsed (Start→1st)',
+        'EOD In Yard',
+        'Punch Out',
+        'Elapsed (EOD→Punch)',
+        'Total Loads',
+        'Total Hours',
+        'Loads/Hour',
+        'Comments'
+    ]
+    const csvRows = [headers, tableHeaders]
+    rows.forEach(row => {
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string') return null
+            const [h, m] = timeStr.split(':').map(Number)
+            if (isNaN(h) || isNaN(m)) return null
+            return h * 60 + m
+        }
+        function getOperatorName(row, operatorOptions) {
+            if (!row || !row.name) return ''
+            if (Array.isArray(operatorOptions)) {
+                const found = operatorOptions.find(opt => opt.value === row.name)
+                if (found) return found.label
+            }
+            if (row.displayName) return row.displayName
+            return row.name
+        }
+        const start = parseTimeToMinutes(row.start_time)
+        const firstLoad = parseTimeToMinutes(row.first_load)
+        const eod = parseTimeToMinutes(row.eod_in_yard)
+        const punch = parseTimeToMinutes(row.punch_out)
+        const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : ''
+        const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : ''
+        const totalHours = (start !== null && punch !== null) ? ((punch - start) / 60) : ''
+        const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
+        csvRows.push([
+            getOperatorName(row, operatorOptions),
+            row.truck_number || '',
+            row.start_time || '',
+            row.first_load || '',
+            elapsedStart !== '' ? `${elapsedStart} min` : '',
+            row.eod_in_yard || '',
+            row.punch_out || '',
+            elapsedEnd !== '' ? `${elapsedEnd} min` : '',
+            row.loads || '',
+            totalHours !== '' ? totalHours.toFixed(2) : '',
+            loadsPerHour,
+            row.comments || ''
+        ])
+    })
+    const csvContent = csvRows.map(r =>
+        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+    ).join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const safeDate = reportDate ? reportDate.replace(/[^0-9\-]/g, '') : ''
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Plant Production Report${safeDate ? ' - ' + safeDate : ''}.csv`
+    document.body.appendChild(a)
+    a.click()
+    setTimeout(() => {
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }, 0)
+}
+
+function exportReportFieldsToCSV(report, form) {
+    if (!report || !Array.isArray(report.fields)) return
+    const headers = report.fields.map(f => f.label || f.name)
+    const values = report.fields.map(f => form[f.name] || '')
+    const csvRows = [headers, values]
+    const csvContent = csvRows.map(r =>
+        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+    ).join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${report.title || report.name}.csv`
+    document.body.appendChild(a)
+    a.click()
+    setTimeout(() => {
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }, 0)
+}
+
 function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly }) {
     const [form, setForm] = useState(() => {
         if (initialData) {
+            if (initialData.data) {
+                return { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData.data, ...(initialData.rows ? { rows: initialData.rows } : {}) }
+            }
             return { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData }
         }
         return Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : '']))
     })
     const [submitting, setSubmitting] = useState(false)
+    const [savingDraft, setSavingDraft] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
     const [maintenanceItems, setMaintenanceItems] = useState([])
@@ -41,6 +155,20 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [mixers, setMixers] = useState([])
     const [plants, setPlants] = useState([])
     const [excludedOperators, setExcludedOperators] = useState([])
+    const [saveMessage, setSaveMessage] = useState('')
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
+
+    useEffect(() => {
+        setInitialFormSnapshot(JSON.stringify(form))
+    }, [])
+
+    useEffect(() => {
+        if (initialFormSnapshot !== null) {
+            setHasUnsavedChanges(JSON.stringify(form) !== initialFormSnapshot)
+        }
+    }, [form, initialFormSnapshot])
 
     useEffect(() => {
         async function fetchPlants() {
@@ -171,8 +299,26 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     }, [report.name, form.plant, user, readOnly, plants])
 
     useEffect(() => {
-        if (initialData && initialData.rows && initialData.rows.length > 0) {
-            setForm(f => ({ ...f, rows: initialData.rows }))
+        if (initialData) {
+            if (initialData.data) {
+                setForm(f => ({
+                    ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])),
+                    ...initialData.data,
+                    ...(initialData.rows ? { rows: initialData.rows } : {})
+                }))
+            } else {
+                setForm(f => ({
+                    ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])),
+                    ...initialData
+                }))
+            }
+            setInitialFormSnapshot(
+                JSON.stringify(
+                    initialData.data
+                        ? { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData.data, ...(initialData.rows ? { rows: initialData.rows } : {}) }
+                        : { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData }
+                )
+            )
         }
     }, [initialData])
 
@@ -321,6 +467,78 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         }
     }
 
+    async function handleSaveDraft(e) {
+        e.preventDefault()
+        setError('')
+        setSuccess(false)
+        setSaveMessage('')
+        for (const field of report.fields) {
+            if (field.required && !form[field.name]) {
+                setError('Please fill out all required fields.')
+                return
+            }
+        }
+        setSavingDraft(true)
+        try {
+            if (!report || !user || typeof user.id !== 'string') {
+                setError('User not found')
+                setSavingDraft(false)
+                return
+            }
+            let monday = report.weekIso ? new Date(report.weekIso) : null
+            let saturday = monday ? new Date(monday) : null
+            if (saturday) saturday.setDate(monday.getDate() + 5)
+            const upsertData = {
+                report_name: report.name,
+                user_id: user.id,
+                data: { ...form, week: report.weekIso },
+                week: monday ? monday.toISOString() : null,
+                completed: false,
+                submitted_at: new Date().toISOString(),
+                report_date_range_start: monday?.toISOString() || null,
+                report_date_range_end: saturday?.toISOString() || null
+            }
+            const { data: existing, error: findError } = await supabase
+                .from('reports')
+                .select('id')
+                .eq('report_name', report.name)
+                .eq('user_id', user.id)
+                .eq('week', monday ? monday.toISOString() : null)
+                .maybeSingle()
+            if (findError) {
+                setError(findError.message || 'Error checking for existing report')
+                setSavingDraft(false)
+                return
+            }
+            let response
+            if (existing && existing.id) {
+                response = await supabase
+                    .from('reports')
+                    .update(upsertData)
+                    .eq('id', existing.id)
+                    .select('id')
+                    .single()
+            } else {
+                response = await supabase
+                    .from('reports')
+                    .insert([upsertData])
+                    .select('id')
+                    .single()
+            }
+            const { error } = response
+            if (error) {
+                setError(error.message || 'Error saving draft')
+                setSavingDraft(false)
+                return
+            }
+            setSaveMessage('Changes saved.')
+        } catch {
+            setError('Error saving draft')
+        } finally {
+            setSavingDraft(false)
+        }
+    }
+
     function getPlantName(plantCode) {
         return plantCode || ''
     }
@@ -342,8 +560,8 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     if (report.weekIso) {
         weekRange = getWeekRangeFromIso(report.weekIso)
     }
-
     const PluginComponent = plugins[report.name]
+    const submitted = !!initialData?.completed
 
     function handleExcludeOperator(idx) {
         const updatedRows = [...(form.rows || [])]
@@ -379,12 +597,64 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setCarouselIndex((form.rows || []).length)
     }
 
+    function handleBackClick() {
+        if (hasUnsavedChanges) setShowUnsavedChangesModal(true)
+        else onBack()
+    }
+
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
             <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
-                <button className="report-form-back" onClick={onBack} type="button" style={{ marginBottom: 24, marginLeft: 0 }}>
-                    <i className="fas fa-arrow-left"></i> Back
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <button className="report-form-back" onClick={handleBackClick} type="button">
+                        <i className="fas fa-arrow-left"></i> Back
+                    </button>
+                    {Array.isArray(form.rows) && form.rows.length > 0 && report.name === 'plant_production' && (
+                        <button
+                            type="button"
+                            style={{
+                                background: submitted ? 'var(--accent)' : 'var(--divider)',
+                                color: submitted ? 'var(--text-light)' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '10px 22px',
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: submitted ? 'pointer' : 'not-allowed',
+                                opacity: submitted ? 1 : 0.6
+                            }}
+                            onClick={() => {
+                                if (submitted) exportRowsToCSV(form.rows, operatorOptions, form.report_date)
+                            }}
+                            disabled={!submitted || readOnly}
+                        >
+                            Export to Spreadsheet
+                        </button>
+                    )}
+                    {report.name !== 'plant_production' && (
+                        <button
+                            type="button"
+                            style={{
+                                background: submitted ? 'var(--accent)' : 'var(--divider)',
+                                color: submitted ? 'var(--text-light)' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '10px 22px',
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: submitted ? 'pointer' : 'not-allowed',
+                                opacity: submitted ? 1 : 0.6,
+                                marginLeft: 12
+                            }}
+                            onClick={() => {
+                                if (submitted) exportReportFieldsToCSV(report, form)
+                            }}
+                            disabled={!submitted || readOnly}
+                        >
+                            Export to Spreadsheet
+                        </button>
+                    )}
+                </div>
                 <div className="report-form-header-row" style={{ marginTop: 0 }}>
                     <div className="report-form-title">
                         {report.title || ''}
@@ -399,60 +669,92 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                     <div className="report-form-fields-grid">
                         {report.name === 'plant_production' ? (
                             <>
-                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
-                                    <label>
-                                        Plant
-                                        <span className="report-modal-required">*</span>
-                                    </label>
-                                    <select
-                                        value={form.plant || ''}
-                                        onChange={e => setForm(f => ({ ...f, plant: e.target.value }))}
-                                        required
-                                        disabled={readOnly}
-                                        style={{
-                                            background: 'var(--background)',
-                                            border: '1px solid var(--divider)',
-                                            borderRadius: 6,
-                                            fontSize: 15,
-                                            width: 220,
-                                            padding: '7px 10px',
-                                            color: 'var(--text-primary)',
-                                            marginBottom: 18
-                                        }}
-                                        className="plant-prod-input"
-                                    >
-                                        <option value="">Select Plant...</option>
-                                        {plants.map(p => (
-                                            <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
-                                        ))}
-                                    </select>
+                                <div style={{ display: 'flex', gap: 24, width: '100%', marginBottom: 18 }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label>
+                                            Plant
+                                            <span className="report-modal-required">*</span>
+                                        </label>
+                                        <select
+                                            value={form.plant || ''}
+                                            onChange={e => {
+                                                const newPlant = e.target.value
+                                                setForm(f => ({ ...f, plant: newPlant, rows: [] }))
+                                                setCarouselIndex(0)
+                                            }}
+                                            required
+                                            disabled={readOnly}
+                                            style={{
+                                                background: 'var(--background)',
+                                                border: '1.5px solid var(--divider)',
+                                                borderRadius: 8,
+                                                fontSize: 16,
+                                                width: '100%',
+                                                height: 44,
+                                                padding: '0 16px',
+                                                color: 'var(--text-primary)',
+                                                boxShadow: '0 1px 4px var(--shadow-xs)',
+                                                transition: 'border 0.2s, box-shadow 0.2s',
+                                                outline: 'none',
+                                                appearance: 'none',
+                                                cursor: readOnly ? 'not-allowed' : 'pointer',
+                                                lineHeight: 1.2
+                                            }}
+                                            className="plant-prod-input plant-prod-select"
+                                        >
+                                            <option value="">Select Plant...</option>
+                                            {plants.map(p => (
+                                                <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                        <label>
+                                            Report Date
+                                            <span className="report-modal-required">*</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={form.report_date || ''}
+                                            onChange={e => setForm(f => ({ ...f, report_date: e.target.value }))}
+                                            required
+                                            disabled={readOnly}
+                                            style={{
+                                                background: 'var(--background)',
+                                                border: '1.5px solid var(--divider)',
+                                                borderRadius: 8,
+                                                fontSize: 16,
+                                                width: 180,
+                                                height: 44,
+                                                padding: '0 16px',
+                                                color: 'var(--text-primary)',
+                                                boxShadow: '0 1px 4px var(--shadow-xs)',
+                                                transition: 'border 0.2s, box-shadow 0.2s',
+                                                outline: 'none',
+                                                cursor: readOnly ? 'not-allowed' : 'pointer',
+                                                lineHeight: 1.2
+                                            }}
+                                            className="plant-prod-input plant-prod-date"
+                                        />
+                                    </div>
                                 </div>
+                                <style>
+                                    {`
+                                    .plant-prod-select:focus, .plant-prod-date:focus {
+                                        border: 1.5px solid var(--accent);
+                                        box-shadow: 0 2px 8px var(--shadow-sm);
+                                    }
+                                    .plant-prod-select:hover, .plant-prod-date:hover {
+                                        border: 1.5px solid var(--accent);
+                                    }
+                                    .plant-prod-input::placeholder {
+                                        color: var(--text-primary);
+                                        opacity: 1;
+                                    }
+                                    `}
+                                </style>
                                 <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
-                                    <label>
-                                        Report Date
-                                        <span className="report-modal-required">*</span>
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={form.report_date || ''}
-                                        onChange={e => setForm(f => ({ ...f, report_date: e.target.value }))}
-                                        required
-                                        disabled={readOnly}
-                                        style={{
-                                            background: 'var(--background)',
-                                            border: '1px solid var(--divider)',
-                                            borderRadius: 6,
-                                            fontSize: 15,
-                                            width: 180,
-                                            padding: '7px 10px',
-                                            color: 'var(--text-primary)',
-                                            marginBottom: 18
-                                        }}
-                                        className="plant-prod-input"
-                                    />
-                                </div>
-                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
-                                    <label>Production Rows</label>
+                                    <label>Operators</label>
                                     <div>
                                         {form.plant && (form.rows || []).length === 0 && (
                                             <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
@@ -466,7 +768,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                         )}
                                         {(form.rows || []).length > 0 && (
                                             <div style={{ marginBottom: 18 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16, width: '100%' }}>
                                                     {form.rows.map((row, idx) => (
                                                         <div
                                                             key={idx}
@@ -499,8 +801,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                         boxShadow: '0 1px 4px var(--shadow-sm)',
                                                         padding: 0,
                                                         color: 'var(--text-primary)',
-                                                        maxWidth: 600,
-                                                        margin: '0 auto'
+                                                        width: '100%'
                                                     }}
                                                 >
                                                     {form.rows[carouselIndex] && (
@@ -705,10 +1006,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                 opacity: carouselIndex === 0 ? 0.5 : 1
                                                             }}
                                                         >
-                                                            &#8592; Prev Row
+                                                            &#8592; Prev Operator
                                                         </button>
                                                         <span style={{ fontWeight: 600, fontSize: 15 }}>
-                                                            Row {carouselIndex + 1} of {form.rows.length}
+                                                            Operator {carouselIndex + 1} of {form.rows.length}
                                                         </span>
                                                         <button
                                                             type="button"
@@ -726,7 +1027,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                 opacity: carouselIndex === form.rows.length - 1 ? 0.5 : 1
                                                             }}
                                                         >
-                                                            Next Row &#8594;
+                                                            Next Operator &#8594;
                                                         </button>
                                                     </div>
                                                 </div>
@@ -765,14 +1066,6 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                         )}
                                     </div>
                                 </div>
-                                <style>
-                                    {`
-                                    .plant-prod-input::placeholder {
-                                        color: var(--text-primary);
-                                        opacity: 1;
-                                    }
-                                    `}
-                                </style>
                             </>
                         ) : (
                             report.fields.map(field => (
@@ -830,18 +1123,70 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                     )}
                     {error && <div className="report-modal-error">{error}</div>}
                     {success && <div style={{ color: 'var(--success)', marginBottom: 8 }}>Report submitted successfully.</div>}
+                    {saveMessage && <div style={{ color: 'var(--success)', marginBottom: 8 }}>{saveMessage}</div>}
                     {!readOnly && (
-                        <div className="report-modal-actions-wide">
-                            <button type="button" className="report-modal-cancel" onClick={onBack} disabled={submitting}>
+                        <div className="report-modal-actions-wide" style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                            <button type="button" className="report-modal-cancel" onClick={handleBackClick} disabled={submitting || savingDraft}>
                                 Cancel
                             </button>
-                            <button type="submit" className="report-modal-submit" disabled={submitting}>
+                            <button
+                                type="button"
+                                className="report-modal-save"
+                                style={{
+                                    background: 'var(--accent)',
+                                    color: 'var(--text-light)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: 'pointer',
+                                    marginRight: 12
+                                }}
+                                onClick={handleSaveDraft}
+                                disabled={submitting || savingDraft}
+                            >
+                                {savingDraft ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button type="submit" className="report-modal-submit" disabled={submitting || savingDraft}>
                                 {submitting ? 'Submitting...' : 'Submit'}
                             </button>
                         </div>
                     )}
                 </form>
             </div>
+            {showUnsavedChangesModal && (
+                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
+                        <h2>Unsaved Changes</h2>
+                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
+                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
+                            <button
+                                className="primary-button"
+                                onClick={async () => {
+                                    setShowUnsavedChangesModal(false)
+                                    try {
+                                        await handleSaveDraft({ preventDefault: () => {} })
+                                        setTimeout(() => onBack(), 800)
+                                    } catch {
+                                    }
+                                }}
+                                disabled={submitting || savingDraft}
+                                style={{background: 'var(--accent)', opacity: submitting || savingDraft ? '0.6' : '1', cursor: submitting || savingDraft ? 'not-allowed' : 'pointer'}}
+                            >Save & Leave</button>
+                            <button
+                                className="danger-button"
+                                onClick={() => {
+                                    setShowUnsavedChangesModal(false)
+                                    setHasUnsavedChanges(false)
+                                    onBack()
+                                }}
+                            >Discard & Leave</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

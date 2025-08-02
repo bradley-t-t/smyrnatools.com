@@ -296,42 +296,57 @@ function TractorDetailView({tractorId, onClose}) {
     }
 
     async function handleVerifyTractor() {
-        if (!tractor) return;
+        if (!tractor) return
 
-        setIsSaving(true);
+        const operatorName = getOperatorName(assignedOperator)
+        if (
+            status === 'Active' &&
+            (
+                assignedOperator === null ||
+                assignedOperator === undefined ||
+                assignedOperator === '0' ||
+                (assignedOperator && operatorName === 'Unknown')
+            )
+        ) {
+            setMessage('Cannot verify: Assigned operator is missing or invalid.')
+            setTimeout(() => setMessage(''), 4000)
+            return
+        }
+
+        setIsSaving(true)
         try {
             if (hasUnsavedChanges) {
                 await handleSave().catch(error => {
-                    console.error('Error saving changes before verification:', error);
-                    alert('Failed to save your changes before verification. Please try saving manually first.');
-                    throw new Error('Failed to save changes before verification');
-                });
+                    console.error('Error saving changes before verification:', error)
+                    alert('Failed to save your changes before verification. Please try saving manually first.')
+                    throw new Error('Failed to save changes before verification')
+                })
             }
 
-            let userObj = await UserService.getCurrentUser();
-            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
+            let userObj = await UserService.getCurrentUser()
+            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
 
-            const now = new Date().toISOString();
+            const now = new Date().toISOString()
             const {data, error} = await supabase
                 .from('tractors')
                 .update({updated_last: now, updated_by: userId})
                 .eq('id', tractor.id)
-                .select();
+                .select()
 
-            if (error) throw new Error(`Failed to verify tractor: ${error.message}`);
+            if (error) throw new Error(`Failed to verify tractor: ${error.message}`)
             if (data?.length) {
-                setTractor(Tractor.fromApiFormat(data[0]));
-                setMessage('Tractor verified successfully!');
-                setTimeout(() => setMessage(''), 3000);
+                setTractor(Tractor.fromApiFormat(data[0]))
+                setMessage('Tractor verified successfully!')
+                setTimeout(() => setMessage(''), 3000)
             }
 
-            setHasUnsavedChanges(false);
+            setHasUnsavedChanges(false)
 
         } catch (error) {
-            console.error('Error verifying tractor:', error);
-            alert(`Error verifying tractor: ${error.message}`);
+            console.error('Error verifying tractor:', error)
+            alert(`Error verifying tractor: ${error.message}`)
         } finally {
-            setIsSaving(false);
+            setIsSaving(false)
         }
     }
 

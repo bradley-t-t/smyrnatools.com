@@ -57,7 +57,7 @@ export class Mixer {
             cleanliness_rating: this.cleanlinessRating,
             status: this.status,
             created_at: formatDateForDb(this.createdAt) || formatDateForDb(new Date()),
-            updated_at: formatDateForDb(new Date()),
+            updated_at: formatDateForDb(this.updatedAt),
             updated_last: formatDateForDb(this.updatedLast),
             updated_by: this.updatedBy,
             vin: this.vin,
@@ -112,6 +112,7 @@ export class Mixer {
     getFormattedChipDate() {
         return this.lastChipDate ? new Date(this.lastChipDate).toLocaleDateString() : 'Not available';
     }
+
     isVerified(latestHistoryDate) {
         return MixerUtility.isVerified(
             this.updatedLast,
@@ -119,5 +120,12 @@ export class Mixer {
             this.updatedBy,
             latestHistoryDate
         );
+    }
+
+    verify(userId) {
+        const now = new Date().toISOString();
+        this.updatedLast = now;
+        this.updatedBy = userId;
+        return this;
     }
 }
