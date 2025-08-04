@@ -138,6 +138,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
     const [submittedAt, setSubmittedAt] = useState('')
     const [summaryTab, setSummaryTab] = useState('summary')
     const [operatorOptions, setOperatorOptions] = useState([])
+    const [assignedPlant, setAssignedPlant] = useState('')
 
     useEffect(() => {
         async function fetchOwnerName() {
@@ -231,9 +232,15 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
         fetchOperatorOptions()
     }, [report.name, form.plant, form.rows])
 
-    function getPlantName(plantCode) {
-        return plantCode || 'No Plant'
-    }
+    useEffect(() => {
+        async function fetchAssignedPlant() {
+            if (report.name === 'plant_manager' && completedByUser && completedByUser.id) {
+                const plant = await UserService.getUserPlant(completedByUser.id)
+                setAssignedPlant(plant || '')
+            }
+        }
+        fetchAssignedPlant()
+    }, [report.name, completedByUser])
 
     function truncateText(text, maxLength) {
         if (!text) return ''
@@ -376,6 +383,16 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                     }}>
                         {statusText}
                     </div>
+                    {report.name === 'plant_manager' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--accent)' }}>
+                                {ownerName}
+                            </div>
+                            <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-secondary)' }}>
+                                Assigned Plant: {assignedPlant}
+                            </div>
+                        </div>
+                    )}
                     {submittedAt && (
                         <div style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
                             {isSubmitted ? 'Submitted at' : 'Last saved'}: {submittedAt}

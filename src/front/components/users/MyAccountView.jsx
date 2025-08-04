@@ -193,7 +193,7 @@ function MyAccountView({userId}) {
         } catch (error) {
             setPasswordError(error.message);
         } finally {
-            setLoading(false);
+        setLoading(false);
         }
     };
 
@@ -245,8 +245,10 @@ function MyAccountView({userId}) {
                             : 'My Account'}
                     </h1>
                     <p className="account-subtitle">{email || 'No email available'}</p>
-                    {userRole && <div className="account-badge" style={{ backgroundColor: 'var(--myaccount-accent)' }}>{userRole}</div>}
-                    {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
+                    <div className="account-badges-row">
+                        {userRole && <div className="account-badge" style={{ backgroundColor: 'var(--myaccount-accent)' }}>{userRole}</div>}
+                        {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
+                    </div>
                 </div>
             </div>
             {message && (
@@ -294,7 +296,6 @@ function MyAccountView({userId}) {
                                 <div className="form-group">
                                     <label htmlFor="first_name">First Name</label>
                                     <div className="input-with-icon">
-                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
                                         <input
                                             type="text"
                                             id="first_name"
@@ -304,12 +305,12 @@ function MyAccountView({userId}) {
                                             required
                                             style={{ paddingLeft: "45px" }}
                                         />
+                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)" }}></i>
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="last_name">Last Name</label>
                                     <div className="input-with-icon">
-                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
                                         <input
                                             type="text"
                                             id="last_name"
@@ -319,6 +320,7 @@ function MyAccountView({userId}) {
                                             required
                                             style={{ paddingLeft: "45px" }}
                                         />
+                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)" }}></i>
                                     </div>
                                 </div>
                             </div>
@@ -376,37 +378,6 @@ function MyAccountView({userId}) {
                     <div className="section-header">
                         <h2><i className="fas fa-shield-alt" style={{ color: 'var(--myaccount-accent)' }}></i> Account Security</h2>
                         <p>Manage your password and protect your account</p>
-                    </div>
-                    <div className="security-overview">
-                        <div className="security-status-card" style={{ borderColor: 'var(--myaccount-accent)' }}>
-                            <div className="security-status-header">
-                                <div className="security-status-icon" style={{ backgroundColor: 'var(--myaccount-accent)' }}>
-                                    <i className="fas fa-user-shield"></i>
-                                </div>
-                                <div className="security-status-title">
-                                    <h3>Security Status</h3>
-                                    <div className="security-badge secure">
-                                        <i className="fas fa-check-circle"></i> Secure
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="security-metrics">
-                                <div className="security-metric">
-                                    <div className="metric-label">Password Strength</div>
-                                    <div className="strength-bar">
-                                        <div className="strength-indicator high" style={{ width: '85%', backgroundColor: 'var(--myaccount-accent)' }}></div>
-                                    </div>
-                                    <div className="metric-value">Strong</div>
-                                </div>
-                                <div className="security-metric">
-                                    <div className="metric-label">Online Status</div>
-                                    <div className="online-status-indicator">
-                                        <span className="status-dot" style={{ backgroundColor: '#10b981' }}></span>
-                                        <span className="status-text">Active and Visible to Others</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <div className="security-actions-grid">
                         <div className="security-action-card">
@@ -498,41 +469,6 @@ function MyAccountView({userId}) {
                                     </span>
                                 </div>
                             </button>
-                        </div>
-                    </div>
-                </div>
-                <div className="account-section">
-                    <div className="section-header">
-                        <h2><i className="fas fa-info-circle" style={{ color: 'var(--myaccount-accent)' }}></i> Security Tips</h2>
-                        <p>Recommended practices to keep your account secure</p>
-                    </div>
-                    <div className="security-tips-container">
-                        <div className="security-tip">
-                            <div className="tip-icon">
-                                <i className="fas fa-fingerprint" style={{ color: 'var(--myaccount-accent)' }}></i>
-                            </div>
-                            <div className="tip-content">
-                                <h4>Use a Strong Password</h4>
-                                <p>Create a password with at least 8 characters including uppercase letters, numbers, and symbols.</p>
-                            </div>
-                        </div>
-                        <div className="security-tip">
-                            <div className="tip-icon">
-                                <i className="fas fa-sync-alt" style={{ color: 'var(--myaccount-accent)' }}></i>
-                            </div>
-                            <div className="tip-content">
-                                <h4>Change Regularly</h4>
-                                <p>Update your password every 90 days to maintain strong security.</p>
-                            </div>
-                        </div>
-                        <div className="security-tip">
-                            <div className="tip-icon">
-                                <i className="fas fa-user-secret" style={{ color: 'var(--myaccount-accent)' }}></i>
-                            </div>
-                            <div className="tip-content">
-                                <h4>Don't Share Credentials</h4>
-                                <p>Never share your login information with others or store it in unsecured locations.</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -631,4 +567,3 @@ function MyAccountView({userId}) {
 }
 
 export default MyAccountView;
-

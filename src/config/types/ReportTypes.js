@@ -21,10 +21,10 @@ export const reportTypes = [
     assignment: ["reports.assigned.plant_manager"],
     manage: ["reports.manage.plant_manager"],
     fields: [
-      { name: "plant", label: "Plant", type: "text", required: false },
       { name: "yardage", label: "Yardage", type: "number", required: false },
       { name: "total_hours", label: "Total Hours", type: "number", required: false },
       { name: "total_yards_lost", label: "Total Yards Lost", type: "number", required: false },
+      { name: "yards_resold", label: "Yards Resold", type: "number", required: false },
       { name: "monday_recap", label: "Monday Recap", type: "textarea", required: false },
       { name: "tuesday_recap", label: "Tuesday Recap", type: "textarea", required: false },
       { name: "wednesday_recap", label: "Wednesday Recap", type: "textarea", required: false },

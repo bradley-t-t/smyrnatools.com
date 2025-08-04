@@ -423,11 +423,6 @@ function ReportsView() {
                                                             <div className="reports-list-item" key={item.name + item.weekIso}>
                                                                 <div className="reports-list-title">
                                                                     {item.title}
-                                                                    {item.name !== 'district_manager' && (
-                                                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>
-                                                                            ({item.range})
-                                                                        </span>
-                                                                    )}
                                                                     <span style={{
                                                                         marginLeft: 12,
                                                                         color: statusColor,
@@ -482,7 +477,6 @@ function ReportsView() {
                                                             <div className="reports-list-title">
                                                                 {report.title}
                                                             </div>
-                                                            <div className="reports-list-date">{report.completedDate && new Date(report.completedDate).toLocaleString()}</div>
                                                             <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
                                                             <button className="reports-list-action" onClick={() => handleReview(report)}>
                                                                 Review

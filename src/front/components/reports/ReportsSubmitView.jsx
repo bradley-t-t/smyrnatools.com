@@ -602,6 +602,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         else onBack()
     }
 
+    useEffect(() => {
+        if (report.name === 'plant_manager' && user && user.plant_code) {
+            setForm(f => ({ ...f, plant: user.plant_code }))
+        }
+    }, [report.name, user])
+
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
             <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
