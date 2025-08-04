@@ -64,6 +64,9 @@ function ReportsView() {
     const [hasAssigned, setHasAssigned] = useState({})
     const [hasReviewPermission, setHasReviewPermission] = useState({})
     const [submitInitialData, setSubmitInitialData] = useState(null)
+    const [plants, setPlants] = useState([])
+    const [filterReportType, setFilterReportType] = useState('')
+    const [filterPlant, setFilterPlant] = useState('')
 
     useEffect(() => {
         async function fetchUserAndReports() {
@@ -152,6 +155,20 @@ function ReportsView() {
             setHasReviewPermission(review)
         }
         checkAssignedAndReview()
+    }, [])
+
+    useEffect(() => {
+        async function fetchPlants() {
+            const { data, error } = await supabase
+                .from('plants')
+                .select('plant_code,plant_name')
+                .order('plant_code', { ascending: true })
+            setPlants(!error && Array.isArray(data)
+                ? data.filter(p => p.plant_code && p.plant_name)
+                : []
+            )
+        }
+        fetchPlants()
     }, [])
 
     function getDueWeeks(startDate) {
@@ -339,6 +356,18 @@ function ReportsView() {
         setShowForm(item)
     }
 
+    function getPlantNameFromReport(report) {
+        if (report.data && report.data.plant) return report.data.plant
+        if (report.data && report.data.rows && report.data.rows[0] && report.data.rows[0].plant_code) return report.data.rows[0].plant_code
+        return ''
+    }
+
+    function getPlantNameFromWeekItem(item) {
+        if (item.report && item.report.data && item.report.data.plant) return item.report.data.plant
+        if (item.report && item.report.data && item.report.data.rows && item.report.data.rows[0] && item.report.data.rows[0].plant_code) return item.report.data.rows[0].plant_code
+        return ''
+    }
+
     return (
         <>
             <div className="reports-root">
@@ -378,6 +407,7 @@ function ReportsView() {
                                     ) : (
                                         sortedMyWeeks.map(weekIso => {
                                             const weekItems = myReportsByWeek[weekIso]
+                                            if (weekItems.length === 0) return null
                                             const weekStart = new Date(weekIso)
                                             weekStart.setDate(weekStart.getDate() + 1)
                                             const weekEnd = new Date(weekStart)
@@ -453,6 +483,7 @@ function ReportsView() {
                                     ) : (
                                         sortedReviewWeeks.map(weekIso => {
                                             const weekReports = reviewReportsByWeek[weekIso]
+                                            if (weekReports.length === 0) return null
                                             const weekStart = new Date(weekIso)
                                             weekStart.setDate(weekStart.getDate() + 1)
                                             const weekEnd = new Date(weekStart)
@@ -515,7 +546,7 @@ function ReportsView() {
                 )}
             </div>
             <div style={{ width: '100%', textAlign: 'center', marginTop: 48, marginBottom: 32, fontWeight: 600, color: 'var(--text-secondary)', paddingBottom: 32 }}>
-                Weekly Reports are due on Saturdays
+                Weekly Reports are due on Mondays by 10am (For the prior week)
             </div>
         </>
     )

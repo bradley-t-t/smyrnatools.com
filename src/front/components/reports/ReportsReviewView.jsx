@@ -3,7 +3,7 @@ import './styles/ReportsSubmitView.css'
 import './styles/ReportsReviewView.css'
 import { supabase } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
-import { getWeekRangeFromIso, getMondayAndSaturday } from './ReportsView'
+import { getWeekRangeFromIso } from './ReportsView'
 import { PlantManagerReviewPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerReviewPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionReviewPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
@@ -14,24 +14,29 @@ const plugins = {
     plant_production: PlantProductionReviewPlugin
 }
 
+function parseTimeToMinutes(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return null
+    const [h, m] = timeStr.split(':').map(Number)
+    if (isNaN(h) || isNaN(m)) return null
+    return h * 60 + m
+}
+
+function getOperatorName(row, operatorOptions) {
+    if (!row || !row.name) return ''
+    if (Array.isArray(operatorOptions)) {
+        const found = operatorOptions.find(opt => opt.value === row.name)
+        if (found) return found.label
+    }
+    if (row.displayName) return row.displayName
+    return row.name
+}
+
 function exportRowsToCSV(rows, operatorOptions, reportDate) {
     if (!Array.isArray(rows) || rows.length === 0) return
     const dateStr = reportDate ? ` - ${reportDate}` : ''
     const title = `Plant Production Report${dateStr}`
-    const headers = [
-        title,
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        ''
-    ]
+    const headers = Array(12).fill('')
+    headers[0] = title
     const tableHeaders = [
         'Operator Name',
         'Truck Number',
@@ -48,21 +53,6 @@ function exportRowsToCSV(rows, operatorOptions, reportDate) {
     ]
     const csvRows = [headers, tableHeaders]
     rows.forEach(row => {
-        function parseTimeToMinutes(timeStr) {
-            if (!timeStr || typeof timeStr !== 'string') return null
-            const [h, m] = timeStr.split(':').map(Number)
-            if (isNaN(h) || isNaN(m)) return null
-            return h * 60 + m
-        }
-        function getOperatorName(row, operatorOptions) {
-            if (!row || !row.name) return ''
-            if (Array.isArray(operatorOptions)) {
-                const found = operatorOptions.find(opt => opt.value === row.name)
-                if (found) return found.label
-            }
-            if (row.displayName) return row.displayName
-            return row.name
-        }
         const start = parseTimeToMinutes(row.start_time)
         const firstLoad = parseTimeToMinutes(row.first_load)
         const eod = parseTimeToMinutes(row.eod_in_yard)
@@ -130,6 +120,11 @@ function formatDateTime(dt) {
     return date.toLocaleString()
 }
 
+function truncateText(text, maxLength) {
+    if (!text) return ''
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
+
 function ReportsReviewView({ report, initialData, onBack, user, completedByUser }) {
     const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
@@ -179,11 +174,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                 .eq('completed', true)
                 .gte('completed_at', monday.toISOString())
                 .lte('completed_at', saturday.toISOString())
-            if (!error && Array.isArray(data)) {
-                setMaintenanceItems(data)
-            } else {
-                setMaintenanceItems([])
-            }
+            setMaintenanceItems(!error && Array.isArray(data) ? data : [])
         }
         fetchMaintenanceItems()
     }, [report.weekIso, initialData?.week])
@@ -218,16 +209,13 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                 .from('operators')
                 .select('employee_id, name')
                 .eq('plant_code', plantCode)
-            if (!opError && Array.isArray(operatorsData)) {
-                setOperatorOptions(
-                    operatorsData.map(u => ({
-                        value: u.employee_id,
-                        label: u.name
-                    }))
-                )
-            } else {
-                setOperatorOptions([])
-            }
+            setOperatorOptions(!opError && Array.isArray(operatorsData)
+                ? operatorsData.map(u => ({
+                    value: u.employee_id,
+                    label: u.name
+                }))
+                : []
+            )
         }
         fetchOperatorOptions()
     }, [report.name, form.plant, form.rows])
@@ -241,11 +229,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
         }
         fetchAssignedPlant()
     }, [report.name, completedByUser])
-
-    function truncateText(text, maxLength) {
-        if (!text) return ''
-        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
-    }
 
     let weekRangeHeader = weekRange
     let reportTitle = report.title || 'Report Review'

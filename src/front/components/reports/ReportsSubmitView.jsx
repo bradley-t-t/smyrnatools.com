@@ -5,7 +5,6 @@ import { getWeekRangeFromIso } from './ReportsView'
 import { PlantManagerSubmitPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerSubmitPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionSubmitPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
-import { UserService } from '../../../services/UserService'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
@@ -15,24 +14,29 @@ const plugins = {
 
 const REPORTS_START_DATE = new Date('2025-07-20')
 
+function parseTimeToMinutes(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return null
+    const [h, m] = timeStr.split(':').map(Number)
+    if (isNaN(h) || isNaN(m)) return null
+    return h * 60 + m
+}
+
+function getOperatorName(row, operatorOptions) {
+    if (!row || !row.name) return ''
+    if (Array.isArray(operatorOptions)) {
+        const found = operatorOptions.find(opt => opt.value === row.name)
+        if (found) return found.label
+    }
+    if (row.displayName) return row.displayName
+    return row.name
+}
+
 function exportRowsToCSV(rows, operatorOptions, reportDate) {
     if (!Array.isArray(rows) || rows.length === 0) return
     const dateStr = reportDate ? ` - ${reportDate}` : ''
     const title = `Plant Production Report${dateStr}`
-    const headers = [
-        title,
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        ''
-    ]
+    const headers = Array(12).fill('')
+    headers[0] = title
     const tableHeaders = [
         'Operator Name',
         'Truck Number',
@@ -49,21 +53,6 @@ function exportRowsToCSV(rows, operatorOptions, reportDate) {
     ]
     const csvRows = [headers, tableHeaders]
     rows.forEach(row => {
-        function parseTimeToMinutes(timeStr) {
-            if (!timeStr || typeof timeStr !== 'string') return null
-            const [h, m] = timeStr.split(':').map(Number)
-            if (isNaN(h) || isNaN(m)) return null
-            return h * 60 + m
-        }
-        function getOperatorName(row, operatorOptions) {
-            if (!row || !row.name) return ''
-            if (Array.isArray(operatorOptions)) {
-                const found = operatorOptions.find(opt => opt.value === row.name)
-                if (found) return found.label
-            }
-            if (row.displayName) return row.displayName
-            return row.name
-        }
         const start = parseTimeToMinutes(row.start_time)
         const firstLoad = parseTimeToMinutes(row.first_load)
         const eod = parseTimeToMinutes(row.eod_in_yard)
@@ -125,6 +114,19 @@ function exportReportFieldsToCSV(report, form) {
     }, 0)
 }
 
+function truncateText(text, maxLength) {
+    if (!text) return ''
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
+
+function getTruckNumberForOperator(row, mixers) {
+    if (row && row.truck_number) return row.truck_number
+    if (!row || !row.name) return ''
+    const mixer = mixers.find(m => m.assigned_operator === row.name)
+    if (mixer && mixer.truck_number) return mixer.truck_number
+    return ''
+}
+
 function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly }) {
     const [form, setForm] = useState(() => {
         if (initialData) {
@@ -176,19 +178,16 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 .from('plants')
                 .select('plant_code,plant_name')
                 .order('plant_code', { ascending: true })
-            if (!error && Array.isArray(data)) {
-                const sorted = data
-                    .filter(p => p.plant_code && p.plant_name)
+            setPlants(!error && Array.isArray(data)
+                ? data.filter(p => p.plant_code && p.plant_name)
                     .sort((a, b) => {
                         const aNum = parseInt(a.plant_code, 10)
                         const bNum = parseInt(b.plant_code, 10)
                         if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
                         return String(a.plant_code).localeCompare(String(b.plant_code))
                     })
-                setPlants(sorted)
-            } else {
-                setPlants([])
-            }
+                : []
+            )
         }
         if (report.name === 'plant_production') {
             fetchPlants()
@@ -215,11 +214,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 .eq('completed', true)
                 .gte('completed_at', weekStart.toISOString())
                 .lte('completed_at', weekEnd.toISOString())
-            if (!error && Array.isArray(data)) {
-                setMaintenanceItems(data)
-            } else {
-                setMaintenanceItems([])
-            }
+            setMaintenanceItems(!error && Array.isArray(data) ? data : [])
         }
         fetchMaintenanceItems()
     }, [report.weekIso])
@@ -539,23 +534,6 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         }
     }
 
-    function getPlantName(plantCode) {
-        return plantCode || ''
-    }
-
-    function truncateText(text, maxLength) {
-        if (!text) return ''
-        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
-    }
-
-    function getTruckNumberForOperator(row) {
-        if (row && row.truck_number) return row.truck_number
-        if (!row || !row.name) return ''
-        const mixer = mixers.find(m => m.assigned_operator === row.name)
-        if (mixer && mixer.truck_number) return mixer.truck_number
-        return ''
-    }
-
     let weekRange = ''
     if (report.weekIso) {
         weekRange = getWeekRangeFromIso(report.weekIso)
@@ -835,7 +813,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                     <label style={{ fontWeight: 600, fontSize: 15 }}>Truck #</label>
                                                                     <input
                                                                         type="text"
-                                                                        value={getTruckNumberForOperator(form.rows[carouselIndex])}
+                                                                        value={getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
                                                                         disabled
                                                                         style={{
                                                                             background: 'var(--background)',
