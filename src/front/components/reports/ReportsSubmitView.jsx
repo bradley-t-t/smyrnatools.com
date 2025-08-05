@@ -18,7 +18,6 @@ const plugins = {
     plant_production: PlantProductionSubmitPlugin
 }
 
-
 function truncateText(text, maxLength) {
     if (!text) return ''
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
@@ -68,15 +67,165 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
     const [debugMsg, setDebugMsg] = useState('')
 
-    useEffect(() => {
-        setInitialFormSnapshot(JSON.stringify(form))
-    }, [])
+    let weekRange = ''
+    if (report.weekIso) {
+        weekRange = getWeekRangeFromIso(report.weekIso)
+    }
+    const PluginComponent = plugins[report.name]
+    const submitted = !!initialData?.completed
 
-    useEffect(() => {
-        if (initialFormSnapshot !== null) {
-            setHasUnsavedChanges(JSON.stringify(form) !== initialFormSnapshot)
+    function handleChange(e, name, idx, colName) {
+        if (report.name === 'plant_production' && name === 'rows') {
+            const updatedRows = [...(form.rows || [])]
+            if (colName === 'name' || colName === 'truck_number') {
+                return
+            } else {
+                updatedRows[idx][colName] = e.target.value
+            }
+            setForm({ ...form, rows: updatedRows })
+            return
         }
-    }, [form, initialFormSnapshot])
+        let value = e.target.value
+        if (
+            ['total_yards_lost', 'yardage_lost', 'lost_yardage', 'Yardage Lost', 'yardage_lost'].includes(name)
+            && value !== ''
+            && !isNaN(Number(value))
+            && Number(value) < 0
+        ) {
+            value = 0
+        }
+        setForm({ ...form, [name]: value })
+    }
+
+    async function handleSubmit(e) {
+        e.preventDefault()
+        setError('')
+        setSuccess(false)
+        if (report.name !== 'general_manager') {
+            for (const field of report.fields) {
+                if (field.required && !form[field.name]) {
+                    setError('Please fill out all required fields.')
+                    return
+                }
+            }
+        }
+        setSubmitting(true)
+    }
+
+    async function handleSaveDraft(e) {
+        e.preventDefault()
+        setError('')
+        setSuccess(false)
+        setSaveMessage('')
+        if (report.name !== 'general_manager') {
+            for (const field of report.fields) {
+                if (field.required && !form[field.name]) {
+                    setError('Please fill out all required fields.')
+                    return
+                }
+            }
+        }
+        setSavingDraft(true)
+        try {
+            if (!report || !user || typeof user.id !== 'string') {
+                setError('User not found')
+                setSavingDraft(false)
+                return
+            }
+            let monday = report.weekIso ? new Date(report.weekIso) : null
+            let saturday = monday ? new Date(monday) : null
+            if (saturday) saturday.setDate(monday.getDate() + 5)
+            const upsertData = {
+                report_name: report.name,
+                user_id: user.id,
+                data: { ...form, week: report.weekIso },
+                week: monday ? monday.toISOString() : null,
+                completed: false,
+                submitted_at: new Date().toISOString(),
+                report_date_range_start: monday?.toISOString() || null,
+                report_date_range_end: saturday?.toISOString() || null
+            }
+            const { data: existing, error: findError } = await supabase
+                .from('reports')
+                .select('id')
+                .eq('report_name', report.name)
+                .eq('user_id', user.id)
+                .eq('week', monday ? monday.toISOString() : null)
+                .maybeSingle()
+            if (findError) {
+                setError(findError.message || 'Error checking for existing report')
+                setSavingDraft(false)
+                return
+            }
+            let response
+            if (existing && existing.id) {
+                response = await supabase
+                    .from('reports')
+                    .update(upsertData)
+                    .eq('id', existing.id)
+                    .select('id')
+                    .single()
+            } else {
+                response = await supabase
+                    .from('reports')
+                    .insert([upsertData])
+                    .select('id')
+                    .single()
+            }
+            const { error } = response
+            if (error) {
+                setError(error.message || 'Error saving draft')
+                setSavingDraft(false)
+                return
+            }
+            setSaveMessage('Changes saved.')
+            setInitialFormSnapshot(JSON.stringify(form))
+            setHasUnsavedChanges(false)
+        } catch {
+            setError('Error saving draft')
+        } finally {
+            setSavingDraft(false)
+        }
+    }
+
+    function handleExcludeOperator(idx) {
+        const updatedRows = [...(form.rows || [])]
+        if (updatedRows[idx]) {
+            updatedRows.splice(idx, 1)
+        }
+        let newIndex = carouselIndex
+        if (newIndex >= updatedRows.length) {
+            newIndex = Math.max(0, updatedRows.length - 1)
+        }
+        setForm({ ...form, rows: updatedRows })
+        setCarouselIndex(newIndex)
+    }
+
+    function handleReincludeOperator(operatorId) {
+        if (!operatorId) return
+        const op = operatorOptions.find(opt => opt.value === operatorId)
+        const mixer = mixers.find(m => m.assigned_operator === operatorId)
+        const newRow = {
+            name: operatorId,
+            truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
+            start_time: '',
+            first_load: '',
+            eod_in_yard: '',
+            punch_out: '',
+            loads: '',
+            comments: ''
+        }
+        setForm(f => ({
+            ...f,
+            rows: [...(f.rows || []), newRow]
+        }))
+        setCarouselIndex((form.rows || []).length)
+    }
+
+    function handleBackClick() {
+        if (hasUnsavedChanges) setShowUnsavedChangesModal(true)
+        else onBack()
+    }
 
     useEffect(() => {
         async function fetchPlants() {
@@ -213,13 +362,6 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                     ...initialData
                 }))
             }
-            setInitialFormSnapshot(
-                JSON.stringify(
-                    initialData.data
-                        ? { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData.data, ...(initialData.rows ? { rows: initialData.rows } : {}) }
-                        : { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData }
-                )
-            )
         }
     }, [initialData])
 
@@ -324,163 +466,22 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         }
     }, [form.rows, operatorOptions, report.name])
 
-    function handleChange(e, name, idx, colName) {
-        if (report.name === 'plant_production' && name === 'rows') {
-            const updatedRows = [...(form.rows || [])]
-            if (colName === 'name' || colName === 'truck_number') {
-                return
-            } else {
-                updatedRows[idx][colName] = e.target.value
-            }
-            setForm({ ...form, rows: updatedRows })
-            return
-        }
-        let value = e.target.value
+    useEffect(() => {
         if (
-            ['total_yards_lost', 'yardage_lost', 'lost_yardage', 'Yardage Lost', 'yardage_lost'].includes(name)
-            && value !== ''
-            && !isNaN(Number(value))
-            && Number(value) < 0
+            (report.name !== 'plant_production') ||
+            (report.name === 'plant_production' && plants.length > 0 && operatorOptions.length > 0 && Array.isArray(form.rows))
         ) {
-            value = 0
+            if (initialFormSnapshot === null) {
+                setInitialFormSnapshot(JSON.stringify(form))
+            }
         }
-        setForm({ ...form, [name]: value })
-    }
+    }, [report.name, plants, operatorOptions, form.rows, initialData])
 
-    async function handleSubmit(e) {
-        e.preventDefault()
-        setError('')
-        setSuccess(false)
-        if (report.name !== 'general_manager') {
-            for (const field of report.fields) {
-                if (field.required && !form[field.name]) {
-                    setError('Please fill out all required fields.')
-                    return
-                }
-            }
+    useEffect(() => {
+        if (initialFormSnapshot !== null) {
+            setHasUnsavedChanges(JSON.stringify(form) !== initialFormSnapshot)
         }
-        setSubmitting(true)
-    }
-
-    async function handleSaveDraft(e) {
-        e.preventDefault()
-        setError('')
-        setSuccess(false)
-        setSaveMessage('')
-        if (report.name !== 'general_manager') {
-            for (const field of report.fields) {
-                if (field.required && !form[field.name]) {
-                    setError('Please fill out all required fields.')
-                    return
-                }
-            }
-        }
-        setSavingDraft(true)
-        try {
-            if (!report || !user || typeof user.id !== 'string') {
-                setError('User not found')
-                setSavingDraft(false)
-                return
-            }
-            let monday = report.weekIso ? new Date(report.weekIso) : null
-            let saturday = monday ? new Date(monday) : null
-            if (saturday) saturday.setDate(monday.getDate() + 5)
-            const upsertData = {
-                report_name: report.name,
-                user_id: user.id,
-                data: { ...form, week: report.weekIso },
-                week: monday ? monday.toISOString() : null,
-                completed: false,
-                submitted_at: new Date().toISOString(),
-                report_date_range_start: monday?.toISOString() || null,
-                report_date_range_end: saturday?.toISOString() || null
-            }
-            const { data: existing, error: findError } = await supabase
-                .from('reports')
-                .select('id')
-                .eq('report_name', report.name)
-                .eq('user_id', user.id)
-                .eq('week', monday ? monday.toISOString() : null)
-                .maybeSingle()
-            if (findError) {
-                setError(findError.message || 'Error checking for existing report')
-                setSavingDraft(false)
-                return
-            }
-            let response
-            if (existing && existing.id) {
-                response = await supabase
-                    .from('reports')
-                    .update(upsertData)
-                    .eq('id', existing.id)
-                    .select('id')
-                    .single()
-            } else {
-                response = await supabase
-                    .from('reports')
-                    .insert([upsertData])
-                    .select('id')
-                    .single()
-            }
-            const { error } = response
-            if (error) {
-                setError(error.message || 'Error saving draft')
-                setSavingDraft(false)
-                return
-            }
-            setSaveMessage('Changes saved.')
-        } catch {
-            setError('Error saving draft')
-        } finally {
-            setSavingDraft(false)
-        }
-    }
-
-    let weekRange = ''
-    if (report.weekIso) {
-        weekRange = getWeekRangeFromIso(report.weekIso)
-    }
-    const PluginComponent = plugins[report.name]
-    const submitted = !!initialData?.completed
-
-    function handleExcludeOperator(idx) {
-        const updatedRows = [...(form.rows || [])]
-        if (updatedRows[idx]) {
-            updatedRows.splice(idx, 1)
-        }
-        let newIndex = carouselIndex
-        if (newIndex >= updatedRows.length) {
-            newIndex = Math.max(0, updatedRows.length - 1)
-        }
-        setForm({ ...form, rows: updatedRows })
-        setCarouselIndex(newIndex)
-    }
-
-    function handleReincludeOperator(operatorId) {
-        if (!operatorId) return
-        const op = operatorOptions.find(opt => opt.value === operatorId)
-        const mixer = mixers.find(m => m.assigned_operator === operatorId)
-        const newRow = {
-            name: operatorId,
-            truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
-            start_time: '',
-            first_load: '',
-            eod_in_yard: '',
-            punch_out: '',
-            loads: '',
-            comments: ''
-        }
-        setForm(f => ({
-            ...f,
-            rows: [...(f.rows || []), newRow]
-        }))
-        setCarouselIndex((form.rows || []).length)
-    }
-
-    function handleBackClick() {
-        if (hasUnsavedChanges) setShowUnsavedChangesModal(true)
-        else onBack()
-    }
+    }, [form, initialFormSnapshot])
 
     useEffect(() => {
         if (report.name === 'plant_manager' && user && user.plant_code) {
@@ -1113,5 +1114,4 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         </div>
     )
 }
-
 export default ReportsSubmitView

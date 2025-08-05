@@ -306,34 +306,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                         </div>
                     )}
                 </div>
-                <div style={{ display: 'flex', gap: 0, marginBottom: 24, marginTop: 18 }}>
-                    {tabOptions.map(tab => (
-                        <button
-                            key={tab.key}
-                            type="button"
-                            onClick={() => setActiveTab(tab.key)}
-                            style={{
-                                background: activeTab === tab.key ? 'var(--accent)' : 'var(--divider)',
-                                color: activeTab === tab.key ? 'var(--text-light)' : 'var(--text-secondary)',
-                                border: 'none',
-                                borderRadius: tab.key === tabOptions[0].key ? '8px 0 0 8px' : '0 8px 8px 0',
-                                padding: '10px 32px',
-                                fontWeight: 700,
-                                fontSize: 16,
-                                cursor: 'pointer',
-                                marginRight: tab.key === tabOptions[0].key ? 2 : 0,
-                                marginLeft: tab.key === tabOptions[1].key ? 2 : 0,
-                                boxShadow: activeTab === tab.key ? '0 2px 8px var(--shadow-xs)' : 'none'
-                            }}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
                 <div className="report-form-body-wide">
-                    {(activeTab === 'review' || activeTab === 'overview') && (
-                        null
-                    )}
                     {report.name !== 'general_manager' && (
                         <>
                             {report.name === 'plant_production' ? null : (
