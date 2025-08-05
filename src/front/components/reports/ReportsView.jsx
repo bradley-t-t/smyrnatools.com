@@ -5,52 +5,16 @@ import ReportsSubmitView from './ReportsSubmitView'
 import ReportsReviewView from './ReportsReviewView'
 import { supabase } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
+import {
+    getMondayAndSaturday,
+    getMondayISO,
+    getWeekRangeString,
+    getPlantNameFromReport,
+    getPlantNameFromWeekItem
+} from '../../../services/ReportService'
 
 const HARDCODED_TODAY = new Date()
 const REPORTS_START_DATE = new Date('2025-07-20')
-
-export function getWeekRangeFromIso(weekIso) {
-    const monday = new Date(weekIso)
-    monday.setDate(monday.getDate() + 1)
-    monday.setHours(0, 0, 0, 0)
-    const saturday = new Date(monday)
-    saturday.setDate(monday.getDate() + 5)
-    function formatDateMMDDYY(date) {
-        const mm = date.getMonth() + 1
-        const dd = date.getDate()
-        const yy = date.getFullYear().toString().slice(-2)
-        return `${mm}-${dd}-${yy}`
-    }
-    return `${formatDateMMDDYY(monday)} through ${formatDateMMDDYY(saturday)}`
-}
-
-export function getMondayAndSaturday(date = new Date()) {
-    const d = new Date(date)
-    const day = d.getDay()
-    const monday = new Date(d)
-    monday.setDate(d.getDate() - ((day + 6) % 7))
-    monday.setHours(0, 0, 0, 0)
-    const saturday = new Date(monday)
-    saturday.setDate(monday.getDate() + 5)
-    saturday.setHours(0, 0, 0, 0)
-    return { monday, saturday }
-}
-
-function getMondayISO(date) {
-    const { monday } = getMondayAndSaturday(date)
-    return monday.toISOString().slice(0, 10)
-}
-
-function formatDateMMDDYY(date) {
-    const mm = date.getMonth() + 1
-    const dd = date.getDate()
-    const yy = date.getFullYear().toString().slice(-2)
-    return `${mm}-${dd}-${yy}`
-}
-
-function getWeekRangeString(start, end) {
-    return `${formatDateMMDDYY(start)} through ${formatDateMMDDYY(end)}`
-}
 
 function ReportsView() {
     const [localReports, setLocalReports] = useState([])
@@ -356,22 +320,42 @@ function ReportsView() {
         setShowForm(item)
     }
 
-    function getPlantNameFromReport(report) {
-        if (report.data && report.data.plant) return report.data.plant
-        if (report.data && report.data.rows && report.data.rows[0] && report.data.rows[0].plant_code) return report.data.rows[0].plant_code
-        return ''
-    }
 
-    function getPlantNameFromWeekItem(item) {
-        if (item.report && item.report.data && item.report.data.plant) return item.report.data.plant
-        if (item.report && item.report.data && item.report.data.rows && item.report.data.rows[0] && item.report.data.rows[0].plant_code) return item.report.data.rows[0].plant_code
-        return ''
-    }
+    const filteredMyWeeks = sortedMyWeeks.filter(weekIso => {
+        const weekItems = myReportsByWeek[weekIso]
+        return weekItems.some(item => {
+            let matchType = !filterReportType || item.name === filterReportType
+            let matchPlant = true
+            if (filterPlant) {
+                const plant = getPlantNameFromWeekItem(item)
+                matchPlant = plant === filterPlant
+            }
+            return matchType && matchPlant
+        })
+    })
+
+    const filteredReviewWeeks = sortedReviewWeeks.filter(weekIso => {
+        const weekReports = reviewReportsByWeek[weekIso]
+        return weekReports.some(report => {
+            let matchType = !filterReportType || report.name === filterReportType
+            let matchPlant = true
+            if (filterPlant) {
+                const plant = getPlantNameFromReport(report)
+                matchPlant = plant === filterPlant
+            }
+            return matchType && matchPlant
+        })
+    })
+
+    const permittedReportTypes = reportTypes.filter(rt =>
+        (tab === 'all' && hasAssigned[rt.name]) ||
+        (tab === 'review' && hasReviewPermission[rt.name])
+    )
 
     return (
         <>
             <div className="reports-root">
-                {loadError && <div style={{ color: 'var(--error, red)', padding: 16 }}>{loadError}</div>}
+                {loadError && <div style={{ color: 'var(--error)', padding: 16 }}>{loadError}</div>}
                 {!showForm && !showReview && (
                     <>
                         <div className="reports-toolbar">
@@ -396,17 +380,75 @@ function ReportsView() {
                                 </button>
                             </div>
                         </div>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: 16,
+                            alignItems: 'center',
+                            margin: '16px 24px 8px 0'
+                        }}>
+                            <select
+                                value={filterReportType}
+                                onChange={e => setFilterReportType(e.target.value)}
+                                style={{
+                                    background: 'var(--background)',
+                                    border: '1.5px solid var(--divider)',
+                                    borderRadius: 8,
+                                    fontSize: 15,
+                                    padding: '6px 14px',
+                                    color: 'var(--text-primary)',
+                                    minWidth: 180,
+                                    boxShadow: '0 1px 4px var(--shadow-xs)',
+                                    outline: 'none',
+                                    appearance: 'none'
+                                }}
+                            >
+                                <option value="">All Report Types</option>
+                                {permittedReportTypes.map(rt => (
+                                    <option key={rt.name} value={rt.name}>{rt.title}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={filterPlant}
+                                onChange={e => setFilterPlant(e.target.value)}
+                                style={{
+                                    background: 'var(--background)',
+                                    border: '1.5px solid var(--divider)',
+                                    borderRadius: 8,
+                                    fontSize: 15,
+                                    padding: '6px 14px',
+                                    color: 'var(--text-primary)',
+                                    minWidth: 180,
+                                    boxShadow: '0 1px 4px var(--shadow-xs)',
+                                    outline: 'none',
+                                    appearance: 'none'
+                                }}
+                            >
+                                <option value="">All Plants</option>
+                                {plants.map(p => (
+                                    <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="reports-content">
                             {tab === 'all' && (
                                 <div className="reports-list">
-                                    {sortedMyWeeks.length === 0 ? (
+                                    {filteredMyWeeks.length === 0 ? (
                                         <div className="reports-empty">
                                             <i className="fas fa-check-circle"></i>
                                             <div>No reports</div>
                                         </div>
                                     ) : (
-                                        sortedMyWeeks.map(weekIso => {
-                                            const weekItems = myReportsByWeek[weekIso]
+                                        filteredMyWeeks.map(weekIso => {
+                                            const weekItems = myReportsByWeek[weekIso].filter(item => {
+                                                let matchType = !filterReportType || item.name === filterReportType
+                                                let matchPlant = true
+                                                if (filterPlant) {
+                                                    const plant = getPlantNameFromWeekItem(item)
+                                                    matchPlant = plant === filterPlant
+                                                }
+                                                return matchType && matchPlant
+                                            })
                                             if (weekItems.length === 0) return null
                                             const weekStart = new Date(weekIso)
                                             weekStart.setDate(weekStart.getDate() + 1)
@@ -475,14 +517,22 @@ function ReportsView() {
                             )}
                             {tab === 'review' && (
                                 <div className="reports-list">
-                                    {sortedReviewWeeks.length === 0 ? (
+                                    {filteredReviewWeeks.length === 0 ? (
                                         <div className="reports-empty">
                                             <i className="fas fa-user-check"></i>
                                             <div>No reports to review</div>
                                         </div>
                                     ) : (
-                                        sortedReviewWeeks.map(weekIso => {
-                                            const weekReports = reviewReportsByWeek[weekIso]
+                                        filteredReviewWeeks.map(weekIso => {
+                                            const weekReports = reviewReportsByWeek[weekIso].filter(report => {
+                                                let matchType = !filterReportType || report.name === filterReportType
+                                                let matchPlant = true
+                                                if (filterPlant) {
+                                                    const plant = getPlantNameFromReport(report)
+                                                    matchPlant = plant === filterPlant
+                                                }
+                                                return matchType && matchPlant
+                                            })
                                             if (weekReports.length === 0) return null
                                             const weekStart = new Date(weekIso)
                                             weekStart.setDate(weekStart.getDate() + 1)

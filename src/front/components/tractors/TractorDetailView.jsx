@@ -604,7 +604,32 @@ ${openIssues.length > 0
                             </div>
                             <div className="form-group">
                                 <label>Status</label>
-                                <select value={status} onChange={e => setStatus(e.target.value)} disabled={!canEditTractor} className="form-control">
+                                <select
+                                    value={status}
+                                    onChange={async e => {
+                                        const newStatus = e.target.value;
+                                        if (
+                                            assignedOperator &&
+                                            originalValues.status === 'Active' &&
+                                            ['In Shop', 'Retired', 'Spare'].includes(newStatus)
+                                        ) {
+                                            await handleSave({status: newStatus, assignedOperator: null});
+                                            setStatus(newStatus);
+                                            setAssignedOperator(null);
+                                            setLastUnassignedOperatorId(assignedOperator);
+                                            setMessage('Status changed and operator unassigned');
+                                            setTimeout(() => setMessage(''), 3000);
+                                            await refreshOperators();
+                                            await fetchOperatorsForModal();
+                                            const updatedTractor = await TractorService.fetchTractorById(tractorId);
+                                            setTractor(updatedTractor);
+                                        } else {
+                                            setStatus(newStatus);
+                                        }
+                                    }}
+                                    disabled={!canEditTractor}
+                                    className="form-control"
+                                >
                                     <option value="">Select Status</option>
                                     <option
                                         value="Active"

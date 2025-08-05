@@ -3,7 +3,11 @@ import './styles/ReportsSubmitView.css'
 import './styles/ReportsReviewView.css'
 import { supabase } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
-import { getWeekRangeFromIso } from './ReportsView'
+import {
+    getWeekRangeFromIso,
+    exportRowsToCSV,
+    exportReportFieldsToCSV
+} from '../../../services/ReportService'
 import { PlantManagerReviewPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerReviewPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionReviewPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
@@ -12,106 +16,6 @@ const plugins = {
     plant_manager: PlantManagerReviewPlugin,
     district_manager: DistrictManagerReviewPlugin,
     plant_production: PlantProductionReviewPlugin
-}
-
-function parseTimeToMinutes(timeStr) {
-    if (!timeStr || typeof timeStr !== 'string') return null
-    const [h, m] = timeStr.split(':').map(Number)
-    if (isNaN(h) || isNaN(m)) return null
-    return h * 60 + m
-}
-
-function getOperatorName(row, operatorOptions) {
-    if (!row || !row.name) return ''
-    if (Array.isArray(operatorOptions)) {
-        const found = operatorOptions.find(opt => opt.value === row.name)
-        if (found) return found.label
-    }
-    if (row.displayName) return row.displayName
-    return row.name
-}
-
-function exportRowsToCSV(rows, operatorOptions, reportDate) {
-    if (!Array.isArray(rows) || rows.length === 0) return
-    const dateStr = reportDate ? ` - ${reportDate}` : ''
-    const title = `Plant Production Report${dateStr}`
-    const headers = Array(12).fill('')
-    headers[0] = title
-    const tableHeaders = [
-        'Operator Name',
-        'Truck Number',
-        'Start Time',
-        '1st Load',
-        'Elapsed (Start→1st)',
-        'EOD In Yard',
-        'Punch Out',
-        'Elapsed (EOD→Punch)',
-        'Total Loads',
-        'Total Hours',
-        'Loads/Hour',
-        'Comments'
-    ]
-    const csvRows = [headers, tableHeaders]
-    rows.forEach(row => {
-        const start = parseTimeToMinutes(row.start_time)
-        const firstLoad = parseTimeToMinutes(row.first_load)
-        const eod = parseTimeToMinutes(row.eod_in_yard)
-        const punch = parseTimeToMinutes(row.punch_out)
-        const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : ''
-        const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : ''
-        const totalHours = (start !== null && punch !== null) ? ((punch - start) / 60) : ''
-        const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
-        csvRows.push([
-            getOperatorName(row, operatorOptions),
-            row.truck_number || '',
-            row.start_time || '',
-            row.first_load || '',
-            elapsedStart !== '' ? `${elapsedStart} min` : '',
-            row.eod_in_yard || '',
-            row.punch_out || '',
-            elapsedEnd !== '' ? `${elapsedEnd} min` : '',
-            row.loads || '',
-            totalHours !== '' ? totalHours.toFixed(2) : '',
-            loadsPerHour,
-            row.comments || ''
-        ])
-    })
-    const csvContent = csvRows.map(r =>
-        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-    ).join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const safeDate = reportDate ? reportDate.replace(/[^0-9\-]/g, '') : ''
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Plant Production Report${safeDate ? ' - ' + safeDate : ''}.csv`
-    document.body.appendChild(a)
-    a.click()
-    setTimeout(() => {
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }, 0)
-}
-
-function exportReportFieldsToCSV(report, form) {
-    if (!report || !Array.isArray(report.fields)) return
-    const headers = report.fields.map(f => f.label || f.name)
-    const values = report.fields.map(f => form[f.name] || '')
-    const csvRows = [headers, values]
-    const csvContent = csvRows.map(r =>
-        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-    ).join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${report.title || report.name}.csv`
-    document.body.appendChild(a)
-    a.click()
-    setTimeout(() => {
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }, 0)
 }
 
 function formatDateTime(dt) {
@@ -125,7 +29,7 @@ function truncateText(text, maxLength) {
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
 }
 
-function ReportsReviewView({ report, initialData, onBack, user, completedByUser }) {
+function ReportsReviewView({ report, initialData, onBack, user, completedByUser, allReports }) {
     const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
     const [ownerName, setOwnerName] = useState('')
@@ -222,7 +126,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
 
     useEffect(() => {
         async function fetchAssignedPlant() {
-            if (report.name === 'plant_manager' && completedByUser && completedByUser.id) {
+            if ((report.name === 'plant_manager' || report.name === 'district_manager' || report.name === 'plant_production') && completedByUser && completedByUser.id) {
                 const plant = await UserService.getUserPlant(completedByUser.id)
                 setAssignedPlant(plant || '')
             }
@@ -304,6 +208,16 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
     let statusText = isSubmitted ? 'Submitted' : 'Saved (Draft)'
     let statusColor = isSubmitted ? 'var(--success)' : 'var(--warning)'
 
+    const tabOptions = [
+        { key: 'review', label: 'Review' },
+        { key: 'overview', label: 'Overview' }
+    ]
+    const [activeTab, setActiveTab] = useState(tabOptions[0].key)
+
+    useEffect(() => {
+        setActiveTab(tabOptions[0].key)
+    }, [report.name])
+
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
             <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
@@ -366,7 +280,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                     }}>
                         {statusText}
                     </div>
-                    {report.name === 'plant_manager' && (
+                    {(report.name === 'plant_manager' || report.name === 'district_manager' || report.name === 'plant_production') && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
                             <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--accent)' }}>
                                 {ownerName}
@@ -392,45 +306,76 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser 
                         </div>
                     )}
                 </div>
+                <div style={{ display: 'flex', gap: 0, marginBottom: 24, marginTop: 18 }}>
+                    {tabOptions.map(tab => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveTab(tab.key)}
+                            style={{
+                                background: activeTab === tab.key ? 'var(--accent)' : 'var(--divider)',
+                                color: activeTab === tab.key ? 'var(--text-light)' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: tab.key === tabOptions[0].key ? '8px 0 0 8px' : '0 8px 8px 0',
+                                padding: '10px 32px',
+                                fontWeight: 700,
+                                fontSize: 16,
+                                cursor: 'pointer',
+                                marginRight: tab.key === tabOptions[0].key ? 2 : 0,
+                                marginLeft: tab.key === tabOptions[1].key ? 2 : 0,
+                                boxShadow: activeTab === tab.key ? '0 2px 8px var(--shadow-xs)' : 'none'
+                            }}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
                 <div className="report-form-body-wide">
-                    {report.name === 'plant_production' ? null : (
-                        <div className="report-form-fields-grid">
-                            {report.fields.map(field => (
-                                <div key={field.name} className="report-form-field-wide">
-                                    <label>
-                                        {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                        {field.required && <span className="report-modal-required">*</span>}
-                                    </label>
-                                    {field.type === 'textarea' ? (
-                                        <textarea value={form[field.name] || ''} readOnly disabled />
-                                    ) : field.type === 'select' ? (
-                                        <select value={form[field.name] || ''} readOnly disabled>
-                                            <option value="">Select...</option>
-                                            {field.options?.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <input type={field.type} value={form[field.name] || ''} readOnly disabled />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                    {(activeTab === 'review' || activeTab === 'overview') && (
+                        null
                     )}
-                    {PluginComponent && (
-                        <PluginComponent
-                            form={form}
-                            yph={yph}
-                            yphGrade={yphGrade}
-                            yphLabel={yphLabel}
-                            lost={lost}
-                            lostGrade={lostGrade}
-                            lostLabel={lostLabel}
-                            summaryTab={summaryTab}
-                            setSummaryTab={setSummaryTab}
-                            maintenanceItems={maintenanceItems}
-                            operatorOptions={operatorOptions}
-                        />
+                    {report.name !== 'general_manager' && (
+                        <>
+                            {report.name === 'plant_production' ? null : (
+                                <div className="report-form-fields-grid">
+                                    {report.fields.map(field => (
+                                        <div key={field.name} className="report-form-field-wide">
+                                            <label>
+                                                {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                                {field.required && <span className="report-modal-required">*</span>}
+                                            </label>
+                                            {field.type === 'textarea' ? (
+                                                <textarea value={form[field.name] || ''} readOnly disabled />
+                                            ) : field.type === 'select' ? (
+                                                <select value={form[field.name] || ''} readOnly disabled>
+                                                    <option value="">Select...</option>
+                                                    {field.options?.map(opt => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <input type={field.type} value={form[field.name] || ''} readOnly disabled />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {PluginComponent && (
+                                <PluginComponent
+                                    form={form}
+                                    yph={yph}
+                                    yphGrade={yphGrade}
+                                    yphLabel={yphLabel}
+                                    lost={lost}
+                                    lostGrade={lostGrade}
+                                    lostLabel={lostLabel}
+                                    summaryTab={summaryTab}
+                                    setSummaryTab={setSummaryTab}
+                                    maintenanceItems={maintenanceItems}
+                                    operatorOptions={operatorOptions}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
             </div>

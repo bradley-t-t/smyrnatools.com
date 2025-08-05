@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import './styles/ReportsSubmitView.css'
 import { supabase } from '../../../services/DatabaseService'
-import { getWeekRangeFromIso } from './ReportsView'
+import {
+    getWeekRangeFromIso,
+    parseTimeToMinutes,
+    getOperatorName,
+    exportRowsToCSV,
+    exportReportFieldsToCSV
+} from '../../../services/ReportService'
 import { PlantManagerSubmitPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerSubmitPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionSubmitPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
@@ -12,107 +18,6 @@ const plugins = {
     plant_production: PlantProductionSubmitPlugin
 }
 
-const REPORTS_START_DATE = new Date('2025-07-20')
-
-function parseTimeToMinutes(timeStr) {
-    if (!timeStr || typeof timeStr !== 'string') return null
-    const [h, m] = timeStr.split(':').map(Number)
-    if (isNaN(h) || isNaN(m)) return null
-    return h * 60 + m
-}
-
-function getOperatorName(row, operatorOptions) {
-    if (!row || !row.name) return ''
-    if (Array.isArray(operatorOptions)) {
-        const found = operatorOptions.find(opt => opt.value === row.name)
-        if (found) return found.label
-    }
-    if (row.displayName) return row.displayName
-    return row.name
-}
-
-function exportRowsToCSV(rows, operatorOptions, reportDate) {
-    if (!Array.isArray(rows) || rows.length === 0) return
-    const dateStr = reportDate ? ` - ${reportDate}` : ''
-    const title = `Plant Production Report${dateStr}`
-    const headers = Array(12).fill('')
-    headers[0] = title
-    const tableHeaders = [
-        'Operator Name',
-        'Truck Number',
-        'Start Time',
-        '1st Load',
-        'Elapsed (Start→1st)',
-        'EOD In Yard',
-        'Punch Out',
-        'Elapsed (EOD→Punch)',
-        'Total Loads',
-        'Total Hours',
-        'Loads/Hour',
-        'Comments'
-    ]
-    const csvRows = [headers, tableHeaders]
-    rows.forEach(row => {
-        const start = parseTimeToMinutes(row.start_time)
-        const firstLoad = parseTimeToMinutes(row.first_load)
-        const eod = parseTimeToMinutes(row.eod_in_yard)
-        const punch = parseTimeToMinutes(row.punch_out)
-        const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : ''
-        const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : ''
-        const totalHours = (start !== null && punch !== null) ? ((punch - start) / 60) : ''
-        const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
-        csvRows.push([
-            getOperatorName(row, operatorOptions),
-            row.truck_number || '',
-            row.start_time || '',
-            row.first_load || '',
-            elapsedStart !== '' ? `${elapsedStart} min` : '',
-            row.eod_in_yard || '',
-            row.punch_out || '',
-            elapsedEnd !== '' ? `${elapsedEnd} min` : '',
-            row.loads || '',
-            totalHours !== '' ? totalHours.toFixed(2) : '',
-            loadsPerHour,
-            row.comments || ''
-        ])
-    })
-    const csvContent = csvRows.map(r =>
-        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-    ).join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const safeDate = reportDate ? reportDate.replace(/[^0-9\-]/g, '') : ''
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Plant Production Report${safeDate ? ' - ' + safeDate : ''}.csv`
-    document.body.appendChild(a)
-    a.click()
-    setTimeout(() => {
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }, 0)
-}
-
-function exportReportFieldsToCSV(report, form) {
-    if (!report || !Array.isArray(report.fields)) return
-    const headers = report.fields.map(f => f.label || f.name)
-    const values = report.fields.map(f => form[f.name] || '')
-    const csvRows = [headers, values]
-    const csvContent = csvRows.map(r =>
-        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-    ).join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${report.title || report.name}.csv`
-    document.body.appendChild(a)
-    a.click()
-    setTimeout(() => {
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }, 0)
-}
 
 function truncateText(text, maxLength) {
     if (!text) return ''
@@ -127,7 +32,7 @@ function getTruckNumberForOperator(row, mixers) {
     return ''
 }
 
-function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly }) {
+function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly, allReports }) {
     const [form, setForm] = useState(() => {
         if (initialData) {
             if (initialData.data) {
@@ -161,6 +66,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
+    const [debugMsg, setDebugMsg] = useState('')
 
     useEffect(() => {
         setInitialFormSnapshot(JSON.stringify(form))
@@ -445,21 +351,15 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         e.preventDefault()
         setError('')
         setSuccess(false)
-        for (const field of report.fields) {
-            if (field.required && !form[field.name]) {
-                setError('Please fill out all required fields.')
-                return
+        if (report.name !== 'general_manager') {
+            for (const field of report.fields) {
+                if (field.required && !form[field.name]) {
+                    setError('Please fill out all required fields.')
+                    return
+                }
             }
         }
         setSubmitting(true)
-        try {
-            await onSubmit(form)
-            setSuccess(true)
-        } catch {
-            setError('Error submitting report')
-        } finally {
-            setSubmitting(false)
-        }
     }
 
     async function handleSaveDraft(e) {
@@ -467,10 +367,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setError('')
         setSuccess(false)
         setSaveMessage('')
-        for (const field of report.fields) {
-            if (field.required && !form[field.name]) {
-                setError('Please fill out all required fields.')
-                return
+        if (report.name !== 'general_manager') {
+            for (const field of report.fields) {
+                if (field.required && !form[field.name]) {
+                    setError('Please fill out all required fields.')
+                    return
+                }
             }
         }
         setSavingDraft(true)
@@ -1091,26 +993,47 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                         )}
                     </div>
                     {PluginComponent && (
-                        <PluginComponent
-                            form={form}
-                            yph={yph}
-                            yphGrade={yphGrade}
-                            yphLabel={yphLabel}
-                            lost={lost}
-                            lostGrade={lostGrade}
-                            lostLabel={lostLabel}
-                            summaryTab={summaryTab}
-                            setSummaryTab={setSummaryTab}
-                            maintenanceItems={maintenanceItems}
-                            operatorOptions={operatorOptions}
-                        />
+                        <>
+                            <PluginComponent
+                                form={form}
+                                yph={yph}
+                                yphGrade={yphGrade}
+                                yphLabel={yphLabel}
+                                lost={lost}
+                                lostGrade={lostGrade}
+                                lostLabel={lostLabel}
+                                summaryTab={summaryTab}
+                                setSummaryTab={setSummaryTab}
+                                maintenanceItems={maintenanceItems}
+                                operatorOptions={operatorOptions}
+                                setDebugMsg={setDebugMsg}
+                                allReports={report.name === 'general_manager' ? allReports : undefined}
+                                weekIso={report.name === 'general_manager' ? report.weekIso : undefined}
+                            />
+                        </>
                     )}
                     {error && <div className="report-modal-error">{error}</div>}
                     {success && <div style={{ color: 'var(--success)', marginBottom: 8 }}>Report submitted successfully.</div>}
                     {saveMessage && <div style={{ color: 'var(--success)', marginBottom: 8 }}>{saveMessage}</div>}
                     {!readOnly && (
-                        <div className="report-modal-actions-wide" style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                            <button type="button" className="report-modal-cancel" onClick={handleBackClick} disabled={submitting || savingDraft}>
+                        <div className="report-modal-actions-wide" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <button
+                                type="button"
+                                className="report-modal-cancel"
+                                onClick={handleBackClick}
+                                disabled={submitting || savingDraft}
+                                style={{
+                                    background: 'var(--divider)',
+                                    color: 'var(--text-primary)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: 'pointer',
+                                    height: 44
+                                }}
+                            >
                                 Cancel
                             </button>
                             <button
@@ -1125,14 +1048,30 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                     fontWeight: 600,
                                     fontSize: 15,
                                     cursor: 'pointer',
-                                    marginRight: 12
+                                    marginRight: 12,
+                                    height: 44
                                 }}
                                 onClick={handleSaveDraft}
                                 disabled={submitting || savingDraft}
                             >
                                 {savingDraft ? 'Saving...' : 'Save Changes'}
                             </button>
-                            <button type="submit" className="report-modal-submit" disabled={submitting || savingDraft}>
+                            <button
+                                type="submit"
+                                className="report-modal-submit"
+                                disabled={submitting || savingDraft}
+                                style={{
+                                    background: 'var(--accent)',
+                                    color: 'var(--text-light)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: 'pointer',
+                                    height: 44
+                                }}
+                            >
                                 {submitting ? 'Submitting...' : 'Submit'}
                             </button>
                         </div>

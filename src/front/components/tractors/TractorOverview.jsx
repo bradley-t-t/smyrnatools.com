@@ -5,7 +5,7 @@ import {PlantService} from '../../../services/PlantService'
 import {supabase} from '../../../services/DatabaseService'
 import LoadingScreen from '../common/LoadingScreen'
 import './styles/TractorOverview.css'
-import { getWeekRangeFromIso } from '../reports/ReportsView'
+import { getWeekRangeFromIso } from '../../../services/ReportService'
 import { UserService } from '../../../services/UserService'
 
 const TractorOverview = ({
@@ -808,3 +808,4 @@ const TractorOverview = ({
 }
 
 export default TractorOverview
+

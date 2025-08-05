@@ -408,24 +408,6 @@ export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
                     <RowCard row={row} idx={i} key={i} operatorOptions={operatorOptions} />
                 ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-                <button
-                    type="button"
-                    style={{
-                        background: 'var(--accent)',
-                        color: 'var(--text-light)',
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '10px 22px',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        cursor: 'pointer'
-                    }}
-                    onClick={() => exportRowsToCSV(rows, operatorOptions, reportDate)}
-                >
-                    Export to Spreadsheet
-                </button>
-            </div>
         </div>
     )
 }
@@ -451,24 +433,6 @@ export function PlantProductionReviewPlugin({ form, operatorOptions }) {
                 {rows.map((row, i) => (
                     <RowCard row={row} idx={i} key={i} operatorOptions={operatorOptions} />
                 ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-                <button
-                    type="button"
-                    style={{
-                        background: 'var(--accent)',
-                        color: 'var(--text-light)',
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '10px 22px',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        cursor: 'pointer'
-                    }}
-                    onClick={() => exportRowsToCSV(rows, operatorOptions, reportDate)}
-                >
-                    Export to Spreadsheet
-                </button>
             </div>
         </div>
     )

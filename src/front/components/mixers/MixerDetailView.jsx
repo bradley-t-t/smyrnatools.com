@@ -1,88 +1,85 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {MixerService} from '../../../services/MixerService';
-import {PlantService} from '../../../services/PlantService';
-import {OperatorService} from '../../../services/OperatorService';
-import {UserService} from '../../../services/UserService';
-import {supabase} from '../../../services/DatabaseService';
-import {AuthUtility} from '../../../utils/AuthUtility';
-import {usePreferences} from '../../../app/context/PreferencesContext';
-import MixerHistoryView from './MixerHistoryView';
-import MixerCommentModal from './MixerCommentModal';
-import MixerIssueModal from './MixerIssueModal';
-import MixerCard from './MixerCard';
-import OperatorSelectModal from './OperatorSelectModal';
-import './styles/MixerDetailView.css';
-import {MixerUtility} from "../../../utils/MixerUtility";
-import {Mixer} from "../../../config/models/mixers/Mixer";
-import ThemeUtility from "../../../utils/ThemeUtility";
-import LoadingScreen from "../common/LoadingScreen";
+import React, {useState, useEffect, useRef} from 'react'
+import {MixerService} from '../../../services/MixerService'
+import {PlantService} from '../../../services/PlantService'
+import {OperatorService} from '../../../services/OperatorService'
+import {UserService} from '../../../services/UserService'
+import {supabase} from '../../../services/DatabaseService'
+import {AuthUtility} from '../../../utils/AuthUtility'
+import {usePreferences} from '../../../app/context/PreferencesContext'
+import MixerHistoryView from './MixerHistoryView'
+import MixerCommentModal from './MixerCommentModal'
+import MixerIssueModal from './MixerIssueModal'
+import MixerCard from './MixerCard'
+import OperatorSelectModal from './OperatorSelectModal'
+import './styles/MixerDetailView.css'
+import {MixerUtility} from "../../../utils/MixerUtility"
+import {Mixer} from "../../../config/models/mixers/Mixer"
+import ThemeUtility from "../../../utils/ThemeUtility"
+import LoadingScreen from "../common/LoadingScreen"
 
 function MixerDetailView({mixerId, onClose}) {
-    const {preferences} = usePreferences();
-    const [mixer, setMixer] = useState(null);
-    const [operators, setOperators] = useState([]);
-    const [plants, setPlants] = useState([]);
-    const [mixers, setMixers] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
-    const [showComments, setShowComments] = useState(false);
-    const [showIssues, setShowIssues] = useState(false);
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [updatedByEmail, setUpdatedByEmail] = useState(null);
-    const [message, setMessage] = useState('');
-    const [showOperatorModal, setShowOperatorModal] = useState(false);
-    const [userProfile, setUserProfile] = useState(null);
-    const [canEditMixer, setCanEditMixer] = useState(true);
-    const [plantRestrictionReason, setPlantRestrictionReason] = useState('');
-    const [originalValues, setOriginalValues] = useState({});
-    const [truckNumber, setTruckNumber] = useState('');
-    const [assignedOperator, setAssignedOperator] = useState('');
-    const [assignedPlant, setAssignedPlant] = useState('');
-    const [status, setStatus] = useState('');
-    const [cleanlinessRating, setCleanlinessRating] = useState(0);
-    const [lastServiceDate, setLastServiceDate] = useState(null);
-    const [lastChipDate, setLastChipDate] = useState(null);
-    const [vin, setVin] = useState('');
-    const [make, setMake] = useState('');
-    const [model, setModel] = useState('');
-    const [year, setYear] = useState('');
-    const [operatorModalOperators, setOperatorModalOperators] = useState([]);
-    const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null);
-    const [comments, setComments] = useState([]);
-    const [issues, setIssues] = useState([]);
-    const mixerCardRef = useRef(null);
+    const {preferences} = usePreferences()
+    const [mixer, setMixer] = useState(null)
+    const [operators, setOperators] = useState([])
+    const [plants, setPlants] = useState([])
+    const [mixers, setMixers] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [isSaving, setIsSaving] = useState(false)
+    const [showHistory, setShowHistory] = useState(false)
+    const [showComments, setShowComments] = useState(false)
+    const [showIssues, setShowIssues] = useState(false)
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const [updatedByEmail, setUpdatedByEmail] = useState(null)
+    const [message, setMessage] = useState('')
+    const [showOperatorModal, setShowOperatorModal] = useState(false)
+    const [userProfile, setUserProfile] = useState(null)
+    const [canEditMixer, setCanEditMixer] = useState(true)
+    const [plantRestrictionReason, setPlantRestrictionReason] = useState('')
+    const [originalValues, setOriginalValues] = useState({})
+    const [truckNumber, setTruckNumber] = useState('')
+    const [assignedOperator, setAssignedOperator] = useState('')
+    const [assignedPlant, setAssignedPlant] = useState('')
+    const [status, setStatus] = useState('')
+    const [cleanlinessRating, setCleanlinessRating] = useState(0)
+    const [lastServiceDate, setLastServiceDate] = useState(null)
+    const [lastChipDate, setLastChipDate] = useState(null)
+    const [vin, setVin] = useState('')
+    const [make, setMake] = useState('')
+    const [model, setModel] = useState('')
+    const [year, setYear] = useState('')
+    const [operatorModalOperators, setOperatorModalOperators] = useState([])
+    const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null)
+    const [comments, setComments] = useState([])
+    const [issues, setIssues] = useState([])
+    const mixerCardRef = useRef(null)
 
     useEffect(() => {
         async function fetchData() {
-            setIsLoading(true);
+            setIsLoading(true)
             try {
                 const [mixerData, operatorsData, plantsData, allMixers] = await Promise.all([
                     MixerService.fetchMixerById(mixerId),
                     OperatorService.fetchOperators(),
                     PlantService.fetchPlants(),
                     MixerService.getAllMixers()
-                ]);
-
-                setMixer(mixerData);
-                setOperators(operatorsData);
-                setPlants(plantsData);
-                setMixers(allMixers);
-
-                setTruckNumber(mixerData.truckNumber || '');
-                setAssignedOperator(mixerData.assignedOperator || '');
-                setAssignedPlant(mixerData.assignedPlant || '');
-                setStatus(mixerData.status || '');
-                setCleanlinessRating(mixerData.cleanlinessRating || 0);
-                setLastServiceDate(mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null);
-                setLastChipDate(mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null);
-                setVin(mixerData.vin || '');
-                setMake(mixerData.make || '');
-                setModel(mixerData.model || '');
-                setYear(mixerData.year || '');
-
+                ])
+                setMixer(mixerData)
+                setOperators(operatorsData)
+                setPlants(plantsData)
+                setMixers(allMixers)
+                setTruckNumber(mixerData.truckNumber || '')
+                setAssignedOperator(mixerData.assignedOperator || '')
+                setAssignedPlant(mixerData.assignedPlant || '')
+                setStatus(mixerData.status || '')
+                setCleanlinessRating(mixerData.cleanlinessRating || 0)
+                setLastServiceDate(mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null)
+                setLastChipDate(mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null)
+                setVin(mixerData.vin || '')
+                setMake(mixerData.make || '')
+                setModel(mixerData.model || '')
+                setYear(mixerData.year || '')
                 setOriginalValues({
                     truckNumber: mixerData.truckNumber || '',
                     assignedOperator: mixerData.assignedOperator || '',
@@ -95,62 +92,55 @@ function MixerDetailView({mixerId, onClose}) {
                     make: mixerData.make || '',
                     model: mixerData.model || '',
                     year: mixerData.year || ''
-                });
-
-                document.documentElement.style.setProperty('--rating-value', mixerData.cleanlinessRating || 0);
-
+                })
+                document.documentElement.style.setProperty('--rating-value', mixerData.cleanlinessRating || 0)
                 if (mixerData.updatedBy) {
                     try {
-                        const userName = await UserService.getUserDisplayName(mixerData.updatedBy);
-                        setUpdatedByEmail(userName);
+                        const userName = await UserService.getUserDisplayName(mixerData.updatedBy)
+                        setUpdatedByEmail(userName)
                     } catch {
-                        setUpdatedByEmail('Unknown User');
+                        setUpdatedByEmail('Unknown User')
                     }
                 }
             } catch (error) {
-                console.error('Error fetching mixer details:', error);
+                console.error('Error fetching mixer details:', error)
             } finally {
-                setIsLoading(false);
-                setHasUnsavedChanges(false);
+                setIsLoading(false)
+                setHasUnsavedChanges(false)
             }
         }
-        fetchData();
-    }, [mixerId]);
+        fetchData()
+    }, [mixerId])
 
     useEffect(() => {
         async function checkPlantRestriction() {
-            if (isLoading || !mixer) return;
-
+            if (isLoading || !mixer) return
             try {
-                const userId = await UserService.getCurrentUser();
-                if (!userId) return;
-
-                const hasPermission = await UserService.hasPermission(userId, 'mixers.bypass.plantrestriction');
-                if (hasPermission) return setCanEditMixer(true);
-
-                const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
-                setUserProfile(profileData);
-
+                const userId = await UserService.getCurrentUser()
+                if (!userId) return
+                const hasPermission = await UserService.hasPermission(userId, 'mixers.bypass.plantrestriction')
+                if (hasPermission) return setCanEditMixer(true)
+                const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single()
+                setUserProfile(profileData)
                 if (profileData && mixer) {
-                    const isSamePlant = profileData.plant_code === mixer.assignedPlant;
-                    setCanEditMixer(isSamePlant);
+                    const isSamePlant = profileData.plant_code === mixer.assignedPlant
+                    setCanEditMixer(isSamePlant)
                     if (!isSamePlant) {
                         setPlantRestrictionReason(
                             `You cannot edit or verify this mixer because it belongs to plant ${mixer.assignedPlant} and you are assigned to plant ${profileData.plant_code}.`
-                        );
+                        )
                     }
                 }
             } catch (error) {
-                console.error('Error checking plant restriction:', error);
+                console.error('Error checking plant restriction:', error)
             }
         }
-        checkPlantRestriction();
-    }, [mixer, isLoading]);
+        checkPlantRestriction()
+    }, [mixer, isLoading])
 
     useEffect(() => {
-        if (!originalValues.truckNumber || isLoading) return;
-
-        const formatDateForComparison = date => date ? (date instanceof Date ? date.toISOString().split('T')[0] : '') : '';
+        if (!originalValues.truckNumber || isLoading) return
+        const formatDateForComparison = date => date ? (date instanceof Date ? date.toISOString().split('T')[0] : '') : ''
         const hasChanges =
             truckNumber !== originalValues.truckNumber ||
             assignedPlant !== originalValues.assignedPlant ||
@@ -161,65 +151,57 @@ function MixerDetailView({mixerId, onClose}) {
             vin !== originalValues.vin ||
             make !== originalValues.make ||
             model !== originalValues.model ||
-            year !== originalValues.year;
-
-        setHasUnsavedChanges(hasChanges);
-    }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, lastChipDate, vin, make, model, year, originalValues, isLoading]);
+            year !== originalValues.year
+        setHasUnsavedChanges(hasChanges)
+    }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, lastChipDate, vin, make, model, year, originalValues, isLoading])
 
     useEffect(() => {
         const handleBeforeUnload = e => {
             if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
+                e.preventDefault()
+                e.returnValue = ''
             }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [hasUnsavedChanges]);
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [hasUnsavedChanges])
 
     async function handleSave(overrideValues = {}) {
         if (!mixer?.id) {
-            alert('Error: Cannot save mixer with undefined ID');
-            return;
+            alert('Error: Cannot save mixer with undefined ID')
+            return
         }
-
-        setIsSaving(true);
+        setIsSaving(true)
         try {
-            let userObj = await UserService.getCurrentUser();
-            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
-
+            let userObj = await UserService.getCurrentUser()
+            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
             const formatDate = date => {
-                if (!date) return null;
-                const parsedDate = date instanceof Date ? date : new Date(date);
-                if (isNaN(parsedDate.getTime())) return null;
-                return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`;
-            };
-
+                if (!date) return null
+                const parsedDate = date instanceof Date ? date : new Date(date)
+                if (isNaN(parsedDate.getTime())) return null
+                return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`
+            }
             let assignedOperatorValue = overrideValues.hasOwnProperty('assignedOperator')
                 ? overrideValues.assignedOperator
-                : assignedOperator;
-
+                : assignedOperator
             let statusValue = overrideValues.hasOwnProperty('status')
                 ? overrideValues.status
-                : status;
-
-            if ((!assignedOperatorValue || assignedOperatorValue === '' || assignedOperatorValue === null) && statusValue === 'Active') {
-                statusValue = 'Spare';
+                : status
+            if (originalValues.status === 'Active' && statusValue !== 'Active' && assignedOperatorValue) {
+                assignedOperatorValue = null
             }
             if (assignedOperatorValue && statusValue !== 'Active') {
-                statusValue = 'Active';
+                statusValue = 'Active'
             }
-            if (['In Shop', 'Retired', 'Spare'].includes(statusValue) && assignedOperatorValue) {
-                assignedOperatorValue = null;
+            if ((!assignedOperatorValue || assignedOperatorValue === '' || assignedOperatorValue === null) && statusValue === 'Active') {
+                statusValue = 'Spare'
             }
-
             let mixerForHistory = {
                 ...mixer,
                 assignedOperator: overrideValues.hasOwnProperty('prevAssignedOperator')
                     ? overrideValues.prevAssignedOperator
                     : mixer.assignedOperator
-            };
-
+            }
             const updatedMixer = {
                 ...mixer,
                 id: mixer.id,
@@ -237,19 +219,16 @@ function MixerDetailView({mixerId, onClose}) {
                 updatedAt: new Date().toISOString(),
                 updatedBy: userId,
                 updatedLast: mixer.updatedLast
-            };
-
+            }
             await MixerService.updateMixer(
                 updatedMixer.id,
                 updatedMixer,
                 undefined,
                 mixerForHistory
-            );
-            setMixer(updatedMixer);
-
-            setMessage('Changes saved successfully! Mixer needs verification.');
-            setTimeout(() => setMessage(''), 5000);
-
+            )
+            setMixer(updatedMixer)
+            setMessage('Changes saved successfully! Mixer needs verification.')
+            setTimeout(() => setMessage(''), 5000)
             setOriginalValues({
                 truckNumber: updatedMixer.truckNumber,
                 assignedOperator: updatedMixer.assignedOperator,
@@ -262,36 +241,33 @@ function MixerDetailView({mixerId, onClose}) {
                 make: updatedMixer.make,
                 model: updatedMixer.model,
                 year: updatedMixer.year
-            });
-
-            setHasUnsavedChanges(false);
+            })
+            setHasUnsavedChanges(false)
         } catch (error) {
-            console.error('Error saving mixer:', error);
-            alert(`Error saving changes: ${error.message || 'Unknown error'}`);
+            console.error('Error saving mixer:', error)
+            alert(`Error saving changes: ${error.message || 'Unknown error'}`)
         } finally {
-            setIsSaving(false);
+            setIsSaving(false)
         }
     }
 
     async function handleDelete() {
-        if (!mixer) return;
-        if (!showDeleteConfirmation) return setShowDeleteConfirmation(true);
-
+        if (!mixer) return
+        if (!showDeleteConfirmation) return setShowDeleteConfirmation(true)
         try {
-            await supabase.from('mixers').delete().eq('id', mixer.id);
-            alert('Mixer deleted successfully');
-            onClose();
+            await supabase.from('mixers').delete().eq('id', mixer.id)
+            alert('Mixer deleted successfully')
+            onClose()
         } catch (error) {
-            console.error('Error deleting mixer:', error);
-            alert('Error deleting mixer');
+            console.error('Error deleting mixer:', error)
+            alert('Error deleting mixer')
         } finally {
-            setShowDeleteConfirmation(false);
+            setShowDeleteConfirmation(false)
         }
     }
 
     async function handleVerifyMixer() {
         if (!mixer) return
-
         const operatorName = getOperatorName(assignedOperator)
         if (
             status === 'Active' &&
@@ -306,7 +282,6 @@ function MixerDetailView({mixerId, onClose}) {
             setTimeout(() => setMessage(''), 4000)
             return
         }
-
         setIsSaving(true)
         try {
             if (hasUnsavedChanges) {
@@ -316,26 +291,21 @@ function MixerDetailView({mixerId, onClose}) {
                     throw new Error('Failed to save changes before verification')
                 })
             }
-
             let userObj = await UserService.getCurrentUser()
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
-
             const now = new Date().toISOString()
             const {data, error} = await supabase
                 .from('mixers')
                 .update({updated_last: now, updated_by: userId})
                 .eq('id', mixer.id)
                 .select()
-
             if (error) throw new Error(`Failed to verify mixer: ${error.message}`)
             if (data?.length) {
                 setMixer(Mixer.fromApiFormat(data[0]))
                 setMessage('Mixer verified successfully!')
                 setTimeout(() => setMessage(''), 3000)
             }
-
             setHasUnsavedChanges(false)
-
         } catch (error) {
             console.error('Error verifying mixer:', error)
             alert(`Error verifying mixer: ${error.message}`)
@@ -598,15 +568,30 @@ ${openIssues.length > 0
                             </div>
                             <div className="form-group">
                                 <label>Status</label>
-                                <select value={status} onChange={e => setStatus(e.target.value)} disabled={!canEditMixer} className="form-control">
+                                <select
+                                    value={status}
+                                    onChange={async e => {
+                                        const newStatus = e.target.value
+                                        if (assignedOperator && originalValues.status === 'Active' && newStatus !== 'Active') {
+                                            await handleSave({status: newStatus, assignedOperator: null})
+                                            setStatus(newStatus)
+                                            setAssignedOperator(null)
+                                            setLastUnassignedOperatorId(assignedOperator)
+                                            setMessage('Status changed and operator unassigned')
+                                            setTimeout(() => setMessage(''), 3000)
+                                            await refreshOperators()
+                                            await fetchOperatorsForModal()
+                                            const updatedMixer = await MixerService.fetchMixerById(mixerId)
+                                            setMixer(updatedMixer)
+                                        } else {
+                                            setStatus(newStatus)
+                                        }
+                                    }}
+                                    disabled={!canEditMixer}
+                                    className="form-control"
+                                >
                                     <option value="">Select Status</option>
-                                    <option
-                                        value="Active"
-                                        disabled={!assignedOperator}
-                                        style={!assignedOperator ? {color: 'var(--text-disabled)', backgroundColor: 'var(--background-disabled)'} : {}}
-                                    >
-                                        Active{!assignedOperator ? ' (Cannot set without an operator assigned)' : ''}
-                                    </option>
+                                    <option value="Active">Active</option>
                                     <option value="Spare">Spare</option>
                                     <option value="In Shop">In Shop</option>
                                     <option value="Retired">Retired</option>
@@ -880,5 +865,4 @@ ${openIssues.length > 0
         </div>
     );
 }
-export default MixerDetailView;
-
+export default MixerDetailView

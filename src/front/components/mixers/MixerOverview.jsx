@@ -5,7 +5,7 @@ import {PlantService} from '../../../services/PlantService'
 import {supabase} from '../../../services/DatabaseService'
 import LoadingScreen from '../common/LoadingScreen'
 import './styles/MixerOverview.css'
-import { getWeekRangeFromIso } from '../reports/ReportsView'
+import { getWeekRangeFromIso } from '../../../services/ReportService'
 import { UserService } from '../../../services/UserService'
 
 const MixerOverview = ({
@@ -33,6 +33,12 @@ const MixerOverview = ({
     const [lastReport, setLastReport] = useState(null)
     const [lastReportRange, setLastReportRange] = useState('')
     const [notation, setNotation] = useState('')
+    const [goalCount, setGoalCount] = useState(null)
+    const [showGoalEdit, setShowGoalEdit] = useState(false)
+    const [goalEditValue, setGoalEditValue] = useState('')
+    const [canEditGoal, setCanEditGoal] = useState(false)
+    const [goalSaveLoading, setGoalSaveLoading] = useState(false)
+    const [goalSaveError, setGoalSaveError] = useState('')
 
     useEffect(() => {
         fetchData()
@@ -58,14 +64,71 @@ const MixerOverview = ({
     useEffect(() => {
         if (selectedPlant) {
             fetchPlantManagerMetrics(selectedPlant)
+            fetchGoalCount(selectedPlant)
+            checkEditGoalPermission()
         } else {
             setPlantReportMetrics(null)
             setPlantReportRange('')
             setLastReport(null)
             setLastReportRange('')
             setNotation('')
+            setGoalCount(null)
+            setCanEditGoal(false)
         }
     }, [selectedPlant, plants])
+
+    async function fetchGoalCount(plantCode) {
+        if (!plantCode) {
+            setGoalCount(null)
+            return
+        }
+        const { data, error } = await supabase
+            .from('plants_goals_operators')
+            .select('goal_count')
+            .eq('plant_code', plantCode)
+            .single()
+        if (error || !data) {
+            setGoalCount(null)
+        } else {
+            setGoalCount(data.goal_count)
+        }
+    }
+
+    async function checkEditGoalPermission() {
+        try {
+            const userId = await UserService.getCurrentUser()
+            if (!userId) {
+                setCanEditGoal(false)
+                return
+            }
+            const hasPermission = await UserService.hasPermission(userId, 'mixers.editgoals')
+            setCanEditGoal(!!hasPermission)
+        } catch {
+            setCanEditGoal(false)
+        }
+    }
+
+    async function handleGoalEditSave() {
+        setGoalSaveLoading(true)
+        setGoalSaveError('')
+        const value = parseInt(goalEditValue)
+        if (isNaN(value) || value < 0) {
+            setGoalSaveError('Goal must be a positive integer')
+            setGoalSaveLoading(false)
+            return
+        }
+        const { error } = await supabase
+            .from('plants_goals_operators')
+            .upsert({ plant_code: selectedPlant, goal_count: value }, { onConflict: ['plant_code'] })
+        if (error) {
+            setGoalSaveError('Error saving goal')
+            setGoalSaveLoading(false)
+            return
+        }
+        setGoalCount(value)
+        setShowGoalEdit(false)
+        setGoalSaveLoading(false)
+    }
 
     const fetchPlantManagerMetrics = async (plantCode) => {
         setPlantReportMetrics(null)
@@ -420,18 +483,8 @@ const MixerOverview = ({
             }
         })
         let filteredTrainers = operators.filter(op => op.isTrainer)
-        if (selectedPlant) {
-            filteredTrainers = filteredTrainers.filter(op => op.plantCode === selectedPlant || relevantOperatorIds.has(op.employeeId))
-        }
         let allTrainees = operators.filter(op => op.status === 'Training')
-        let filteredTrainees
-        if (selectedPlant) {
-            filteredTrainees = allTrainees.filter(
-                op => filteredTrainers.some(tr => tr.employeeId === op.assignedTrainer)
-            )
-        } else {
-            filteredTrainees = allTrainees
-        }
+        let filteredTrainees = allTrainees
         const rows = []
         const trainerTraineeCount = {}
         filteredTrainees.forEach(trainee => {
@@ -485,6 +538,12 @@ const MixerOverview = ({
                 hasMultipleTrainees: false
             })
         })
+        if (selectedPlant) {
+            return rows.filter(row =>
+                row.trainerPlant === selectedPlant ||
+                row.traineePlant === selectedPlant
+            )
+        }
         rows.sort((a, b) => {
             if (a.trainerPlant < b.trainerPlant) return -1
             if (a.trainerPlant > b.trainerPlant) return 1
@@ -501,6 +560,11 @@ const MixerOverview = ({
         )
     }
 
+    let activeCount = 0
+    if (selectedPlant && filteredMixers) {
+        activeCount = filteredMixers.filter(m => m.status === 'Active').length
+    }
+
     return (
         <div className="mixer-overview">
             {filteredMixers && mixers.length !== filteredMixers.length && (
@@ -512,6 +576,120 @@ const MixerOverview = ({
                 <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
                         Showing statistics for {filteredMixers.length} mixer{filteredMixers.length !== 1 ? 's' : ''}
+                    </div>
+                </div>
+            )}
+            {selectedPlant && (
+                <div style={{marginTop: 6, fontWeight: 500, fontSize: '1.05rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12}}>
+                    <span>
+                        Active Mixers Goal: ({activeCount} / {goalCount !== null ? goalCount : '—'})
+                    </span>
+                    {canEditGoal && (
+                        <button
+                            style={{
+                                marginLeft: 12,
+                                fontSize: '0.95rem',
+                                padding: '2px 10px',
+                                borderRadius: 6,
+                                border: '1px solid var(--divider)',
+                                background: 'var(--background)',
+                                color: 'var(--accent)',
+                                cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                                setGoalEditValue(goalCount !== null ? String(goalCount) : '')
+                                setShowGoalEdit(true)
+                            }}
+                        >
+                            Edit Goal
+                        </button>
+                    )}
+                </div>
+            )}
+            {showGoalEdit && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'rgba(0,0,0,0.25)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                    onClick={() => setShowGoalEdit(false)}
+                >
+                    <div
+                        style={{
+                            background: 'var(--background)',
+                            borderRadius: 12,
+                            boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+                            padding: '32px 28px',
+                            minWidth: 320,
+                            maxWidth: 400,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center'
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{fontWeight: 600, fontSize: '1.15rem', marginBottom: 18}}>
+                            Edit Goal for Plant {selectedPlant}
+                        </div>
+                        <input
+                            type="number"
+                            min="0"
+                            value={goalEditValue}
+                            onChange={e => setGoalEditValue(e.target.value)}
+                            style={{
+                                fontSize: '1.1rem',
+                                padding: '8px 12px',
+                                borderRadius: 6,
+                                border: '1px solid var(--divider)',
+                                marginBottom: 12,
+                                width: '100%'
+                            }}
+                        />
+                        {goalSaveError && (
+                            <div style={{color: 'var(--danger)', marginBottom: 8, fontSize: '0.97rem'}}>
+                                {goalSaveError}
+                            </div>
+                        )}
+                        <div style={{display: 'flex', gap: 12, marginTop: 8}}>
+                            <button
+                                style={{
+                                    padding: '6px 18px',
+                                    borderRadius: 6,
+                                    border: '1px solid var(--divider)',
+                                    background: 'var(--background)',
+                                    color: 'var(--accent)',
+                                    fontWeight: 500,
+                                    cursor: 'pointer'
+                                }}
+                                disabled={goalSaveLoading}
+                                onClick={handleGoalEditSave}
+                            >
+                                Save
+                            </button>
+                            <button
+                                style={{
+                                    padding: '6px 18px',
+                                    borderRadius: 6,
+                                    border: '1px solid var(--divider)',
+                                    background: 'var(--background)',
+                                    color: 'var(--text-secondary)',
+                                    fontWeight: 500,
+                                    cursor: 'pointer'
+                                }}
+                                disabled={goalSaveLoading}
+                                onClick={() => setShowGoalEdit(false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
