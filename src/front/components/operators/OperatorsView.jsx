@@ -9,6 +9,7 @@ import OperatorCard from './OperatorCard';
 import OperatorsOverview from './OperatorsOverview';
 import OperatorAddView from './OperatorAddView';
 import { usePreferences } from '../../../app/context/PreferencesContext';
+import FormatUtility from '../../../utils/FormatUtility';
 
 function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator }) {
     const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences();
@@ -265,14 +266,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     );
 
     function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return '';
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = date.getFullYear();
-        const mm = pad(date.getMonth() + 1);
-        const dd = pad(date.getDate());
-        return `${mm}/${dd}/${yyyy}`;
+        return FormatUtility.formatDate(dateStr)
     }
 
     function getFiltersAppliedString() {
@@ -296,7 +290,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         const dd = pad(now.getDate());
         const hh = pad(now.getHours());
         const min = pad(now.getMinutes());
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}:${min}`;
+        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
         const filtersApplied = getFiltersAppliedString();
         const fileName = `Operator Export - ${formattedNow} - ${filtersApplied}.csv`;
         const topHeader = `Operator Export - ${formattedNow} - ${filtersApplied}`;

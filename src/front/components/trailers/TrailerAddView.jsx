@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TrailerService } from '../../../services/TrailerService';
-import Trailer from '../../../config/models/trailers/Trailer';
+import { Trailer } from '../../../config/models/trailers/Trailer';
 import { AuthService } from '../../../services/AuthService';
-import './styles/TrailerAddView.css';
+import './styles/TractorAddView.css';
 
 function TrailerAddView({ plants, onClose, onTrailerAdded }) {
     const [trailerNumber, setTrailerNumber] = useState('');

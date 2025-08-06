@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import MixerAddView from './MixerAddView';
-import {MixerUtility} from '../../../utils/MixerUtility';
+import MixerUtility from '../../../utils/MixerUtility';
 import {MixerService} from '../../../services/MixerService';
 import {PlantService} from '../../../services/PlantService';
 import {OperatorService} from '../../../services/OperatorService';

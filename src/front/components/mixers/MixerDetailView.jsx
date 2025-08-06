@@ -12,7 +12,7 @@ import MixerIssueModal from './MixerIssueModal'
 import MixerCard from './MixerCard'
 import OperatorSelectModal from './OperatorSelectModal'
 import './styles/MixerDetailView.css'
-import {MixerUtility} from "../../../utils/MixerUtility"
+import MixerUtility from '../../../utils/MixerUtility'
 import {Mixer} from "../../../config/models/mixers/Mixer"
 import ThemeUtility from "../../../utils/ThemeUtility"
 import LoadingScreen from "../common/LoadingScreen"

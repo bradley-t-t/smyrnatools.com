@@ -5,13 +5,7 @@ import ReportsSubmitView from './ReportsSubmitView'
 import ReportsReviewView from './ReportsReviewView'
 import { supabase } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
-import {
-    getMondayAndSaturday,
-    getMondayISO,
-    getWeekRangeString,
-    getPlantNameFromReport,
-    getPlantNameFromWeekItem
-} from '../../../services/ReportService'
+import { ReportService } from '../../../services/ReportService'
 
 const HARDCODED_TODAY = new Date()
 const REPORTS_START_DATE = new Date('2025-07-20')
@@ -138,10 +132,10 @@ function ReportsView() {
     function getDueWeeks(startDate) {
         const weeks = []
         const today = HARDCODED_TODAY
-        const currentMonday = getMondayAndSaturday(today).monday
-        let monday = getMondayAndSaturday(startDate).monday
+        const currentMonday = ReportService.getMondayAndSaturday(today).monday
+        let monday = ReportService.getMondayAndSaturday(startDate).monday
         while (monday <= currentMonday) {
-            weeks.push({ weekIso: getMondayISO(monday), monday: new Date(monday) })
+            weeks.push({ weekIso: ReportService.getMondayISO(monday), monday: new Date(monday) })
             monday.setDate(monday.getDate() + 7)
         }
         return weeks
@@ -166,7 +160,7 @@ function ReportsView() {
             allWeeks.push({
                 ...rt,
                 weekIso,
-                range: getWeekRangeString(dividerMonday, dividerSaturday),
+                range: ReportService.getWeekRangeString(dividerMonday, dividerSaturday),
                 completed: !!(existing && existing.completed),
                 report: existing || null
             })
@@ -327,7 +321,7 @@ function ReportsView() {
             let matchType = !filterReportType || item.name === filterReportType
             let matchPlant = true
             if (filterPlant) {
-                const plant = getPlantNameFromWeekItem(item)
+                const plant = ReportService.getPlantNameFromWeekItem(item)
                 matchPlant = plant === filterPlant
             }
             return matchType && matchPlant
@@ -340,7 +334,7 @@ function ReportsView() {
             let matchType = !filterReportType || report.name === filterReportType
             let matchPlant = true
             if (filterPlant) {
-                const plant = getPlantNameFromReport(report)
+                const plant = ReportService.getPlantNameFromReport(report)
                 matchPlant = plant === filterPlant
             }
             return matchType && matchPlant
@@ -444,7 +438,7 @@ function ReportsView() {
                                                 let matchType = !filterReportType || item.name === filterReportType
                                                 let matchPlant = true
                                                 if (filterPlant) {
-                                                    const plant = getPlantNameFromWeekItem(item)
+                                                    const plant = ReportService.getPlantNameFromWeekItem(item)
                                                     matchPlant = plant === filterPlant
                                                 }
                                                 return matchType && matchPlant
@@ -454,7 +448,7 @@ function ReportsView() {
                                             weekStart.setDate(weekStart.getDate() + 1)
                                             const weekEnd = new Date(weekStart)
                                             weekEnd.setDate(weekStart.getDate() + 5)
-                                            const weekRange = getWeekRangeString(weekStart, weekEnd)
+                                            const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                             return (
                                                 <div key={weekIso} style={{ marginBottom: 32 }}>
                                                     <div
@@ -528,7 +522,7 @@ function ReportsView() {
                                                 let matchType = !filterReportType || report.name === filterReportType
                                                 let matchPlant = true
                                                 if (filterPlant) {
-                                                    const plant = getPlantNameFromReport(report)
+                                                    const plant = ReportService.getPlantNameFromReport(report)
                                                     matchPlant = plant === filterPlant
                                                 }
                                                 return matchType && matchPlant
@@ -538,7 +532,7 @@ function ReportsView() {
                                             weekStart.setDate(weekStart.getDate() + 1)
                                             const weekEnd = new Date(weekStart)
                                             weekEnd.setDate(weekStart.getDate() + 5)
-                                            const weekRange = getWeekRangeString(weekStart, weekEnd)
+                                            const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                             return (
                                                 <div key={weekIso} style={{ marginBottom: 32 }}>
                                                     <div

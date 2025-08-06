@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {MixerUtility} from '../../../utils/MixerUtility';
+import MixerUtility from '../../../utils/MixerUtility';
 import ThemeUtility from '../../../utils/ThemeUtility';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import {MixerMaintenanceService} from '../../../services/MixerMaintenanceService';

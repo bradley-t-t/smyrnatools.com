@@ -7,7 +7,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext';
 import EquipmentCommentModal from './EquipmentCommentModal';
 import EquipmentIssueModal from './EquipmentIssueModal';
 import EquipmentCard from './EquipmentCard';
-import { EquipmentUtility } from '../../../utils/EquipmentUtility';
+import EquipmentUtility from '../../../utils/EquipmentUtility';
 import EquipmentHistoryView from './EquipmentHistoryView';
 import './styles/EquipmentDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';

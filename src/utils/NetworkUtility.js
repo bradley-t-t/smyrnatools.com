@@ -1,62 +1,50 @@
-const PING_TIMEOUT = 5000;
-export class NetworkUtility {
-    static isOnline() {
-        return navigator.onLine;
-    }
+const PING_TIMEOUT = 5000
 
-    static addOnlineListener(callback) {
-        if (typeof callback !== 'function') return;
-        window.addEventListener('online', callback);
-    }
-
-    static removeOnlineListener(callback) {
-        if (typeof callback !== 'function') return;
-        window.removeEventListener('online', callback);
-    }
-
-    static addOfflineListener(callback) {
-        if (typeof callback !== 'function') return;
-        window.addEventListener('offline', callback);
-    }
-
-    static removeOfflineListener(callback) {
-        if (typeof callback !== 'function') return;
-        window.removeEventListener('offline', callback);
-    }
-}
-export class NetworkUtility {
-    static isOnline() {
-        return navigator.onLine;
-    }
-
-    static addNetworkListeners(onlineCallback, offlineCallback) {
-        if (!onlineCallback || !offlineCallback) throw new Error('Callbacks are required');
-
-        window.addEventListener('online', onlineCallback);
-        window.addEventListener('offline', offlineCallback);
-
+const NetworkUtility = {
+    isOnline() {
+        return navigator.onLine
+    },
+    addOnlineListener(callback) {
+        if (typeof callback !== 'function') return
+        window.addEventListener('online', callback)
+    },
+    removeOnlineListener(callback) {
+        if (typeof callback !== 'function') return
+        window.removeEventListener('online', callback)
+    },
+    addOfflineListener(callback) {
+        if (typeof callback !== 'function') return
+        window.addEventListener('offline', callback)
+    },
+    removeOfflineListener(callback) {
+        if (typeof callback !== 'function') return
+        window.removeEventListener('offline', callback)
+    },
+    addNetworkListeners(onlineCallback, offlineCallback) {
+        if (!onlineCallback || !offlineCallback) throw new Error('Callbacks are required')
+        window.addEventListener('online', onlineCallback)
+        window.addEventListener('offline', offlineCallback)
         return () => {
-            window.removeEventListener('online', onlineCallback);
-            window.removeEventListener('offline', offlineCallback);
-        };
-    }
-
-    static async checkConnection() {
+            window.removeEventListener('online', onlineCallback)
+            window.removeEventListener('offline', offlineCallback)
+        }
+    },
+    async checkConnection() {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT);
-
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT)
             const response = await fetch('/ping', {
                 method: 'HEAD',
                 signal: controller.signal,
                 cache: 'no-store'
-            });
-
-            clearTimeout(timeoutId);
-            return response.ok;
+            })
+            clearTimeout(timeoutId)
+            return response.ok
         } catch (error) {
-            console.error('Connection check failed:', error.message);
-            return false;
+            return false
         }
     }
 }
+
+export default NetworkUtility
+export { NetworkUtility }

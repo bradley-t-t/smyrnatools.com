@@ -1,20 +1,17 @@
-// TractorUtility.js
-export class TractorUtility {
-    static isServiceOverdue(serviceDate) {
-        if (!serviceDate) return false;
-
+const TractorUtility = {
+    isServiceOverdue(serviceDate) {
+        if (!serviceDate) return false
         try {
-            const service = new Date(serviceDate);
-            const today = new Date();
-            const diffDays = Math.ceil((today - service) / (1000 * 60 * 60 * 24));
-            return diffDays > 30;
-        } catch (error) {
-            console.error('Error checking service date:', error);
-            return false;
+            const service = new Date(serviceDate)
+            const today = new Date()
+            const diffDays = Math.ceil((today - service) / (1000 * 60 * 60 * 24))
+            return diffDays > 30
+        } catch {
+            return false
         }
-    }
+    },
 
-    static isVerified(updatedLast, updatedAt, updatedBy) {
+    isVerified(updatedLast, updatedAt, updatedBy) {
         const useHardcodedDate = false
         const hardcodedToday = new Date('2024-07-30T00:00:00Z')
         if (!updatedLast || !updatedBy) return false
@@ -33,57 +30,52 @@ export class TractorUtility {
                 return false
             }
             return !checkForMonday(lastVerified, today)
-        } catch (error) {
+        } catch {
             return false
         }
-    }
+    },
 
-    static formatDate(date) {
-        if (!date) return 'Not available';
-
+    formatDate(date) {
+        if (!date) return 'Not available'
         try {
-            return new Date(date).toLocaleDateString();
-        } catch (error) {
-            console.error('Error formatting date:', error);
-            return 'Invalid date';
+            return new Date(date).toLocaleDateString()
+        } catch {
+            return 'Invalid date'
         }
-    }
+    },
 
-    static getStatusCounts(tractors) {
-        if (!Array.isArray(tractors)) return {};
-
-        const counts = {Total: tractors.length, Active: 0, Spare: 0, 'In Shop': 0, Retired: 0};
+    getStatusCounts(tractors) {
+        if (!Array.isArray(tractors)) return {}
+        const counts = {Total: tractors.length, Active: 0, Spare: 0, 'In Shop': 0, Retired: 0}
         tractors.forEach(tractor => {
-            const status = tractor.status || 'Unknown';
-            if (['Active', 'Spare', 'In Shop', 'Retired'].includes(status)) counts[status]++;
-        });
+            const status = tractor.status || 'Unknown'
+            if (['Active', 'Spare', 'In Shop', 'Retired'].includes(status)) counts[status]++
+        })
+        return counts
+    },
 
-        return counts;
-    }
-
-    static getPlantCounts(tractors) {
-        if (!Array.isArray(tractors)) return {};
-
+    getPlantCounts(tractors) {
+        if (!Array.isArray(tractors)) return {}
         return tractors.reduce((counts, tractor) => {
-            const plant = tractor.assignedPlant || 'Unassigned';
-            counts[plant] = (counts[plant] || 0) + 1;
-            return counts;
-        }, {});
-    }
+            const plant = tractor.assignedPlant || 'Unassigned'
+            counts[plant] = (counts[plant] || 0) + 1
+            return counts
+        }, {})
+    },
 
-    static getCleanlinessAverage(tractors) {
-        if (!Array.isArray(tractors) || !tractors.length) return 'N/A';
-
+    getCleanlinessAverage(tractors) {
+        if (!Array.isArray(tractors) || !tractors.length) return 'N/A'
         const ratings = tractors
             .filter(m => m.cleanlinessRating != null)
-            .map(m => Number(m.cleanlinessRating));
+            .map(m => Number(m.cleanlinessRating))
+        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'N/A'
+    },
 
-        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'N/A';
-    }
-
-    static getNeedServiceCount(tractors) {
-        if (!Array.isArray(tractors)) return 0;
-
-        return tractors.filter(tractor => this.isServiceOverdue(tractor.lastServiceDate)).length;
+    getNeedServiceCount(tractors) {
+        if (!Array.isArray(tractors)) return 0
+        return tractors.filter(tractor => TractorUtility.isServiceOverdue(tractor.lastServiceDate)).length
     }
 }
+
+export default TractorUtility
+export {TractorUtility}

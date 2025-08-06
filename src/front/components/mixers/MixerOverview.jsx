@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react'
 import {MixerService} from '../../../services/MixerService'
-import {MixerUtility} from '../../../utils/MixerUtility'
+import MixerUtility from '../../../utils/MixerUtility'
 import {PlantService} from '../../../services/PlantService'
 import {supabase} from '../../../services/DatabaseService'
+import { ReportService } from '../../../services/ReportService'
 import LoadingScreen from '../common/LoadingScreen'
 import './styles/MixerOverview.css'
-import { getWeekRangeFromIso } from '../../../services/ReportService'
 import { UserService } from '../../../services/UserService'
 
 const MixerOverview = ({
@@ -145,7 +145,7 @@ const MixerOverview = ({
         prevMonday.setDate(monday.getDate() - 7)
         prevMonday.setHours(0, 0, 0, 0)
         const prevMondayIso = prevMonday.toISOString().slice(0, 10)
-        setPlantReportRange(getWeekRangeFromIso(prevMondayIso))
+        setPlantReportRange(ReportService.getWeekRangeFromIso(prevMondayIso))
         const { data: usersData } = await supabase
             .from('users_profiles')
             .select('id')
@@ -292,7 +292,7 @@ const MixerOverview = ({
             setNotation('This information has not been reported and has no history.')
         }
         setLastReport(last)
-        setLastReportRange(lastWeekIso ? getWeekRangeFromIso(lastWeekIso) : '')
+        setLastReportRange(lastWeekIso ? ReportService.getWeekRangeFromIso(lastWeekIso) : '')
     }
 
     const handleShowLastReport = () => {

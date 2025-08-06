@@ -182,9 +182,7 @@ function TractorSelectModal({ isOpen, onClose, onSelect, currentValue, trailers,
                                         onClick={() => !isAssigned && handleSelect(tractor.id)}
                                     >
                                         <div className="tractor-main-info">
-                                            <span className="tractor-number">
-                                                {tractor.truckNumber ? `Tractor #${tractor.truckNumber}` : 'Unknown'}
-                                            </span>
+                                            <span className="tractor-number">{tractor.truckNumber || 'Unknown'}</span>
                                         </div>
                                         <div className="tractor-details">
                                             <span className="tractor-plant">Plant: {tractor.assignedPlant}</span>

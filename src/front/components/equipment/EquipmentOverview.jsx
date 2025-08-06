@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { EquipmentService } from '../../../services/EquipmentService';
-import { EquipmentUtility } from '../../../utils/EquipmentUtility';
+import EquipmentUtility from '../../../utils/EquipmentUtility';
 import { PlantService } from '../../../services/PlantService';
 import { supabase } from '../../../services/DatabaseService';
 import LoadingScreen from '../common/LoadingScreen';

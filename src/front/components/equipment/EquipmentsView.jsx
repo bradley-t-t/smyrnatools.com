@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import EquipmentAddView from './EquipmentAddView';
-import { EquipmentUtility } from '../../../utils/EquipmentUtility';
+import EquipmentUtility from '../../../utils/EquipmentUtility';
 import { EquipmentService } from '../../../services/EquipmentService';
 import { PlantService } from '../../../services/PlantService';
 import LoadingScreen from '../common/LoadingScreen';

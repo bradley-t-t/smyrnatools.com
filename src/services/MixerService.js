@@ -1,6 +1,6 @@
 import supabase from './DatabaseService';
 import {Mixer} from '../config/models/mixers/Mixer';
-import {MixerUtility} from '../utils/MixerUtility';
+import MixerUtility from '../utils/MixerUtility';
 import {MixerHistory} from '../config/models/mixers/MixerHistory';
 import {UserService} from "./UserService";
 import {MixerComment} from '../config/models/mixers/MixerComment';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EquipmentUtility } from '../../../utils/EquipmentUtility';
+import EquipmentUtility from '../../../utils/EquipmentUtility';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import { EquipmentMaintenanceService } from '../../../services/EquipmentMaintenanceService';
 import { EquipmentService } from '../../../services/EquipmentService';

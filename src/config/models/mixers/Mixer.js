@@ -1,4 +1,4 @@
-import { MixerUtility } from '../../../utils/MixerUtility';
+import MixerUtility from '../../../utils/MixerUtility';
 
 export class Mixer {
     constructor(data = {}) {

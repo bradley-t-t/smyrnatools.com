@@ -296,6 +296,7 @@ function MyAccountView({userId}) {
                                 <div className="form-group">
                                     <label htmlFor="first_name">First Name</label>
                                     <div className="input-with-icon">
+                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
                                         <input
                                             type="text"
                                             id="first_name"
@@ -305,12 +306,12 @@ function MyAccountView({userId}) {
                                             required
                                             style={{ paddingLeft: "45px" }}
                                         />
-                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)" }}></i>
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="last_name">Last Name</label>
                                     <div className="input-with-icon">
+                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
                                         <input
                                             type="text"
                                             id="last_name"
@@ -320,7 +321,6 @@ function MyAccountView({userId}) {
                                             required
                                             style={{ paddingLeft: "45px" }}
                                         />
-                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)" }}></i>
                                     </div>
                                 </div>
                             </div>

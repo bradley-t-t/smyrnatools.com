@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import './styles/ReportsSubmitView.css'
 import { supabase } from '../../../services/DatabaseService'
-import {
-    getWeekRangeFromIso,
-    parseTimeToMinutes,
-    getOperatorName,
-    exportRowsToCSV,
-    exportReportFieldsToCSV
-} from '../../../services/ReportService'
+import { ReportService } from '../../../services/ReportService'
 import { PlantManagerSubmitPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerSubmitPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionSubmitPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
@@ -69,7 +63,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
 
     let weekRange = ''
     if (report.weekIso) {
-        weekRange = getWeekRangeFromIso(report.weekIso)
+        weekRange = ReportService.getWeekRangeFromIso(report.weekIso)
     }
     const PluginComponent = plugins[report.name]
     const submitted = !!initialData?.completed
@@ -103,8 +97,8 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setSuccess(false)
         if (report.name !== 'general_manager') {
             for (const field of report.fields) {
-                if (field.required && !form[field.name]) {
-                    setError('Please fill out all required fields.')
+                if (field.required && (!form[field.name] || (Array.isArray(form[field.name]) && form[field.name].length === 0))) {
+                    setError('Please fill out all required fields before submitting.')
                     return
                 }
             }
@@ -117,14 +111,6 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setError('')
         setSuccess(false)
         setSaveMessage('')
-        if (report.name !== 'general_manager') {
-            for (const field of report.fields) {
-                if (field.required && !form[field.name]) {
-                    setError('Please fill out all required fields.')
-                    return
-                }
-            }
-        }
         setSavingDraft(true)
         try {
             if (!report || !user || typeof user.id !== 'string') {
@@ -511,7 +497,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                 opacity: submitted ? 1 : 0.6
                             }}
                             onClick={() => {
-                                if (submitted) exportRowsToCSV(form.rows, operatorOptions, form.report_date)
+                                if (submitted) ReportService.exportRowsToCSV(form.rows, operatorOptions, form.report_date)
                             }}
                             disabled={!submitted || readOnly}
                         >
@@ -534,7 +520,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                 marginLeft: 12
                             }}
                             onClick={() => {
-                                if (submitted) exportReportFieldsToCSV(report, form)
+                                if (submitted) ReportService.exportReportFieldsToCSV(report, form)
                             }}
                             disabled={!submitted || readOnly}
                         >

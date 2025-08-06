@@ -1,4 +1,4 @@
-export const TrailerUtility = {
+const TrailerUtility = {
     isVerified(updatedLast, updatedAt, updatedBy, latestHistoryDate = null) {
         if (!updatedLast || !updatedBy) return false;
         const lastVerification = new Date(updatedLast);
@@ -57,3 +57,4 @@ export const TrailerUtility = {
 };
 
 export default TrailerUtility;
+export { TrailerUtility };

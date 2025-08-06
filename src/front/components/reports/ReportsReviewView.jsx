@@ -3,11 +3,7 @@ import './styles/ReportsSubmitView.css'
 import './styles/ReportsReviewView.css'
 import { supabase } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
-import {
-    getWeekRangeFromIso,
-    exportRowsToCSV,
-    exportReportFieldsToCSV
-} from '../../../services/ReportService'
+import { ReportService } from '../../../services/ReportService'
 import { PlantManagerReviewPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerReviewPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionReviewPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
@@ -57,9 +53,9 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     useEffect(() => {
         let weekIso = report.weekIso || initialData?.week
         if (weekIso) {
-            setWeekRange(getWeekRangeFromIso(weekIso))
+            setWeekRange(ReportService.getWeekRangeFromIso(weekIso))
         } else if (report.report_date_range_start && report.report_date_range_end) {
-            setWeekRange(getWeekRangeFromIso(report.report_date_range_start.toISOString().slice(0, 10)))
+            setWeekRange(ReportService.getWeekRangeFromIso(report.report_date_range_start.toISOString().slice(0, 10)))
         }
     }, [report, initialData])
 
@@ -240,7 +236,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 opacity: isSubmitted ? 1 : 0.6
                             }}
                             onClick={() => {
-                                if (isSubmitted) exportRowsToCSV(form.rows, operatorOptions, form.report_date)
+                                if (isSubmitted) ReportService.exportRowsToCSV(form.rows, operatorOptions, form.report_date)
                             }}
                             disabled={!isSubmitted}
                         >
@@ -263,7 +259,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 marginLeft: 12
                             }}
                             onClick={() => {
-                                if (isSubmitted) exportReportFieldsToCSV(report, form)
+                                if (isSubmitted) ReportService.exportReportFieldsToCSV(report, form)
                             }}
                             disabled={!isSubmitted}
                         >

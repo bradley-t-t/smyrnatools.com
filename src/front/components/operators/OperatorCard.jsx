@@ -1,24 +1,9 @@
 import React from 'react';
 import './styles/OperatorCard.css';
 import ThemeUtility from '../../../utils/ThemeUtility';
-import {usePreferences} from "../../../app/context/PreferencesContext";
-
-function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
-    const options = { month: 'long', day: 'numeric', year: 'numeric' };
-    const formatted = date.toLocaleDateString('en-US', options);
-    const day = date.getDate();
-    let suffix = 'th';
-    if (day % 10 === 1 && day !== 11) suffix = 'st';
-    else if (day % 10 === 2 && day !== 12) suffix = 'nd';
-    else if (day % 10 === 3 && day !== 13) suffix = 'rd';
-    return formatted.replace(`${day}`, `${day}${suffix}`);
-}
+import formatUtility from '../../../utils/FormatUtility';
 
 function OperatorCard({operator, plantName, onSelect, onDelete, trainers, children, rating}) {
-    const {preferences} = usePreferences();
     if (!operator) return null;
     const statusColor = ThemeUtility.operatorStatusColors[operator.status] || ThemeUtility.operatorStatusColors.default;
     const handleCardClick = () => {
@@ -83,7 +68,7 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers, childr
                             <div className="detail-label">Pending Start Date</div>
                             <div className="detail-value">
                                 {operator.pendingStartDate
-                                    ? formatDate(operator.pendingStartDate)
+                                    ? formatUtility.formatDate(operator.pendingStartDate)
                                     : 'Not Set'}
                             </div>
                         </div>

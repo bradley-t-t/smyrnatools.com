@@ -5,14 +5,12 @@ import {PlantService} from '../../../services/PlantService'
 import {supabase} from '../../../services/DatabaseService'
 import LoadingScreen from '../common/LoadingScreen'
 import './styles/TractorOverview.css'
-import { getWeekRangeFromIso } from '../../../services/ReportService'
-import { UserService } from '../../../services/UserService'
 
 const TractorOverview = ({
-                             filteredTractors = null,
-                             selectedPlant = '',
-                             onStatusClick
-                         }) => {
+    filteredTractors = null,
+    selectedPlant = '',
+    onStatusClick
+}) => {
     const [tractors, setTractors] = useState([])
     const [plants, setPlants] = useState([])
     const [operators, setOperators] = useState([])
@@ -28,11 +26,6 @@ const TractorOverview = ({
     const [verifiedCount, setVerifiedCount] = useState(0)
     const [notVerifiedCount, setNotVerifiedCount] = useState(0)
     const [duplicateOperatorNames, setDuplicateOperatorNames] = useState(new Set())
-    const [plantReportMetrics, setPlantReportMetrics] = useState(null)
-    const [plantReportRange, setPlantReportRange] = useState('')
-    const [lastReport, setLastReport] = useState(null)
-    const [lastReportRange, setLastReportRange] = useState('')
-    const [notation, setNotation] = useState('')
 
     useEffect(() => {
         fetchData()
@@ -55,251 +48,6 @@ const TractorOverview = ({
         setDuplicateOperatorNames(duplicates)
     }, [operators])
 
-    useEffect(() => {
-        if (selectedPlant) {
-            fetchPlantManagerMetrics(selectedPlant)
-        } else {
-            setPlantReportMetrics(null)
-            setPlantReportRange('')
-            setLastReport(null)
-            setLastReportRange('')
-            setNotation('')
-        }
-    }, [selectedPlant, plants])
-
-    const fetchPlantManagerMetrics = async (plantCode) => {
-        setPlantReportMetrics(null)
-        setPlantReportRange('')
-        setLastReport(null)
-        setLastReportRange('')
-        setNotation('')
-        const today = new Date()
-        const day = today.getDay()
-        const monday = new Date(today)
-        monday.setDate(today.getDate() - ((day + 6) % 7))
-        monday.setHours(0, 0, 0, 0)
-        const prevMonday = new Date(monday)
-        prevMonday.setDate(monday.getDate() - 7)
-        prevMonday.setHours(0, 0, 0, 0)
-        const prevMondayIso = prevMonday.toISOString().slice(0, 10)
-        setPlantReportRange(getWeekRangeFromIso(prevMondayIso))
-        const { data: usersData } = await supabase
-            .from('users_profiles')
-            .select('id')
-        let userIdsForPlant = []
-        if (Array.isArray(usersData)) {
-            const plantMap = {}
-            await Promise.all(usersData.map(async u => {
-                const userPlant = await UserService.getUserPlant(u.id)
-                plantMap[u.id] = userPlant
-            }))
-            userIdsForPlant = usersData.filter(u => plantMap[u.id] === plantCode).map(u => u.id)
-        }
-        if (!userIdsForPlant.length) {
-            setPlantReportMetrics({
-                yph: null,
-                yphLabel: '',
-                lost: null,
-                lostLabel: ''
-            })
-            setNotation('This information has not been reported and has no history.')
-            return
-        }
-        const { data: reportsData, error } = await supabase
-            .from('reports')
-            .select('data,week,user_id')
-            .eq('report_name', 'plant_manager')
-            .eq('completed', true)
-            .in('user_id', userIdsForPlant)
-        let found = null
-        if (!error && Array.isArray(reportsData)) {
-            found = reportsData.find(r => {
-                let weekField = r.data?.week || r.week
-                let weekIso = ''
-                if (weekField instanceof Date) {
-                    weekIso = weekField.toISOString().slice(0, 10)
-                } else if (typeof weekField === 'string') {
-                    const d = new Date(weekField)
-                    if (!isNaN(d)) {
-                        weekIso = d.toISOString().slice(0, 10)
-                    }
-                }
-                return weekIso === prevMondayIso
-            })
-        }
-        if (found && found.data) {
-            const form = found.data
-            let yards =
-                parseFloat(form.yardage) ||
-                parseFloat(form.total_yards_delivered) ||
-                parseFloat(form['Yardage']) ||
-                parseFloat(form['yardage']) ||
-                null
-            let hours =
-                parseFloat(form.total_hours) ||
-                parseFloat(form.total_operator_hours) ||
-                parseFloat(form['Total Hours']) ||
-                parseFloat(form['total_operator_hours']) ||
-                parseFloat(form['total_hours']) ||
-                null
-            let lost = null
-            if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) {
-                lost = Number(form.total_yards_lost)
-            } else if (
-                typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))
-            ) {
-                lost = Number(form.yardage_lost)
-            } else if (
-                typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))
-            ) {
-                lost = Number(form.lost_yardage)
-            } else if (
-                typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))
-            ) {
-                lost = Number(form['Yardage Lost'])
-            } else if (
-                typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
-            ) {
-                lost = Number(form['yardage_lost'])
-            }
-            if (lost !== null && lost < 0) {
-                lost = 0
-            }
-            let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
-            let yphLabel = ''
-            if (yph !== null) {
-                if (yph >= 6) yphLabel = 'Excellent'
-                else if (yph >= 4) yphLabel = 'Good'
-                else if (yph >= 3) yphLabel = 'Average'
-                else yphLabel = 'Poor'
-            }
-            let lostLabel = ''
-            if (lost !== null) {
-                if (lost === 0) lostLabel = 'Excellent'
-                else if (lost < 5) lostLabel = 'Good'
-                else if (lost < 10) lostLabel = 'Average'
-                else lostLabel = 'Poor'
-            }
-            setPlantReportMetrics({
-                yph,
-                yphLabel,
-                lost,
-                lostLabel
-            })
-            if (yph === null || lost === null) {
-                setNotation('This information has been reported but is incomplete.')
-            } else {
-                setNotation('The plant manager has reported these metrics.')
-            }
-            return
-        }
-        let last = null
-        let lastWeekIso = ''
-        if (Array.isArray(reportsData) && reportsData.length > 0) {
-            let sorted = reportsData
-                .map(r => {
-                    let weekField = r.data?.week || r.week
-                    let weekIso = ''
-                    if (weekField instanceof Date) {
-                        weekIso = weekField.toISOString().slice(0, 10)
-                    } else if (typeof weekField === 'string') {
-                        const d = new Date(weekField)
-                        if (!isNaN(d)) {
-                            weekIso = d.toISOString().slice(0, 10)
-                        }
-                    }
-                    return { ...r, weekIso }
-                })
-                .filter(r => r.weekIso)
-                .sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
-            if (sorted.length > 0) {
-                last = sorted[0]
-                lastWeekIso = last.weekIso
-            }
-        }
-        setPlantReportMetrics({
-            yph: null,
-            yphLabel: '',
-            lost: null,
-            lostLabel: ''
-        })
-        if (last) {
-            setNotation('The plant manager has not reported the metrics. Click here to see previous metrics.')
-        } else {
-            setNotation('This information has not been reported and has no history.')
-        }
-        setLastReport(last)
-        setLastReportRange(lastWeekIso ? getWeekRangeFromIso(lastWeekIso) : '')
-    }
-
-    const handleShowLastReport = () => {
-        if (!lastReport) return
-        const form = lastReport.data
-        let yards =
-            parseFloat(form.yardage) ||
-            parseFloat(form.total_yards_delivered) ||
-            parseFloat(form['Yardage']) ||
-            parseFloat(form['yardage']) ||
-            null
-        let hours =
-            parseFloat(form.total_hours) ||
-            parseFloat(form.total_operator_hours) ||
-            parseFloat(form['Total Hours']) ||
-            parseFloat(form['total_operator_hours']) ||
-            parseFloat(form['total_hours']) ||
-            null
-        let lost = null
-        if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) {
-            lost = Number(form.total_yards_lost)
-        } else if (
-            typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))
-        ) {
-            lost = Number(form.yardage_lost)
-        } else if (
-            typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))
-        ) {
-            lost = Number(form.lost_yardage)
-        } else if (
-            typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))
-        ) {
-            lost = Number(form['Yardage Lost'])
-        } else if (
-            typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
-        ) {
-            lost = Number(form['yardage_lost'])
-        }
-        if (lost !== null && lost < 0) {
-            lost = 0
-        }
-        let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
-        let yphLabel = ''
-        if (yph !== null) {
-            if (yph >= 6) yphLabel = 'Excellent'
-            else if (yph >= 4) yphLabel = 'Good'
-            else if (yph >= 3) yphLabel = 'Average'
-            else yphLabel = 'Poor'
-        }
-        let lostLabel = ''
-        if (lost !== null) {
-            if (lost === 0) lostLabel = 'Excellent'
-            else if (lost < 5) lostLabel = 'Good'
-            else if (lost < 10) lostLabel = 'Average'
-            else lostLabel = 'Poor'
-        }
-        setPlantReportMetrics({
-            yph,
-            yphLabel,
-            lost,
-            lostLabel
-        })
-        setPlantReportRange(lastReportRange)
-        if (yph === null || lost === null) {
-            setNotation('This information has been reported but is incomplete.')
-        } else {
-            setNotation('The plant manager has reported these metrics.')
-        }
-    }
-
     const updateStatistics = (tractorsData) => {
         const statsTractors = filteredTractors || tractorsData
         const statusCounts = TractorUtility.getStatusCounts(statsTractors)
@@ -314,15 +62,6 @@ const TractorOverview = ({
         const notVerified = statsTractors.length - verified
         setVerifiedCount(verified)
         setNotVerifiedCount(notVerified)
-        const assignedOperatorIds = new Set()
-        statsTractors
-            .filter(tractor => tractor.assignedOperator && tractor.assignedOperator !== '0')
-            .forEach(tractor => assignedOperatorIds.add(tractor.assignedOperator))
-        const assignedOperators = operators.filter(op => assignedOperatorIds.has(op.employeeId))
-        const trainingCount = assignedOperators.filter(op => op.assignedTrainer && op.assignedTrainer !== '0').length
-        const trainersCount = assignedOperators.filter(op => op.isTrainer === true).length
-        setTrainingCount(trainingCount)
-        setTrainersCount(trainersCount)
         calculatePlantDistributionByStatus(statsTractors)
         setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }))
         let filteredForIssues = statsTractors
@@ -512,47 +251,6 @@ const TractorOverview = ({
                 <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
                         Showing statistics for {filteredTractors.length} tractor{filteredTractors.length !== 1 ? 's' : ''}
-                    </div>
-                </div>
-            )}
-            {selectedPlant && (
-                <div className="plant-metrics-container">
-                    <div style={{fontWeight: 600, color: 'var(--accent)', marginBottom: 8, fontSize: '1.08rem'}}>
-                        {plantReportRange && `Metrics for ${plantReportRange}`}
-                    </div>
-                    <div style={{display: 'flex', gap: 18, width: '100%', maxWidth: 700, justifyContent: 'center'}}>
-                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0, background: 'var(--background)' }}>
-                            <div className="summary-metric-title">Yards per Man-Hour</div>
-                            <div className="summary-metric-value">
-                                {plantReportMetrics && plantReportMetrics.yph !== null ? plantReportMetrics.yph.toFixed(2) : '--'}
-                            </div>
-                            <div className="summary-metric-grade">
-                                {plantReportMetrics && plantReportMetrics.yphLabel}
-                            </div>
-                        </div>
-                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0, background: 'var(--background)' }}>
-                            <div className="summary-metric-title">Yardage Lost</div>
-                            <div className="summary-metric-value">
-                                {plantReportMetrics && plantReportMetrics.lost !== null ? plantReportMetrics.lost : '--'}
-                            </div>
-                            <div className="summary-metric-grade">
-                                {plantReportMetrics && plantReportMetrics.lostLabel}
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            marginTop: 8,
-                            color: 'var(--text-secondary)',
-                            fontWeight: 500,
-                            fontSize: '1rem',
-                            cursor: notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? 'pointer' : 'default',
-                            textDecoration: notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? 'underline' : 'none'
-                        }}
-                        onClick={notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? handleShowLastReport : undefined}
-                        tabIndex={notation && notation.toLowerCase().includes('click here to see previous metrics') && lastReport ? 0 : -1}
-                    >
-                        {notation}
                     </div>
                 </div>
             )}
@@ -808,4 +506,3 @@ const TractorOverview = ({
 }
 
 export default TractorOverview
-

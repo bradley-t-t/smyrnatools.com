@@ -1,6 +1,6 @@
 import supabase from './DatabaseService';
 import { Operator } from '../config/models/operators/Operator';
-import { generateUUID, isValidUUID, safeUUID } from '../utils/UUIDUtility';
+import UUIDUtility from '../utils/UUIDUtility';
 
 const OPERATORS_TABLE = 'operators';
 
@@ -89,13 +89,13 @@ export class OperatorService {
 
     static async createOperator(operator) {
         const operatorInstance = operator instanceof Operator ? operator : new Operator({
-            employee_id: isValidUUID(operator.employee_id) ? operator.employee_id : generateUUID(),
+            employee_id: UUIDUtility.isValidUUID(operator.employee_id) ? operator.employee_id : UUIDUtility.generateUUID(),
             smyrna_id: null,
             name: operator.name?.trim(),
             plant_code: operator.plant_code,
             status: operator.status ?? 'Active',
             is_trainer: operator.is_trainer ?? false,
-            assigned_trainer: safeUUID(operator.assigned_trainer),
+            assigned_trainer: UUIDUtility.safeUUID(operator.assigned_trainer),
             position: operator.position || null,
             created_at: operator.created_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
             updated_at: operator.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
@@ -104,7 +104,7 @@ export class OperatorService {
 
         const insertObj = operatorInstance.toApiFormat();
 
-        if (!isValidUUID(insertObj.employee_id)) {
+        if (!UUIDUtility.isValidUUID(insertObj.employee_id)) {
             throw new Error('Invalid employee_id: Must be a valid UUID');
         }
 
@@ -156,7 +156,7 @@ export class OperatorService {
 
         const updateObj = operatorInstance.toApiFormat();
 
-        if (!isValidUUID(updateObj.employee_id)) {
+        if (!UUIDUtility.isValidUUID(updateObj.employee_id)) {
             throw new Error('Invalid employee_id: Must be a valid UUID');
         }
 
@@ -173,7 +173,7 @@ export class OperatorService {
     }
 
     static async deleteOperator(employeeId) {
-        if (!employeeId || !isValidUUID(employeeId)) {
+        if (!employeeId || !UUIDUtility.isValidUUID(employeeId)) {
             throw new Error('Invalid Employee ID: Must be a valid UUID.');
         }
 

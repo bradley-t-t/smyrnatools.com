@@ -1,51 +1,38 @@
-const STORAGE_KEY = 'smyrna_secure_credentials';
+const STORAGE_KEY = 'smyrna_secure_credentials'
 
-class KeychainUtility {
-    static shared = new KeychainUtility();
-
-    constructor() {
-        this.storageKey = STORAGE_KEY;
-    }
-
+const KeychainUtility = {
     storeCredentials(email, password) {
-        if (!email || !password) throw new Error('Email and password are required');
-
+        if (!email || !password) throw new Error('Email and password are required')
         try {
-            localStorage.setItem(this.storageKey, JSON.stringify({
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 email,
                 password: btoa(password),
                 timestamp: new Date().toISOString()
-            }));
-            return true;
+            }))
+            return true
         } catch (error) {
-            console.error('Error storing credentials:', error);
-            throw error;
+            throw error
         }
-    }
-
+    },
     retrieveCredentials() {
         try {
-            const storedData = localStorage.getItem(this.storageKey);
-            if (!storedData) return null;
-
-            const credentials = JSON.parse(storedData);
+            const storedData = localStorage.getItem(STORAGE_KEY)
+            if (!storedData) return null
+            const credentials = JSON.parse(storedData)
             return {
                 email: credentials.email,
                 password: atob(credentials.password)
-            };
+            }
         } catch (error) {
-            console.error('Error retrieving credentials:', error);
-            return null;
+            return null
         }
-    }
-
+    },
     clearCredentials() {
         try {
-            localStorage.removeItem(this.storageKey);
-        } catch (error) {
-            console.error('Error clearing credentials:', error);
-        }
+            localStorage.removeItem(STORAGE_KEY)
+        } catch (error) {}
     }
 }
 
-export default KeychainUtility;
+export default KeychainUtility
+export { KeychainUtility }

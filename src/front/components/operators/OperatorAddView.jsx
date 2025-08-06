@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OperatorService } from '../../../services/OperatorService';
 import { UserService } from '../../../services/UserService';
-import { generateUUID, isValidUUID, safeUUID } from '../../../utils/UUIDUtility';
+import UUIDUtility from '../../../utils/UUIDUtility';
 import './styles/OperatorAddView.css';
 
 function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
@@ -50,21 +50,21 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
 
         try {
             let userId = sessionStorage.getItem('userId');
-            if (!isValidUUID(userId)) {
+            if (!UUIDUtility.isValidUUID(userId)) {
                 throw new Error('Invalid or missing User ID. Please log in again.');
             }
 
             const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
             const newOperator = {
-                employee_id: generateUUID(),
+                employee_id: UUIDUtility.generateUUID(),
                 smyrna_id: null,
                 name: name.trim(),
                 plant_code: assignedPlant,
                 status,
                 position: position || null,
                 is_trainer: isTrainer,
-                assigned_trainer: safeUUID(assignedTrainer),
+                assigned_trainer: UUIDUtility.safeUUID(assignedTrainer),
                 created_at: now,
                 updated_at: now,
                 updated_by: userId,

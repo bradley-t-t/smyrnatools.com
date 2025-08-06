@@ -6,12 +6,12 @@ export const reportTypes = [
     assignment: ["reports.assigned.district_manager"],
     manage: ["reports.manage.district_manager"],
     fields: [
-      { name: "monday", label: "Monday Recap", type: "textarea", required: false },
-      { name: "tuesday", label: "Tuesday Recap", type: "textarea", required: false },
-      { name: "wednesday", label: "Wednesday Recap", type: "textarea", required: false },
-      { name: "thursday", label: "Thursday Recap", type: "textarea", required: false },
-      { name: "friday", label: "Friday Recap", type: "textarea", required: false },
-      { name: "saturday", label: "Saturday Recap", type: "textarea", required: false }
+      { name: "monday", label: "Monday Recap", type: "textarea", required: true },
+      { name: "tuesday", label: "Tuesday Recap", type: "textarea", required: true },
+      { name: "wednesday", label: "Wednesday Recap", type: "textarea", required: true },
+      { name: "thursday", label: "Thursday Recap", type: "textarea", required: true },
+      { name: "friday", label: "Friday Recap", type: "textarea", required: true },
+      { name: "saturday", label: "Saturday Recap", type: "textarea", required: true }
     ]
   },
   {
@@ -21,16 +21,16 @@ export const reportTypes = [
     assignment: ["reports.assigned.plant_manager"],
     manage: ["reports.manage.plant_manager"],
     fields: [
-      { name: "yardage", label: "Yardage", type: "number", required: false },
-      { name: "total_hours", label: "Total Hours", type: "number", required: false },
-      { name: "total_yards_lost", label: "Total Yards Lost", type: "number", required: false },
-      { name: "yards_resold", label: "Yards Resold", type: "number", required: false },
-      { name: "monday_recap", label: "Monday Recap", type: "textarea", required: false },
-      { name: "tuesday_recap", label: "Tuesday Recap", type: "textarea", required: false },
-      { name: "wednesday_recap", label: "Wednesday Recap", type: "textarea", required: false },
-      { name: "thursday_recap", label: "Thursday Recap", type: "textarea", required: false },
-      { name: "friday_recap", label: "Friday Recap", type: "textarea", required: false },
-      { name: "saturday_recap", label: "Saturday Recap", type: "textarea", required: false }
+      { name: "yardage", label: "Yardage", type: "number", required: true },
+      { name: "total_hours", label: "Total Hours", type: "number", required: true },
+      { name: "total_yards_lost", label: "Total Yards Lost", type: "number", required: true },
+      { name: "yards_resold", label: "Yards Resold", type: "number", required: true },
+      { name: "monday_recap", label: "Monday Recap", type: "textarea", required: true },
+      { name: "tuesday_recap", label: "Tuesday Recap", type: "textarea", required: true },
+      { name: "wednesday_recap", label: "Wednesday Recap", type: "textarea", required: true },
+      { name: "thursday_recap", label: "Thursday Recap", type: "textarea", required: true },
+      { name: "friday_recap", label: "Friday Recap", type: "textarea", required: true },
+      { name: "saturday_recap", label: "Saturday Recap", type: "textarea", required: true }
     ]
   },
   {

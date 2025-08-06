@@ -1,8 +1,8 @@
-import { generateUUID, isValidUUID, safeUUID } from '../../../utils/UUIDUtility';
+import UUIDUtility from '../../../utils/UUIDUtility';
 
 export class Operator {
     constructor(data = {}) {
-        this.employeeId = data.employee_id ?? data.employeeId ?? generateUUID();
+        this.employeeId = data.employee_id ?? data.employeeId ?? UUIDUtility.generateUUID();
         this.smyrnaId = data.smyrna_id ?? data.smyrnaId ?? null;
         this.name = data.name?.trim() ?? '';
         this.plantCode = data.plant_code ?? data.plantCode ?? null;
@@ -18,7 +18,7 @@ export class Operator {
     static fromApiFormat(data) {
         if (!data) return null;
         return new Operator({
-            employee_id: data.employee_id ?? data.employeeId ?? generateUUID(),
+            employee_id: data.employee_id ?? data.employeeId ?? UUIDUtility.generateUUID(),
             smyrna_id: data.smyrna_id ?? data.smyrnaId ?? null,
             name: data.name ?? '',
             plant_code: data.plant_code ?? data.plantCode ?? null,
@@ -37,10 +37,10 @@ export class Operator {
     }
 
     toApiFormat() {
-        if (!isValidUUID(this.employeeId)) {
+        if (!UUIDUtility.isValidUUID(this.employeeId)) {
             throw new Error('Invalid employee_id: Must be a valid UUID');
         }
-        if (this.smyrnaId && isValidUUID(this.smyrnaId)) {
+        if (this.smyrnaId && UUIDUtility.isValidUUID(this.smyrnaId)) {
             throw new Error('smyrna_id cannot be a UUID');
         }
         return {
@@ -50,7 +50,7 @@ export class Operator {
             plant_code: this.plantCode ?? null,
             status: this.status || 'Active',
             is_trainer: this.isTrainer ?? false,
-            assigned_trainer: safeUUID(this.assignedTrainer),
+            assigned_trainer: UUIDUtility.safeUUID(this.assignedTrainer),
             position: this.position ?? null,
             created_at: this.createdAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
             updated_at: this.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
