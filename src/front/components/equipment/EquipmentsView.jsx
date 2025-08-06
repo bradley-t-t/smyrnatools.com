@@ -4,7 +4,6 @@ import EquipmentUtility from '../../../utils/EquipmentUtility';
 import { EquipmentService } from '../../../services/EquipmentService';
 import { PlantService } from '../../../services/PlantService';
 import LoadingScreen from '../common/LoadingScreen';
-import { EquipmentMaintenanceService } from '../../../services/EquipmentMaintenanceService';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import EquipmentCard from './EquipmentCard';
 import EquipmentOverview from './EquipmentOverview';
@@ -49,7 +48,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
             const data = await EquipmentService.fetchEquipments();
             const processedData = await Promise.all(data.map(async equipment => {
                 try {
-                    const issues = await EquipmentMaintenanceService.fetchIssues(equipment.id);
+                    const issues = await EquipmentService.fetchIssues(equipment.id);
                     equipment.issues = issues || [];
                 } catch {
                     equipment.issues = [];
@@ -374,4 +373,3 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
 }
 
 export default EquipmentsView;
-

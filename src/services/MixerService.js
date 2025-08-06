@@ -4,10 +4,16 @@ import MixerUtility from '../utils/MixerUtility';
 import {MixerHistory} from '../config/models/mixers/MixerHistory';
 import {UserService} from "./UserService";
 import {MixerComment} from '../config/models/mixers/MixerComment';
+import {MixerImage} from '../config/models/mixers/MixerImage';
+import { DatabaseUtility } from '../utils/DatabaseUtility';
+import { v4 as uuidv4 } from 'uuid';
 
 const MIXERS_TABLE = 'mixers';
 const HISTORY_TABLE = 'mixers_history';
 const MIXERS_COMMENTS_TABLE = 'mixers_comments';
+const MIXERS_IMAGES_TABLE = 'mixers_images';
+const MIXERS_MAINTENANCE_TABLE = 'mixers_maintenance';
+const BUCKET_NAME = 'smyrna';
 
 const formatDate = date => {
     if (!date) return null;
@@ -493,5 +499,102 @@ export class MixerService {
             }
             return entries;
         }, []);
+    }
+
+    static async fetchMixerImages(mixerId) {
+        const {data, error} = await supabase
+            .from(MIXERS_IMAGES_TABLE)
+            .select('*')
+            .eq('mixer_id', mixerId);
+        if (error) {
+            console.error(`Error fetching images for mixer ${mixerId}:`, error);
+            throw error;
+        }
+        return data ? data.map(image => MixerImage.fromRow(image)) : [];
+    }
+
+    static async uploadMixerImage(mixerId, file) {
+        if (!mixerId) throw new Error('Mixer ID is required');
+        if (!file) throw new Error('File is required');
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `mixer_${mixerId}_${uuidv4()}.${fileExt}`;
+        const filePath = `${BUCKET_NAME}/mixer_images/${fileName}`;
+
+        const {error: uploadError} = await supabase
+            .storage
+            .from(BUCKET_NAME)
+            .upload(`mixer_images/${fileName}`, file);
+
+        if (uploadError) {
+            console.error('Error uploading image:', uploadError);
+            throw uploadError;
+        }
+
+        const {data, error} = await supabase
+            .from(MIXERS_IMAGES_TABLE)
+            .insert({
+                mixer_id: mixerId,
+                image_url: filePath,
+                created_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error saving image record:', error);
+            throw error;
+        }
+
+        return MixerImage.fromRow(data);
+    }
+
+    static async deleteMixerImage(imageId) {
+        if (!imageId) throw new Error('Image ID is required');
+
+        const {data: imageData, error: fetchError} = await supabase
+            .from(MIXERS_IMAGES_TABLE)
+            .select('image_url')
+            .eq('id', imageId)
+            .single();
+
+        if (fetchError) {
+            console.error(`Error fetching image URL for deletion (ID: ${imageId}):`, fetchError);
+            throw fetchError;
+        }
+
+        if (imageData) {
+            const {error: deleteFileError} = await supabase
+                .storage
+                .from(BUCKET_NAME)
+                .delete([imageData.image_url]);
+
+            if (deleteFileError) {
+                console.error(`Error deleting file from storage (ID: ${imageId}):`, deleteFileError);
+                throw deleteFileError;
+            }
+        }
+
+        const {error} = await supabase
+            .from(MIXERS_IMAGES_TABLE)
+            .delete()
+            .eq('id', imageId);
+
+        if (error) {
+            console.error(`Error deleting image record (ID: ${imageId}):`, error);
+            throw error;
+        }
+
+        return true;
+    }
+
+    static async fetchIssues(mixerId) {
+        const {data, error} = await supabase
+            .from(MIXERS_MAINTENANCE_TABLE)
+            .select('*')
+            .eq('mixer_id', mixerId)
+            .order('time_created', { ascending: false });
+        if (error) throw error;
+        return data ?? [];
     }
 }

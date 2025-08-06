@@ -3,7 +3,7 @@ import './styles/TrailerIssueModal.css';
 import { supabase } from '../../../services/DatabaseService';
 import { v4 as uuidv4 } from 'uuid';
 import LoadingScreen from '../common/LoadingScreen';
-import { TrailerMaintenanceService } from '../../../services/TrailerMaintenanceService';
+import TrailerService from '../../../services/TrailerService';
 
 const LOAD_ISSUES_ERROR = 'Failed to load issues. Please try again.';
 const ADD_ISSUE_ERROR = 'Failed to add issue. Please try again.';
@@ -26,7 +26,7 @@ function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
         setIsLoading(true);
         setError(null);
         try {
-            const fetchedIssues = await TrailerMaintenanceService.fetchIssues(trailerId);
+            const fetchedIssues = await TrailerService.fetchIssues(trailerId);
             setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : []);
         } catch (err) {
             setError(LOAD_ISSUES_ERROR);
@@ -38,7 +38,7 @@ function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
 
     const handleDeleteIssue = async (issueId) => {
         try {
-            await TrailerMaintenanceService.deleteIssue(issueId);
+            await TrailerService.deleteIssue(issueId);
             fetchIssues();
         } catch (err) {
             setError(DELETE_ISSUE_ERROR);
@@ -47,7 +47,7 @@ function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
 
     const handleCompleteIssue = async (issueId) => {
         try {
-            await TrailerMaintenanceService.completeIssue(issueId);
+            await TrailerService.completeIssue(issueId);
             fetchIssues();
         } catch (err) {
             setError(COMPLETE_ISSUE_ERROR);
@@ -67,7 +67,7 @@ function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
             if (!userId) {
                 throw new Error('You must be logged in to add issues');
             }
-            await TrailerMaintenanceService.addIssue(trailerId, newIssue.trim(), severity, userId);
+            await TrailerService.addIssue(trailerId, newIssue.trim(), severity, userId);
             setNewIssue('');
             setSeverity('Medium');
             fetchIssues();

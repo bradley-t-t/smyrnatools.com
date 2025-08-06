@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {TractorUtility} from '../../../utils/TractorUtility';
 import {usePreferences} from '../../../app/context/PreferencesContext';
-import {TractorMaintenanceService} from '../../../services/TractorMaintenanceService';
 import {TractorService} from '../../../services/TractorService';
 import './styles/TractorCard.css';
 
@@ -17,7 +16,7 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
     useEffect(() => {
         const fetchOpenIssues = async () => {
             try {
-                const issues = await TractorMaintenanceService.fetchIssues(tractor.id);
+                const issues = await TractorService.fetchIssues(tractor.id);
                 const openIssues = issues.filter(issue => !issue.time_completed);
                 setOpenIssuesCount(openIssues.length);
             } catch (error) {

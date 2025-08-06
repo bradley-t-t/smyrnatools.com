@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MixerMaintenanceService } from '../../../services/MixerMaintenanceService';
+import { MixerService } from '../../../services/MixerService';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorMessage from '../common/ErrorMessage';
@@ -29,7 +29,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         setIsLoading(true);
         setError(null);
         try {
-            const fetchedIssues = await MixerMaintenanceService.fetchIssues(mixerId);
+            const fetchedIssues = await MixerService.fetchIssues(mixerId);
             setIssues(fetchedIssues);
         } catch (err) {
             setError('Failed to load maintenance issues. Please try again.');
@@ -44,7 +44,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         }
 
         try {
-            await MixerMaintenanceService.deleteIssue(issueId);
+            await MixerService.deleteIssue(issueId);
             fetchIssues();
         } catch (err) {
             setError('Failed to delete issue. Please try again.');
@@ -53,7 +53,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
 
     const handleCompleteIssue = async (issueId) => {
         try {
-            await MixerMaintenanceService.completeIssue(issueId);
+            await MixerService.completeIssue(issueId);
             fetchIssues();
         } catch (err) {
             setError('Failed to mark issue as completed. Please try again.');
@@ -72,7 +72,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         setError(null);
 
         try {
-            const result = await MixerMaintenanceService.addIssue(mixerId, newIssue, severity);
+            const result = await MixerService.addIssue(mixerId, newIssue, severity);
             setNewIssue('');
             setSeverity('Medium');
             await fetchIssues();

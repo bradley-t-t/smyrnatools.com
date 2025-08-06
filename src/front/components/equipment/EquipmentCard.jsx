@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import EquipmentUtility from '../../../utils/EquipmentUtility';
 import { usePreferences } from '../../../app/context/PreferencesContext';
-import { EquipmentMaintenanceService } from '../../../services/EquipmentMaintenanceService';
 import { EquipmentService } from '../../../services/EquipmentService';
 import './styles/EquipmentCard.css';
 
@@ -14,7 +13,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
     useEffect(() => {
         const fetchOpenIssues = async () => {
             try {
-                const issues = await EquipmentMaintenanceService.fetchIssues(equipment.id);
+                const issues = await EquipmentService.fetchIssues(equipment.id);
                 const openIssues = issues.filter(issue => !issue.time_completed);
                 setOpenIssuesCount(openIssues.length);
             } catch (error) {

@@ -3,10 +3,13 @@ import { UserService } from './UserService';
 import {Equipment} from "../config/models/equipment/Equipment";
 import {EquipmentHistory} from "../config/models/equipment/EquipmentHistory";
 import {EquipmentComment} from "../config/models/equipment/EquipmentComment";
+import { DatabaseUtility } from '../utils/DatabaseUtility';
+import { v4 as uuidv4 } from 'uuid';
 
 const EQUIPMENTS_TABLE = 'heavy_equipment';
 const HISTORY_TABLE = 'equipment_history';
 const EQUIPMENTS_COMMENTS_TABLE = 'equipment_comments';
+const EQUIPMENT_MAINTENANCE_TABLE = 'equipment_maintenance';
 
 const formatDate = date => {
     if (!date) return null;
@@ -463,5 +466,79 @@ export class EquipmentService {
             }
             return entries;
         }, []);
+    }
+
+    static async fetchIssues(equipmentId) {
+        const { data, error } = await supabase
+            .from(EQUIPMENT_MAINTENANCE_TABLE)
+            .select('*')
+            .eq('equipment_id', equipmentId)
+            .order('time_created', { ascending: false });
+        if (error) throw error;
+        return data ?? [];
+    }
+
+    static async addIssue(equipmentId, issueText, severity) {
+        if (!equipmentId) throw new Error('Equipment ID is required');
+        if (!issueText?.trim()) throw new Error('Issue description is required');
+        const validSeverities = ['Low', 'Medium', 'High'];
+        const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium';
+        const payload = {
+            id: uuidv4(),
+            equipment_id: equipmentId,
+            issue: issueText.trim(),
+            severity: finalSeverity,
+            time_created: new Date().toISOString(),
+            time_completed: null
+        };
+        const { data, error } = await supabase
+            .from(EQUIPMENT_MAINTENANCE_TABLE)
+            .insert([payload])
+            .select()
+            .single();
+        if (error) {
+            const enhancedError = new Error(`Database error (${error.code}): ${error.message}${error.hint ? ' - ' + error.hint : ''}`);
+            enhancedError.originalError = error;
+            enhancedError.details = error.details;
+            try {
+                const schemaInfo = await DatabaseUtility.checkTableSchema(supabase, EQUIPMENT_MAINTENANCE_TABLE);
+                localStorage.setItem('equipment_maintenance_error', JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    equipmentId,
+                    severity,
+                    error: error.message,
+                    stack: error.stack,
+                    originalError: {
+                        message: error.message,
+                        code: error.code,
+                        details: error.details
+                    },
+                    schemaInfo
+                }));
+            } catch (e) {}
+            throw enhancedError;
+        }
+        if (!data) throw new Error('Database insert succeeded but no data was returned');
+        return data;
+    }
+
+    static async deleteIssue(issueId) {
+        const { error } = await supabase
+            .from(EQUIPMENT_MAINTENANCE_TABLE)
+            .delete()
+            .eq('id', issueId);
+        if (error) throw error;
+        return true;
+    }
+
+    static async completeIssue(issueId) {
+        const { data, error } = await supabase
+            .from(EQUIPMENT_MAINTENANCE_TABLE)
+            .update({ time_completed: new Date().toISOString() })
+            .eq('id', issueId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
     }
 }

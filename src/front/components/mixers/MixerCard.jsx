@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import MixerUtility from '../../../utils/MixerUtility';
 import ThemeUtility from '../../../utils/ThemeUtility';
 import {usePreferences} from '../../../app/context/PreferencesContext';
-import {MixerMaintenanceService} from '../../../services/MixerMaintenanceService';
 import {MixerService} from '../../../services/MixerService';
 import './styles/MixerCard.css';
 
@@ -19,7 +18,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     useEffect(() => {
         const fetchOpenIssues = async () => {
             try {
-                const issues = await MixerMaintenanceService.fetchIssues(mixer.id);
+                const issues = await MixerService.fetchIssues(mixer.id);
                 const openIssues = issues.filter(issue => !issue.time_completed);
                 setOpenIssuesCount(openIssues.length);
             } catch (error) {

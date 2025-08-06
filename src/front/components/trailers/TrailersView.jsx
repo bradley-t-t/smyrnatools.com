@@ -5,13 +5,12 @@ import TrailerCard from './TrailerCard';
 import TrailerOverview from './TrailerOverview';
 import '../../styles/FilterStyles.css';
 import './styles/TrailersView.css';
-import { TrailerService } from "../../../services/TrailerService";
-import { TrailerMaintenanceService } from "../../../services/TrailerMaintenanceService";
-import { TrailerUtility } from "../../../utils/TrailerUtility";
-import { PlantService } from "../../../services/PlantService";
-import { TractorService } from "../../../services/TractorService";
-import TrailerAddView from "./TrailerAddView";
-import TrailerDetailView from "./TrailerDetailView";
+import { TrailerService } from '../../../services/TrailerService';
+import { TrailerUtility } from '../../../utils/TrailerUtility';
+import { PlantService } from '../../../services/PlantService';
+import { TractorService } from '../../../services/TractorService';
+import TrailerAddView from './TrailerAddView';
+import TrailerDetailView from './TrailerDetailView';
 
 function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, onSelectTrailer }) {
     const { preferences, resetTrailerFilters, saveLastViewedFilters, updatePreferences } = usePreferences();
@@ -57,7 +56,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                     latestHistoryDate = history[0]?.changedAt || null;
                 } catch {}
                 try {
-                    const issues = await TrailerMaintenanceService.fetchIssues(trailer.id);
+                    const issues = await TrailerService.fetchIssues(trailer.id);
                     trailer.issues = issues || [];
                 } catch {
                     trailer.issues = [];
@@ -460,4 +459,3 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
 }
 
 export default TrailersView;
-

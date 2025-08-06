@@ -1,4 +1,3 @@
-// TractorsView.jsx
 import React, {useEffect, useState} from 'react';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
@@ -6,8 +5,7 @@ import TractorCard from './TractorCard';
 import TractorOverview from './TractorOverview';
 import '../../styles/FilterStyles.css';
 import './styles/TractorsView.css';
-import {TractorService} from "../../../services/TractorService";
-import {TractorMaintenanceService} from "../../../services/TractorMaintenanceService";
+import { TractorService } from '../../../services/TractorService';
 import {TractorUtility} from "../../../utils/TractorUtility";
 import {OperatorService} from "../../../services/OperatorService";
 import {PlantService} from "../../../services/PlantService";
@@ -58,7 +56,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                     latestHistoryDate = history[0]?.changedAt || null;
                 } catch {}
                 try {
-                    const issues = await TractorMaintenanceService.fetchIssues(tractor.id);
+                    const issues = await TractorService.fetchIssues(tractor.id);
                     tractor.issues = issues || [];
                 } catch {
                     tractor.issues = [];
@@ -518,4 +516,3 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
 }
 
 export default TractorsView;
-

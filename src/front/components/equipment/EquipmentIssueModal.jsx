@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { EquipmentMaintenanceService } from '../../../services/EquipmentMaintenanceService';
+import { EquipmentService } from '../../../services/EquipmentService';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorMessage from '../common/ErrorMessage';
@@ -29,7 +29,7 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
         setIsLoading(true);
         setError(null);
         try {
-            const fetchedIssues = await EquipmentMaintenanceService.fetchIssues(equipmentId);
+            const fetchedIssues = await EquipmentService.fetchIssues(equipmentId);
             setIssues(fetchedIssues);
         } catch (err) {
             setError('Failed to load maintenance issues. Please try again.');
@@ -44,7 +44,7 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
         }
 
         try {
-            await EquipmentMaintenanceService.deleteIssue(issueId);
+            await EquipmentService.deleteIssue(issueId);
             fetchIssues();
         } catch (err) {
             setError('Failed to delete issue. Please try again.');
@@ -53,7 +53,7 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
 
     const handleCompleteIssue = async (issueId) => {
         try {
-            await EquipmentMaintenanceService.completeIssue(issueId);
+            await EquipmentService.completeIssue(issueId);
             fetchIssues();
         } catch (err) {
             setError('Failed to mark issue as completed. Please try again.');
@@ -72,7 +72,7 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
         setError(null);
 
         try {
-            const result = await EquipmentMaintenanceService.addIssue(equipmentId, newIssue, severity);
+            const result = await EquipmentService.addIssue(equipmentId, newIssue, severity);
             setNewIssue('');
             setSeverity('Medium');
             await fetchIssues();

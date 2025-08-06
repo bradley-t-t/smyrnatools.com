@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PresenceService } from '../../services/PresenceService';
+import { UserPresenceService } from '../../services/UserPresenceService';
 
 export function usePresence() {
     const [onlineUsers, setOnlineUsers] = useState([]);
@@ -9,14 +9,14 @@ export function usePresence() {
     useEffect(() => {
         let isMounted = true;
         setLoading(true);
-        PresenceService.setup().then(success => {
+        UserPresenceService.setup().then(success => {
             if (!isMounted) return;
             if (!success) {
                 setError('Failed to initialize presence service');
                 setLoading(false);
                 return;
             }
-            PresenceService.getOnlineUsers().then(users => {
+            UserPresenceService.getOnlineUsers().then(users => {
                 if (!isMounted) return;
                 setOnlineUsers(users);
                 setLoading(false);
@@ -29,9 +29,9 @@ export function usePresence() {
                 if (!isMounted) return;
                 setOnlineUsers(users);
             };
-            PresenceService.addListener(handlePresenceChange);
+            UserPresenceService.addListener(handlePresenceChange);
             return () => {
-                PresenceService.removeListener(handlePresenceChange);
+                UserPresenceService.removeListener(handlePresenceChange);
             };
         }).catch(err => {
             if (!isMounted) return;

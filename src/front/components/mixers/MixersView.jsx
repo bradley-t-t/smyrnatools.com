@@ -5,7 +5,6 @@ import {MixerService} from '../../../services/MixerService';
 import {PlantService} from '../../../services/PlantService';
 import {OperatorService} from '../../../services/OperatorService';
 import LoadingScreen from '../common/LoadingScreen';
-import {MixerMaintenanceService} from '../../../services/MixerMaintenanceService';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerOverview from './MixerOverview';
@@ -55,7 +54,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     latestHistoryDate = history[0]?.changedAt || null;
                 } catch {}
                 try {
-                    const issues = await MixerMaintenanceService.fetchIssues(mixer.id);
+                    const issues = await MixerService.fetchIssues(mixer.id);
                     mixer.issues = issues || [];
                 } catch {
                     mixer.issues = [];

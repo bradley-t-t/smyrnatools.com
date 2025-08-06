@@ -227,4 +227,4 @@ class PresenceServiceImpl {
     }
 }
 
-export const PresenceService = new PresenceServiceImpl();
+export const UserPresenceService = new PresenceServiceImpl();

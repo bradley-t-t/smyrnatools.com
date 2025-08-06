@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrailerUtility } from '../../../utils/TrailerUtility';
 import { usePreferences } from '../../../app/context/PreferencesContext';
-import { TrailerMaintenanceService } from '../../../services/TrailerMaintenanceService';
 import { TrailerService } from '../../../services/TrailerService';
 import './styles/TrailerCard.css';
 
@@ -14,7 +13,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
     useEffect(() => {
         const fetchOpenIssues = async () => {
             try {
-                const issues = await TrailerMaintenanceService.fetchIssues(trailer.id);
+                const issues = await TrailerService.fetchIssues(trailer.id);
                 const openIssues = issues.filter(issue => !issue.time_completed);
                 setOpenIssuesCount(openIssues.length);
             } catch (error) {
