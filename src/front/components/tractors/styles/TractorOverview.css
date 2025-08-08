@@ -36,8 +36,8 @@
 
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
+    background: var(--bg-primary) ;
+    color: var(--text-primary) ;
 }
 
 :root {
@@ -93,8 +93,8 @@ td > span[tabIndex="0"] .fa-exclamation-triangle {
 }
 
 span:hover .trainer-warning-tooltip, span:focus .trainer-warning-tooltip {
-    visibility: visible !important;
-    opacity: 1 !important;
+    visibility: visible ;
+    opacity: 1 ;
 }
 
 .clickable {
@@ -178,12 +178,12 @@ span:hover .trainer-warning-tooltip, span:focus .trainer-warning-tooltip {
 .stat-icon {
     font-size: 2.2rem;
     margin-right: 18px;
-    color: #fff !important;
+    color: #fff ;
     width: 54px;
     height: 54px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--accent) !important;
+    background-color: var(--accent) ;
     border-radius: 16px;
 }

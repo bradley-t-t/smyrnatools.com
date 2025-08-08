@@ -31,8 +31,10 @@
     right: 20px;
     border-radius: 50px;
     box-shadow: var(--shadow-md);
-    overflow: hidden;
+    overflow: visible;
     border: none;
+    background: none;
+    padding: 0;
 }
 
 .online-users-minimized {
@@ -57,6 +59,79 @@
 .online-users-minimized .user-count {
     font-size: 14px;
     font-weight: bold;
+}
+
+.online-users-minimized-compact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 10px;
+    min-width: 0;
+    height: 40px;
+    border-radius: 20px;
+    background-color: var(--accent);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.online-users-minimized-compact .user-count {
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 0 8px;
+}
+
+.online-users-minimized-compact .action-button.circle.icon-only {
+    margin-left: 2px;
+    background: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    padding: 0;
+    line-height: 0;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    color: white;
+}
+
+.online-users-minimized-compact .action-button.circle.icon-only:hover {
+    background-color: var(--card-bg);
+    color: var(--accent);
+}
+
+.online-users-minimized-compact .action-button.circle,
+.online-users-minimized-compact .action-button,
+.header-actions .action-button.circle,
+.header-actions .action-button {
+    margin-left: 2px;
+    background: none;
+    color: var(--accent);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    padding: 0;
+    line-height: 0;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+}
+
+.online-users-minimized-compact .action-button.circle.icon-only:hover {
+    background-color: var(--card-bg);
+    color: var(--accent);
 }
 
 .online-users-header {
@@ -99,27 +174,45 @@
 
 .header-actions {
     display: flex;
-    gap: 4px;
+    gap: 6px;
 }
 
 .action-button {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 12px;
-    color: #777;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    padding: 0;
+    line-height: 0;
+    color: var(--accent);
 }
 
-.action-button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: #333;
+.action-button.circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    background: none;
+}
+
+.action-button:hover,
+.action-button.circle:hover {
+    background-color: var(--card-bg);
+    color: var(--accent);
+    box-shadow: var(--shadow-xs);
+}
+
+.online-users-minimized .action-button.circle {
+    margin-left: 8px;
 }
 
 .online-users-list {
@@ -186,14 +279,42 @@
     text-align: center;
     padding: 8px;
     font-size: 13px;
-    color: #555;
+    color: var(--accent);
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
-.more-users:hover {
-    color: #222;
-    background-color: rgba(0, 0, 0, 0.03);
+.more-users button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: none;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 0;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+}
+
+.more-users button.icon-only {
+    margin-left: 0;
+}
+
+.more-users button:hover {
+    background-color: var(--card-bg);
+    color: var(--accent);
+    box-shadow: var(--shadow-xs);
 }
 
 .online-users-overlay[data-theme="dark"] {

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import { AuthService } from '../../../services/AuthService';
+import { UserService } from "../../../services/UserService";
+import { useUserPresence } from "../../../app/hooks/UserPresence";
 import './styles/OnlineUsersOverlay.css';
-import {UserService} from "../../../services/UserService";
-import {usePresence} from "../../../app/hooks/UsePresence";
 
 function OnlineUsersOverlay() {
-    const { onlineUsers, loading, error } = usePresence();
+    const { onlineUsers, loading, error } = useUserPresence();
     const { preferences } = usePreferences();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isMinimized, setIsMinimized] = useState(true);
@@ -33,45 +33,37 @@ function OnlineUsersOverlay() {
     if (!isLoggedIn || loading || error || onlineUsers.length === 0 || !preferences.showOnlineOverlay) return null;
 
     return (
-        <div
-            className={`online-users-overlay ${isExpanded ? 'expanded' : ''} ${isMinimized ? 'minimized' : ''}`}
-            style={{
-                backgroundColor: preferences.themeMode === 'dark' ? 'var(--bg-primary)' : 'var(--card-bg)',
-                borderColor: 'var(--accent)',
-            }}
-        >
+        <div className={`online-users-overlay ${isExpanded ? 'expanded' : ''} ${isMinimized ? 'minimized' : ''}`}>
             {isMinimized ? (
-                <div
-                    className="online-users-minimized"
-                    onClick={toggleMinimize}
-                    style={{ backgroundColor: 'var(--accent)' }}
-                >
-                    <div className="user-count">{onlineUsers.length}</div>
-                    <i className="fas fa-users"></i>
+                <div className="online-users-minimized-compact" onClick={toggleMinimize}>
+                    <span className="user-count">{onlineUsers.length}</span>
+                    <button className="action-button circle icon-only" title="Expand">
+                        <i className="fas fa-chevron-up"></i>
+                    </button>
                 </div>
             ) : (
                 <>
-                    <div className="online-users-header" style={{ borderBottomColor: 'var(--accent)' }}>
+                    <div className="online-users-header">
                         <div className="header-title">
-                            <i className="fas fa-users" style={{ color: 'var(--accent)' }}></i>
+                            <i className="fas fa-users"></i>
                             <span>Online Users</span>
-                            <div className={`user-count ${animateCount ? 'pulse' : ''}`} style={{ backgroundColor: 'var(--accent)' }}>
+                            <div className={`user-count ${animateCount ? 'pulse' : ''}`}>
                                 {onlineUsers.length}
                             </div>
                         </div>
                         <div className="header-actions">
-                            <button className="action-button" onClick={toggleExpand} title={isExpanded ? 'Show less' : 'Show more'}>
+                            <button className="action-button circle" onClick={toggleExpand} title={isExpanded ? 'Show less' : 'Show more'}>
                                 <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                             </button>
-                            <button className="action-button" onClick={toggleMinimize} title="Minimize">
-                                <i className="fas fa-minus"></i>
+                            <button className="action-button circle" onClick={toggleMinimize} title="Minimize">
+                                <i className="fas fa-xmark"></i>
                             </button>
                         </div>
                     </div>
                     <div className="online-users-list">
                         {onlineUsers.slice(0, isExpanded ? onlineUsers.length : 3).map(user => (
                             <div key={user.id} className="online-user">
-                                <div className="user-avatar" style={{ backgroundColor: 'var(--accent)' }}>
+                                <div className="user-avatar">
                                     {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                 </div>
                                 <div className="user-info">
@@ -84,8 +76,11 @@ function OnlineUsersOverlay() {
                             </div>
                         ))}
                         {!isExpanded && onlineUsers.length > 3 && (
-                            <div className="more-users" onClick={toggleExpand}>
+                            <div className="more-users">
                                 <span>+{onlineUsers.length - 3} more</span>
+                                <button className="action-button circle icon-only" title="Show more" onClick={toggleExpand}>
+                                    <i className="fas fa-chevron-down"></i>
+                                </button>
                             </div>
                         )}
                     </div>

@@ -25,6 +25,7 @@ function ReportsView() {
     const [plants, setPlants] = useState([])
     const [filterReportType, setFilterReportType] = useState('')
     const [filterPlant, setFilterPlant] = useState('')
+    const [managerEditUser, setManagerEditUser] = useState(null)
 
     useEffect(() => {
         async function fetchUserAndReports() {
@@ -202,7 +203,7 @@ function ReportsView() {
         return typeof userId === 'string' && userId.length > 0 ? userId.slice(0, 8) : ''
     }
 
-    async function handleSubmitReport(formData) {
+    async function handleSubmitReport(formData, completed = true) {
         if (!showForm || !user || typeof user.id !== 'string') {
             setLoadError('User not found')
             return
@@ -210,6 +211,81 @@ function ReportsView() {
         const weekIso = showForm.weekIso
         const reportName = showForm.name
         const userId = user.id
+        let monday = weekIso ? new Date(weekIso) : null
+        let saturday = monday ? new Date(monday) : null
+        if (saturday) saturday.setDate(monday.getDate() + 5)
+        const upsertData = {
+            report_name: reportName,
+            user_id: userId,
+            data: { ...formData, week: weekIso },
+            week: monday ? monday.toISOString() : null,
+            completed: completed,
+            submitted_at: new Date().toISOString(),
+            report_date_range_start: monday?.toISOString() || null,
+            report_date_range_end: saturday?.toISOString() || null
+        }
+        let response
+        const { data: existing, error: findError } = await supabase
+            .from('reports')
+            .select('id')
+            .eq('report_name', reportName)
+            .eq('user_id', userId)
+            .eq('week', monday ? monday.toISOString() : null)
+            .maybeSingle()
+        if (findError) {
+            setLoadError(findError.message || 'Error checking for existing report')
+            return
+        }
+        if (existing && existing.id) {
+            response = await supabase
+                .from('reports')
+                .update(upsertData)
+                .eq('id', existing.id)
+                .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
+                .single()
+        } else {
+            response = await supabase
+                .from('reports')
+                .insert([upsertData])
+                .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
+                .single()
+        }
+        const { data, error } = response
+        if (error) {
+            setLoadError(error.message || 'Error submitting report')
+            return
+        }
+        if (data && data.id) {
+            setLocalReports(prev => {
+                const filtered = prev.filter(r => r.id !== data.id)
+                return [
+                    ...filtered,
+                    {
+                        id: data.id,
+                        name: data.report_name,
+                        title: (reportTypes.find(rt => rt.name === data.report_name) || {}).title || data.report_name,
+                        completed: !!data.completed,
+                        completedDate: data.submitted_at,
+                        data: data.data,
+                        userId: data.user_id,
+                        week: data.week || data.data?.week || weekIso,
+                        report_date_range_start: data.report_date_range_start ? new Date(data.report_date_range_start) : monday,
+                        report_date_range_end: data.report_date_range_end ? new Date(data.report_date_range_end) : saturday
+                    }
+                ]
+            })
+            setShowForm(null)
+        }
+    }
+
+    async function handleManagerEditSubmit(formData) {
+        if (!showForm || !managerEditUser) {
+            setLoadError('No user selected for manager edit')
+            return
+        }
+        const weekIso = showForm.weekIso
+        const reportName = showForm.name
+        const userId = managerEditUser
         let monday = weekIso ? new Date(weekIso) : null
         let saturday = monday ? new Date(monday) : null
         if (saturday) saturday.setDate(monday.getDate() + 5)
@@ -274,12 +350,28 @@ function ReportsView() {
                 ]
             })
             setShowForm(null)
+            setManagerEditUser(null)
         }
     }
 
     function handleReview(report) {
         setReviewData(report)
         setShowReview(reportTypes.find(rt => rt.name === report.name))
+    }
+
+    function handleManagerEdit(reportType, reportData) {
+        setShowReview(null)
+        setReviewData(null)
+        setShowForm({
+            ...reportType,
+            weekIso: reportData.week || reportData.data?.week,
+            name: reportType.name
+        })
+        setSubmitInitialData({
+            ...reportData,
+            data: reportData.data
+        })
+        setManagerEditUser(reportData.userId)
     }
 
     async function handleShowForm(item) {
@@ -571,9 +663,21 @@ function ReportsView() {
                     <ReportsSubmitView
                         report={showForm}
                         initialData={submitInitialData}
-                        onBack={() => setShowForm(null)}
-                        onSubmit={handleSubmitReport}
+                        onBack={() => {
+                            setShowForm(null)
+                            setManagerEditUser(null)
+                        }}
+                        onSubmit={(form, submitType) => {
+                            if (managerEditUser) {
+                                handleManagerEditSubmit(form)
+                            } else {
+                                handleSubmitReport(form, submitType === 'submit')
+                            }
+                        }}
                         user={user}
+                        readOnly={showReview === null && reviewData !== null}
+                        managerEditUser={managerEditUser}
+                        userProfiles={userProfiles}
                     />
                 )}
                 {showReview && (
@@ -586,6 +690,7 @@ function ReportsView() {
                         }}
                         user={user}
                         completedByUser={reviewData?.userId ? userProfiles[reviewData.userId] : undefined}
+                        onManagerEdit={handleManagerEdit}
                     />
                 )}
             </div>

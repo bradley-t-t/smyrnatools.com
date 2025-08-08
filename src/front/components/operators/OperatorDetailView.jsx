@@ -14,6 +14,7 @@ import OperatorScheduledOffButton from './OperatorScheduledOffView';
 function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [operator, setOperator] = useState(null);
     const [plants, setPlants] = useState([]);
+    const [trainers, setTrainers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -31,7 +32,6 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [scheduledOffDays, setScheduledOffDays] = useState([]);
-    const [trainers, setTrainers] = useState([]);
     const [rating, setRating] = useState(0);
 
     useEffect(() => {
@@ -44,7 +44,25 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     useEffect(() => {
         fetchData();
         fetchScheduledOff();
+        fetchPlants();
+        fetchTrainers();
     }, [operatorId]);
+
+    const fetchPlants = async () => {
+        const { data } = await supabase.from('plants').select('*');
+        setPlants(data || []);
+    };
+
+    const fetchTrainers = async () => {
+        const { data } = await supabase
+            .from('operators')
+            .select('employee_id, name, is_trainer')
+            .eq('is_trainer', true);
+        setTrainers((data || []).map(trainer => ({
+            employeeId: trainer.employee_id,
+            name: trainer.name
+        })));
+    };
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -251,12 +269,12 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                         >
                             <option value="">Select Plant</option>
                             {plants.sort((a, b) => {
-                                const aCode = parseInt(a.plantCode?.replace(/\D/g, '') || '0');
-                                const bCode = parseInt(b.plantCode?.replace(/\D/g, '') || '0');
+                                const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
+                                const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
                                 return aCode - bCode;
                             }).map(plant => (
-                                <option key={plant.plantCode} value={plant.plantCode}>
-                                    ({plant.plantCode}) {plant.plantName}
+                                <option key={plant.plant_code} value={plant.plant_code}>
+                                    ({plant.plant_code}) {plant.plant_name}
                                 </option>
                             ))}
                         </select>

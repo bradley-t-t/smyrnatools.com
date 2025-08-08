@@ -25,7 +25,7 @@ function getTruckNumberForOperator(row, mixers) {
     return ''
 }
 
-function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly, allReports }) {
+function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly, allReports, managerEditUser, userProfiles }) {
     const [form, setForm] = useState(() => {
         if (initialData) {
             if (initialData.data) {
@@ -104,6 +104,13 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             }
         }
         setSubmitting(true)
+        try {
+            await onSubmit(form, 'submit')
+            setSuccess(true)
+        } catch (err) {
+            setError(err?.message || 'Error submitting report')
+        }
+        setSubmitting(false)
     }
 
     async function handleSaveDraft(e) {
@@ -113,65 +120,14 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         setSaveMessage('')
         setSavingDraft(true)
         try {
-            if (!report || !user || typeof user.id !== 'string') {
-                setError('User not found')
-                setSavingDraft(false)
-                return
-            }
-            let monday = report.weekIso ? new Date(report.weekIso) : null
-            let saturday = monday ? new Date(monday) : null
-            if (saturday) saturday.setDate(monday.getDate() + 5)
-            const upsertData = {
-                report_name: report.name,
-                user_id: user.id,
-                data: { ...form, week: report.weekIso },
-                week: monday ? monday.toISOString() : null,
-                completed: false,
-                submitted_at: new Date().toISOString(),
-                report_date_range_start: monday?.toISOString() || null,
-                report_date_range_end: saturday?.toISOString() || null
-            }
-            const { data: existing, error: findError } = await supabase
-                .from('reports')
-                .select('id')
-                .eq('report_name', report.name)
-                .eq('user_id', user.id)
-                .eq('week', monday ? monday.toISOString() : null)
-                .maybeSingle()
-            if (findError) {
-                setError(findError.message || 'Error checking for existing report')
-                setSavingDraft(false)
-                return
-            }
-            let response
-            if (existing && existing.id) {
-                response = await supabase
-                    .from('reports')
-                    .update(upsertData)
-                    .eq('id', existing.id)
-                    .select('id')
-                    .single()
-            } else {
-                response = await supabase
-                    .from('reports')
-                    .insert([upsertData])
-                    .select('id')
-                    .single()
-            }
-            const { error } = response
-            if (error) {
-                setError(error.message || 'Error saving draft')
-                setSavingDraft(false)
-                return
-            }
+            await onSubmit(form, 'draft')
             setSaveMessage('Changes saved.')
             setInitialFormSnapshot(JSON.stringify(form))
             setHasUnsavedChanges(false)
-        } catch {
-            setError('Error saving draft')
-        } finally {
-            setSavingDraft(false)
+        } catch (err) {
+            setError(err?.message || 'Error saving draft')
         }
+        setSavingDraft(false)
     }
 
     function handleExcludeOperator(idx) {
@@ -475,9 +431,28 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         }
     }, [report.name, user])
 
+    let editingUserName = ''
+    if (managerEditUser && userProfiles && userProfiles[managerEditUser]) {
+        const profile = userProfiles[managerEditUser]
+        editingUserName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+    } else if (managerEditUser) {
+        editingUserName = managerEditUser.slice(0, 8)
+    }
+
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
             <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
+                {managerEditUser && (
+                    <div style={{
+                        fontWeight: 700,
+                        fontSize: 18,
+                        color: 'var(--accent)',
+                        marginBottom: 18,
+                        textAlign: 'center'
+                    }}>
+                        Editing report for: {editingUserName}
+                    </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                     <button className="report-form-back" onClick={handleBackClick} type="button">
                         <i className="fas fa-arrow-left"></i> Back
@@ -1043,24 +1018,26 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                             >
                                 {savingDraft ? 'Saving...' : 'Save Changes'}
                             </button>
-                            <button
-                                type="submit"
-                                className="report-modal-submit"
-                                disabled={submitting || savingDraft}
-                                style={{
-                                    background: 'var(--accent)',
-                                    color: 'var(--text-light)',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '10px 22px',
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    cursor: 'pointer',
-                                    height: 44
-                                }}
-                            >
-                                {submitting ? 'Submitting...' : 'Submit'}
-                            </button>
+                            {(!managerEditUser) && (
+                                <button
+                                    type="submit"
+                                    className="report-modal-submit"
+                                    disabled={submitting || savingDraft}
+                                    style={{
+                                        background: 'var(--accent)',
+                                        color: 'var(--text-light)',
+                                        border: 'none',
+                                        borderRadius: 6,
+                                        padding: '10px 22px',
+                                        fontWeight: 600,
+                                        fontSize: 15,
+                                        cursor: 'pointer',
+                                        height: 44
+                                    }}
+                                >
+                                    {submitting ? 'Submitting...' : 'Submit'}
+                                </button>
+                            )}
                         </div>
                     )}
                 </form>

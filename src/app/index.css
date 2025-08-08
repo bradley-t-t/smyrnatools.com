@@ -211,3 +211,7 @@ button {
 input, select, textarea {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+.action-button.primary.rectangular-button {
+    min-width: 120px !important;
+}

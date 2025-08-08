@@ -23,7 +23,7 @@
 }
 
 .manager-card .manager-name {
-    color: var(--accent) !important;
+    color: var(--accent) ;
     font-weight: 600;
 }
 

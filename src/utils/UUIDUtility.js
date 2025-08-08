@@ -38,4 +38,5 @@ const uuidUtility = {
     }
 }
 
+export const generateUUID = uuidUtility.generateUUID
 export default uuidUtility

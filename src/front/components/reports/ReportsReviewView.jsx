@@ -25,7 +25,7 @@ function truncateText(text, maxLength) {
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
 }
 
-function ReportsReviewView({ report, initialData, onBack, user, completedByUser, allReports }) {
+function ReportsReviewView({ report, initialData, onBack, user, completedByUser, allReports, onManagerEdit }) {
     const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
     const [ownerName, setOwnerName] = useState('')
@@ -34,6 +34,8 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     const [summaryTab, setSummaryTab] = useState('summary')
     const [operatorOptions, setOperatorOptions] = useState([])
     const [assignedPlant, setAssignedPlant] = useState('')
+    const [hasManagerEditPermission, setHasManagerEditPermission] = useState(false)
+    const [showManagerEditButton, setShowManagerEditButton] = useState(false)
 
     useEffect(() => {
         async function fetchOwnerName() {
@@ -130,6 +132,31 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         fetchAssignedPlant()
     }, [report.name, completedByUser])
 
+    useEffect(() => {
+        async function checkPermissionAndRoleWeight() {
+            if (user && user.id) {
+                const perm = await UserService.hasPermission(user.id, 'reports.edit.others')
+                setHasManagerEditPermission(!!perm)
+                let ownerId = completedByUser?.id || initialData?.user_id || report?.userId
+                if (ownerId && ownerId !== user.id) {
+                    const userRole = await UserService.getHighestRole(user.id)
+                    const ownerRole = await UserService.getHighestRole(ownerId)
+                    if (userRole && ownerRole && userRole.weight > ownerRole.weight) {
+                        setShowManagerEditButton(true)
+                    } else {
+                        setShowManagerEditButton(false)
+                    }
+                } else {
+                    setShowManagerEditButton(false)
+                }
+            } else {
+                setHasManagerEditPermission(false)
+                setShowManagerEditButton(false)
+            }
+        }
+        checkPermissionAndRoleWeight()
+    }, [user, completedByUser, initialData, report])
+
     let weekRangeHeader = weekRange
     let reportTitle = report.title || 'Report Review'
 
@@ -221,19 +248,40 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     <button className="report-form-back" onClick={onBack} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
-                    {Array.isArray(form.rows) && form.rows.length > 0 && report.name === 'plant_production' && (
-                        <button
-                            type="button"
-                            style={{
-                                background: isSubmitted ? 'var(--accent)' : 'var(--divider)',
-                                color: isSubmitted ? 'var(--text-light)' : 'var(--text-secondary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: isSubmitted ? 'pointer' : 'not-allowed',
-                                opacity: isSubmitted ? 1 : 0.6
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {hasManagerEditPermission && showManagerEditButton && (
+                            <button
+                                type="button"
+                                style={{
+                                    background: 'var(--accent)',
+                                    color: 'var(--text-light)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => {
+                                    if (onManagerEdit) onManagerEdit(report, initialData)
+                            }}
+                            >
+                                Manager Edit
+                            </button>
+                        )}
+                        {Array.isArray(form.rows) && form.rows.length > 0 && report.name === 'plant_production' && (
+                            <button
+                                type="button"
+                                style={{
+                                    background: isSubmitted ? 'var(--accent)' : 'var(--divider)',
+                                    color: isSubmitted ? 'var(--text-light)' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: isSubmitted ? 'pointer' : 'not-allowed',
+                                    opacity: isSubmitted ? 1 : 0.6
                             }}
                             onClick={() => {
                                 if (isSubmitted) ReportService.exportRowsToCSV(form.rows, operatorOptions, form.report_date)
@@ -242,21 +290,20 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                         >
                             Export to Spreadsheet
                         </button>
-                    )}
-                    {report.name !== 'plant_production' && (
-                        <button
-                            type="button"
-                            style={{
-                                background: isSubmitted ? 'var(--accent)' : 'var(--divider)',
-                                color: isSubmitted ? 'var(--text-light)' : 'var(--text-secondary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: isSubmitted ? 'pointer' : 'not-allowed',
-                                opacity: isSubmitted ? 1 : 0.6,
-                                marginLeft: 12
+                        )}
+                        {report.name !== 'plant_production' && (
+                            <button
+                                type="button"
+                                style={{
+                                    background: isSubmitted ? 'var(--accent)' : 'var(--divider)',
+                                    color: isSubmitted ? 'var(--text-light)' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: isSubmitted ? 'pointer' : 'not-allowed',
+                                    opacity: isSubmitted ? 1 : 0.6
                             }}
                             onClick={() => {
                                 if (isSubmitted) ReportService.exportReportFieldsToCSV(report, form)
@@ -265,7 +312,8 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                         >
                             Export to Spreadsheet
                         </button>
-                    )}
+                        )}
+                    </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
                     <div style={{
@@ -313,8 +361,25 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                                 {field.name === 'yardage' ? 'Total Yardage' : field.label}
                                                 {field.required && <span className="report-modal-required">*</span>}
                                             </label>
-                                            {field.type === 'textarea' ? (
-                                                <textarea value={form[field.name] || ''} readOnly disabled />
+                                            {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
+                                                <textarea
+                                                    value={form[field.name] || ''}
+                                                    readOnly
+                                                    disabled
+                                                    style={{
+                                                        minHeight: 60,
+                                                        maxHeight: 300,
+                                                        resize: 'vertical',
+                                                        width: '100%',
+                                                        fontSize: 15,
+                                                        background: 'var(--background)',
+                                                        border: '1px solid var(--divider)',
+                                                        borderRadius: 6,
+                                                        color: 'var(--text-primary)',
+                                                        padding: '7px 10px',
+                                                        overflowY: 'auto'
+                                                    }}
+                                                />
                                             ) : field.type === 'select' ? (
                                                 <select value={form[field.name] || ''} readOnly disabled>
                                                     <option value="">Select...</option>

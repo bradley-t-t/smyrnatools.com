@@ -575,10 +575,10 @@ input[type="date"].equipment-form-control {
 }
 
 .form-section.basic-info .form-group {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
+    margin-bottom: 0 ;
+    padding-bottom: 0 ;
 }
 .form-section.basic-info .form-group:not(:last-child) {
-    margin-bottom: 2px !important;
-    padding-bottom: 0 !important;
+    margin-bottom: 2px ;
+    padding-bottom: 0 ;
 }

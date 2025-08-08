@@ -322,8 +322,8 @@
 
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
+    background: var(--bg-primary) ;
+    color: var(--text-primary) ;
 }
 
 .overview-grid {
@@ -454,8 +454,8 @@ td > span[tabIndex="0"] .fa-exclamation-triangle {
 }
 
 span:hover .trainer-warning-tooltip, span:focus .trainer-warning-tooltip {
-    visibility: visible !important;
-    opacity: 1 !important;
+    visibility: visible ;
+    opacity: 1 ;
 }
 
 .clickable {

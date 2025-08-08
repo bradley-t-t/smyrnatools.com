@@ -266,7 +266,7 @@
 .dark-mode .summary-metric-title,
 .dark-mode .summary-metric-value,
 .dark-mode .summary-metric-grade {
-    color: var(--text-light) !important;
+    color: var(--text-light) ;
 }
 
 .summary-metric-scale {

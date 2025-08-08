@@ -1,9 +1,13 @@
 import React from 'react';
 import './styles/TeamsOverview.css';
 
-const TEAMS_TABLE = 'operators_teams';
-
 function TeamsOverview({ onClose, teams }) {
+    let countA = 0
+    let countB = 0
+    if (teams && typeof teams === 'object') {
+        if (Array.isArray(teams.A)) countA = teams.A.length
+        if (Array.isArray(teams.B)) countB = teams.B.length
+    }
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -15,16 +19,24 @@ function TeamsOverview({ onClose, teams }) {
                 </div>
                 <div className="modal-body">
                     <div className="overview-metrics">
-                        <div className="metrics-row">
-                            <div className="metric-card">
-                                <div className="metric-title">Active Operators (A Team)</div>
-                                <div className="metric-value">{teams.A.filter(op => op.status === 'Active').length}</div>
-                            </div>
-                            <div className="metric-card">
-                                <div className="metric-title">Active Operators (B Team)</div>
-                                <div className="metric-value">{teams.B.filter(op => op.status === 'Active').length}</div>
-                            </div>
-                        </div>
+                        <table className="teams-overview-table">
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Operator Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>A Team</td>
+                                    <td>{countA}</td>
+                                </tr>
+                                <tr>
+                                    <td>B Team</td>
+                                    <td>{countB}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div className="modal-footer">
@@ -34,7 +46,7 @@ function TeamsOverview({ onClose, teams }) {
                 </div>
             </div>
         </div>
-    );
+    )
 }
 
-export default TeamsOverview;
+export default TeamsOverview

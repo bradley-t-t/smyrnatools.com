@@ -166,7 +166,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 3px;
 }
 
 .vertical-navbar:not(.collapsed) .menu-icon {

@@ -16,14 +16,14 @@
 }
 
 .filter-button.active {
-  background-color: var(--select-active-border) !important;
-  border-color: var(--select-active-border) !important;
-  color: var(--text-light) !important;
+  background-color: var(--select-active-border) ;
+  border-color: var(--select-active-border) ;
+  color: var(--text-light) ;
 }
 
 .cancel-button:hover {
-  border-color: var(--select-active-border) !important;
-  color: var(--select-active-border) !important;
+  border-color: var(--select-active-border) ;
+  color: var(--select-active-border) ;
 }
 
 .accent-red {

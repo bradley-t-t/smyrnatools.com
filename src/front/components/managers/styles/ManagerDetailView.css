@@ -1,37 +1,3 @@
-:root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f7fafc;
-  --bg-tertiary: #f5f5f5;
-  --bg-hover: #f0f0f0;
-  --text-primary: #1a202c;
-  --text-secondary: #718096;
-  --text-tertiary: #a0aec0;
-  --accent: #3182ce;
-  --accent-dark: #2b6cb0;
-  --success: #38a169;
-  --danger: #e53e3e;
-  --danger-bg: #fed7d7;
-  --danger-bg-hover: #feb2b2;
-  --border-light: #e2e8f0;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #2d3748;
-    --bg-secondary: #1a202c;
-    --bg-tertiary: #4a5568;
-    --bg-hover: #3f4a5b;
-    --text-primary: #f7fafc;
-    --text-secondary: #a0aec0;
-    --text-tertiary: #718096;
-    --border-light: #4a5568;
-    --danger-bg: #742a2a;
-    --danger-bg-hover: #9b2c2c;
-  }
-}
-
 .manager-detail-view {
   width: 100%;
   height: 100%;
@@ -437,7 +403,7 @@
 }
 
 body.in-detail-view .managers-list-container {
-  display: none !important;
+  display: none ;
 }
 
 .message {
@@ -465,7 +431,7 @@ body.in-detail-view .managers-list-container {
 }
 
 .disabled-field {
-  background-color: var(--bg-tertiary) !important;
-  cursor: not-allowed !important;
+  background-color: var(--bg-tertiary) ;
+  cursor: not-allowed ;
   opacity: 0.75;
 }

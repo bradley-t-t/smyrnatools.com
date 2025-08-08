@@ -95,10 +95,23 @@ function LoginView() {
                     return;
                 }
 
-                const user = await signUp(email, password, firstName, lastName);
-                setErrorMessage('');
-                alert('Account created successfully! You will now be redirected to the dashboard.');
-                setTimeout(() => forceReload(), 1000);
+                try {
+                    const user = await signUp(email, password, firstName, lastName);
+                    setErrorMessage('');
+                    alert('Account created successfully! You will now be redirected to the dashboard.');
+                    setTimeout(() => forceReload(), 1000);
+                } catch (signUpError) {
+                    if (
+                        signUpError.message &&
+                        signUpError.message.includes('violates foreign key constraint')
+                    ) {
+                        setErrorMessage('Account creation failed due to a server error. Please contact support.');
+                    } else {
+                        setErrorMessage(signUpError.message || 'An error occurred during account creation');
+                    }
+                    setIsSubmitting(false);
+                    return;
+                }
             } else {
                 if (!email || !password) {
                     setErrorMessage('Please enter both email and password');

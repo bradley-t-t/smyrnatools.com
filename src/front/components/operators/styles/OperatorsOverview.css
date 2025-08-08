@@ -256,6 +256,6 @@
 
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
+    background: var(--bg-primary) ;
+    color: var(--text-primary) ;
 }

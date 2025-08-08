@@ -17,8 +17,8 @@
 /* Dark mode support for modal background */
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary, #18181b) !important;
-    color: var(--text-primary, #f5f5f5) !important;
+    background: var(--bg-primary, #18181b) ;
+    color: var(--text-primary, #f5f5f5) ;
 }
 
 .list-overview h1 {
