@@ -411,12 +411,6 @@
     letter-spacing: 2px;
 }
 
-.teams-rotation-note {
-    text-align: center;
-    width: 100%;
-    margin: 12px 0 0 0;
-}
-
 @media (max-width: 1100px) {
     .teams-split-cards {
         flex-direction: column;

@@ -22,7 +22,6 @@ function EquipmentDetailView({ equipmentId, onClose }) {
     const [showIssues, setShowIssues] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [message, setMessage] = useState('');
     const [canEditEquipment, setCanEditEquipment] = useState(true);
@@ -229,9 +228,11 @@ function EquipmentDetailView({ equipmentId, onClose }) {
         }
     }
 
-    function handleBackClick(isSave = false) {
-        if (hasUnsavedChanges && !isSave) setShowUnsavedChangesModal(true);
-        else onClose();
+    async function handleBackClick() {
+        if (hasUnsavedChanges) {
+            await handleSave();
+        }
+        onClose();
     }
 
     function getPlantName(plantCode) {
@@ -518,11 +519,7 @@ ${openIssues.length > 0
                 <div className="form-actions">
                     {canEditEquipment && (
                         <>
-                            <button className="primary-button save-button" onClick={async () => {
-                                await handleSave();
-                                setShowUnsavedChangesModal(false);
-                                setHasUnsavedChanges(false);
-                            }} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
+                            <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
                             <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)} disabled={isSaving}>Delete Equipment</button>
                         </>
                     )}
@@ -536,35 +533,6 @@ ${openIssues.length > 0
                         <div className="confirmation-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                             <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {showUnsavedChangesModal && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
-                        <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button
-                                className="primary-button"
-                                onClick={async () => {
-                                    setShowUnsavedChangesModal(false);
-                                    await handleSave();
-                                    setTimeout(() => onClose(), 800);
-                                }}
-                                disabled={!canEditEquipment}
-                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', opacity: !canEditEquipment ? '0.6' : '1', cursor: !canEditEquipment ? 'not-allowed' : 'pointer' }}
-                            >Save & Leave</button>
-                            <button
-                                className="danger-button"
-                                onClick={() => {
-                                    setShowUnsavedChangesModal(false);
-                                    setHasUnsavedChanges(false);
-                                    onClose();
-                                }}
-                            >Discard & Leave</button>
                         </div>
                     </div>
                 </div>

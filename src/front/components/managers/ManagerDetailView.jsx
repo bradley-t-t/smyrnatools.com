@@ -19,7 +19,6 @@ function ManagerDetailView({managerId, onClose}) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [message, setMessage] = useState('');
     const [originalValues, setOriginalValues] = useState({});
@@ -71,17 +70,6 @@ function ManagerDetailView({managerId, onClose}) {
         if (!manager) return;
         setIsReadOnly(currentUserRoleWeight <= (manager.roleWeight || 0));
     }, [manager, currentUserRoleWeight]);
-
-    useEffect(() => {
-        const handleBeforeUnload = e => {
-            if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [hasUnsavedChanges]);
 
     async function fetchCurrentUserRole() {
         try {
@@ -277,9 +265,11 @@ function ManagerDetailView({managerId, onClose}) {
         }
     }
 
-    const handleBackClick = () => {
-        if (hasUnsavedChanges) setShowUnsavedChangesModal(true);
-        else onClose();
+    const handleBackClick = async () => {
+        if (hasUnsavedChanges) {
+            await handleSave();
+        }
+        onClose();
     };
 
     const getPlantName = plantCode => {
@@ -491,33 +481,6 @@ function ManagerDetailView({managerId, onClose}) {
                         <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
                             <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {showUnsavedChangesModal && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
-                        <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button className="primary-button save-button" style={{backgroundColor: 'var(--accent-color)'}} onClick={async () => {
-                                setShowUnsavedChangesModal(false);
-                                try {
-                                    await handleSave();
-                                    setMessage('Changes saved successfully!');
-                                    setTimeout(() => onClose(), 800);
-                                } catch (error) {
-                                    setMessage('Error saving changes. Please try again.');
-                                    setTimeout(() => setMessage(''), 3000);
-                                }
-                            }}>Save & Leave</button>
-                            <button className="danger-button" onClick={() => {
-                                setShowUnsavedChangesModal(false);
-                                setHasUnsavedChanges(false);
-                                onClose();
-                            }}>Discard & Leave</button>
                         </div>
                     </div>
                 </div>

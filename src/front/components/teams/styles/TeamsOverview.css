@@ -80,11 +80,6 @@
 .modal-content.overview-modal {
     background: var(--bg-primary, #fff);
     color: var(--text-primary, #212122);
-    max-width: 420px;
-    width: 100%;
-    margin: 0 auto;
-    border-radius: var(--border-radius-lg);
-    box-sizing: border-box;
 }
 
 .dark-mode .overview-modal,
@@ -95,14 +90,13 @@
 
 .teams-overview-table {
     width: 100%;
-    max-width: 340px;
+    border-collapse: collapse;
     margin: 0 auto;
     border-collapse: collapse;
     font-size: 20px;
     background: var(--card-bg);
     color: var(--text-primary);
 }
-
 .teams-overview-table th,
 .teams-overview-table td {
     padding: 18px 24px;

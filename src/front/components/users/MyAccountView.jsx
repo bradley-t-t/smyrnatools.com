@@ -464,9 +464,6 @@ function MyAccountView({userId}) {
                                     <span className="action-title" style={{fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem'}}>
                                         Sign Out
                                     </span>
-                                    <span className="action-description" style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>
-                                        End your current session
-                                    </span>
                                 </div>
                             </button>
                         </div>

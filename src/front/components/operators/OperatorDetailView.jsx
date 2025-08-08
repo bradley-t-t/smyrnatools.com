@@ -29,7 +29,6 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
     const [updatedByEmail, setUpdatedByEmail] = useState('');
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [scheduledOffDays, setScheduledOffDays] = useState([]);
     const [rating, setRating] = useState(0);
@@ -98,7 +97,10 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
         setScheduledOffDays(data && data.days_off ? data.days_off : []);
     };
 
-    const handleBackClick = () => {
+    const handleBackClick = async () => {
+        if (hasUnsavedChanges) {
+            await handleSave();
+        }
         if (onClose) onClose();
     };
 
@@ -382,39 +384,6 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                         <div className="confirmation-actions">
                             <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {showUnsavedChangesModal && (
-                <div className="confirmation-modal">
-                    <div className="confirmation-content">
-                        <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="confirmation-actions">
-                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button 
-                                className="primary-button save-button"
-                                onClick={async () => {
-                                    setShowUnsavedChangesModal(false);
-                                    try {
-                                        await handleSave();
-                                        setMessage('Changes saved successfully!');
-                                        setTimeout(() => onClose(), 800);
-                                    } catch (error) {
-                                        setMessage('Error saving changes. Please try again.');
-                                        setTimeout(() => setMessage(''), 3000);
-                                    }
-                                }}
-                            >Save & Leave</button>
-                            <button 
-                                className="danger-button" 
-                                onClick={() => {
-                                    setShowUnsavedChangesModal(false);
-                                    setHasUnsavedChanges(false);
-                                    onClose();
-                                }}
-                            >Discard & Leave</button>
                         </div>
                     </div>
                 </div>

@@ -14,9 +14,9 @@ import './styles/TrailerDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';
 import TractorSelectModal from "./TractorSelectModal";
 
-function TrailerDetailView({ trailerId, onClose }) {
+function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
     const { preferences } = usePreferences();
-    const [trailer, setTrailer] = useState(null);
+    const [trailer, setTrailer] = useState(initialTrailer || null);
     const [tractors, setTractors] = useState([]);
     const [plants, setPlants] = useState([]);
     const [trailers, setTrailers] = useState([]);
@@ -26,7 +26,6 @@ function TrailerDetailView({ trailerId, onClose }) {
     const [showComments, setShowComments] = useState(false);
     const [showIssues, setShowIssues] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [updatedByEmail, setUpdatedByEmail] = useState(null);
     const [message, setMessage] = useState('');
@@ -51,8 +50,11 @@ function TrailerDetailView({ trailerId, onClose }) {
         async function fetchData() {
             setIsLoading(true);
             try {
-                const [trailerData, tractorsData, plantsData, allTrailers] = await Promise.all([
-                    TrailerService.fetchTrailerById(trailerId),
+                let trailerData = initialTrailer;
+                if (!trailerData && trailerId) {
+                    trailerData = await TrailerService.fetchTrailerById(trailerId);
+                }
+                const [tractorsData, plantsData, allTrailers] = await Promise.all([
                     TractorService.fetchTractors(),
                     PlantService.fetchPlants(),
                     TrailerService.fetchTrailers()
@@ -61,26 +63,24 @@ function TrailerDetailView({ trailerId, onClose }) {
                 setTractors(tractorsData);
                 setPlants(plantsData);
                 setTrailers(allTrailers);
-
-                setTrailerNumber(trailerData.trailerNumber || '');
-                setAssignedPlant(trailerData.assignedPlant || '');
-                setTrailerType(trailerData.trailerType || '');
-                setAssignedTractor(trailerData.assignedTractor || '');
-                setCleanlinessRating(trailerData.cleanlinessRating || 0);
-                setStatus(trailerData.status || '');
-
+                setTrailerNumber(trailerData?.trailerNumber || '');
+                setAssignedPlant(trailerData?.assignedPlant || '');
+                setTrailerType(trailerData?.trailerType || '');
+                setAssignedTractor(trailerData?.assignedTractor || '');
+                setCleanlinessRating(trailerData?.cleanlinessRating || 0);
+                setStatus(trailerData?.status || '');
                 setOriginalValues({
-                    trailerNumber: trailerData.trailerNumber || '',
-                    assignedPlant: trailerData.assignedPlant || '',
-                    trailerType: trailerData.trailerType || '',
-                    assignedTractor: trailerData.assignedTractor || '',
-                    cleanlinessRating: trailerData.cleanlinessRating || 0,
-                    status: trailerData.status || ''
+                    trailerNumber: trailerData?.trailerNumber || '',
+                    assignedPlant: trailerData?.assignedPlant || '',
+                    trailerType: trailerData?.trailerType || '',
+                    assignedTractor: trailerData?.assignedTractor || '',
+                    cleanlinessRating: trailerData?.cleanlinessRating || 0,
+                    status: trailerData?.status || ''
                 });
 
-                document.documentElement.style.setProperty('--rating-value', trailerData.cleanlinessRating || 0);
+                document.documentElement.style.setProperty('--rating-value', trailerData?.cleanlinessRating || 0);
 
-                if (trailerData.updatedBy) {
+                if (trailerData?.updatedBy) {
                     try {
                         const userName = await UserService.getUserDisplayName(trailerData.updatedBy);
                         setUpdatedByEmail(userName);
@@ -96,7 +96,7 @@ function TrailerDetailView({ trailerId, onClose }) {
             }
         }
         fetchData();
-    }, [trailerId]);
+    }, [initialTrailer, trailerId]);
 
     useEffect(() => {
         async function checkPlantRestriction() {
@@ -271,9 +271,12 @@ function TrailerDetailView({ trailerId, onClose }) {
         }
     }
 
-    function handleBackClick() {
-        if (hasUnsavedChanges) setShowUnsavedChangesModal(true);
-        else onClose();
+    async function handleBackClick() {
+        if (hasUnsavedChanges) {
+            await handleSave();
+            setHasUnsavedChanges(false);
+        }
+        onClose();
     }
 
     function getTractorName(tractorId) {
@@ -305,22 +308,23 @@ function TrailerDetailView({ trailerId, onClose }) {
 
     useEffect(() => {
         async function fetchCommentsAndIssues() {
-            if (!trailerId) return;
+            const id = trailer?.id || trailerId;
+            if (!id) return;
             const { data: commentData } = await supabase
                 .from('trailers_comments')
                 .select('*')
-                .eq('trailer_id', trailerId)
+                .eq('trailer_id', id)
                 .order('created_at', { ascending: false });
             setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
             const { data: issueData } = await supabase
                 .from('trailers_maintenance')
                 .select('*')
-                .eq('trailer_id', trailerId)
+                .eq('trailer_id', id)
                 .order('created_at', { ascending: false });
             setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
         }
         fetchCommentsAndIssues();
-    }, [trailerId]);
+    }, [trailer, trailerId]);
 
     function handleExportEmail() {
         if (!trailer) return;
@@ -390,8 +394,8 @@ ${openIssues.length > 0
 
     return (
         <div className="trailer-detail-view">
-            {showComments && <TrailerCommentModal trailerId={trailerId} trailerNumber={trailer?.trailerNumber} onClose={() => setShowComments(false)} />}
-            {showIssues && <TrailerIssueModal trailerId={trailerId} trailerNumber={trailer?.trailerNumber} onClose={() => setShowIssues(false)} />}
+            {showComments && <TrailerCommentModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber} onClose={() => setShowComments(false)} />}
+            {showIssues && <TrailerIssueModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber} onClose={() => setShowIssues(false)} />}
             {isSaving && (
                 <div className="trailer-saving-overlay">
                     <div className="trailer-saving-indicator"></div>
@@ -718,45 +722,6 @@ ${openIssues.length > 0
                         <div className="trailer-confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
                             <button className="trailer-cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
                             <button className="trailer-danger-button" onClick={handleDelete}>Delete</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {showUnsavedChangesModal && (
-                <div className="trailer-confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.5)'}}>
-                    <div className="trailer-confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
-                        <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="trailer-confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="trailer-cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button
-                                className="trailer-primary-button"
-                                onClick={async () => {
-                                    setShowUnsavedChangesModal(false);
-                                    try {
-                                        await handleSave();
-                                        setHasUnsavedChanges(false);
-                                        setMessage('Changes saved successfully!');
-                                        setTimeout(() => {
-                                            setHasUnsavedChanges(false);
-                                            onClose();
-                                        }, 800);
-                                    } catch (error) {
-                                        setMessage('Error saving changes. Please try again.');
-                                        setTimeout(() => setMessage(''), 3000);
-                                    }
-                                }}
-                                disabled={!canEditTrailer}
-                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', opacity: !canEditTrailer ? '0.6' : '1', cursor: !canEditTrailer ? 'not-allowed' : 'pointer'}}
-                            >Save & Leave</button>
-                            <button
-                                className="trailer-danger-button"
-                                onClick={() => {
-                                    setShowUnsavedChangesModal(false);
-                                    setHasUnsavedChanges(false);
-                                    onClose();
-                                }}
-                            >Discard & Leave</button>
                         </div>
                     </div>
                 </div>

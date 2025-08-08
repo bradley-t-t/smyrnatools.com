@@ -31,7 +31,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             try {
                 await Promise.all([fetchMixers(), fetchOperators(), fetchPlants()]);
             } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -66,7 +65,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             await fixActiveMixersWithoutOperator(processedData);
             setMixers(processedData);
         } catch (error) {
-            console.error('Error fetching mixers:', error);
         }
     }
 
@@ -86,7 +84,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const data = await OperatorService.fetchOperators();
             setOperators(Array.isArray(data) ? data : []);
         } catch (error) {
-            console.error('Error fetching operators:', error);
             setOperators([]);
         }
     }
@@ -96,7 +93,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const data = await PlantService.fetchPlants();
             setPlants(data);
         } catch (error) {
-            console.error('Error fetching plants:', error);
         }
     }
 
@@ -141,11 +137,34 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         setShowOverview(false);
     }
 
+    useEffect(() => {
+        async function searchByVin() {
+            const normalizedSearch = searchText.trim().toLowerCase().replace(/\s+/g, '');
+            if (normalizedSearch.length >= 17 && /^[a-z0-9]+$/i.test(normalizedSearch)) {
+                setIsLoading(true);
+                try {
+                    const vinMixers = await MixerService.searchMixersByVin(normalizedSearch);
+                    setMixers(vinMixers);
+                } catch {}
+                setIsLoading(false);
+            } else {
+                fetchMixers();
+            }
+        }
+        if (searchText.trim().length >= 17 && /^[a-z0-9]+$/i.test(searchText.trim().replace(/\s+/g, ''))) {
+            searchByVin();
+        }
+    }, [searchText]);
+
     const filteredMixers = mixers
         .filter(mixer => {
-            const matchesSearch = !searchText.trim() ||
-                mixer.truckNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                (mixer.assignedOperator && operators.find(op => op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()))
+            const normalizedSearch = searchText.trim().toLowerCase().replace(/\s+/g, '')
+            const truckMatch = (mixer.truckNumber || '').toLowerCase().includes(normalizedSearch)
+            const operatorMatch = mixer.assignedOperator && operators.find(op => op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(normalizedSearch)
+            const vinRaw = (mixer.vinNumber || mixer.vin || '').toLowerCase()
+            const vinNoSpaces = vinRaw.replace(/\s+/g, '')
+            const vinMatch = vinRaw.includes(searchText.trim().toLowerCase()) || vinNoSpaces.includes(normalizedSearch)
+            const matchesSearch = !normalizedSearch || truckMatch || operatorMatch || vinMatch
             const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
             let matchesStatus = true
             if (statusFilter && statusFilter !== 'All Statuses') {
@@ -220,6 +239,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             'Assigned Plant',
             'Last Service Date',
             'Cleanliness Rating',
+            'VIN',
             'Open Issues'
         ];
         const rows = mixersToExport.map(mixer => [
@@ -230,6 +250,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             getPlantName(mixer.assignedPlant),
             formatDate(mixer.lastServiceDate),
             mixer.cleanlinessRating || '',
+            mixer.vinNumber || mixer.vin || '',
             Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
         ]);
         const csvContent = [
@@ -304,7 +325,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     <input
                         type="text"
                         className="ios-search-input"
-                        placeholder="Search by truck or operator..."
+                        placeholder="Search by truck, operator, or VIN..."
                         value={searchText}
                         onChange={e => {
                             setSearchText(e.target.value);
@@ -330,7 +351,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 updateMixerFilter('selectedPlant', e.target.value);
                             }}
                             aria-label="Filter by plant"
-                            style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                         >
                             <option value="">All Plants</option>
                             {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
@@ -348,7 +368,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 setStatusFilter(e.target.value);
                                 updateMixerFilter('statusFilter', e.target.value);
                             }}
-                            style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                         >
                             {filterOptions.map(option => (
                                 <option key={option} value={option}>{option}</option>

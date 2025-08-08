@@ -29,7 +29,6 @@ function MixerDetailView({mixerId, onClose}) {
     const [showComments, setShowComments] = useState(false)
     const [showIssues, setShowIssues] = useState(false)
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [updatedByEmail, setUpdatedByEmail] = useState(null)
     const [message, setMessage] = useState('')
@@ -103,7 +102,6 @@ function MixerDetailView({mixerId, onClose}) {
                     }
                 }
             } catch (error) {
-                console.error('Error fetching mixer details:', error)
             } finally {
                 setIsLoading(false)
                 setHasUnsavedChanges(false)
@@ -132,7 +130,6 @@ function MixerDetailView({mixerId, onClose}) {
                     }
                 }
             } catch (error) {
-                console.error('Error checking plant restriction:', error)
             }
         }
         checkPlantRestriction()
@@ -140,7 +137,7 @@ function MixerDetailView({mixerId, onClose}) {
 
     useEffect(() => {
         if (!originalValues.truckNumber || isLoading) return
-        const formatDateForComparison = date => date ? (date instanceof Date ? date.toISOString().split('T')[0] : '') : ''
+        const formatDateForComparison = date => date ? (date instanceof Date ? date.toISOString() : date) : ''
         const hasChanges =
             truckNumber !== originalValues.truckNumber ||
             assignedPlant !== originalValues.assignedPlant ||
@@ -154,17 +151,6 @@ function MixerDetailView({mixerId, onClose}) {
             year !== originalValues.year
         setHasUnsavedChanges(hasChanges)
     }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, lastChipDate, vin, make, model, year, originalValues, isLoading])
-
-    useEffect(() => {
-        const handleBeforeUnload = e => {
-            if (hasUnsavedChanges) {
-                e.preventDefault()
-                e.returnValue = ''
-            }
-        }
-        window.addEventListener('beforeunload', handleBeforeUnload)
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }, [hasUnsavedChanges])
 
     async function handleSave(overrideValues = {}) {
         if (!mixer?.id) {
@@ -244,7 +230,6 @@ function MixerDetailView({mixerId, onClose}) {
             })
             setHasUnsavedChanges(false)
         } catch (error) {
-            console.error('Error saving mixer:', error)
             alert(`Error saving changes: ${error.message || 'Unknown error'}`)
         } finally {
             setIsSaving(false)
@@ -314,9 +299,11 @@ function MixerDetailView({mixerId, onClose}) {
         }
     }
 
-    function handleBackClick() {
-        if (hasUnsavedChanges) setShowUnsavedChangesModal(true);
-        else onClose();
+    async function handleBackClick() {
+        if (hasUnsavedChanges) {
+            await handleSave()
+        }
+        onClose()
     }
 
     function getOperatorName(operatorId) {
@@ -823,41 +810,6 @@ ${openIssues.length > 0
                         <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
                             <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {showUnsavedChangesModal && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
-                        <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button
-                                className="primary-button"
-                                onClick={async () => {
-                                    setShowUnsavedChangesModal(false);
-                                    try {
-                                        await handleSave();
-                                        setMessage('Changes saved successfully!');
-                                        setTimeout(() => onClose(), 800);
-                                    } catch (error) {
-                                        setMessage('Error saving changes. Please try again.');
-                                        setTimeout(() => setMessage(''), 3000);
-                                    }
-                                }}
-                                disabled={!canEditMixer}
-                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896', opacity: !canEditMixer ? '0.6' : '1', cursor: !canEditMixer ? 'not-allowed' : 'pointer'}}
-                            >Save & Leave</button>
-                            <button
-                                className="danger-button"
-                                onClick={() => {
-                                    setShowUnsavedChangesModal(false);
-                                    setHasUnsavedChanges(false);
-                                    onClose();
-                                }}
-                            >Discard & Leave</button>
                         </div>
                     </div>
                 </div>

@@ -287,7 +287,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
     if (selectedTrailer) {
         return (
             <TrailerDetailView
-                trailerId={selectedTrailer.id}
+                trailer={selectedTrailer}
                 onClose={handleBackFromDetail}
             />
         );
