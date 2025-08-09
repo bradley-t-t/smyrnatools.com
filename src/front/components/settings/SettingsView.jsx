@@ -9,7 +9,7 @@ const ACCENT_OPTIONS = [
 ];
 
 function SettingsView() {
-    const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, setThemeMode, setAccentColor} = usePreferences();
+    const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, toggleAutoOverview, setThemeMode, setAccentColor} = usePreferences();
     const [showFeedback, setShowFeedback] = useState(false);
     const [userId, setUserId] = useState(null);
 
@@ -152,6 +152,18 @@ function SettingsView() {
                                 <span className="slider round"></span>
                             </label>
                             <span className="toggle-state">{preferences.showOnlineOverlay ? 'Visible' : 'Hidden'}</span>
+                        </div>
+                        <div className="toggle-setting">
+                            <span className="toggle-label">Pop-up Overview Automatically</span>
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.autoOverview}
+                                    onChange={() => handleSettingChange(toggleAutoOverview)}
+                                />
+                                <span className="slider round"></span>
+                            </label>
+                            <span className="toggle-state">{preferences.autoOverview ? 'Enabled' : 'Disabled'}</span>
                         </div>
                     </div>
                 </div>

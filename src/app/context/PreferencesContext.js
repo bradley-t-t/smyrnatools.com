@@ -9,6 +9,7 @@ const defaultPreferences = {
     accentColor: 'red',
     showTips: true,
     showOnlineOverlay: true,
+    autoOverview: false,
     mixerFilters: {
         searchText: '',
         selectedPlant: '',
@@ -141,6 +142,7 @@ export const PreferencesProvider = ({children}) => {
             accentColor: data.accent_color,
             showTips: data.show_tips === undefined ? true : data.show_tips,
             showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
+            autoOverview: data.auto_overview === undefined ? false : data.auto_overview,
             mixerFilters: data.mixer_filters ? {
                 searchText: data.mixer_filters.searchText || '',
                 selectedPlant: data.mixer_filters.selectedPlant || '',
@@ -168,6 +170,19 @@ export const PreferencesProvider = ({children}) => {
             localStorage.setItem('userPreferences', JSON.stringify(newPreferences));
         } catch (error) {
         }
+    };
+
+    const toggleAutoOverview = async () => {
+        setPreferences(prev => {
+            const updated = {...prev, autoOverview: !prev.autoOverview};
+            localStorage.setItem('userPreferences', JSON.stringify(updated));
+            return updated;
+        });
+
+        await updateDatabasePreferences(userId, {
+            ...preferences,
+            autoOverview: !preferences.autoOverview
+        });
     };
 
     const updateOperatorFilters = async (filters) => {
@@ -442,6 +457,7 @@ export const PreferencesProvider = ({children}) => {
                     accent_color: preferences.accentColor,
                     show_tips: preferences.showTips,
                     show_online_overlay: preferences.showOnlineOverlay,
+                    auto_overview: preferences.autoOverview,
                     mixer_filters: preferences.mixerFilters || {
                         searchText: '',
                         selectedPlant: '',
@@ -472,6 +488,7 @@ export const PreferencesProvider = ({children}) => {
                 accent_color: prefsToUpdate.accentColor,
                 show_tips: prefsToUpdate.showTips,
                 show_online_overlay: prefsToUpdate.showOnlineOverlay,
+                auto_overview: prefsToUpdate.autoOverview,
                 mixer_filters: prefsToUpdate.mixerFilters,
                 operator_filters: prefsToUpdate.operatorFilters,
                 last_viewed_filters: prefsToUpdate.lastViewedFilters,
@@ -525,6 +542,7 @@ export const PreferencesProvider = ({children}) => {
                 toggleNavbarMinimized,
                 toggleShowTips,
                 toggleShowOnlineOverlay,
+                toggleAutoOverview,
                 setThemeMode,
                 setAccentColor,
                 updatePreferences,

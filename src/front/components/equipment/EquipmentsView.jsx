@@ -41,6 +41,9 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
             setSelectedPlant(preferences.equipmentFilters.selectedPlant || '');
             setStatusFilter(preferences.equipmentFilters.statusFilter || '');
         }
+        if (preferences?.autoOverview) {
+            setShowOverview(true);
+        }
     }, [preferences]);
 
     async function fetchEquipments() {

@@ -42,7 +42,10 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             }
         }
         fetchCurrentUser()
-    }, [])
+        if (preferences?.autoOverview) {
+            setShowOverview(true)
+        }
+    }, [preferences])
 
     useEffect(() => {
         fetchAllData()

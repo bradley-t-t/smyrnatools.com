@@ -44,6 +44,9 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             setSelectedPlant(preferences.tractorFilters.selectedPlant || '')
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
         }
+        if (preferences?.autoOverview) {
+            setShowOverview(true)
+        }
     }, [preferences, reloadTractors]);
 
     async function fetchTractors() {

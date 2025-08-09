@@ -44,6 +44,9 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             setSelectedPlant(preferences.trailerFilters.selectedPlant || '');
             setTypeFilter(preferences.trailerFilters.typeFilter || '');
         }
+        if (preferences?.autoOverview) {
+            setShowOverview(true);
+        }
     }, [preferences, reloadTrailers]);
 
     async function fetchTrailers() {

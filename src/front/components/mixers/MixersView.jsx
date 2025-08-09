@@ -41,6 +41,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
             setStatusFilter(preferences.mixerFilters.statusFilter || '');
         }
+        if (preferences?.autoOverview) {
+            setShowOverview(true);
+        }
     }, [preferences]);
 
     async function fetchMixers() {
