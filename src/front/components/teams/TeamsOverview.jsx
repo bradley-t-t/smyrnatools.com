@@ -19,16 +19,24 @@ function TeamsOverview({ onClose, teams }) {
                 </div>
                 <div className="modal-body">
                     <div className="overview-metrics">
-                        <div className="metrics-row">
-                            <div className="metric-card">
-                                <div className="metric-title">Operators (A Team)</div>
-                                <div className="metric-value">{countA}</div>
-                            </div>
-                            <div className="metric-card">
-                                <div className="metric-title">Operators (B Team)</div>
-                                <div className="metric-value">{countB}</div>
-                            </div>
-                        </div>
+                        <table className="teams-overview-table">
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Operator Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>A Team</td>
+                                    <td>{countA}</td>
+                                </tr>
+                                <tr>
+                                    <td>B Team</td>
+                                    <td>{countB}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div className="modal-footer">

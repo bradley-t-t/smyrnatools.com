@@ -215,3 +215,17 @@ input, select, textarea {
 .action-button.primary.rectangular-button {
     min-width: 120px !important;
 }
+
+.search-bar::before {
+    content: '\f002';
+    font-family: 'Font Awesome 5 Free', serif;
+    font-weight: 900;
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    opacity: 1;
+    font-size: 14px;
+    pointer-events: none;
+}
