@@ -23,6 +23,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState(null);
+    const [viewMode, setViewMode] = useState(preferences.equipmentFilters?.viewMode || 'grid');
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Open Issues'];
 
     useEffect(() => {
@@ -40,6 +41,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
             setSearchText(preferences.equipmentFilters.searchText || '');
             setSelectedPlant(preferences.equipmentFilters.selectedPlant || '');
             setStatusFilter(preferences.equipmentFilters.statusFilter || '');
+            setViewMode(preferences.equipmentFilters.viewMode || 'grid');
         }
         if (preferences?.autoOverview) {
             setShowOverview(true);
@@ -235,6 +237,11 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
         </div>
     );
 
+    function handleViewModeChange(mode) {
+        setViewMode(mode);
+        safeUpdateEquipmentFilter('viewMode', mode);
+    }
+
     return (
         <div className="dashboard-container equipments-view">
             {selectedEquipment ? (
@@ -285,6 +292,24 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                             )}
                         </div>
                         <div className="filters">
+                            <div className="view-toggle-icons">
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('grid')}
+                                    aria-label="Grid view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-th-large"></i>
+                                </button>
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('list')}
+                                    aria-label="List view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-list"></i>
+                                </button>
+                            </div>
                             <div className="filter-wrapper">
                                 <select
                                     className="ios-select"
@@ -348,7 +373,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                 <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No equipment matches your search criteria." : "There is no equipment in the system yet."}</p>
                                 <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Equipment</button>
                             </div>
-                        ) : (
+                        ) : viewMode === 'grid' ? (
                             <div className={`equipments-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredEquipments.map(equipment => (
                                     <EquipmentCard
@@ -358,6 +383,29 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                         onSelect={handleSelectEquipment}
                                     />
                                 ))}
+                            </div>
+                        ) : (
+                            <div className="equipments-list-table-container">
+                                <table className="equipments-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Plant</th>
+                                            <th>Identifying #</th>
+                                            <th>Status</th>
+                                            <th>Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredEquipments.map(equipment => (
+                                            <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)} style={{cursor: 'pointer'}}>
+                                                <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
+                                                <td>{equipment.identifyingNumber ? equipment.identifyingNumber : "---"}</td>
+                                                <td>{equipment.status ? equipment.status : "---"}</td>
+                                                <td>{equipment.equipmentType ? equipment.equipmentType : "---"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>

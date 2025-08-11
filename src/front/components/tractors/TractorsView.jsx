@@ -21,6 +21,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
     const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.tractorFilters?.statusFilter || '');
+    const [viewMode, setViewMode] = useState(preferences.tractorFilters?.viewMode || 'grid');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedTractor, setSelectedTractor] = useState(null)
@@ -43,11 +44,20 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             setSearchText(preferences.tractorFilters.searchText || '')
             setSelectedPlant(preferences.tractorFilters.selectedPlant || '')
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
+            setViewMode(preferences.tractorFilters.viewMode || 'grid')
         }
         if (preferences?.autoOverview) {
             setShowOverview(true)
         }
     }, [preferences, reloadTractors]);
+
+    function handleViewModeChange(mode) {
+        setViewMode(mode)
+        updatePreferences('tractorFilters', {
+            ...preferences.tractorFilters,
+            viewMode: mode
+        })
+    }
 
     async function fetchTractors() {
         try {
@@ -407,6 +417,24 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                     )}
                 </div>
                 <div className="filters">
+                    <div className="view-toggle-icons">
+                        <button
+                            className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('grid')}
+                            aria-label="Grid view"
+                            type="button"
+                        >
+                            <i className="fas fa-th-large"></i>
+                        </button>
+                        <button
+                            className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('list')}
+                            aria-label="List view"
+                            type="button"
+                        >
+                            <i className="fas fa-list"></i>
+                        </button>
+                    </div>
                     <div className="filter-wrapper">
                         <select
                             className="ios-select"
@@ -422,7 +450,6 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                 }));
                             }}
                             aria-label="Filter by plant"
-                            style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                         >
                             <option value="">All Plants</option>
                             {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
@@ -446,7 +473,6 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                     }
                                 }));
                             }}
-                            style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                         >
                             {filterOptions.map(option => (
                                 <option key={option} value={option}>{option}</option>
@@ -490,7 +516,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                         <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p>
                         <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button>
                     </div>
-                ) : (
+                ) : viewMode === 'grid' ? (
                     <div className={`tractors-grid ${searchText ? 'search-results' : ''}`}>
                         {filteredTractors.map(tractor => (
                             <TractorCard
@@ -502,6 +528,38 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                 onSelect={() => handleSelectTractor(tractor.id)}
                             />
                         ))}
+                    </div>
+                ) : (
+                    <div className="tractors-list-table-container">
+                        <table className="tractors-list-table">
+                            <thead>
+                                <tr>
+                                    <th>Plant</th>
+                                    <th>Truck #</th>
+                                    <th>Status</th>
+                                    <th>Operator</th>
+                                    <th>VIN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredTractors.map(tractor => (
+                                    <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}>
+                                        <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
+                                        <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
+                                        <td>{tractor.status ? tractor.status : "---"}</td>
+                                        <td>
+                                            {getOperatorName(tractor.assignedOperator) ? getOperatorName(tractor.assignedOperator) : "---"}
+                                            {isOperatorAssignedToMultipleTractors(tractor.assignedOperator) && (
+                                                <span className="warning-badge">
+                                                    <i className="fas fa-exclamation-triangle"></i>
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>{tractor.vin ? tractor.vin : "---"}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>

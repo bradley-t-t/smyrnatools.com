@@ -21,6 +21,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
     const [selectedManager, setSelectedManager] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [availableRoles, setAvailableRoles] = useState([]);
+    const [viewMode, setViewMode] = useState(preferences.managerFilters?.viewMode || 'grid');
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -39,15 +40,20 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
             setSearchText(preferences.managerFilters.searchText || '');
             setSelectedPlant(preferences.managerFilters.selectedPlant || '');
             setRoleFilter(preferences.managerFilters.roleFilter || '');
+            setViewMode(preferences.managerFilters.viewMode || 'grid');
         }
     }, [preferences.managerFilters]);
+
+    function handleViewModeChange(mode) {
+        setViewMode(mode);
+        updateManagerFilter('viewMode', mode);
+    }
 
     async function fetchAllData() {
         setIsLoading(true);
         try {
             await Promise.all([fetchManagers(), fetchPlants(), fetchRoles()]);
         } catch (error) {
-            console.error('Error fetching data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -61,12 +67,10 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                 supabase.from('users_permissions').select('user_id, role_id'),
                 supabase.from('users_roles').select('id, name, weight')
             ]);
-
             if (usersError) throw usersError;
             if (profilesError) throw profilesError;
             if (permissionsError) throw permissionsError;
             if (rolesError) throw rolesError;
-
             const managersData = users.map(user => {
                 const profile = profiles.find(p => p.id === user.id) || {};
                 const permission = permissions.find(p => p.user_id === user.id) || {};
@@ -83,12 +87,10 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                     updatedAt: user.updated_at
                 };
             });
-
             setManagers(managersData);
             localStorage.setItem('cachedManagers', JSON.stringify(managersData));
             localStorage.setItem('cachedManagersDate', new Date().toISOString());
         } catch (error) {
-            console.error('Error fetching managers:', error);
             const cachedData = localStorage.getItem('cachedManagers');
             const cacheDate = localStorage.getItem('cachedManagersDate');
             if (cachedData && cacheDate && new Date(cacheDate).getTime() > new Date().getTime() - 3600000) {
@@ -103,7 +105,6 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
             if (error) throw error;
             setPlants(data);
         } catch (error) {
-            console.error('Error fetching plants:', error);
         }
     }
 
@@ -114,12 +115,10 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                 setAvailableRoles(rolesData);
                 return;
             }
-
             const {data, error} = await supabase.from('users_roles').select('*');
             if (error) throw error;
             setAvailableRoles(data || []);
         } catch (error) {
-            console.error('Error fetching roles:', error);
             setAvailableRoles([]);
         }
     }
@@ -149,55 +148,6 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
         setSelectedManager(manager);
         onSelectManager ? onSelectManager(manager.id) : setShowDetailView(true);
     };
-
-    const roleCounts = availableRoles.map(role => ({
-        role: role.name,
-        count: managers.filter(m => m.roleName === role.name).length
-    }));
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div
-                className="modal-content overview-modal managers-overview-modal"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="modal-header">
-                    <h2>Managers Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="overview-grid">
-                    <div className="overview-card plant-card">
-                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
-                        <div className="plant-distribution-table">
-                            <table className="distribution-table">
-                                <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Managers</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {plants.map(plant => (
-                                        <tr key={plant.plant_code}>
-                                            <td className="plant-name">{plant.plant_name}</td>
-                                            <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div className="modal-footer" style={{marginTop: 24, textAlign: 'right'}}>
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
 
     function formatDate(dateStr) {
         if (!dateStr) return '';
@@ -270,8 +220,52 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
         URL.revokeObjectURL(url);
     }
 
+    const OverviewPopup = () => (
+        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
+            <div
+                className="modal-content overview-modal managers-overview-modal"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="modal-header">
+                    <h2>Managers Overview</h2>
+                    <button className="close-button" onClick={() => setShowOverview(false)}>
+                        <i className="fas fa-times"></i>
+                    </button>
+                </div>
+                <div className="overview-grid">
+                    <div className="overview-card plant-card">
+                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
+                        <div className="plant-distribution-table">
+                            <table className="distribution-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Managers</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {plants.map(plant => (
+                                        <tr key={plant.plant_code}>
+                                            <td className="plant-name">{plant.plant_name}</td>
+                                            <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div className="modal-footer" style={{marginTop: 24, textAlign: 'right'}}>
+                    <button className="primary-button" onClick={() => setShowOverview(false)}>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="dashboard-container operators-view">
+        <div className="dashboard-container managers-view">
             {showDetailView && selectedManager && (
                 <ManagerDetailView
                     managerId={selectedManager.id}
@@ -322,6 +316,24 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                             )}
                         </div>
                         <div className="filters">
+                            <div className="view-toggle-icons">
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('grid')}
+                                    aria-label="Grid view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-th-large"></i>
+                                </button>
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('list')}
+                                    aria-label="List view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-list"></i>
+                                </button>
+                            </div>
                             <div className="filter-wrapper">
                                 <select
                                     className="ios-select"
@@ -383,11 +395,40 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                                 <h3>No Managers Found</h3>
                                 <p>{searchText || selectedPlant || roleFilter ? "No managers match your search criteria." : "There are no managers in the system yet."}</p>
                             </div>
-                        ) : (
-                            <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
+                        ) : viewMode === 'grid' ? (
+                            <div className={`managers-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredManagers.map(manager => (
                                     <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={handleSelectManager} />
                                 ))}
+                            </div>
+                        ) : (
+                            <div className="managers-list-table-container">
+                                <table className="managers-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Plant</th>
+                                            <th>Email</th>
+                                            <th>First Name</th>
+                                            <th>Last Name</th>
+                                            <th>Role</th>
+                                            <th>Created At</th>
+                                            <th>Updated At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredManagers.map(manager => (
+                                            <tr key={manager.id} onClick={() => handleSelectManager(manager)} style={{cursor: 'pointer'}}>
+                                                <td>{manager.plantCode ? manager.plantCode : "---"}</td>
+                                                <td>{manager.email ? manager.email : "---"}</td>
+                                                <td>{manager.firstName ? manager.firstName : "---"}</td>
+                                                <td>{manager.lastName ? manager.lastName : "---"}</td>
+                                                <td>{manager.roleName ? manager.roleName : "---"}</td>
+                                                <td>{manager.createdAt ? formatDate(manager.createdAt) : "---"}</td>
+                                                <td>{manager.updatedAt ? formatDate(manager.updatedAt) : "---"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>

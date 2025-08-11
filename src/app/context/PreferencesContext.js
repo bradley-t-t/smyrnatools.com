@@ -3,6 +3,14 @@ import {logSupabaseError, supabase} from '../../services/DatabaseService';
 
 const PreferencesContext = createContext();
 
+export function usePreferences() {
+    const context = useContext(PreferencesContext);
+    if (!context) {
+        throw new Error('usePreferences must be used within a PreferencesProvider');
+    }
+    return context;
+}
+
 const defaultPreferences = {
     navbarMinimized: false,
     themeMode: 'light',
@@ -13,19 +21,40 @@ const defaultPreferences = {
     mixerFilters: {
         searchText: '',
         selectedPlant: '',
-        statusFilter: ''
+        statusFilter: '',
+        viewMode: 'grid'
     },
     operatorFilters: {
         searchText: '',
         selectedPlants: [],
         statusFilter: '',
         trainerFilter: '',
-        positionFilter: ''
+        positionFilter: '',
+        viewMode: 'grid'
     },
     managerFilters: {
         searchText: '',
         selectedPlants: [],
-        roleFilter: ''
+        roleFilter: '',
+        viewMode: 'grid'
+    },
+    tractorFilters: {
+        searchText: '',
+        selectedPlant: '',
+        statusFilter: '',
+        viewMode: 'grid'
+    },
+    trailerFilters: {
+        searchText: '',
+        selectedPlant: '',
+        typeFilter: '',
+        viewMode: 'grid'
+    },
+    equipmentFilters: {
+        searchText: '',
+        selectedPlant: '',
+        statusFilter: '',
+        viewMode: 'grid'
     },
     lastViewedFilters: null
 };
@@ -146,22 +175,60 @@ export const PreferencesProvider = ({children}) => {
             mixerFilters: data.mixer_filters ? {
                 searchText: data.mixer_filters.searchText || '',
                 selectedPlant: data.mixer_filters.selectedPlant || '',
-                statusFilter: data.mixer_filters.statusFilter || ''
+                statusFilter: data.mixer_filters.statusFilter || '',
+                viewMode: data.mixer_filters.viewMode || 'grid'
             } : {
                 searchText: '',
                 selectedPlant: '',
-                statusFilter: ''
+                statusFilter: '',
+                viewMode: 'grid'
             },
-            operatorFilters: data.operator_filters || {
+            operatorFilters: data.operator_filters ? {
+                ...data.operator_filters,
+                viewMode: data.operator_filters.viewMode || 'grid'
+            } : {
                 searchText: '',
                 selectedPlant: '',
                 statusFilter: '',
-                trainerFilter: ''
+                trainerFilter: '',
+                positionFilter: '',
+                viewMode: 'grid'
             },
-            managerFilters: data.manager_filters || {
+            managerFilters: data.manager_filters ? {
+                ...data.manager_filters,
+                viewMode: data.manager_filters.viewMode || 'grid'
+            } : {
                 searchText: '',
                 selectedPlant: '',
-                roleFilter: ''
+                roleFilter: '',
+                viewMode: 'grid'
+            },
+            tractorFilters: data.tractor_filters ? {
+                ...data.tractor_filters,
+                viewMode: data.tractor_filters.viewMode || 'grid'
+            } : {
+                searchText: '',
+                selectedPlant: '',
+                statusFilter: '',
+                viewMode: 'grid'
+            },
+            trailerFilters: data.trailer_filters ? {
+                ...data.trailer_filters,
+                viewMode: data.trailer_filters.viewMode || 'grid'
+            } : {
+                searchText: '',
+                selectedPlant: '',
+                typeFilter: '',
+                viewMode: 'grid'
+            },
+            equipmentFilters: data.equipment_filters ? {
+                ...data.equipment_filters,
+                viewMode: data.equipment_filters.viewMode || 'grid'
+            } : {
+                searchText: '',
+                selectedPlant: '',
+                statusFilter: '',
+                viewMode: 'grid'
             },
             lastViewedFilters: data.last_viewed_filters
         };
@@ -337,7 +404,6 @@ export const PreferencesProvider = ({children}) => {
                 ...preferences.operatorFilters,
                 [key]: value
             };
-
             await updateOperatorFilters(updatedFilters);
         } catch (error) {
         }
@@ -349,9 +415,52 @@ export const PreferencesProvider = ({children}) => {
                 ...preferences.mixerFilters,
                 [key]: value
             };
-
             await updateMixerFilters(updatedFilters);
         } catch (error) {
+        }
+    };
+
+    const updateManagerFilter = async (key, value) => {
+        try {
+            const updatedFilters = {
+                ...preferences.managerFilters,
+                [key]: value
+            };
+            await updateManagerFilters(updatedFilters);
+        } catch (error) {
+        }
+    };
+
+    const updateTractorFilter = async (key, value) => {
+        setPreferences(prev => {
+            const newPrefs = {...prev, tractorFilters: {...prev.tractorFilters, [key]: value}};
+            localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+            return newPrefs;
+        });
+        if (userId) {
+            await updateDatabasePreferences(userId, {...preferences, tractorFilters: {...preferences.tractorFilters, [key]: value}});
+        }
+    };
+
+    const updateTrailerFilter = async (key, value) => {
+        setPreferences(prev => {
+            const newPrefs = {...prev, trailerFilters: {...prev.trailerFilters, [key]: value}};
+            localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+            return newPrefs;
+        });
+        if (userId) {
+            await updateDatabasePreferences(userId, {...preferences, trailerFilters: {...preferences.trailerFilters, [key]: value}});
+        }
+    };
+
+    const updateEquipmentFilter = async (key, value) => {
+        setPreferences(prev => {
+            const newPrefs = {...prev, equipmentFilters: {...prev.equipmentFilters, [key]: value}};
+            localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
+            return newPrefs;
+        });
+        if (userId) {
+            await updateDatabasePreferences(userId, {...preferences, equipmentFilters: {...preferences.equipmentFilters, [key]: value}});
         }
     };
 
@@ -375,6 +484,54 @@ export const PreferencesProvider = ({children}) => {
         };
 
         await updateMixerFilters(emptyFilters);
+    };
+
+    const resetManagerFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            roleFilter: ''
+        };
+        await updateManagerFilters(emptyFilters);
+    };
+
+    const resetTractorFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            statusFilter: '',
+            viewMode: 'grid'
+        };
+        await updateTractorFilter('searchText', '');
+        await updateTractorFilter('selectedPlant', '');
+        await updateTractorFilter('statusFilter', '');
+        await updateTractorFilter('viewMode', 'grid');
+    };
+
+    const resetTrailerFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            typeFilter: '',
+            viewMode: 'grid'
+        };
+        await updateTrailerFilter('searchText', '');
+        await updateTrailerFilter('selectedPlant', '');
+        await updateTrailerFilter('typeFilter', '');
+        await updateTrailerFilter('viewMode', 'grid');
+    };
+
+    const resetEquipmentFilters = async () => {
+        const emptyFilters = {
+            searchText: '',
+            selectedPlant: '',
+            statusFilter: '',
+            viewMode: 'grid'
+        };
+        await updateEquipmentFilter('searchText', '');
+        await updateEquipmentFilter('selectedPlant', '');
+        await updateEquipmentFilter('statusFilter', '');
+        await updateEquipmentFilter('viewMode', 'grid');
     };
 
     const updateManagerFilters = async (filters) => {
@@ -414,28 +571,6 @@ export const PreferencesProvider = ({children}) => {
             }
         } catch (error) {
         }
-    };
-
-    const updateManagerFilter = async (key, value) => {
-        try {
-            const updatedFilters = {
-                ...preferences.managerFilters,
-                [key]: value
-            };
-
-            await updateManagerFilters(updatedFilters);
-        } catch (error) {
-        }
-    };
-
-    const resetManagerFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            roleFilter: ''
-        };
-
-        await updateManagerFilters(emptyFilters);
     };
 
     const createUserPreferences = async (uid) => {
@@ -556,6 +691,12 @@ export const PreferencesProvider = ({children}) => {
                 updateOperatorFilter,
                 resetOperatorFilters,
                 saveLastViewedFilters,
+                updateTractorFilter,
+                resetTractorFilters,
+                updateTrailerFilter,
+                resetTrailerFilters,
+                updateEquipmentFilter,
+                resetEquipmentFilters
             }}
         >
             {children}
@@ -572,19 +713,10 @@ export const debugForceCreatePreferences = async (userId) => {
                 user_id: userId,
                 navbar_minimized: false,
                 theme_mode: 'light',
-                accent_color: 'blue',
+                accent_color: 'blue'
             }]);
-        if (error) throw error;
-        return true;
     } catch (error) {
         return false;
     }
-};
-
-export const usePreferences = () => {
-    const context = useContext(PreferencesContext);
-    if (!context) {
-        throw new Error('usePreferences must be used within a PreferencesProvider');
-    }
-    return context;
-};
+    return true;
+}

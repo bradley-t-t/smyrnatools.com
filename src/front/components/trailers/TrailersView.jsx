@@ -21,6 +21,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
     const [searchText, setSearchText] = useState(preferences.trailerFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.trailerFilters?.selectedPlant || '');
     const [typeFilter, setTypeFilter] = useState(preferences.trailerFilters?.typeFilter || '');
+    const [viewMode, setViewMode] = useState(preferences.trailerFilters?.viewMode || 'grid');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedTrailer, setSelectedTrailer] = useState(null);
@@ -32,8 +33,6 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             setIsLoading(true);
             try {
                 await Promise.all([fetchTrailers(), fetchTractors(), fetchPlants()]);
-            } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -43,11 +42,20 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             setSearchText(preferences.trailerFilters.searchText || '');
             setSelectedPlant(preferences.trailerFilters.selectedPlant || '');
             setTypeFilter(preferences.trailerFilters.typeFilter || '');
+            setViewMode(preferences.trailerFilters.viewMode || 'grid');
         }
         if (preferences?.autoOverview) {
             setShowOverview(true);
         }
     }, [preferences, reloadTrailers]);
+
+    function handleViewModeChange(mode) {
+        setViewMode(mode)
+        updatePreferences('trailerFilters', {
+            ...preferences.trailerFilters,
+            viewMode: mode
+        })
+    }
 
     async function fetchTrailers() {
         try {
@@ -70,7 +78,6 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             }));
             setTrailers(processedData);
         } catch (error) {
-            console.error('Error fetching trailers:', error);
         }
     }
 
@@ -79,7 +86,6 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             const data = await TractorService.fetchTractors();
             setTractors(Array.isArray(data) ? data : []);
         } catch (error) {
-            console.error('Error fetching tractors:', error);
             setTractors([]);
         }
     }
@@ -89,7 +95,6 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             const data = await PlantService.fetchPlants();
             setPlants(data);
         } catch (error) {
-            console.error('Error fetching plants:', error);
         }
     }
 
@@ -297,7 +302,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
     }
 
     return (
-        <div className="dashboard-container tractors-view">
+        <div className="dashboard-container trailers-view">
             <div className="dashboard-header">
                 <h1>{title}</h1>
                 <div className="dashboard-actions">
@@ -351,6 +356,24 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                     )}
                 </div>
                 <div className="filters">
+                    <div className="view-toggle-icons">
+                        <button
+                            className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('grid')}
+                            aria-label="Grid view"
+                            type="button"
+                        >
+                            <i className="fas fa-th-large"></i>
+                        </button>
+                        <button
+                            className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('list')}
+                            aria-label="List view"
+                            type="button"
+                        >
+                            <i className="fas fa-list"></i>
+                        </button>
+                    </div>
                     <div className="filter-wrapper">
                         <select
                             className="ios-select"
@@ -366,7 +389,6 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                 }));
                             }}
                             aria-label="Filter by plant"
-                            style={{ '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                         >
                             <option value="">All Plants</option>
                             {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
@@ -390,7 +412,6 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                     }
                                 }));
                             }}
-                            style={{ '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                         >
                             {filterOptions.map(option => (
                                 <option key={option} value={option}>{option}</option>
@@ -434,8 +455,8 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                         <p>{searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types') ? "No trailers match your search criteria." : "There are no trailers in the system yet."}</p>
                         <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Trailer</button>
                     </div>
-                ) : (
-                    <div className={`tractors-grid ${searchText ? 'search-results' : ''}`}>
+                ) : viewMode === 'grid' ? (
+                    <div className={`trailers-grid ${searchText ? 'search-results' : ''}`}>
                         {filteredTrailers.map(trailer => (
                             <TrailerCard
                                 key={trailer.id}
@@ -446,6 +467,38 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                 onSelect={() => handleSelectTrailer(trailer.id)}
                             />
                         ))}
+                    </div>
+                ) : (
+                    <div className="trailers-list-table-container">
+                        <table className="trailers-list-table">
+                            <thead>
+                                <tr>
+                                    <th>Plant</th>
+                                    <th>Trailer #</th>
+                                    <th>Status</th>
+                                    <th>Type</th>
+                                    <th>Tractor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredTrailers.map(trailer => (
+                                    <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)} style={{cursor: 'pointer'}}>
+                                        <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
+                                        <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
+                                        <td>{trailer.status ? trailer.status : "---"}</td>
+                                        <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
+                                        <td>
+                                            {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
+                                            {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (
+                                                <span className="warning-badge">
+                                                    <i className="fas fa-exclamation-triangle"></i>
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>

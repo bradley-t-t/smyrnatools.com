@@ -44,6 +44,10 @@
     --comments-badge-bg: #ffe066;
     --comments-badge-text: #fff;
     --comments-badge-icon: #fff;
+    --accent-header-bg: var(--accent);
+    --accent-header-text: #fff;
+    --accent-row-bg: #e6ecf7;
+    --accent-row-hover-bg: #d0dbf2;
 }
 
 .dark-mode {
@@ -87,6 +91,10 @@
     --comments-badge-bg: #bfae3c;
     --comments-badge-text: #fff;
     --comments-badge-icon: #fff;
+    --accent-header-bg: #5865f2;
+    --accent-header-text: #fff;
+    --accent-row-bg: #23272a;
+    --accent-row-hover-bg: #36393f;
 }
 
 .accent-red {
@@ -324,4 +332,255 @@ button.primary:hover {
     font-size: 14px;
     pointer-events: none;
     z-index: 99999;
+}
+
+/* Table/List Layout Styles for all views */
+.mixers-list-table-container,
+.tractors-list-table-container,
+.trailers-list-table-container,
+.operators-list-table-container,
+.managers-list-table-container,
+.equipments-list-table-container {
+    width: 100%;
+    max-width: 100vw;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    border-radius: 14px;
+    border: 1px solid var(--divider);
+    display: block;
+}
+
+.mixers-list-table,
+.tractors-list-table,
+.trailers-list-table,
+.operators-list-table,
+.managers-list-table,
+.equipments-list-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: none;
+    font-size: 15px;
+    margin: 0;
+    table-layout: fixed;
+}
+
+.mixers-list-table th,
+.tractors-list-table th,
+.trailers-list-table th,
+.operators-list-table th,
+.managers-list-table th,
+.equipments-list-table th,
+.mixers-list-table td,
+.tractors-list-table td,
+.trailers-list-table td,
+.operators-list-table td,
+.managers-list-table td,
+.equipments-list-table td {
+    text-align: left;
+    min-width: 80px;
+}
+
+.mixers-list-table th,
+.tractors-list-table th,
+.trailers-list-table th,
+.operators-list-table th,
+.managers-list-table th,
+.equipments-list-table th {
+    background: var(--accent-header-bg);
+    color: var(--accent-header-text);
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 8px;
+    border-bottom: 2px solid var(--divider);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.mixers-list-table tbody tr:nth-child(even),
+.tractors-list-table tbody tr:nth-child(even),
+.trailers-list-table tbody tr:nth-child(even),
+.operators-list-table tbody tr:nth-child(even),
+.managers-list-table tbody tr:nth-child(even),
+.equipments-list-table tbody tr:nth-child(even) {
+    background: var(--accent-row-bg);
+}
+
+.mixers-list-table td,
+.tractors-list-table td,
+.trailers-list-table td,
+.operators-list-table td,
+.managers-list-table td,
+.equipments-list-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--divider);
+    color: var(--text-primary);
+    font-size: 15px;
+    background: var(--card-bg);
+    transition: background 0.2s;
+    vertical-align: middle;
+    min-width: 80px;
+}
+
+.mixers-list-table td:last-child,
+.tractors-list-table td:last-child,
+.trailers-list-table td:last-child,
+.managers-list-table td:last-child {
+    max-width: 320px;
+    white-space: normal;
+    word-break: break-all;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    overflow: visible;
+}
+
+.mixers-list-table tbody tr,
+.tractors-list-table tbody tr,
+.trailers-list-table tbody tr,
+.operators-list-table tbody tr,
+.managers-list-table tbody tr,
+.equipments-list-table tbody tr {
+    transition: background 0.18s;
+    cursor: pointer;
+}
+
+.mixers-list-table tbody tr:hover,
+.tractors-list-table tbody tr:hover,
+.trailers-list-table tbody tr:hover,
+.operators-list-table tbody tr:hover,
+.managers-list-table tbody tr:hover,
+.equipments-list-table tbody tr:hover {
+    background: var(--accent-row-hover-bg);
+    box-shadow: 0 2px 12px rgba(49,130,206,0.08);
+}
+
+.mixers-list-table tr:last-child td,
+.tractors-list-table tr:last-child td,
+.trailers-list-table tr:last-child td,
+.operators-list-table tr:last-child td,
+.managers-list-table tr:last-child td,
+.equipments-list-table tr:last-child td {
+    border-bottom: none;
+}
+
+.mixers-list-table th:first-child,
+.tractors-list-table th:first-child,
+.trailers-list-table th:first-child,
+.operators-list-table th:first-child,
+.managers-list-table th:first-child,
+.equipments-list-table th:first-child {
+    border-top-left-radius: 14px;
+}
+
+.mixers-list-table th:last-child,
+.tractors-list-table th:last-child,
+.trailers-list-table th:last-child,
+.operators-list-table th:last-child,
+.managers-list-table th:last-child,
+.equipments-list-table th:last-child {
+    border-top-right-radius: 14px;
+}
+
+.mixers-list-table td:first-child,
+.tractors-list-table td:first-child,
+.trailers-list-table td:first-child,
+.operators-list-table td:first-child,
+.managers-list-table td:first-child,
+.equipments-list-table td:first-child {
+    border-bottom-left-radius: 10px;
+}
+
+.mixers-list-table td:last-child,
+.tractors-list-table td:last-child,
+.trailers-list-table td:last-child,
+.operators-list-table td:last-child,
+.managers-list-table td:last-child,
+.equipments-list-table td:last-child {
+    border-bottom-right-radius: 10px;
+}
+
+@media (max-width: 900px) {
+    .mixers-list-table-container,
+    .tractors-list-table-container,
+    .trailers-list-table-container,
+    .operators-list-table-container,
+    .managers-list-table-container,
+    .equipments-list-table-container {
+        border-radius: 8px;
+        padding: 0;
+    }
+    .mixers-list-table,
+    .tractors-list-table,
+    .trailers-list-table,
+    .operators-list-table,
+    .managers-list-table,
+    .equipments-list-table {
+        font-size: 13px;
+        border-radius: 8px;
+        min-width: 400px;
+        table-layout: fixed;
+    }
+    .mixers-list-table th,
+    .tractors-list-table th,
+    .trailers-list-table th,
+    .operators-list-table th,
+    .managers-list-table th,
+    .equipments-list-table th {
+        padding: 10px 4px;
+    }
+    .mixers-list-table td,
+    .tractors-list-table td,
+    .trailers-list-table td,
+    .operators-list-table td,
+    .managers-list-table td,
+    .equipments-list-table td {
+        padding: 8px 4px;
+        max-width: 80px;
+        min-width: 80px;
+    }
+    .mixers-list-table td:last-child,
+    .tractors-list-table td:last-child,
+    .trailers-list-table td:last-child,
+    .managers-list-table td:last-child {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mixers-list-table th,
+    .tractors-list-table th,
+    .trailers-list-table th,
+    .operators-list-table th,
+    .managers-list-table th,
+    .equipments-list-table th {
+        font-size: 12px;
+        padding: 6px 2px;
+    }
+    .mixers-list-table td,
+    .tractors-list-table td,
+    .trailers-list-table td,
+    .operators-list-table td,
+    .managers-list-table td,
+    .equipments-list-table td {
+        font-size: 12px;
+        padding: 5px 2px;
+        max-width: 60px;
+        min-width: 60px;
+    }
+    .mixers-list-table td:last-child,
+    .tractors-list-table td:last-child,
+    .trailers-list-table td:last-child,
+    .managers-list-table td:last-child {
+        max-width: 80px;
+    }
 }

@@ -20,8 +20,6 @@ import WebView from "../front/components/common/WebView"
 import {UserService} from "../services/UserService"
 import OnlineUsersOverlay from '../front/components/common/OnlineUsersOverlay'
 import TipBanner from '../front/components/common/TipBanner'
-import '../front/styles/Theme.css'
-import '../front/styles/Global.css'
 import TeamsView from '../front/components/teams/TeamsView'
 import OperatorScheduledOffView from '../front/components/operators/OperatorScheduledOffView'
 import ReportsView from '../front/components/reports/ReportsView'
@@ -29,6 +27,65 @@ import ConnectionScreen from '../front/components/common/ConnectionScreen'
 import TractorsView from '../front/components/tractors/TractorsView'
 import TrailersView from '../front/components/trailers/TrailersView'
 import EquipmentsView from '../front/components/equipment/EquipmentsView'
+import '../front/styles/Theme.css'
+import '../front/styles/Global.css'
+
+function VersionPopup({ version }) {
+    if (!version) return null
+    return (
+        <div className="version-popup-centered">
+            Version: {version}
+        </div>
+    )
+}
+
+function UpdateLoadingScreen({ version }) {
+    const [progress, setProgress] = useState(0)
+    useEffect(() => {
+        let start = Date.now()
+        let interval = setInterval(() => {
+            let elapsed = Date.now() - start
+            let minDuration = 15000
+            let randomStep = Math.floor(Math.random() * 7) + 2
+            if (progress < 100) {
+                setProgress(prev => Math.min(100, prev + randomStep))
+            }
+            if (elapsed >= minDuration && progress >= 100) {
+                clearInterval(interval)
+                setTimeout(() => {
+                    window.location.reload(true)
+                }, 500)
+            }
+        }, 300)
+        return () => clearInterval(interval)
+    }, [progress])
+    return (
+        <div className="loading-screen full-page">
+            <div className="loading-content">
+                <div className="loading-animation">
+                    <img src={require('../front/assets/images/SmyrnaLogo.png')} alt="Loading" className="bouncing-logo"/>
+                </div>
+                <p className="loading-message">Smyrna Tools is Updating...</p>
+                <div style={{
+                    width: '100%',
+                    height: '12px',
+                    borderRadius: '6px',
+                    background: 'var(--card-bg)',
+                    marginTop: '32px',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        width: `${progress}%`,
+                        height: '100%',
+                        background: 'var(--accent)',
+                        transition: 'width 0.3s'
+                    }}/>
+                </div>
+                <VersionPopup version={version} />
+            </div>
+        </div>
+    )
+}
 
 function AppContent() {
     const [userId, setUserId] = useState(null)
@@ -46,6 +103,8 @@ function AppContent() {
     const [session, setSession] = useState(null)
     const [userDisplayName, setUserDisplayName] = useState('')
     const [currentVersion, setCurrentVersion] = useState('')
+    const [updateMode, setUpdateMode] = useState(false)
+    const [latestVersion, setLatestVersion] = useState('')
 
     useEffect(() => {
         fetch('/version.json', { cache: 'no-store' })
@@ -61,7 +120,8 @@ function AppContent() {
                 .then(res => res.json())
                 .then(data => {
                     if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
-                        window.location.reload(true)
+                        setLatestVersion(data.version)
+                        setUpdateMode(true)
                     }
                 })
         }
@@ -250,7 +310,6 @@ function AppContent() {
         }
     }, [userId])
 
-
     const handleViewSelection = (viewId) => {
         setSelectedView(viewId)
         setTitle(viewId)
@@ -277,6 +336,9 @@ function AppContent() {
     }
 
     const renderCurrentView = () => {
+        if (!userId) {
+            return <LoginView/>
+        }
         if (webViewURL) {
             return (
                 <WebView
@@ -409,20 +471,28 @@ function AppContent() {
         }
     }
 
+    if (updateMode) {
+        return <UpdateLoadingScreen version={latestVersion || currentVersion}/>
+    }
+
     return (
         <div className="App">
-            {isMobile && <MobileNavigation/>}
-            <Navigation
-                selectedView={selectedView}
-                onSelectView={handleViewSelection}
-                unreadMessageCount={unreadMessageCount}
-                onExternalLink={handleExternalLink}
-                userName={userDisplayName}
-                userDisplayName={userDisplayName}
-                userId={userId}
-            >
-                {renderCurrentView()}
-            </Navigation>
+            {isMobile && userId && <MobileNavigation/>}
+            {userId ? (
+                <Navigation
+                    selectedView={selectedView}
+                    onSelectView={handleViewSelection}
+                    unreadMessageCount={unreadMessageCount}
+                    onExternalLink={handleExternalLink}
+                    userName={userDisplayName}
+                    userDisplayName={userDisplayName}
+                    userId={userId}
+                >
+                    {renderCurrentView()}
+                </Navigation>
+            ) : (
+                renderCurrentView()
+            )}
         </div>
     )
 }

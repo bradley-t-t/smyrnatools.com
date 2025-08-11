@@ -26,6 +26,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [selectedMixer, setSelectedMixer] = useState(null);
     const [showOperatorsView, setShowOperatorsView] = useState(false)
     const [operatorStatusFilter, setOperatorStatusFilter] = useState('')
+    const [viewMode, setViewMode] = useState(preferences.mixerFilters?.viewMode || 'grid')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     useEffect(() => {
@@ -148,6 +149,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         setShowOperatorsView(true)
     }
 
+    function handleViewModeChange(mode) {
+        setViewMode(mode)
+        updateMixerFilter('viewMode', mode)
+    }
+
     useEffect(() => {
         async function searchByVin() {
             const normalizedSearch = searchText.trim().toLowerCase().replace(/\s+/g, '');
@@ -250,8 +256,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             'Assigned Plant',
             'Last Service Date',
             'Cleanliness Rating',
-            'VIN',
-            'Open Issues'
+            'VIN'
         ];
         const rows = mixersToExport.map(mixer => [
             mixer.truckNumber || '',
@@ -262,7 +267,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             formatDate(mixer.lastServiceDate),
             mixer.cleanlinessRating || '',
             mixer.vinNumber || mixer.vin || '',
-            Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
         ]);
         const csvContent = [
             `"${topHeader}"`,
@@ -354,6 +358,24 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     )}
                 </div>
                 <div className="filters">
+                    <div className="view-toggle-icons">
+                        <button
+                            className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('grid')}
+                            aria-label="Grid view"
+                            type="button"
+                        >
+                            <i className="fas fa-th-large"></i>
+                        </button>
+                        <button
+                            className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('list')}
+                            aria-label="List view"
+                            type="button"
+                        >
+                            <i className="fas fa-list"></i>
+                        </button>
+                    </div>
                     <div className="filter-wrapper">
                         <select
                             className="ios-select"
@@ -415,7 +437,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
                         <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer</button>
                     </div>
-                ) : (
+                ) : viewMode === 'grid' ? (
                     <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
                         {filteredMixers.map(mixer => (
                             <MixerCard
@@ -427,6 +449,38 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 onSelect={handleSelectMixer}
                             />
                         ))}
+                    </div>
+                ) : (
+                    <div className="mixers-list-table-container">
+                        <table className="mixers-list-table">
+                            <thead>
+                                <tr>
+                                    <th>Plant</th>
+                                    <th>Truck #</th>
+                                    <th>Status</th>
+                                    <th>Operator</th>
+                                    <th>VIN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredMixers.map(mixer => (
+                                    <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
+                                        <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
+                                        <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
+                                        <td>{mixer.status ? mixer.status : "---"}</td>
+                                        <td>
+                                            {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
+                                            {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
+                                                <span className="warning-badge">
+                                                    <i className="fas fa-exclamation-triangle"></i>
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>

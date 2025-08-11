@@ -28,6 +28,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [trainers, setTrainers] = useState([]);
     const [scheduledOffMap, setScheduledOffMap] = useState([]);
     const [reloadFlag, setReloadFlag] = useState(false);
+    const [viewMode, setViewMode] = useState(preferences.operatorFilters?.viewMode || 'grid');
 
     const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
     const filterOptions = [
@@ -56,6 +57,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             setSelectedPlant(preferences.operatorFilters.selectedPlant || '');
             setStatusFilter(preferences.operatorFilters.statusFilter || '');
             setPositionFilter(preferences.operatorFilters.positionFilter || '');
+            setViewMode(preferences.operatorFilters.viewMode || 'grid');
         }
     }, [preferences.operatorFilters]);
 
@@ -335,6 +337,11 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         URL.revokeObjectURL(url);
     }
 
+    function handleViewModeChange(mode) {
+        setViewMode(mode);
+        updateOperatorFilter('viewMode', mode);
+    }
+
     return (
         <div className="dashboard-container operators-view">
             {showDetailView && selectedOperator && (
@@ -393,6 +400,24 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                             )}
                         </div>
                         <div className="filters">
+                            <div className="view-toggle-icons">
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('grid')}
+                                    aria-label="Grid view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-th-large"></i>
+                                </button>
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('list')}
+                                    aria-label="List view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-list"></i>
+                                </button>
+                            </div>
                             <div className="filter-wrapper">
                                 <select
                                     className="ios-select"
@@ -499,7 +524,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                     Add Operator
                                 </button>
                             </div>
-                        ) : (
+                        ) : viewMode === 'grid' ? (
                             <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredOperators.map(operator => (
                                     <OperatorCard
@@ -514,6 +539,37 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                         rating={operator.rating}
                                     />
                                 ))}
+                            </div>
+                        ) : (
+                            <div className="operators-list-table-container">
+                                <table className="operators-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Plant</th>
+                                            <th>Smyrna ID</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                            <th>Position</th>
+                                            <th>Trainer</th>
+                                            <th>Pending Start Date</th>
+                                            <th>Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredOperators.map(operator => (
+                                            <tr key={operator.employeeId} style={{cursor: 'pointer'}} onClick={() => handleSelectOperator(operator)}>
+                                                <td>{operator.plantCode ? operator.plantCode : "---"}</td>
+                                                <td>{operator.smyrnaId ? operator.smyrnaId : "---"}</td>
+                                                <td>{operator.name ? operator.name : "---"}</td>
+                                                <td>{operator.status ? operator.status : "---"}</td>
+                                                <td>{operator.position ? operator.position : "---"}</td>
+                                                <td>{operator.isTrainer ? "Yes" : "No"}</td>
+                                                <td>{operator.pendingStartDate ? formatDate(operator.pendingStartDate) : "---"}</td>
+                                                <td>{typeof operator.rating === "number" ? operator.rating : "---"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>
