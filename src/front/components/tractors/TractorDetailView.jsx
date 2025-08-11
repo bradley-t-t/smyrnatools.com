@@ -1,4 +1,3 @@
-// TractorDetailView.jsx
 import React, {useState, useEffect, useRef} from 'react';
 import {TractorService} from '../../../services/TractorService';
 import {PlantService} from '../../../services/PlantService';

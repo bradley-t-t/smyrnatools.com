@@ -91,7 +91,7 @@
     --comments-badge-bg: #bfae3c;
     --comments-badge-text: #fff;
     --comments-badge-icon: #fff;
-    --accent-header-bg: #5865f2;
+    --accent-header-bg: var(--accent);
     --accent-header-text: #fff;
     --accent-row-bg: #23272a;
     --accent-row-hover-bg: #36393f;
