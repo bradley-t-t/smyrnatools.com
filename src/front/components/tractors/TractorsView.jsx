@@ -74,6 +74,14 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                 } catch {
                     tractor.issues = [];
                 }
+                if (TractorService.fetchComments) {
+                    try {
+                        const comments = await TractorService.fetchComments(tractor.id);
+                        tractor.comments = comments || [];
+                    } catch {
+                        tractor.comments = [];
+                    }
+                }
                 tractor.isVerified = () => TractorUtility.isVerified(tractor.updatedLast, tractor.updatedAt, tractor.updatedBy, latestHistoryDate);
                 tractor.latestHistoryDate = latestHistoryDate;
                 return tractor;
@@ -183,25 +191,19 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
 
     function handleStatusClick(status) {
         if (status === 'All Statuses') {
-            setStatusFilter('');
-            updatePreferences(prev => ({
-                ...prev,
-                tractorFilters: {
-                    ...prev.tractorFilters,
-                    statusFilter: ''
-                }
-            }));
+            setStatusFilter('')
+            updatePreferences('tractorFilters', {
+                ...preferences.tractorFilters,
+                statusFilter: ''
+            })
         } else {
-            setStatusFilter(status);
-            updatePreferences(prev => ({
-                ...prev,
-                tractorFilters: {
-                    ...prev.tractorFilters,
-                    statusFilter: status
-                }
-            }));
+            setStatusFilter(status)
+            updatePreferences('tractorFilters', {
+                ...preferences.tractorFilters,
+                statusFilter: status
+            })
         }
-        setShowOverview(false);
+        setShowOverview(false)
     }
 
     function handleBackFromDetail() {
@@ -392,25 +394,19 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                         value={searchText}
                         onChange={e => {
                             setSearchText(e.target.value);
-                            updatePreferences(prev => ({
-                                ...prev,
-                                tractorFilters: {
-                                    ...prev.tractorFilters,
-                                    searchText: e.target.value
-                                }
-                            }));
+                            updatePreferences('tractorFilters', {
+                                ...preferences.tractorFilters,
+                                searchText: e.target.value
+                            });
                         }}
                     />
                     {searchText && (
                         <button className="clear" onClick={() => {
                             setSearchText('');
-                            updatePreferences(prev => ({
-                                ...prev,
-                                tractorFilters: {
-                                    ...prev.tractorFilters,
-                                    searchText: ''
-                                }
-                            }));
+                            updatePreferences('tractorFilters', {
+                                ...preferences.tractorFilters,
+                                searchText: ''
+                            });
                         }}>
                             <i className="fas fa-times"></i>
                         </button>
@@ -440,14 +436,11 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                             className="ios-select"
                             value={selectedPlant}
                             onChange={e => {
-                                setSelectedPlant(e.target.value);
-                                updatePreferences(prev => ({
-                                    ...prev,
-                                    tractorFilters: {
-                                        ...prev.tractorFilters,
-                                        selectedPlant: e.target.value
-                                    }
-                                }));
+                                setSelectedPlant(e.target.value)
+                                updatePreferences('tractorFilters', {
+                                    ...preferences.tractorFilters,
+                                    selectedPlant: e.target.value
+                                })
                             }}
                             aria-label="Filter by plant"
                         >
@@ -464,14 +457,11 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                             className="ios-select"
                             value={statusFilter}
                             onChange={e => {
-                                setStatusFilter(e.target.value);
-                                updatePreferences(prev => ({
-                                    ...prev,
-                                    tractorFilters: {
-                                        ...prev.tractorFilters,
-                                        statusFilter: e.target.value
-                                    }
-                                }));
+                                setStatusFilter(e.target.value)
+                                updatePreferences('tractorFilters', {
+                                    ...preferences.tractorFilters,
+                                    statusFilter: e.target.value
+                                })
                             }}
                         >
                             {filterOptions.map(option => (
@@ -481,20 +471,18 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                     </div>
                     {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
                         <button className="filter-reset-button" onClick={() => {
-                            setSearchText('');
-                            setSelectedPlant('');
-                            setStatusFilter('');
-                            updatePreferences(prev => ({
-                                ...prev,
-                                tractorFilters: {
-                                    ...prev.tractorFilters,
-                                    searchText: '',
-                                    selectedPlant: '',
-                                    statusFilter: ''
-                                }
-                            }));
+                            setSearchText('')
+                            setSelectedPlant('')
+                            setStatusFilter('')
+                            updatePreferences('tractorFilters', {
+                                ...preferences.tractorFilters,
+                                searchText: '',
+                                selectedPlant: '',
+                                statusFilter: ''
+                            })
+                            setViewMode(viewMode)
                         }}>
-                            <i className="fas fa-undo"></i> Reset Filters
+                            <i className="fas fa-undo"></i>
                         </button>
                     )}
                     <button className="ios-button" onClick={() => setShowOverview(true)}>
@@ -526,24 +514,28 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                 plantName={getPlantName(tractor.assignedPlant)}
                                 showOperatorWarning={isOperatorAssignedToMultipleTractors(tractor.assignedOperator)}
                                 onSelect={() => handleSelectTractor(tractor.id)}
-                            />
+                        />
                         ))}
                     </div>
                 ) : (
-                    <div className="tractors-list-table-container">
-                        <table className="tractors-list-table">
-                            <thead>
-                                <tr>
-                                    <th>Plant</th>
-                                    <th>Truck #</th>
-                                    <th>Status</th>
-                                    <th>Operator</th>
-                                    <th>Cleanliness</th>
-                                    <th>VIN</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredTractors.map(tractor => (
+                    <table className="tractors-list-table">
+                        <thead>
+                            <tr>
+                                <th>Plant</th>
+                                <th>Truck #</th>
+                                <th>Status</th>
+                                <th>Operator</th>
+                                <th>Cleanliness</th>
+                                <th>VIN</th>
+                                <th>Verified</th>
+                                <th>More</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredTractors.map(tractor => {
+                                const commentsCount = Array.isArray(tractor.comments) ? tractor.comments.length : 0
+                                const issuesCount = Array.isArray(tractor.issues) ? tractor.issues.filter(issue => !issue.time_completed).length : 0
+                                return (
                                     <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}>
                                         <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
                                         <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
@@ -582,11 +574,36 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                             })()}
                                         </td>
                                         <td>{tractor.vin ? tractor.vin : "---"}</td>
+                                        <td>
+                                            {tractor.isVerified() ? (
+                                                <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                    <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                                    Verified
+                                                </span>
+                                            ) : (
+                                                <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                    <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                                    Not Verified
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                <div style={{display: 'flex', alignItems: 'center'}}>
+                                                    <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                    <span>{commentsCount}</span>
+                                                </div>
+                                                <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                    <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                    <span>{issuesCount}</span>
+                                                </div>
+                                            </div>
+                                        </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                )
+                            })}
+                        </tbody>
+                    </table>
                 )}
             </div>
             {showAddSheet && (
@@ -599,7 +616,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             )}
             {showOverview && <OverviewPopup />}
         </div>
-    );
+    )
 }
 
 export default TractorsView;

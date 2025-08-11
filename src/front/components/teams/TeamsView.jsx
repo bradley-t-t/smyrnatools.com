@@ -308,7 +308,7 @@ function TeamsView() {
                             setSelectedPlant('');
                             setStatusFilter('Active');
                         }}>
-                            <i className="fas fa-undo"></i> Reset Filters
+                            <i className="fas fa-undo"></i>
                         </button>
                     ) : null}
                     <button className="ios-button" onClick={() => setShowOverview(true)}>

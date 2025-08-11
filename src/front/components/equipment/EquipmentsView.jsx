@@ -58,6 +58,14 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                 } catch {
                     equipment.issues = [];
                 }
+                if (EquipmentService.fetchComments) {
+                    try {
+                        const comments = await EquipmentService.fetchComments(equipment.id);
+                        equipment.comments = comments || [];
+                    } catch {
+                        equipment.comments = [];
+                    }
+                }
                 return equipment;
             }));
             setEquipments(processedData);
@@ -346,12 +354,13 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                             </div>
                             {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
                                 <button className="filter-reset-button" onClick={() => {
-                                    setSearchText('');
-                                    setSelectedPlant('');
-                                    setStatusFilter('');
-                                    resetEquipmentFilters?.();
+                                    setSearchText('')
+                                    setSelectedPlant('')
+                                    setStatusFilter('')
+                                    resetEquipmentFilters?.()
+                                    setViewMode(viewMode)
                                 }}>
-                                    <i className="fas fa-undo"></i> Reset Filters
+                                    <i className="fas fa-undo"></i>
                                 </button>
                             )}
                             <button className="ios-button" onClick={() => setShowOverview(true)}>
@@ -395,51 +404,68 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                             <th>Type</th>
                                             <th>Cleanliness</th>
                                             <th>Condition</th>
+                                            <th>More</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredEquipments.map(equipment => (
-                                            <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)} style={{cursor: 'pointer'}}>
-                                                <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
-                                                <td>{equipment.identifyingNumber ? equipment.identifyingNumber : "---"}</td>
-                                                <td>
-                                                    <span
-                                                        className="item-status-dot"
-                                                        style={{
-                                                            display: 'inline-block',
-                                                            verticalAlign: 'middle',
-                                                            marginRight: '8px',
-                                                            backgroundColor:
-                                                                equipment.status === 'Active' ? 'var(--status-active)' :
-                                                                equipment.status === 'Spare' ? 'var(--status-spare)' :
-                                                                equipment.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                equipment.status === 'Retired' ? 'var(--status-retired)' :
-                                                                'var(--accent)',
-                                                        }}
-                                                    ></span>
-                                                    {equipment.status ? equipment.status : "---"}
-                                                </td>
-                                                <td>{equipment.equipmentType ? equipment.equipmentType : "---"}</td>
-                                                <td>
-                                                    {(() => {
-                                                        const rating = Math.round(equipment.cleanlinessRating || 0)
-                                                        const stars = rating > 0 ? rating : 1
-                                                        return Array.from({length: stars}).map((_, i) => (
-                                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                        ))
-                                                    })()}
-                                                </td>
-                                                <td>
-                                                    {(() => {
-                                                        const rating = Math.round(equipment.conditionRating || 0)
-                                                        const stars = rating > 0 ? rating : 1
-                                                        return Array.from({length: stars}).map((_, i) => (
-                                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                        ))
-                                                    })()}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {filteredEquipments.map(equipment => {
+                                            const commentsCount = Array.isArray(equipment.comments) ? equipment.comments.length : 0
+                                            const issuesCount = Array.isArray(equipment.issues) ? equipment.issues.filter(issue => !issue.time_completed).length : 0
+                                            return (
+                                                <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)} style={{cursor: 'pointer'}}>
+                                                    <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
+                                                    <td>{equipment.identifyingNumber ? equipment.identifyingNumber : "---"}</td>
+                                                    <td>
+                                                        <span
+                                                            className="item-status-dot"
+                                                            style={{
+                                                                display: 'inline-block',
+                                                                verticalAlign: 'middle',
+                                                                marginRight: '8px',
+                                                                backgroundColor:
+                                                                    equipment.status === 'Active' ? 'var(--status-active)' :
+                                                                    equipment.status === 'Spare' ? 'var(--status-spare)' :
+                                                                    equipment.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                    equipment.status === 'Retired' ? 'var(--status-retired)' :
+                                                                    'var(--accent)',
+                                                            }}
+                                                        ></span>
+                                                        {equipment.status ? equipment.status : "---"}
+                                                    </td>
+                                                    <td>{equipment.equipmentType ? equipment.equipmentType : "---"}</td>
+                                                    <td>
+                                                        {(() => {
+                                                            const rating = Math.round(equipment.cleanlinessRating || 0)
+                                                            const stars = rating > 0 ? rating : 1
+                                                            return Array.from({length: stars}).map((_, i) => (
+                                                                <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                            ))
+                                                        })()}
+                                                    </td>
+                                                    <td>
+                                                        {(() => {
+                                                            const rating = Math.round(equipment.conditionRating || 0)
+                                                            const stars = rating > 0 ? rating : 1
+                                                            return Array.from({length: stars}).map((_, i) => (
+                                                                <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                            ))
+                                                        })()}
+                                                    </td>
+                                                    <td>
+                                                        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                                <span>{commentsCount}</span>
+                                                            </div>
+                                                            <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                                <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                                <span>{issuesCount}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

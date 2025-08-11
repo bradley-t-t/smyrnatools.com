@@ -19,7 +19,6 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [searchText, setSearchText] = useState(preferences.operatorFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.operatorFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.operatorFilters?.statusFilter || '');
-    const [positionFilter, setPositionFilter] = useState(preferences.operatorFilters?.positionFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [showDetailView, setShowDetailView] = useState(false);
@@ -29,13 +28,11 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [scheduledOffMap, setScheduledOffMap] = useState([]);
     const [reloadFlag, setReloadFlag] = useState(false);
     const [viewMode, setViewMode] = useState(preferences.operatorFilters?.viewMode || 'grid');
-
     const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
     const filterOptions = [
         'All Statuses', 'Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training',
         'Trainer', 'Not Trainer'
     ];
-    const positionOptions = ['All Positions', 'Mixer Operator', 'Tractor Operator'];
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
@@ -56,7 +53,6 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             setSearchText(preferences.operatorFilters.searchText || '');
             setSelectedPlant(preferences.operatorFilters.selectedPlant || '');
             setStatusFilter(preferences.operatorFilters.statusFilter || '');
-            setPositionFilter(preferences.operatorFilters.positionFilter || '');
             setViewMode(preferences.operatorFilters.viewMode || 'grid');
         }
     }, [preferences.operatorFilters]);
@@ -193,11 +189,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                     matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true';
                 }
             }
-            let matchesPosition = true;
-            if (positionFilter && positionFilter !== 'All Positions') {
-                matchesPosition = operator.position === positionFilter;
-            }
-            return matchesSearch && matchesPlant && matchesStatus && matchesPosition;
+            return matchesSearch && matchesPlant && matchesStatus;
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
@@ -284,7 +276,6 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`);
         }
         if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
-        if (positionFilter && positionFilter !== 'All Positions') filters.push(`Position: ${positionFilter}`);
         return filters.length ? filters.join(', ') : 'No Filters';
     }
 
@@ -464,38 +455,16 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                     ))}
                                 </select>
                             </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={positionFilter}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setPositionFilter(value);
-                                        updateOperatorFilter('positionFilter', value);
-                                    }}
-                                    style={{
-                                        '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                                        '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
-                                    }}
-                                >
-                                    {positionOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') || (positionFilter && positionFilter !== 'All Positions')) && (
-                                <button
-                                    className="filter-reset-button"
-                                    onClick={() => {
-                                        setSearchText('');
-                                        setSelectedPlant('');
-                                        setStatusFilter('');
-                                        setPositionFilter('');
-                                        resetOperatorFilters();
-                                    }}
-                                >
+                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                                <button className="filter-reset-button" onClick={() => {
+                                    setSearchText('')
+                                    setSelectedPlant('')
+                                    setStatusFilter('')
+                                    updateOperatorFilter('searchText', '')
+                                    updateOperatorFilter('selectedPlant', '')
+                                    updateOperatorFilter('statusFilter', '')
+                                }}>
                                     <i className="fas fa-undo"></i>
-                                    Reset Filters
                                 </button>
                             )}
                             <button className="ios-button" onClick={() => setShowOverview(true)}>
@@ -570,7 +539,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                                                 operator.status === 'Light Duty' ? 'var(--status-spare)' :
                                                                 operator.status === 'Training' ? 'var(--status-inshop)' :
                                                                 operator.status === 'Terminated' ? 'var(--status-retired)' :
-                                                                operator.status === 'Pending Start' ? 'var(--status-warning)' :
+                                                                operator.status === 'Pending Start' ? 'var(--status-inshop)' :
                                                                 'var(--accent)',
                                                         }}
                                                     ></span>

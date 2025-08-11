@@ -369,12 +369,13 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                             </div>
                             {(searchText || selectedPlant || roleFilter) && (
                                 <button className="filter-reset-button" onClick={() => {
-                                    setSearchText('');
-                                    setSelectedPlant('');
-                                    setRoleFilter('');
-                                    resetManagerFilters?.();
+                                    setSearchText('')
+                                    setSelectedPlant('')
+                                    setRoleFilter('')
+                                    resetManagerFilters?.()
+                                    setViewMode(viewMode)
                                 }}>
-                                    <i className="fas fa-undo"></i> Reset Filters
+                                    <i className="fas fa-undo"></i>
                                 </button>
                             )}
                             <button className="ios-button" onClick={() => setShowOverview(true)}>
@@ -411,8 +412,6 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                                             <th>First Name</th>
                                             <th>Last Name</th>
                                             <th>Role</th>
-                                            <th>Created At</th>
-                                            <th>Updated At</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -423,8 +422,6 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                                                 <td>{manager.firstName ? manager.firstName : "---"}</td>
                                                 <td>{manager.lastName ? manager.lastName : "---"}</td>
                                                 <td>{manager.roleName ? manager.roleName : "---"}</td>
-                                                <td>{manager.createdAt ? formatDate(manager.createdAt) : "---"}</td>
-                                                <td>{manager.updatedAt ? formatDate(manager.updatedAt) : "---"}</td>
                                             </tr>
                                         ))}
                                     </tbody>

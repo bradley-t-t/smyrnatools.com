@@ -34,7 +34,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setIsLoading(true);
             try {
                 await Promise.all([fetchMixers(), fetchOperators(), fetchPlants()]);
-            } catch (error) {
             } finally {
                 setIsLoading(false);
             }
@@ -65,6 +64,13 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 } catch {
                     mixer.issues = [];
                 }
+                let comments = [];
+                try {
+                    comments = await MixerService.fetchComments(mixer.id);
+                } catch {
+                    comments = [];
+                }
+                mixer.comments = comments;
                 mixer.isVerified = () => MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, latestHistoryDate);
                 mixer.latestHistoryDate = latestHistoryDate;
                 return mixer;
@@ -410,12 +416,13 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     </div>
                     {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
                         <button className="filter-reset-button" onClick={() => {
-                            setSearchText('');
-                            setSelectedPlant('');
-                            setStatusFilter('');
-                            resetMixerFilters();
+                            setSearchText('')
+                            setSelectedPlant('')
+                            setStatusFilter('')
+                            resetMixerFilters()
+                            setViewMode(viewMode)
                         }}>
-                            <i className="fas fa-undo"></i> Reset Filters
+                            <i className="fas fa-undo"></i>
                         </button>
                     )}
                     <button className="ios-button" onClick={() => setShowOverview(true)}>
@@ -455,56 +462,87 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         <table className="mixers-list-table">
                             <thead>
                                 <tr>
-                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Plant</th>
-                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Truck #</th>
-                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Status</th>
-                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Operator</th>
-                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Cleanliness</th>
-                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>VIN</th>
+                                    <th>Plant</th>
+                                    <th>Truck #</th>
+                                    <th>Status</th>
+                                    <th>Operator</th>
+                                    <th>Cleanliness</th>
+                                    <th>VIN</th>
+                                    <th>Verified</th>
+                                    <th>More</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredMixers.map(mixer => (
-                                    <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
-                                        <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
-                                        <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
-                                        <td>
-                                            <span
-                                                className="item-status-dot"
-                                                style={{
-                                                    display: 'inline-block',
-                                                    verticalAlign: 'middle',
-                                                    marginRight: '8px',
-                                                    backgroundColor:
-                                                        mixer.status === 'Active' ? 'var(--status-active)' :
-                                                        mixer.status === 'Spare' ? 'var(--status-spare)' :
-                                                        mixer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                        mixer.status === 'Retired' ? 'var(--status-retired)' :
-                                                        'var(--accent)',
-                                                }}
-                                            ></span>
-                                            {mixer.status ? mixer.status : "---"}
-                                        </td>
-                                        <td>
-                                            {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
-                                            {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
-                                                <span className="warning-badge">
-                                                    <i className="fas fa-exclamation-triangle"></i>
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            {(() => {
-                                                const rating = Math.round(mixer.cleanlinessRating || 0)
-                                                const stars = rating > 0 ? rating : 1
-                                                return Array.from({length: stars}).map((_, i) => (
-                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                ))
-                                            })()}
-                                        </td>
-                                        <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
-                                    </tr>
-                                ))}
+                                {filteredMixers.map(mixer => {
+                                    const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
+                                    const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
+                                    return (
+                                        <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
+                                            <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
+                                            <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
+                                            <td>
+                                                <span
+                                                    className="item-status-dot"
+                                                    style={{
+                                                        display: 'inline-block',
+                                                        verticalAlign: 'middle',
+                                                        marginRight: '8px',
+                                                        backgroundColor:
+                                                            mixer.status === 'Active' ? 'var(--status-active)' :
+                                                            mixer.status === 'Spare' ? 'var(--status-spare)' :
+                                                            mixer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                            mixer.status === 'Retired' ? 'var(--status-retired)' :
+                                                            'var(--accent)',
+                                                    }}
+                                                ></span>
+                                                {mixer.status ? mixer.status : "---"}
+                                            </td>
+                                            <td>
+                                                {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
+                                                {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
+                                                    <span className="warning-badge">
+                                                        <i className="fas fa-exclamation-triangle"></i>
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {(() => {
+                                                    const rating = Math.round(mixer.cleanlinessRating || 0)
+                                                    const stars = rating > 0 ? rating : 1
+                                                    return Array.from({length: stars}).map((_, i) => (
+                                                        <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                    ))
+                                                })()}
+                                            </td>
+                                            <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
+                                            <td>
+                                                {mixer.isVerified() ? (
+                                                    <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                        <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                                        Verified
+                                                    </span>
+                                                ) : (
+                                                    <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                        <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                                        Not Verified
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                    <div style={{display: 'flex', alignItems: 'center'}}>
+                                                        <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                        <span>{commentsCount}</span>
+                                                    </div>
+                                                    <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                        <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                        <span>{issuesCount}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>

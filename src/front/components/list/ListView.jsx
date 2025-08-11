@@ -289,7 +289,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 }
                             }}
                         >
-                            <i className="fas fa-undo"></i> Reset Filters
+                            <i className="fas fa-undo"></i>
                         </button>
                     )}
                     <button className="ios-button" onClick={() => setShowOverview(true)}>

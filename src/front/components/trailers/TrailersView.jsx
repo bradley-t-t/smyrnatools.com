@@ -72,6 +72,14 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                 } catch {
                     trailer.issues = [];
                 }
+                if (TrailerService.fetchComments) {
+                    try {
+                        const comments = await TrailerService.fetchComments(trailer.id);
+                        trailer.comments = comments || [];
+                    } catch {
+                        trailer.comments = [];
+                    }
+                }
                 trailer.isVerified = () => TrailerUtility.isVerified(trailer.updatedLast, trailer.updatedAt, trailer.updatedBy, latestHistoryDate);
                 trailer.latestHistoryDate = latestHistoryDate;
                 return trailer;
@@ -379,14 +387,11 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                             className="ios-select"
                             value={selectedPlant}
                             onChange={e => {
-                                setSelectedPlant(e.target.value);
-                                updatePreferences(prev => ({
-                                    ...prev,
-                                    trailerFilters: {
-                                        ...prev.trailerFilters,
-                                        selectedPlant: e.target.value
-                                    }
-                                }));
+                                setSelectedPlant(e.target.value)
+                                updatePreferences('trailerFilters', {
+                                    ...preferences.trailerFilters,
+                                    selectedPlant: e.target.value
+                                })
                             }}
                             aria-label="Filter by plant"
                         >
@@ -403,14 +408,11 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                             className="ios-select"
                             value={typeFilter}
                             onChange={e => {
-                                setTypeFilter(e.target.value);
-                                updatePreferences(prev => ({
-                                    ...prev,
-                                    trailerFilters: {
-                                        ...prev.trailerFilters,
-                                        typeFilter: e.target.value
-                                    }
-                                }));
+                                setTypeFilter(e.target.value)
+                                updatePreferences('trailerFilters', {
+                                    ...preferences.trailerFilters,
+                                    typeFilter: e.target.value
+                                })
                             }}
                         >
                             {filterOptions.map(option => (
@@ -420,20 +422,17 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                     </div>
                     {(searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types')) && (
                         <button className="filter-reset-button" onClick={() => {
-                            setSearchText('');
-                            setSelectedPlant('');
-                            setTypeFilter('');
-                            updatePreferences(prev => ({
-                                ...prev,
-                                trailerFilters: {
-                                    ...prev.trailerFilters,
-                                    searchText: '',
-                                    selectedPlant: '',
-                                    typeFilter: ''
-                                }
-                            }));
+                            setSearchText('')
+                            setSelectedPlant('')
+                            setTypeFilter('')
+                            updatePreferences('trailerFilters', {
+                                ...preferences.trailerFilters,
+                                searchText: '',
+                                selectedPlant: '',
+                                typeFilter: ''
+                            })
                         }}>
-                            <i className="fas fa-undo"></i> Reset Filters
+                            <i className="fas fa-undo"></i>
                         </button>
                     )}
                     <button className="ios-button" onClick={() => setShowOverview(true)}>
@@ -479,50 +478,67 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                     <th>Type</th>
                                     <th>Cleanliness</th>
                                     <th>Tractor</th>
+                                    <th>More</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredTrailers.map(trailer => (
-                                    <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)} style={{cursor: 'pointer'}}>
-                                        <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
-                                        <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
-                                        <td>
-                                            <span
-                                                className="item-status-dot"
-                                                style={{
-                                                    display: 'inline-block',
-                                                    verticalAlign: 'middle',
-                                                    marginRight: '8px',
-                                                    backgroundColor:
-                                                        trailer.status === 'Active' ? 'var(--status-active)' :
-                                                        trailer.status === 'Spare' ? 'var(--status-spare)' :
-                                                        trailer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                        trailer.status === 'Retired' ? 'var(--status-retired)' :
-                                                        'var(--accent)',
-                                                }}
-                                            ></span>
-                                            {trailer.status ? trailer.status : "---"}
-                                        </td>
-                                        <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
-                                        <td>
-                                            {(() => {
-                                                const rating = Math.round(trailer.cleanlinessRating || 0)
-                                                const stars = rating > 0 ? rating : 1
-                                                return Array.from({length: stars}).map((_, i) => (
-                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                ))
-                                            })()}
-                                        </td>
-                                        <td>
-                                            {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
-                                            {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (
-                                                <span className="warning-badge">
-                                                    <i className="fas fa-exclamation-triangle"></i>
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {filteredTrailers.map(trailer => {
+                                    const commentsCount = Array.isArray(trailer.comments) ? trailer.comments.length : 0
+                                    const issuesCount = Array.isArray(trailer.issues) ? trailer.issues.filter(issue => !issue.time_completed).length : 0
+                                    return (
+                                        <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)} style={{cursor: 'pointer'}}>
+                                            <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
+                                            <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
+                                            <td>
+                                                <span
+                                                    className="item-status-dot"
+                                                    style={{
+                                                        display: 'inline-block',
+                                                        verticalAlign: 'middle',
+                                                        marginRight: '8px',
+                                                        backgroundColor:
+                                                            trailer.status === 'Active' ? 'var(--status-active)' :
+                                                            trailer.status === 'Spare' ? 'var(--status-spare)' :
+                                                            trailer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                            trailer.status === 'Retired' ? 'var(--status-retired)' :
+                                                            'var(--accent)',
+                                                    }}
+                                                ></span>
+                                                {trailer.status ? trailer.status : "---"}
+                                            </td>
+                                            <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
+                                            <td>
+                                                {(() => {
+                                                    const rating = Math.round(trailer.cleanlinessRating || 0)
+                                                    const stars = rating > 0 ? rating : 1
+                                                    return Array.from({length: stars}).map((_, i) => (
+                                                        <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                    ))
+                                                })()}
+                                            </td>
+                                            <td>
+                                                {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
+                                                {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (
+                                                    <span className="warning-badge">
+                                                        <i className="fas fa-exclamation-triangle"></i>
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                    <div style={{display: 'flex', alignItems: 'center'}}>
+                                                        <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                        <span>{commentsCount}</span>
+                                                    </div>
+                                                    <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                        <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                        <span>{issuesCount}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>
