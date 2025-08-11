@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { usePreferences } from '../../../app/context/PreferencesContext';
+import { UserService } from '../../../services/UserService';
 import './styles/TipBanner.css';
 
 function TipBanner() {
     const { preferences } = usePreferences();
     const [currentTip, setCurrentTip] = useState('');
     const [isVisible, setIsVisible] = useState(true);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
 
     const tips = [
@@ -18,17 +20,22 @@ function TipBanner() {
     ];
 
     useEffect(() => {
-        setCurrentTip(tips[Math.floor(Math.random() * tips.length)]);
+        UserService.getCurrentUser().then(user => {
+            setIsAuthenticated(!!user);
+        });
+    }, []);
 
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        setCurrentTip(tips[Math.floor(Math.random() * tips.length)]);
         const tipInterval = setInterval(() => {
             const newTip = tips[Math.floor(Math.random() * tips.length)];
             setCurrentTip(newTip);
         }, 15000);
-
         return () => clearInterval(tipInterval);
-    }, []);
+    }, [isAuthenticated]);
 
-    if (!isVisible || !preferences.showTips) return null;
+    if (!isAuthenticated || !isVisible || !preferences.showTips) return null;
 
     return (
         <div className="tip-banner" style={{ backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff' }}>
