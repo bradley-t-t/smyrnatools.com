@@ -16,7 +16,8 @@ function TipBanner() {
         'Verify your assets by Friday at 10am weekly',
         'Whenever you make changes to an asset, you must re-verify it',
         'Training operators should not be assigned to an asset until they have completed their training',
-        "You can disable these tips in your settings"
+        "You can disable these tips in your settings",
+        "Weekly reports are due by Saturday at end of day"
     ];
 
     useEffect(() => {
