@@ -455,11 +455,12 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         <table className="mixers-list-table">
                             <thead>
                                 <tr>
-                                    <th>Plant</th>
-                                    <th>Truck #</th>
-                                    <th>Status</th>
-                                    <th>Operator</th>
-                                    <th>VIN</th>
+                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Plant</th>
+                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Truck #</th>
+                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Status</th>
+                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Operator</th>
+                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>Cleanliness</th>
+                                    <th style={{background: 'var(--accent-header-bg)', color: 'var(--accent-header-text)'}}>VIN</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -467,7 +468,23 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
                                         <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
                                         <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
-                                        <td>{mixer.status ? mixer.status : "---"}</td>
+                                        <td>
+                                            <span
+                                                className="item-status-dot"
+                                                style={{
+                                                    display: 'inline-block',
+                                                    verticalAlign: 'middle',
+                                                    marginRight: '8px',
+                                                    backgroundColor:
+                                                        mixer.status === 'Active' ? 'var(--status-active)' :
+                                                        mixer.status === 'Spare' ? 'var(--status-spare)' :
+                                                        mixer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                        mixer.status === 'Retired' ? 'var(--status-retired)' :
+                                                        'var(--accent)',
+                                                }}
+                                            ></span>
+                                            {mixer.status ? mixer.status : "---"}
+                                        </td>
                                         <td>
                                             {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
                                             {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
@@ -475,6 +492,15 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                                     <i className="fas fa-exclamation-triangle"></i>
                                                 </span>
                                             )}
+                                        </td>
+                                        <td>
+                                            {(() => {
+                                                const rating = Math.round(mixer.cleanlinessRating || 0)
+                                                const stars = rating > 0 ? rating : 1
+                                                return Array.from({length: stars}).map((_, i) => (
+                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                ))
+                                            })()}
                                         </td>
                                         <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
                                     </tr>

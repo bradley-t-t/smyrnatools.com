@@ -546,12 +546,10 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                     <thead>
                                         <tr>
                                             <th>Plant</th>
-                                            <th>Smyrna ID</th>
                                             <th>Name</th>
                                             <th>Status</th>
                                             <th>Position</th>
                                             <th>Trainer</th>
-                                            <th>Pending Start Date</th>
                                             <th>Rating</th>
                                         </tr>
                                     </thead>
@@ -559,13 +557,36 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                         {filteredOperators.map(operator => (
                                             <tr key={operator.employeeId} style={{cursor: 'pointer'}} onClick={() => handleSelectOperator(operator)}>
                                                 <td>{operator.plantCode ? operator.plantCode : "---"}</td>
-                                                <td>{operator.smyrnaId ? operator.smyrnaId : "---"}</td>
                                                 <td>{operator.name ? operator.name : "---"}</td>
-                                                <td>{operator.status ? operator.status : "---"}</td>
+                                                <td>
+                                                    <span
+                                                        className="item-status-dot"
+                                                        style={{
+                                                            display: 'inline-block',
+                                                            verticalAlign: 'middle',
+                                                            marginRight: '8px',
+                                                            backgroundColor:
+                                                                operator.status === 'Active' ? 'var(--status-active)' :
+                                                                operator.status === 'Light Duty' ? 'var(--status-spare)' :
+                                                                operator.status === 'Training' ? 'var(--status-inshop)' :
+                                                                operator.status === 'Terminated' ? 'var(--status-retired)' :
+                                                                operator.status === 'Pending Start' ? 'var(--status-warning)' :
+                                                                'var(--accent)',
+                                                        }}
+                                                    ></span>
+                                                    {operator.status ? operator.status : "---"}
+                                                </td>
                                                 <td>{operator.position ? operator.position : "---"}</td>
                                                 <td>{operator.isTrainer ? "Yes" : "No"}</td>
-                                                <td>{operator.pendingStartDate ? formatDate(operator.pendingStartDate) : "---"}</td>
-                                                <td>{typeof operator.rating === "number" ? operator.rating : "---"}</td>
+                                                <td>
+                                                    {(() => {
+                                                        const rating = Math.round(operator.rating || 0)
+                                                        const stars = rating > 0 ? rating : 1
+                                                        return Array.from({length: stars}).map((_, i) => (
+                                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                        ))
+                                                    })()}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

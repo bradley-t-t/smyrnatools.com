@@ -477,6 +477,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                     <th>Trailer #</th>
                                     <th>Status</th>
                                     <th>Type</th>
+                                    <th>Cleanliness</th>
                                     <th>Tractor</th>
                                 </tr>
                             </thead>
@@ -485,8 +486,33 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                     <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)} style={{cursor: 'pointer'}}>
                                         <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
                                         <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
-                                        <td>{trailer.status ? trailer.status : "---"}</td>
+                                        <td>
+                                            <span
+                                                className="item-status-dot"
+                                                style={{
+                                                    display: 'inline-block',
+                                                    verticalAlign: 'middle',
+                                                    marginRight: '8px',
+                                                    backgroundColor:
+                                                        trailer.status === 'Active' ? 'var(--status-active)' :
+                                                        trailer.status === 'Spare' ? 'var(--status-spare)' :
+                                                        trailer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                        trailer.status === 'Retired' ? 'var(--status-retired)' :
+                                                        'var(--accent)',
+                                                }}
+                                            ></span>
+                                            {trailer.status ? trailer.status : "---"}
+                                        </td>
                                         <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
+                                        <td>
+                                            {(() => {
+                                                const rating = Math.round(trailer.cleanlinessRating || 0)
+                                                const stars = rating > 0 ? rating : 1
+                                                return Array.from({length: stars}).map((_, i) => (
+                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                ))
+                                            })()}
+                                        </td>
                                         <td>
                                             {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
                                             {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (

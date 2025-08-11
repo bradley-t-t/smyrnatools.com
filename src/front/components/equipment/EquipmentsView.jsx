@@ -393,6 +393,8 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                             <th>Identifying #</th>
                                             <th>Status</th>
                                             <th>Type</th>
+                                            <th>Cleanliness</th>
+                                            <th>Condition</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -400,8 +402,42 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                             <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)} style={{cursor: 'pointer'}}>
                                                 <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
                                                 <td>{equipment.identifyingNumber ? equipment.identifyingNumber : "---"}</td>
-                                                <td>{equipment.status ? equipment.status : "---"}</td>
+                                                <td>
+                                                    <span
+                                                        className="item-status-dot"
+                                                        style={{
+                                                            display: 'inline-block',
+                                                            verticalAlign: 'middle',
+                                                            marginRight: '8px',
+                                                            backgroundColor:
+                                                                equipment.status === 'Active' ? 'var(--status-active)' :
+                                                                equipment.status === 'Spare' ? 'var(--status-spare)' :
+                                                                equipment.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                equipment.status === 'Retired' ? 'var(--status-retired)' :
+                                                                'var(--accent)',
+                                                        }}
+                                                    ></span>
+                                                    {equipment.status ? equipment.status : "---"}
+                                                </td>
                                                 <td>{equipment.equipmentType ? equipment.equipmentType : "---"}</td>
+                                                <td>
+                                                    {(() => {
+                                                        const rating = Math.round(equipment.cleanlinessRating || 0)
+                                                        const stars = rating > 0 ? rating : 1
+                                                        return Array.from({length: stars}).map((_, i) => (
+                                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                        ))
+                                                    })()}
+                                                </td>
+                                                <td>
+                                                    {(() => {
+                                                        const rating = Math.round(equipment.conditionRating || 0)
+                                                        const stars = rating > 0 ? rating : 1
+                                                        return Array.from({length: stars}).map((_, i) => (
+                                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                        ))
+                                                    })()}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

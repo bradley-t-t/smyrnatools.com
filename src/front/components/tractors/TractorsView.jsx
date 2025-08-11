@@ -538,6 +538,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                     <th>Truck #</th>
                                     <th>Status</th>
                                     <th>Operator</th>
+                                    <th>Cleanliness</th>
                                     <th>VIN</th>
                                 </tr>
                             </thead>
@@ -546,7 +547,23 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                     <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}>
                                         <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
                                         <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
-                                        <td>{tractor.status ? tractor.status : "---"}</td>
+                                        <td>
+                                            <span
+                                                className="item-status-dot"
+                                                style={{
+                                                    display: 'inline-block',
+                                                    verticalAlign: 'middle',
+                                                    marginRight: '8px',
+                                                    backgroundColor:
+                                                        tractor.status === 'Active' ? 'var(--status-active)' :
+                                                        tractor.status === 'Spare' ? 'var(--status-spare)' :
+                                                        tractor.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                        tractor.status === 'Retired' ? 'var(--status-retired)' :
+                                                        'var(--accent)',
+                                                }}
+                                            ></span>
+                                            {tractor.status ? tractor.status : "---"}
+                                        </td>
                                         <td>
                                             {getOperatorName(tractor.assignedOperator) ? getOperatorName(tractor.assignedOperator) : "---"}
                                             {isOperatorAssignedToMultipleTractors(tractor.assignedOperator) && (
@@ -554,6 +571,15 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                                     <i className="fas fa-exclamation-triangle"></i>
                                                 </span>
                                             )}
+                                        </td>
+                                        <td>
+                                            {(() => {
+                                                const rating = Math.round(tractor.cleanlinessRating || 0)
+                                                const stars = rating > 0 ? rating : 1
+                                                return Array.from({length: stars}).map((_, i) => (
+                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                ))
+                                            })()}
                                         </td>
                                         <td>{tractor.vin ? tractor.vin : "---"}</td>
                                     </tr>

@@ -450,18 +450,18 @@ button.primary:hover {
 .operators-list-table tbody tr,
 .managers-list-table tbody tr,
 .equipments-list-table tbody tr {
-    transition: background 0.18s;
+    transition: background 0.18s, color 0.18s;
     cursor: pointer;
 }
 
-.mixers-list-table tbody tr:hover,
-.tractors-list-table tbody tr:hover,
-.trailers-list-table tbody tr:hover,
-.operators-list-table tbody tr:hover,
-.managers-list-table tbody tr:hover,
-.equipments-list-table tbody tr:hover {
-    background: var(--accent-row-hover-bg);
-    box-shadow: 0 2px 12px rgba(49,130,206,0.08);
+.mixers-list-table tbody tr:hover td,
+.tractors-list-table tbody tr:hover td,
+.trailers-list-table tbody tr:hover td,
+.operators-list-table tbody tr:hover td,
+.managers-list-table tbody tr:hover td,
+.equipments-list-table tbody tr:hover td {
+    background: var(--accent-row-hover-bg) !important;
+    color: var(--text-primary) !important;
 }
 
 .mixers-list-table tr:last-child td,
