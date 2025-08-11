@@ -346,7 +346,13 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     </div>
                     {weekRangeHeader && (
                         <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
-                            {weekRangeHeader}
+                            {report.name === 'plant_production'
+                                ? (() => {
+                                    const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
+                                    return weekRangeHeader + (form.report_date ? ` - ${form.report_date}` : '') + (plantCode ? ` - ${plantCode}'s Report` : '')
+                                })()
+                                : weekRangeHeader
+                            }
                         </div>
                     )}
                 </div>

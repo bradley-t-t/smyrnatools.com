@@ -55,6 +55,37 @@ function AppContent() {
     }, [])
 
     useEffect(() => {
+        let intervalId
+        function pollVersion() {
+            fetch('/version.json', { cache: 'no-store' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
+                        window.location.reload(true)
+                    }
+                })
+        }
+        if (currentVersion) {
+            intervalId = setInterval(pollVersion, 30000)
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId)
+        }
+    }, [currentVersion])
+
+    function compareVersions(a, b) {
+        const pa = a.split('.').map(Number)
+        const pb = b.split('.').map(Number)
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            const na = pa[i] || 0
+            const nb = pb[i] || 0
+            if (na > nb) return 1
+            if (na < nb) return -1
+        }
+        return 0
+    }
+
+    useEffect(() => {
         async function checkCurrentUser() {
             try {
                 const user = await UserService.getCurrentUser()
@@ -219,49 +250,6 @@ function AppContent() {
         }
     }, [userId])
 
-    useEffect(() => {
-        async function checkVersion() {
-            try {
-                const response = await fetch('/version.json', { cache: 'no-store' })
-                const data = await response.json()
-                if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
-                    window.location.reload(true)
-                }
-            } catch (e) {
-            }
-        }
-        if (currentVersion) {
-            checkVersion()
-        }
-    }, [currentVersion])
-
-    function compareVersions(a, b) {
-        const pa = a.split('.').map(Number)
-        const pb = b.split('.').map(Number)
-        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-            const na = pa[i] || 0
-            const nb = pb[i] || 0
-            if (na > nb) return 1
-            if (na < nb) return -1
-        }
-        return 0
-    }
-
-    if (connectionLost) {
-        return <ConnectionScreen />
-    }
-    if (loading) {
-        return <LoadingScreen message="Loading application..." fullPage={true}/>
-    }
-    if (!userId) {
-        return <LoginView/>
-    }
-    if (userRole.toLowerCase() === 'guest') {
-        return <GuestView/>
-    }
-    if (userCheckFailed) {
-        return <LoginView/>
-    }
 
     const handleViewSelection = (viewId) => {
         setSelectedView(viewId)

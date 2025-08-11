@@ -3,6 +3,15 @@ import {usePreferences} from '../../../app/context/PreferencesContext';
 import {supabase} from '../../../services/DatabaseService';
 import './styles/SettingsView.css';
 
+function VersionPopup({ version }) {
+    if (!version) return null
+    return (
+        <div className="version-popup-centered">
+            Version: {version}
+        </div>
+    )
+}
+
 const ACCENT_OPTIONS = [
     { key: 'red', label: 'Red', className: 'red' },
     { key: 'blue', label: 'Blue', className: 'blue' }
@@ -12,6 +21,14 @@ function SettingsView() {
     const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, toggleAutoOverview, setThemeMode, setAccentColor} = usePreferences();
     const [showFeedback, setShowFeedback] = useState(false);
     const [userId, setUserId] = useState(null);
+    const [version, setVersion] = useState('');
+
+    useEffect(() => {
+        fetch('/version.json', { cache: 'no-store' })
+            .then(res => res.json())
+            .then(data => setVersion(data.version || ''))
+            .catch(() => setVersion(''))
+    }, []);
 
     useEffect(() => {
         const getCurrentUser = async () => {
@@ -40,6 +57,7 @@ function SettingsView() {
 
     return (
         <div className="settings-container">
+            <VersionPopup version={version} />
             {showFeedback && (
                 <div className="settings-feedback">
                     <i className="fas fa-check-circle"></i> Settings saved successfully

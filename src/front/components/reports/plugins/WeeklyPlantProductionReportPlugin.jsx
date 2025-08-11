@@ -390,6 +390,7 @@ export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
     const rows = getRows(form)
     const insights = getInsights(rows)
     const reportDate = form.report_date || ''
+    const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
     if (!rows.length) return null
     return (
         <div style={{ marginTop: 32 }}>
@@ -400,7 +401,7 @@ export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
                 letterSpacing: 0.2,
                 color: 'var(--accent)'
             }}>
-                Plant Production Report{reportDate ? ` - ${reportDate}` : ''}
+                {`Plant Production Report${reportDate ? ` - ${reportDate}` : ''}${plantCode ? ` - ${plantCode}'s Report` : ''}`}
             </div>
             <CardAverages insights={insights} />
             <div>
@@ -416,6 +417,7 @@ export function PlantProductionReviewPlugin({ form, operatorOptions }) {
     const rows = getRows(form)
     const insights = getInsights(rows)
     const reportDate = form.report_date || ''
+    const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
     if (!rows.length) return null
     return (
         <div style={{ marginTop: 32 }}>
@@ -426,7 +428,7 @@ export function PlantProductionReviewPlugin({ form, operatorOptions }) {
                 letterSpacing: 0.2,
                 color: 'var(--accent)'
             }}>
-                Plant Production Report{reportDate ? ` - ${reportDate}` : ''}
+                {`Plant Production Report${reportDate ? ` - ${reportDate}` : ''}${plantCode ? ` - ${plantCode}'s Report` : ''}`}
             </div>
             <CardAverages insights={insights} />
             <div>
