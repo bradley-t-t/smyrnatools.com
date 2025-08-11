@@ -597,4 +597,14 @@ export class MixerService {
         if (error) throw error;
         return data ?? [];
     }
+
+    static async completeIssue(issueId) {
+        if (!issueId) throw new Error('Issue ID is required');
+        const {error} = await supabase
+            .from(MIXERS_MAINTENANCE_TABLE)
+            .update({ time_completed: new Date().toISOString() })
+            .eq('id', issueId);
+        if (error) throw error;
+        return true;
+    }
 }

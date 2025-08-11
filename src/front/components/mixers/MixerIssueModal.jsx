@@ -42,7 +42,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         if (!window.confirm('Are you sure you want to delete this maintenance issue?')) {
             return;
         }
-
         try {
             await MixerService.deleteIssue(issueId);
             fetchIssues();
@@ -53,24 +52,25 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
 
     const handleCompleteIssue = async (issueId) => {
         try {
-            await MixerService.completeIssue(issueId);
-            fetchIssues();
+            if (typeof MixerService.completeIssue === 'function') {
+                await MixerService.completeIssue(String(issueId));
+                fetchIssues();
+            } else {
+                setError('Failed to mark issue as completed. MixerService.completeIssue is not implemented.');
+            }
         } catch (err) {
-            setError('Failed to mark issue as completed. Please try again.');
+            setError('Failed to mark issue as completed. ' + (err?.message || 'Please try again.'));
         }
     };
 
     const handleAddIssue = async (e) => {
         e.preventDefault();
-
         if (!newIssue.trim()) {
             setError('Please enter an issue description');
             return;
         }
-
         setIsSubmitting(true);
         setError(null);
-
         try {
             const result = await MixerService.addIssue(mixerId, newIssue, severity);
             setNewIssue('');
@@ -144,13 +144,11 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
-
                 <div className="issue-modal-content">
                     <ErrorMessage
                         message={error}
                         onDismiss={() => setError(null)}
                     />
-
                     <div className="add-issue-section">
                         <h3>Report New Issue</h3>
                         <form onSubmit={handleAddIssue}>
@@ -161,7 +159,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                 placeholder="Describe the maintenance issue..."
                                 disabled={isSubmitting}
                             ></textarea>
-
                             <div className="severity-selector">
                                 <label>Severity:</label>
                                 <select
@@ -174,7 +171,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                     <option value="High">High</option>
                                 </select>
                             </div>
-
                             <button
                                 type="submit"
                                 className="add-issue-button"
@@ -185,10 +181,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                             </button>
                         </form>
                     </div>
-
                     <div className="issues-list">
                         <h3>Maintenance History</h3>
-
                         {isLoading ? (
                             <div className="loading-container">
                                 <div className="ios-spinner"></div>
@@ -240,11 +234,9 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                         ))
                                     )}
                                 </div>
-
                                 {openIssues.length > 0 && resolvedIssues.length > 0 && (
                                     <div className="issues-divider"></div>
                                 )}
-
                                 <div className="issues-section">
                                     <h4 className="issues-group-title">Resolved Issues ({resolvedIssues.length})</h4>
                                     {resolvedIssues.length === 0 ? (
@@ -283,7 +275,6 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                         )}
                     </div>
                 </div>
-
                 <div className="issue-modal-footer">
                     <button className="cancel-button" onClick={onClose}>Close</button>
                 </div>

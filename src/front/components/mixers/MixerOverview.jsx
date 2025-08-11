@@ -11,7 +11,8 @@ import { UserService } from '../../../services/UserService'
 const MixerOverview = ({
     filteredMixers = null,
     selectedPlant = '',
-    onStatusClick
+    onStatusClick,
+    onOperatorStatusClick
 }) => {
     const [mixers, setMixers] = useState([])
     const [plants, setPlants] = useState([])
@@ -565,6 +566,12 @@ const MixerOverview = ({
         activeCount = filteredMixers.filter(m => m.status === 'Active').length
     }
 
+    function handleOperatorStatusClick(status) {
+        if (onOperatorStatusClick) {
+            onOperatorStatusClick(status)
+        }
+    }
+
     return (
         <div className="mixer-overview">
             {filteredMixers && mixers.length !== filteredMixers.length && (
@@ -797,6 +804,26 @@ const MixerOverview = ({
                         >
                             <div className="status-count">{notVerifiedCount}</div>
                             <div className="status-label">Not Verified</div>
+                        </div>
+                        <div
+                            className="status-item clickable"
+                            onClick={() => handleOperatorStatusClick('Pending Start')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
+                            <div className="status-count">{operators.filter(op => op.status === 'Pending Start').length}</div>
+                            <div className="status-label">Pending Start Operators</div>
+                        </div>
+                        <div
+                            className="status-item clickable"
+                            onClick={() => handleOperatorStatusClick('Terminated')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
+                            <div className="status-count">{operators.filter(op => op.status === 'Terminated').length}</div>
+                            <div className="status-label">Terminated Operators</div>
                         </div>
                     </div>
                 </div>

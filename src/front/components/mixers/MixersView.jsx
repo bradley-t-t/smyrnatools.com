@@ -8,6 +8,7 @@ import LoadingScreen from '../common/LoadingScreen';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import MixerCard from './MixerCard';
 import MixerOverview from './MixerOverview';
+import OperatorsView from '../operators/OperatorsView'
 import '../../styles/FilterStyles.css';
 import './styles/MixersView.css';
 
@@ -23,6 +24,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedMixer, setSelectedMixer] = useState(null);
+    const [showOperatorsView, setShowOperatorsView] = useState(false)
+    const [operatorStatusFilter, setOperatorStatusFilter] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     useEffect(() => {
@@ -138,6 +141,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             updateMixerFilter('statusFilter', status);
         }
         setShowOverview(false);
+    }
+
+    function handleOperatorStatusClick(status) {
+        setOperatorStatusFilter(status)
+        setShowOperatorsView(true)
     }
 
     useEffect(() => {
@@ -288,6 +296,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         unverifiedCount={unverifiedCount}
                         neverVerifiedCount={neverVerifiedCount}
                         onStatusClick={handleStatusClick}
+                        onOperatorStatusClick={handleOperatorStatusClick}
                     />
                 </div>
                 <div className="modal-footer">
@@ -430,6 +439,30 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 />
             )}
             {showOverview && <OverviewPopup />}
+            {showOperatorsView && (
+                <div className="modal-backdrop" onClick={() => setShowOperatorsView(false)}>
+                    <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Operators</h2>
+                            <button className="close-button" onClick={() => setShowOperatorsView(false)}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <OperatorsView
+                                title="Operator Roster"
+                                showSidebar={false}
+                                setShowSidebar={() => {}}
+                                onSelectOperator={() => {}}
+                                initialStatusFilter={operatorStatusFilter}
+                            />
+                        </div>
+                        <div className="modal-footer">
+                            <button className="primary-button" onClick={() => setShowOperatorsView(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

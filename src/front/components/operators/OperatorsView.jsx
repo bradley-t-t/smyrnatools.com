@@ -11,7 +11,7 @@ import OperatorAddView from './OperatorAddView';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import FormatUtility from '../../../utils/FormatUtility';
 
-function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator }) {
+function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator, initialStatusFilter }) {
     const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences();
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -58,6 +58,12 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             setPositionFilter(preferences.operatorFilters.positionFilter || '');
         }
     }, [preferences.operatorFilters]);
+
+    useEffect(() => {
+        if (initialStatusFilter) {
+            setStatusFilter(initialStatusFilter)
+        }
+    }, [initialStatusFilter])
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -222,14 +228,13 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
 
     function handleStatusClick(status) {
         if (status === 'All Statuses') {
-            setStatusFilter('');
-            updateOperatorFilter('statusFilter', '');
+            setStatusFilter('')
+            updateOperatorFilter('statusFilter', '')
         } else {
-            setStatusFilter(status);
-            updateOperatorFilter('statusFilter', status);
+            setStatusFilter(status)
+            updateOperatorFilter('statusFilter', status)
         }
-        setShowOverview(false);
-        setReloadFlag(flag => !flag);
+        setShowOverview(false)
     }
 
     const statusesForCounts = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];

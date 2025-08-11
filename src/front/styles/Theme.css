@@ -296,3 +296,32 @@ button.primary:hover {
     font-size: 18px !important;
     z-index: 2 !important;
 }
+
+.version-popup {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    background: var(--primary-dark);
+    color: var(--text-light);
+    opacity: 0.12;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 99999;
+}
+
+.version-popup-centered {
+    position: fixed;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    background: var(--primary-dark);
+    color: var(--text-light);
+    opacity: 0.12;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 99999;
+}

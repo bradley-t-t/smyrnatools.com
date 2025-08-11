@@ -1,34 +1,34 @@
-import React, {useEffect, useState} from 'react';
-import './index.css';
-import './App.css';
-import {supabase} from '../services/DatabaseService';
-import MobileNavigation from '../front/components/common/MobileNavigation';
-import MixersView from '../front/components/mixers/MixersView';
-import ManagersView from '../front/components/managers/ManagersView';
-import SettingsView from '../front/components/settings/SettingsView';
-import MixerDetailView from '../front/components/mixers/MixerDetailView';
-import OperatorsView from '../front/components/operators/OperatorsView';
-import LoginView from '../front/components/auth/LoginView';
-import LoadingScreen from '../front/components/common/LoadingScreen';
-import MyAccountView from '../front/components/users/MyAccountView';
-import Navigation from "../front/components/common/Navigation";
-import GuestView from '../front/components/auth/GuestView';
-import ListView from '../front/components/list/ListView';
-import {AuthProvider} from './context/AuthContext';
-import {PreferencesProvider} from './context/PreferencesContext';
-import WebView from "../front/components/common/WebView";
-import {UserService} from "../services/UserService";
-import OnlineUsersOverlay from '../front/components/common/OnlineUsersOverlay';
-import TipBanner from '../front/components/common/TipBanner';
-import '../front/styles/Theme.css';
-import '../front/styles/Global.css';
-import TeamsView from '../front/components/teams/TeamsView';
-import OperatorScheduledOffView from '../front/components/operators/OperatorScheduledOffView';
-import ReportsView from '../front/components/reports/ReportsView';
+import React, {useEffect, useState} from 'react'
+import './index.css'
+import './App.css'
+import {supabase} from '../services/DatabaseService'
+import MobileNavigation from '../front/components/common/MobileNavigation'
+import MixersView from '../front/components/mixers/MixersView'
+import ManagersView from '../front/components/managers/ManagersView'
+import SettingsView from '../front/components/settings/SettingsView'
+import MixerDetailView from '../front/components/mixers/MixerDetailView'
+import OperatorsView from '../front/components/operators/OperatorsView'
+import LoginView from '../front/components/auth/LoginView'
+import LoadingScreen from '../front/components/common/LoadingScreen'
+import MyAccountView from '../front/components/users/MyAccountView'
+import Navigation from "../front/components/common/Navigation"
+import GuestView from '../front/components/auth/GuestView'
+import ListView from '../front/components/list/ListView'
+import {AuthProvider} from './context/AuthContext'
+import {PreferencesProvider} from './context/PreferencesContext'
+import WebView from "../front/components/common/WebView"
+import {UserService} from "../services/UserService"
+import OnlineUsersOverlay from '../front/components/common/OnlineUsersOverlay'
+import TipBanner from '../front/components/common/TipBanner'
+import '../front/styles/Theme.css'
+import '../front/styles/Global.css'
+import TeamsView from '../front/components/teams/TeamsView'
+import OperatorScheduledOffView from '../front/components/operators/OperatorScheduledOffView'
+import ReportsView from '../front/components/reports/ReportsView'
 import ConnectionScreen from '../front/components/common/ConnectionScreen'
-import TractorsView from '../front/components/tractors/TractorsView';
-import TrailersView from '../front/components/trailers/TrailersView';
-import EquipmentsView from '../front/components/equipment/EquipmentsView';
+import TractorsView from '../front/components/tractors/TractorsView'
+import TrailersView from '../front/components/trailers/TrailersView'
+import EquipmentsView from '../front/components/equipment/EquipmentsView'
 
 function AppContent() {
     const [userId, setUserId] = useState(null)
@@ -45,6 +45,14 @@ function AppContent() {
     const [loading, setLoading] = useState(true)
     const [session, setSession] = useState(null)
     const [userDisplayName, setUserDisplayName] = useState('')
+    const [currentVersion, setCurrentVersion] = useState('')
+
+    useEffect(() => {
+        fetch('/version.json', { cache: 'no-store' })
+            .then(res => res.json())
+            .then(data => setCurrentVersion(data.version || ''))
+            .catch(() => setCurrentVersion(''))
+    }, [])
 
     useEffect(() => {
         async function checkCurrentUser() {
@@ -210,6 +218,34 @@ function AppContent() {
             getUserData()
         }
     }, [userId])
+
+    useEffect(() => {
+        async function checkVersion() {
+            try {
+                const response = await fetch('/version.json', { cache: 'no-store' })
+                const data = await response.json()
+                if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
+                    window.location.reload(true)
+                }
+            } catch (e) {
+            }
+        }
+        if (currentVersion) {
+            checkVersion()
+        }
+    }, [currentVersion])
+
+    function compareVersions(a, b) {
+        const pa = a.split('.').map(Number)
+        const pb = b.split('.').map(Number)
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            const na = pa[i] || 0
+            const nb = pb[i] || 0
+            if (na > nb) return 1
+            if (na < nb) return -1
+        }
+        return 0
+    }
 
     if (connectionLost) {
         return <ConnectionScreen />

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {supabase} from '../../../services/DatabaseService';
 import './styles/OperatorsOverview.css';
 
-const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => {
+const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '', onStatusClick }) => {
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [statusCounts, setStatusCounts] = useState({});
@@ -27,7 +27,6 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
             const {data, error} = await supabase
                 .from('plants')
                 .select('*');
-
             if (error) throw error;
             setPlants(data);
         } catch (error) {
@@ -124,27 +123,63 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '' }) => 
                 <div className="overview-card status-card">
                     <h2>Status Overview</h2>
                     <div className="status-grid">
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('All Statuses')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
                             <div className="status-count">{statusCounts.Total || 0}</div>
                             <div className="status-label">Total Operators</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Active')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
                             <div className="status-count">{statusCounts.Active || 0}</div>
                             <div className="status-label">Active</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Light Duty')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
                             <div className="status-count">{statusCounts['Light Duty'] || 0}</div>
                             <div className="status-label">Light Duty</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Pending Start')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
                             <div className="status-count">{statusCounts['Pending Start'] || 0}</div>
                             <div className="status-label">Pending Start</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Training')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
                             <div className="status-count">{statusCounts.Training || 0}</div>
                             <div className="status-label">Training</div>
                         </div>
-                        <div className="status-item">
+                        <div
+                            className="status-item clickable"
+                            onClick={() => onStatusClick && onStatusClick('Terminated')}
+                            tabIndex={0}
+                            role="button"
+                            style={{cursor: 'pointer'}}
+                        >
                             <div className="status-count">{statusCounts.Terminated || 0}</div>
                             <div className="status-label">Terminated</div>
                         </div>
