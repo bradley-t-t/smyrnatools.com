@@ -12,50 +12,55 @@ import { usePreferences } from '../../../app/context/PreferencesContext';
 import FormatUtility from '../../../utils/FormatUtility';
 
 function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator, initialStatusFilter }) {
-    const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences();
-    const [operators, setOperators] = useState([]);
-    const [plants, setPlants] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchText, setSearchText] = useState(preferences.operatorFilters?.searchText || '');
-    const [selectedPlant, setSelectedPlant] = useState(preferences.operatorFilters?.selectedPlant || '');
-    const [statusFilter, setStatusFilter] = useState(preferences.operatorFilters?.statusFilter || '');
-    const [showAddSheet, setShowAddSheet] = useState(false);
-    const [showOverview, setShowOverview] = useState(false);
-    const [showDetailView, setShowDetailView] = useState(false);
-    const [selectedOperator, setSelectedOperator] = useState(null);
-    const [currentUserId, setCurrentUserId] = useState(null);
-    const [trainers, setTrainers] = useState([]);
-    const [scheduledOffMap, setScheduledOffMap] = useState([]);
-    const [reloadFlag, setReloadFlag] = useState(false);
-    const [viewMode, setViewMode] = useState(preferences.operatorFilters?.viewMode || preferences.defaultViewMode || 'grid');
-    const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
+    const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences()
+    const [operators, setOperators] = useState([])
+    const [plants, setPlants] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [searchText, setSearchText] = useState(preferences.operatorFilters?.searchText || '')
+    const [selectedPlant, setSelectedPlant] = useState(preferences.operatorFilters?.selectedPlant || '')
+    const [statusFilter, setStatusFilter] = useState(preferences.operatorFilters?.statusFilter || '')
+    const [showAddSheet, setShowAddSheet] = useState(false)
+    const [showOverview, setShowOverview] = useState(false)
+    const [showDetailView, setShowDetailView] = useState(false)
+    const [selectedOperator, setSelectedOperator] = useState(null)
+    const [currentUserId, setCurrentUserId] = useState(null)
+    const [trainers, setTrainers] = useState([])
+    const [scheduledOffMap, setScheduledOffMap] = useState([])
+    const [reloadFlag, setReloadFlag] = useState(false)
+    const [viewMode, setViewMode] = useState(() => {
+        if (preferences.operatorFilters?.viewMode !== undefined && preferences.operatorFilters?.viewMode !== null) return preferences.operatorFilters.viewMode
+        if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
+        const lastUsed = localStorage.getItem('operators_last_view_mode')
+        return lastUsed || 'grid'
+    })
+    const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training']
     const filterOptions = [
         'All Statuses', 'Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training',
         'Trainer', 'Not Trainer'
-    ];
+    ]
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
-            const user = await UserService.getCurrentUser();
+            const user = await UserService.getCurrentUser()
             if (user) {
-                setCurrentUserId(user.id);
+                setCurrentUserId(user.id)
             }
-        };
-        fetchCurrentUser();
-    }, []);
+        }
+        fetchCurrentUser()
+    }, [])
 
     useEffect(() => {
-        fetchAllData();
-    }, [reloadFlag]);
+        fetchAllData()
+    }, [reloadFlag])
 
     useEffect(() => {
         if (preferences.operatorFilters) {
-            setSearchText(preferences.operatorFilters.searchText || '');
-            setSelectedPlant(preferences.operatorFilters.selectedPlant || '');
-            setStatusFilter(preferences.operatorFilters.statusFilter || '');
-            setViewMode(preferences.operatorFilters.viewMode || preferences.defaultViewMode || 'grid');
+            setSearchText(preferences.operatorFilters.searchText || '')
+            setSelectedPlant(preferences.operatorFilters.selectedPlant || '')
+            setStatusFilter(preferences.operatorFilters.statusFilter || '')
+            setViewMode(preferences.operatorFilters.viewMode || preferences.defaultViewMode || 'grid')
         }
-    }, [preferences.operatorFilters, preferences.defaultViewMode]);
+    }, [preferences.operatorFilters, preferences.defaultViewMode])
 
     useEffect(() => {
         if (initialStatusFilter) {
@@ -64,26 +69,26 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     }, [initialStatusFilter])
 
     const fetchAllData = async () => {
-        setIsLoading(true);
+        setIsLoading(true)
         try {
             await Promise.all([
                 fetchOperators(),
                 fetchPlants(),
                 fetchTrainers(),
                 fetchScheduledOff()
-            ]);
+            ])
         } catch (error) {
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     const fetchOperators = async () => {
         try {
             const { data, error } = await supabase
                 .from('operators')
-                .select('*');
-            if (error) throw error;
+                .select('*')
+            if (error) throw error
             const formattedOperators = data.map(op => ({
                 employeeId: op.employee_id,
                 smyrnaId: op.smyrna_id || '',
@@ -95,130 +100,130 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                 position: op.position,
                 pendingStartDate: op.pending_start_date || '',
                 rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0
-            }));
-            setOperators(formattedOperators);
-            localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators));
-            localStorage.setItem('cachedOperatorsDate', new Date().toISOString());
+            }))
+            setOperators(formattedOperators)
+            localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators))
+            localStorage.setItem('cachedOperatorsDate', new Date().toISOString())
         } catch (error) {
-            const cachedData = localStorage.getItem('cachedOperators');
-            const cacheDate = localStorage.getItem('cachedOperatorsDate');
+            const cachedData = localStorage.getItem('cachedOperators')
+            const cacheDate = localStorage.getItem('cachedOperatorsDate')
             if (cachedData && cacheDate) {
-                const cachedTime = new Date(cacheDate).getTime();
-                const hourAgo = new Date().getTime() - 3600000;
+                const cachedTime = new Date(cacheDate).getTime()
+                const hourAgo = new Date().getTime() - 3600000
                 if (cachedTime > hourAgo) {
-                    setOperators(JSON.parse(cachedData));
+                    setOperators(JSON.parse(cachedData))
                 }
             }
         }
-    };
+    }
 
     const fetchPlants = async () => {
         try {
             const { data, error } = await supabase
                 .from('plants')
-                .select('*');
-            if (error) throw error;
-            setPlants(data);
+                .select('*')
+            if (error) throw error
+            setPlants(data)
         } catch (error) {
         }
-    };
+    }
 
     const fetchTrainers = async () => {
         try {
             const { data, error } = await supabase
                 .from('operators')
                 .select('employee_id, name')
-                .eq('is_trainer', true);
-            if (error) throw error;
+                .eq('is_trainer', true)
+            if (error) throw error
             setTrainers(data.map(t => ({
                 employeeId: t.employee_id,
                 name: t.name
-            })));
+            })))
         } catch (error) {
-            setTrainers([]);
+            setTrainers([])
         }
-    };
+    }
 
     const fetchScheduledOff = async () => {
         try {
             const { data, error } = await supabase
                 .from('operators_scheduled_off')
-                .select('id, days_off');
-            if (error) throw error;
-            const map = {};
+                .select('id, days_off')
+            if (error) throw error
+            const map = {}
             (data || []).forEach(item => {
-                map[item.id] = Array.isArray(item.days_off) ? item.days_off : [];
-            });
-            setScheduledOffMap(map);
+                map[item.id] = Array.isArray(item.days_off) ? item.days_off : []
+            })
+            setScheduledOffMap(map)
         } catch (error) {
-            setScheduledOffMap({});
+            setScheduledOffMap({})
         }
-    };
+    }
 
     const reloadAll = async () => {
-        await fetchAllData();
-    };
+        await fetchAllData()
+    }
 
     const deleteOperator = async (operatorId) => {
         try {
             const { error } = await supabase
                 .from('operators')
                 .delete()
-                .eq('employee_id', operatorId);
-            if (error) throw error;
-            fetchOperators();
-            setSelectedOperator(null);
+                .eq('employee_id', operatorId)
+            if (error) throw error
+            fetchOperators()
+            setSelectedOperator(null)
         } catch (error) {
-            alert('Failed to delete operator. Please try again.');
+            alert('Failed to delete operator. Please try again.')
         }
-    };
+    }
 
     const filteredOperators = operators
         .filter(operator => {
             const matchesSearch = searchText.trim() === '' ||
                 operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                operator.employeeId.toLowerCase().includes(searchText.toLowerCase());
-            const matchesPlant = selectedPlant === '' || operator.plantCode === selectedPlant;
-            let matchesStatus = true;
+                operator.employeeId.toLowerCase().includes(searchText.toLowerCase())
+            const matchesPlant = selectedPlant === '' || operator.plantCode === selectedPlant
+            let matchesStatus = true
             if (statusFilter && statusFilter !== 'All Statuses') {
                 if (statuses.includes(statusFilter)) {
-                    matchesStatus = operator.status === statusFilter;
+                    matchesStatus = operator.status === statusFilter
                 } else if (statusFilter === 'Trainer') {
-                    matchesStatus = operator.isTrainer === true || String(operator.isTrainer).toLowerCase() === 'true';
+                    matchesStatus = operator.isTrainer === true || String(operator.isTrainer).toLowerCase() === 'true'
                 } else if (statusFilter === 'Not Trainer') {
-                    matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true';
+                    matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true'
                 }
             }
-            return matchesSearch && matchesPlant && matchesStatus;
+            return matchesSearch && matchesPlant && matchesStatus
         })
         .sort((a, b) => {
-            if (a.status === 'Active' && b.status !== 'Active') return -1;
-            if (a.status !== 'Active' && b.status === 'Active') return 1;
-            if (a.status === 'Training' && b.status !== 'Training') return -1;
-            if (a.status !== 'Training' && b.status === 'Training') return 1;
-            if (a.status === 'Pending Start' && b.status !== 'Pending Start') return -1;
-            if (a.status !== 'Pending Start' && b.status === 'Pending Start') return 1;
-            if (a.status === 'Terminated' && b.status !== 'Terminated') return 1;
-            if (a.status !== 'Terminated' && b.status === 'Terminated') return -1;
-            if (a.status !== b.status) return a.status.localeCompare(b.status);
-            const nameA = a.name.split(' ').pop().toLowerCase();
-            const nameB = b.name.split(' ').pop().toLowerCase();
-            return nameA.localeCompare(nameB);
-        });
+            if (a.status === 'Active' && b.status !== 'Active') return -1
+            if (a.status !== 'Active' && b.status === 'Active') return 1
+            if (a.status === 'Training' && b.status !== 'Training') return -1
+            if (a.status !== 'Training' && b.status === 'Training') return 1
+            if (a.status === 'Pending Start' && b.status !== 'Pending Start') return -1
+            if (a.status !== 'Pending Start' && b.status === 'Pending Start') return 1
+            if (a.status === 'Terminated' && b.status !== 'Terminated') return 1
+            if (a.status !== 'Terminated' && b.status === 'Terminated') return -1
+            if (a.status !== b.status) return a.status.localeCompare(b.status)
+            const nameA = a.name.split(' ').pop().toLowerCase()
+            const nameB = b.name.split(' ').pop().toLowerCase()
+            return nameA.localeCompare(nameB)
+        })
 
     const getPlantName = (plantCode) => {
-        const plant = plants.find(p => p.plant_code === plantCode);
-        return plant ? plant.plant_name : plantCode || 'No Plant';
-    };
+        const plant = plants.find(p => p.plant_code === plantCode)
+        return plant ? plant.plant_name : plantCode || 'No Plant'
+    }
 
     const handleSelectOperator = (operator) => {
-        setSelectedOperator(operator);
+        setSelectedOperator(operator)
         if (onSelectOperator) {
-            onSelectOperator(operator.employeeId);
+            onSelectOperator(operator.employeeId)
         } else {
-            setShowDetailView(true);
+            setShowDetailView(true)
         }
-    };
+    }
 
     function handleStatusClick(status) {
         if (status === 'All Statuses') {
@@ -231,13 +236,13 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         setShowOverview(false)
     }
 
-    const statusesForCounts = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
+    const statusesForCounts = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training']
     const statusCounts = statusesForCounts.map(status => ({
         status,
         count: operators.filter(op => op.status === status).length
-    }));
+    }))
 
-    const trainerCount = operators.filter(op => op.isTrainer).length;
+    const trainerCount = operators.filter(op => op.isTrainer).length
 
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
@@ -262,36 +267,36 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                 </div>
             </div>
         </div>
-    );
+    )
 
     function formatDate(dateStr) {
         return FormatUtility.formatDate(dateStr)
     }
 
     function getFiltersAppliedString() {
-        const filters = [];
-        if (searchText) filters.push(`Search: ${searchText}`);
+        const filters = []
+        if (searchText) filters.push(`Search: ${searchText}`)
         if (selectedPlant) {
-            const plant = plants.find(p => p.plant_code === selectedPlant);
-            filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`);
+            const plant = plants.find(p => p.plant_code === selectedPlant)
+            filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`)
         }
-        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
-        return filters.length ? filters.join(', ') : 'No Filters';
+        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`)
+        return filters.length ? filters.join(', ') : 'No Filters'
     }
 
     function exportOperatorsToCSV(operatorsToExport) {
-        if (!operatorsToExport || operatorsToExport.length === 0) return;
-        const now = new Date();
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = now.getFullYear();
-        const mm = pad(now.getMonth() + 1);
-        const dd = pad(now.getDate());
-        const hh = pad(now.getHours());
-        const min = pad(now.getMinutes());
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
-        const filtersApplied = getFiltersAppliedString();
-        const fileName = `Operator Export - ${formattedNow} - ${filtersApplied}.csv`;
-        const topHeader = `Operator Export - ${formattedNow} - ${filtersApplied}`;
+        if (!operatorsToExport || operatorsToExport.length === 0) return
+        const now = new Date()
+        const pad = n => n.toString().padStart(2, '0')
+        const yyyy = now.getFullYear()
+        const mm = pad(now.getMonth() + 1)
+        const dd = pad(now.getDate())
+        const hh = pad(now.getHours())
+        const min = pad(now.getMinutes())
+        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`
+        const filtersApplied = getFiltersAppliedString()
+        const fileName = `Operator Export - ${formattedNow} - ${filtersApplied}.csv`
+        const topHeader = `Operator Export - ${formattedNow} - ${filtersApplied}`
         const headers = [
             'Smyrna ID',
             'Name',
@@ -301,7 +306,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             'Trainer',
             'Pending Start Date',
             'Rating'
-        ];
+        ]
         const rows = operatorsToExport.map(op => [
             op.smyrnaId || '',
             op.name || '',
@@ -311,26 +316,33 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             op.isTrainer ? 'Yes' : 'No',
             op.pendingStartDate ? formatDate(op.pendingStartDate) : '',
             typeof op.rating === 'number' ? op.rating : ''
-        ]);
+        ])
         const csvContent = [
             `"${topHeader}"`,
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        ].join('\n')
+        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
     }
 
     function handleViewModeChange(mode) {
-        setViewMode(mode);
-        updateOperatorFilter('viewMode', mode);
+        if (viewMode === mode) {
+            setViewMode(null)
+            updateOperatorFilter('viewMode', null)
+            localStorage.removeItem('operators_last_view_mode')
+        } else {
+            setViewMode(mode)
+            updateOperatorFilter('viewMode', mode)
+            localStorage.setItem('operators_last_view_mode', mode)
+        }
     }
 
     return (
@@ -339,8 +351,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                 <OperatorDetailView
                     operatorId={selectedOperator.employeeId}
                     onClose={() => {
-                        setShowDetailView(false);
-                        fetchOperators();
+                        setShowDetailView(false)
+                        fetchOperators()
                     }}
                     onScheduledOffSaved={reloadAll}
                 />
@@ -376,15 +388,15 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                 placeholder="Search by name or ID..."
                                 value={searchText}
                                 onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchText(value);
-                                    updateOperatorFilter('searchText', value);
+                                    const value = e.target.value
+                                    setSearchText(value)
+                                    updateOperatorFilter('searchText', value)
                                 }}
                             />
                             {searchText && (
                                 <button className="clear" onClick={() => {
-                                    setSearchText('');
-                                    updateOperatorFilter('searchText', '');
+                                    setSearchText('')
+                                    updateOperatorFilter('searchText', '')
                                 }}>
                                     <i className="fas fa-times"></i>
                                 </button>
@@ -414,9 +426,9 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                     className="ios-select"
                                     value={selectedPlant}
                                     onChange={(e) => {
-                                        const value = e.target.value;
-                                        setSelectedPlant(value);
-                                        updateOperatorFilter('selectedPlant', value);
+                                        const value = e.target.value
+                                        setSelectedPlant(value)
+                                        updateOperatorFilter('selectedPlant', value)
                                     }}
                                     aria-label="Filter by plant"
                                     style={{
@@ -426,9 +438,9 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                 >
                                     <option value="">All Plants</option>
                                     {plants.sort((a, b) => {
-                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
-                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
-                                        return aCode - bCode;
+                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
+                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
+                                        return aCode - bCode
                                     }).map(plant => (
                                         <option key={plant.plant_code} value={plant.plant_code}>
                                             ({plant.plant_code}) {plant.plant_name}
@@ -441,9 +453,9 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                     className="ios-select"
                                     value={statusFilter}
                                     onChange={(e) => {
-                                        const value = e.target.value;
-                                        setStatusFilter(value);
-                                        updateOperatorFilter('statusFilter', value);
+                                        const value = e.target.value
+                                        setStatusFilter(value)
+                                        updateOperatorFilter('statusFilter', value)
                                     }}
                                     style={{
                                         '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
@@ -579,7 +591,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                 </>
             )}
         </div>
-    );
+    )
 }
 
-export default OperatorsView;
+export default OperatorsView

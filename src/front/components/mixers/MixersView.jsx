@@ -26,7 +26,12 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [selectedMixer, setSelectedMixer] = useState(null);
     const [showOperatorsView, setShowOperatorsView] = useState(false)
     const [operatorStatusFilter, setOperatorStatusFilter] = useState('')
-    const [viewMode, setViewMode] = useState(preferences.mixerFilters?.viewMode || preferences.defaultViewMode || 'grid')
+    const [viewMode, setViewMode] = useState(() => {
+        if (preferences.mixerFilters?.viewMode !== undefined && preferences.mixerFilters?.viewMode !== null) return preferences.mixerFilters.viewMode
+        if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
+        const lastUsed = localStorage.getItem('mixers_last_view_mode')
+        return lastUsed || 'grid'
+    })
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     useEffect(() => {
@@ -44,7 +49,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
             setStatusFilter(preferences.mixerFilters.statusFilter || '');
         }
-        setViewMode(preferences.mixerFilters?.viewMode || preferences.defaultViewMode || 'grid')
+        if (preferences.mixerFilters?.viewMode !== undefined && preferences.mixerFilters?.viewMode !== null) {
+            setViewMode(preferences.mixerFilters.viewMode)
+        } else if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) {
+            setViewMode(preferences.defaultViewMode)
+        } else {
+            const lastUsed = localStorage.getItem('mixers_last_view_mode')
+            if (lastUsed) setViewMode(lastUsed)
+        }
         if (preferences?.autoOverview) {
             setShowOverview(true);
         }
@@ -157,8 +169,15 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     }
 
     function handleViewModeChange(mode) {
-        setViewMode(mode)
-        updateMixerFilter('viewMode', mode)
+        if (viewMode === mode) {
+            setViewMode(null)
+            updateMixerFilter('viewMode', null)
+            localStorage.removeItem('mixers_last_view_mode')
+        } else {
+            setViewMode(mode)
+            updateMixerFilter('viewMode', mode)
+            localStorage.setItem('mixers_last_view_mode', mode)
+        }
     }
 
     useEffect(() => {

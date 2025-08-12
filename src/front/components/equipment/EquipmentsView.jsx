@@ -23,7 +23,12 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState(null);
-    const [viewMode, setViewMode] = useState(preferences.equipmentFilters?.viewMode || preferences.defaultViewMode || 'grid');
+    const [viewMode, setViewMode] = useState(() => {
+        if (preferences.equipmentFilters?.viewMode !== undefined && preferences.equipmentFilters?.viewMode !== null) return preferences.equipmentFilters.viewMode
+        if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
+        const lastUsed = localStorage.getItem('equipments_last_view_mode')
+        return lastUsed || 'grid'
+    });
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Open Issues'];
 
     useEffect(() => {
@@ -244,9 +249,27 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
         </div>
     );
 
+    useEffect(() => {
+        if (preferences.equipmentFilters?.viewMode !== undefined && preferences.equipmentFilters?.viewMode !== null) {
+            setViewMode(preferences.equipmentFilters.viewMode)
+        } else if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) {
+            setViewMode(preferences.defaultViewMode)
+        } else {
+            const lastUsed = localStorage.getItem('equipments_last_view_mode')
+            if (lastUsed) setViewMode(lastUsed)
+        }
+    }, [preferences])
+
     function handleViewModeChange(mode) {
-        setViewMode(mode);
-        safeUpdateEquipmentFilter('viewMode', mode);
+        if (viewMode === mode) {
+            setViewMode(null)
+            updateEquipmentFilter('viewMode', null)
+            localStorage.removeItem('equipments_last_view_mode')
+        } else {
+            setViewMode(mode)
+            updateEquipmentFilter('viewMode', mode)
+            localStorage.setItem('equipments_last_view_mode', mode)
+        }
     }
 
     return (

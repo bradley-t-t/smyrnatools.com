@@ -18,7 +18,8 @@ export function PreferencesProvider({children}) {
             operatorFilters: {
                 searchText: '',
                 selectedPlant: '',
-                statusFilter: ''
+                statusFilter: '',
+                viewMode: 'grid'
             },
             managerFilters: {
                 searchText: '',
@@ -49,7 +50,8 @@ export function PreferencesProvider({children}) {
             operatorFilters: {
                 searchText: '',
                 selectedPlant: '',
-                statusFilter: ''
+                statusFilter: '',
+                viewMode: 'grid'
             }
         }))
     }

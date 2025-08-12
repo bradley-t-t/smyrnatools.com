@@ -9,19 +9,24 @@ import {usePreferences} from '../../../app/context/PreferencesContext';
 import {DatabaseService} from '../../../services/DatabaseService';
 
 function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelectManager}) {
-    const {preferences, updateManagerFilter, resetManagerFilters} = usePreferences();
-    const [managers, setManagers] = useState([]);
-    const [plants, setPlants] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchText, setSearchText] = useState(preferences.managerFilters?.searchText || '');
-    const [selectedPlant, setSelectedPlant] = useState(preferences.managerFilters?.selectedPlant || '');
-    const [roleFilter, setRoleFilter] = useState(preferences.managerFilters?.roleFilter || '');
-    const [showOverview, setShowOverview] = useState(false);
-    const [showDetailView, setShowDetailView] = useState(false);
-    const [selectedManager, setSelectedManager] = useState(null);
-    const [currentUserId, setCurrentUserId] = useState(null);
-    const [availableRoles, setAvailableRoles] = useState([]);
-    const [viewMode, setViewMode] = useState(preferences.managerFilters?.viewMode || preferences.defaultViewMode || 'grid');
+    const {preferences, updateManagerFilter, resetManagerFilters, updatePreferences} = usePreferences()
+    const [managers, setManagers] = useState([])
+    const [plants, setPlants] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [searchText, setSearchText] = useState(preferences.managerFilters?.searchText || '')
+    const [selectedPlant, setSelectedPlant] = useState(preferences.managerFilters?.selectedPlant || '')
+    const [roleFilter, setRoleFilter] = useState(preferences.managerFilters?.roleFilter || '')
+    const [showOverview, setShowOverview] = useState(false)
+    const [showDetailView, setShowDetailView] = useState(false)
+    const [selectedManager, setSelectedManager] = useState(null)
+    const [currentUserId, setCurrentUserId] = useState(null)
+    const [availableRoles, setAvailableRoles] = useState([])
+    const [viewMode, setViewMode] = useState(() => {
+        if (preferences.managerFilters?.viewMode !== undefined && preferences.managerFilters?.viewMode !== null) return preferences.managerFilters.viewMode
+        if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
+        const lastUsed = localStorage.getItem('managers_last_view_mode')
+        return lastUsed || 'grid'
+    })
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -44,9 +49,26 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
         }
     }, [preferences.managerFilters, preferences.defaultViewMode]);
 
+    useEffect(() => {
+        if (preferences.managerFilters?.viewMode !== undefined && preferences.managerFilters?.viewMode !== null) {
+            setViewMode(preferences.managerFilters.viewMode)
+        } else if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) {
+            setViewMode(preferences.defaultViewMode)
+        } else {
+            const lastUsed = localStorage.getItem('managers_last_view_mode')
+            if (lastUsed) setViewMode(lastUsed)
+        }
+    }, [preferences.managerFilters?.viewMode, preferences.defaultViewMode])
     function handleViewModeChange(mode) {
-        setViewMode(mode);
-        updateManagerFilter('viewMode', mode);
+        if (viewMode === mode) {
+            setViewMode(null)
+            updateManagerFilter('viewMode', null)
+            localStorage.removeItem('managers_last_view_mode')
+        } else {
+            setViewMode(mode)
+            updateManagerFilter('viewMode', mode)
+            localStorage.setItem('managers_last_view_mode', mode)
+        }
     }
 
     async function fetchAllData() {
@@ -401,6 +423,31 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                                 {filteredManagers.map(manager => (
                                     <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={handleSelectManager} />
                                 ))}
+                            </div>
+                        ) : viewMode === 'list' ? (
+                            <div className="managers-list-table-container">
+                                <table className="managers-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Plant</th>
+                                            <th>Email</th>
+                                            <th>First Name</th>
+                                            <th>Last Name</th>
+                                            <th>Role</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredManagers.map(manager => (
+                                            <tr key={manager.id} onClick={() => handleSelectManager(manager)} style={{cursor: 'pointer'}}>
+                                                <td>{manager.plantCode ? manager.plantCode : "---"}</td>
+                                                <td>{manager.email ? manager.email : "---"}</td>
+                                                <td>{manager.firstName ? manager.firstName : "---"}</td>
+                                                <td>{manager.lastName ? manager.lastName : "---"}</td>
+                                                <td>{manager.roleName ? manager.roleName : "---"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         ) : (
                             <div className="managers-list-table-container">

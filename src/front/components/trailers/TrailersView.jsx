@@ -13,48 +13,67 @@ import TrailerAddView from './TrailerAddView';
 import TrailerDetailView from './TrailerDetailView';
 
 function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, onSelectTrailer }) {
-    const { preferences, resetTrailerFilters, saveLastViewedFilters, updatePreferences } = usePreferences();
-    const [trailers, setTrailers] = useState([]);
-    const [tractors, setTractors] = useState([]);
-    const [plants, setPlants] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchText, setSearchText] = useState(preferences.trailerFilters?.searchText || '');
-    const [selectedPlant, setSelectedPlant] = useState(preferences.trailerFilters?.selectedPlant || '');
-    const [typeFilter, setTypeFilter] = useState(preferences.trailerFilters?.typeFilter || '');
-    const [viewMode, setViewMode] = useState(preferences.trailerFilters?.viewMode || preferences.defaultViewMode || 'grid');
-    const [showAddSheet, setShowAddSheet] = useState(false);
-    const [showOverview, setShowOverview] = useState(false);
-    const [selectedTrailer, setSelectedTrailer] = useState(null);
-    const [reloadTrailers, setReloadTrailers] = useState(false);
-    const filterOptions = ['All Types', 'Cement', 'End Dump', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
+    const { preferences, resetTrailerFilters, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
+    const [trailers, setTrailers] = useState([])
+    const [tractors, setTractors] = useState([])
+    const [plants, setPlants] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [searchText, setSearchText] = useState(preferences.trailerFilters?.searchText || '')
+    const [selectedPlant, setSelectedPlant] = useState(preferences.trailerFilters?.selectedPlant || '')
+    const [typeFilter, setTypeFilter] = useState(preferences.trailerFilters?.typeFilter || '')
+    const [viewMode, setViewMode] = useState(() => {
+        if (preferences.trailerFilters?.viewMode !== undefined && preferences.trailerFilters?.viewMode !== null) return preferences.trailerFilters.viewMode
+        if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
+        const lastUsed = localStorage.getItem('trailers_last_view_mode')
+        return lastUsed || 'grid'
+    })
+    const [showAddSheet, setShowAddSheet] = useState(false)
+    const [showOverview, setShowOverview] = useState(false)
+    const [selectedTrailer, setSelectedTrailer] = useState(null)
+    const [reloadTrailers, setReloadTrailers] = useState(false)
+    const filterOptions = ['All Types', 'Cement', 'End Dump', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
 
     useEffect(() => {
         async function fetchAllData() {
-            setIsLoading(true);
+            setIsLoading(true)
             try {
-                await Promise.all([fetchTrailers(), fetchTractors(), fetchPlants()]);
+                await Promise.all([fetchTrailers(), fetchTractors(), fetchPlants()])
             } finally {
-                setIsLoading(false);
+                setIsLoading(false)
             }
         }
-        fetchAllData();
+        fetchAllData()
         if (preferences?.trailerFilters) {
-            setSearchText(preferences.trailerFilters.searchText || '');
-            setSelectedPlant(preferences.trailerFilters.selectedPlant || '');
-            setTypeFilter(preferences.trailerFilters.typeFilter || '');
-            setViewMode(preferences.trailerFilters.viewMode || preferences.defaultViewMode || 'grid');
+            setSearchText(preferences.trailerFilters.searchText || '')
+            setSelectedPlant(preferences.trailerFilters.selectedPlant || '')
+            setTypeFilter(preferences.trailerFilters.typeFilter || '')
+            setViewMode(preferences.trailerFilters.viewMode || preferences.defaultViewMode || 'grid')
         }
         if (preferences?.autoOverview) {
-            setShowOverview(true);
+            setShowOverview(true)
         }
-    }, [preferences, reloadTrailers]);
+    }, [preferences, reloadTrailers])
 
+    useEffect(() => {
+        if (preferences.trailerFilters?.viewMode !== undefined && preferences.trailerFilters?.viewMode !== null) {
+            setViewMode(preferences.trailerFilters.viewMode)
+        } else if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) {
+            setViewMode(preferences.defaultViewMode)
+        } else {
+            const lastUsed = localStorage.getItem('trailers_last_view_mode')
+            if (lastUsed) setViewMode(lastUsed)
+        }
+    }, [preferences.trailerFilters?.viewMode, preferences.defaultViewMode])
     function handleViewModeChange(mode) {
-        setViewMode(mode)
-        updatePreferences('trailerFilters', {
-            ...preferences.trailerFilters,
-            viewMode: mode
-        })
+        if (viewMode === mode) {
+            setViewMode(null)
+            updateTrailerFilter('viewMode', null)
+            localStorage.removeItem('trailers_last_view_mode')
+        } else {
+            setViewMode(mode)
+            updateTrailerFilter('viewMode', mode)
+            localStorage.setItem('trailers_last_view_mode', mode)
+        }
     }
 
     async function fetchTrailers() {
@@ -467,7 +486,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                             />
                         ))}
                     </div>
-                ) : (
+                ) : viewMode === 'list' ? (
                     <div className="trailers-list-table-container">
                         <table className="trailers-list-table">
                             <thead>
@@ -541,6 +560,15 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                ) : (
+                    <div className="no-results-container">
+                        <div className="no-results-icon">
+                            <i className="fas fa-trailer"></i>
+                        </div>
+                        <h3>No Trailers Found</h3>
+                        <p>{searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types') ? "No trailers match your search criteria." : "There are no trailers in the system yet."}</p>
+                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Trailer</button>
                     </div>
                 )}
             </div>

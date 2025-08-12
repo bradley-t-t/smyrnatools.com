@@ -13,20 +13,25 @@ import TractorAddView from "./TractorAddView";
 import TractorDetailView from "./TractorDetailView";
 
 function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onSelectTractor}) {
-    const {preferences, resetTractorFilters, saveLastViewedFilters, updatePreferences} = usePreferences();
-    const [tractors, setTractors] = useState([]);
-    const [operators, setOperators] = useState([]);
-    const [plants, setPlants] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '');
-    const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '');
-    const [statusFilter, setStatusFilter] = useState(preferences.tractorFilters?.statusFilter || '');
-    const [viewMode, setViewMode] = useState(preferences.tractorFilters?.viewMode || preferences.defaultViewMode || 'grid');
-    const [showAddSheet, setShowAddSheet] = useState(false);
-    const [showOverview, setShowOverview] = useState(false);
+    const {preferences, resetTractorFilters, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
+    const [tractors, setTractors] = useState([])
+    const [operators, setOperators] = useState([])
+    const [plants, setPlants] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '')
+    const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '')
+    const [statusFilter, setStatusFilter] = useState(preferences.tractorFilters?.statusFilter || '')
+    const [viewMode, setViewMode] = useState(() => {
+        if (preferences.tractorFilters?.viewMode !== undefined && preferences.tractorFilters?.viewMode !== null) return preferences.tractorFilters.viewMode
+        if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
+        const lastUsed = localStorage.getItem('tractors_last_view_mode')
+        return lastUsed || 'grid'
+    })
+    const [showAddSheet, setShowAddSheet] = useState(false)
+    const [showOverview, setShowOverview] = useState(false)
     const [selectedTractor, setSelectedTractor] = useState(null)
     const [reloadTractors, setReloadTractors] = useState(false)
-    const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
+    const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
 
     useEffect(() => {
         async function fetchAllData() {
@@ -44,19 +49,34 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             setSearchText(preferences.tractorFilters.searchText || '')
             setSelectedPlant(preferences.tractorFilters.selectedPlant || '')
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
-            setViewMode(preferences.tractorFilters.viewMode || preferences.defaultViewMode || 'grid')
+            setViewMode(preferences.tractorFilters.viewMode !== undefined && preferences.tractorFilters.viewMode !== null ? preferences.tractorFilters.viewMode : preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null ? preferences.defaultViewMode : localStorage.getItem('tractors_last_view_mode') || 'grid')
         }
         if (preferences?.autoOverview) {
             setShowOverview(true)
         }
-    }, [preferences, reloadTractors]);
+    }, [preferences, reloadTractors])
+
+    useEffect(() => {
+        if (preferences.tractorFilters?.viewMode !== undefined && preferences.tractorFilters?.viewMode !== null) {
+            setViewMode(preferences.tractorFilters.viewMode)
+        } else if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) {
+            setViewMode(preferences.defaultViewMode)
+        } else {
+            const lastUsed = localStorage.getItem('tractors_last_view_mode')
+            if (lastUsed) setViewMode(lastUsed)
+        }
+    }, [preferences.tractorFilters?.viewMode, preferences.defaultViewMode])
 
     function handleViewModeChange(mode) {
-        setViewMode(mode)
-        updatePreferences('tractorFilters', {
-            ...preferences.tractorFilters,
-            viewMode: mode
-        })
+        if (viewMode === mode) {
+            setViewMode(null)
+            updateTractorFilter('viewMode', null)
+            localStorage.removeItem('tractors_last_view_mode')
+        } else {
+            setViewMode(mode)
+            updateTractorFilter('viewMode', mode)
+            localStorage.setItem('tractors_last_view_mode', mode)
+        }
     }
 
     async function fetchTractors() {
@@ -517,7 +537,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                         />
                         ))}
                     </div>
-                ) : (
+                ) : viewMode === 'list' ? (
                     <table className="tractors-list-table">
                         <thead>
                             <tr>
@@ -604,6 +624,15 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                             })}
                         </tbody>
                     </table>
+                ) : (
+                    <div className="no-results-container">
+                        <div className="no-results-icon">
+                            <i className="fas fa-truck"></i>
+                        </div>
+                        <h3>No Tractors Found</h3>
+                        <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p>
+                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button>
+                    </div>
                 )}
             </div>
             {showAddSheet && (

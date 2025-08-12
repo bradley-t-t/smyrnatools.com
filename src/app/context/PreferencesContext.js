@@ -18,7 +18,7 @@ const defaultPreferences = {
     showTips: true,
     showOnlineOverlay: true,
     autoOverview: false,
-    defaultViewMode: 'grid',
+    defaultViewMode: null,
     mixerFilters: {
         searchText: '',
         selectedPlant: '',
@@ -27,15 +27,14 @@ const defaultPreferences = {
     },
     operatorFilters: {
         searchText: '',
-        selectedPlants: [],
+        selectedPlant: '',
         statusFilter: '',
         trainerFilter: '',
-        positionFilter: '',
         viewMode: 'grid'
     },
     managerFilters: {
         searchText: '',
-        selectedPlants: [],
+        selectedPlant: '',
         roleFilter: '',
         viewMode: 'grid'
     },
@@ -166,65 +165,13 @@ export const PreferencesProvider = ({children}) => {
             showTips: data.show_tips === undefined ? true : data.show_tips,
             showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
             autoOverview: data.auto_overview === undefined ? false : data.auto_overview,
-            defaultViewMode: typeof data.default_view_mode === 'string' ? data.default_view_mode : 'grid',
-            mixerFilters: data.mixer_filters ? {
-                searchText: data.mixer_filters.searchText || '',
-                selectedPlant: data.mixer_filters.selectedPlant || '',
-                statusFilter: data.mixer_filters.statusFilter || '',
-                viewMode: data.mixer_filters.viewMode || 'grid'
-            } : {
-                searchText: '',
-                selectedPlant: '',
-                statusFilter: '',
-                viewMode: 'grid'
-            },
-            operatorFilters: data.operator_filters ? {
-                ...data.operator_filters,
-                viewMode: data.operator_filters.viewMode || 'grid'
-            } : {
-                searchText: '',
-                selectedPlant: '',
-                statusFilter: '',
-                trainerFilter: '',
-                positionFilter: '',
-                viewMode: 'grid'
-            },
-            managerFilters: data.manager_filters ? {
-                ...data.manager_filters,
-                viewMode: data.manager_filters.viewMode || 'grid'
-            } : {
-                searchText: '',
-                selectedPlant: '',
-                roleFilter: '',
-                viewMode: 'grid'
-            },
-            tractorFilters: data.tractor_filters ? {
-                ...data.tractor_filters,
-                viewMode: data.tractor_filters.viewMode || 'grid'
-            } : {
-                searchText: '',
-                selectedPlant: '',
-                statusFilter: '',
-                viewMode: 'grid'
-            },
-            trailerFilters: data.trailer_filters ? {
-                ...data.trailer_filters,
-                viewMode: data.trailer_filters.viewMode || 'grid'
-            } : {
-                searchText: '',
-                selectedPlant: '',
-                typeFilter: '',
-                viewMode: 'grid'
-            },
-            equipmentFilters: data.equipment_filters ? {
-                ...data.equipment_filters,
-                viewMode: data.equipment_filters.viewMode || 'grid'
-            } : {
-                searchText: '',
-                selectedPlant: '',
-                statusFilter: '',
-                viewMode: 'grid'
-            },
+            defaultViewMode: data.default_view_mode === undefined ? null : data.default_view_mode,
+            mixerFilters: data.mixer_filters ? {...data.mixer_filters, viewMode: data.mixer_filters.viewMode || 'grid'} : {...defaultPreferences.mixerFilters},
+            operatorFilters: data.operator_filters ? {...data.operator_filters, viewMode: data.operator_filters.viewMode || 'grid'} : {...defaultPreferences.operatorFilters},
+            managerFilters: data.manager_filters ? {...data.manager_filters, viewMode: data.manager_filters.viewMode || 'grid'} : {...defaultPreferences.managerFilters},
+            tractorFilters: data.tractor_filters ? {...data.tractor_filters, viewMode: data.tractor_filters.viewMode || 'grid'} : {...defaultPreferences.tractorFilters},
+            trailerFilters: data.trailer_filters ? {...data.trailer_filters, viewMode: data.trailer_filters.viewMode || 'grid'} : {...defaultPreferences.trailerFilters},
+            equipmentFilters: data.equipment_filters ? {...data.equipment_filters, viewMode: data.equipment_filters.viewMode || 'grid'} : {...defaultPreferences.equipmentFilters},
             lastViewedFilters: data.last_viewed_filters
         };
         setPreferences(newPreferences);
@@ -235,43 +182,91 @@ export const PreferencesProvider = ({children}) => {
     };
 
     const updatePreferences = async (keyOrObject, value) => {
-        try {
-            let updatedPreferences;
-            if (typeof keyOrObject === 'string') {
-                updatedPreferences = {...preferences, [keyOrObject]: value};
-            } else {
-                updatedPreferences = {...preferences, ...keyOrObject};
-            }
-
-            setPreferences(updatedPreferences);
-            localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences));
-
-            if (userId) {
-                const updateData = {
-                    navbar_minimized: updatedPreferences.navbarMinimized,
-                    theme_mode: updatedPreferences.themeMode,
-                    accent_color: updatedPreferences.accentColor,
-                    show_tips: updatedPreferences.showTips,
-                    show_online_overlay: updatedPreferences.showOnlineOverlay,
-                    auto_overview: updatedPreferences.autoOverview,
-                    default_view_mode: updatedPreferences.defaultViewMode,
-                    mixer_filters: updatedPreferences.mixerFilters,
-                    operator_filters: updatedPreferences.operatorFilters,
-                    manager_filters: updatedPreferences.managerFilters,
-                    tractor_filters: updatedPreferences.tractorFilters,
-                    trailer_filters: updatedPreferences.trailerFilters,
-                    equipment_filters: updatedPreferences.equipmentFilters,
-                    last_viewed_filters: updatedPreferences.lastViewedFilters,
-                    updated_at: new Date().toISOString(),
-                };
-
-                await supabase
-                    .from('users_preferences')
-                    .update(updateData)
-                    .eq('user_id', userId);
-            }
-        } catch (error) {
+        let updatedPreferences
+        if (typeof keyOrObject === 'string') {
+            updatedPreferences = {...preferences, [keyOrObject]: value}
+        } else {
+            updatedPreferences = {...preferences, ...keyOrObject}
         }
+        setPreferences(updatedPreferences)
+        localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences))
+        if (userId) {
+            const updateData = {
+                navbar_minimized: updatedPreferences.navbarMinimized,
+                theme_mode: updatedPreferences.themeMode,
+                accent_color: updatedPreferences.accentColor,
+                show_tips: updatedPreferences.showTips,
+                show_online_overlay: updatedPreferences.showOnlineOverlay,
+                auto_overview: updatedPreferences.autoOverview,
+                default_view_mode: updatedPreferences.defaultViewMode,
+                mixer_filters: updatedPreferences.mixerFilters,
+                operator_filters: updatedPreferences.operatorFilters,
+                manager_filters: updatedPreferences.managerFilters,
+                tractor_filters: updatedPreferences.tractorFilters,
+                trailer_filters: updatedPreferences.trailerFilters,
+                equipment_filters: updatedPreferences.equipmentFilters,
+                last_viewed_filters: updatedPreferences.lastViewedFilters,
+                updated_at: new Date().toISOString(),
+            };
+            await supabase
+                .from('users_preferences')
+                .update(updateData)
+                .eq('user_id', userId)
+        }
+    };
+
+    const updateManagerFilter = (key, value) => {
+        const newFilters = {...preferences.managerFilters, [key]: value};
+        updatePreferences('managerFilters', newFilters);
+    };
+
+    const resetManagerFilters = () => {
+        updatePreferences('managerFilters', {...defaultPreferences.managerFilters});
+    };
+
+    const updateTractorFilter = (key, value) => {
+        const newFilters = {...preferences.tractorFilters, [key]: value};
+        updatePreferences('tractorFilters', newFilters);
+    };
+
+    const resetTractorFilters = () => {
+        updatePreferences('tractorFilters', {...defaultPreferences.tractorFilters});
+    };
+
+    const updateTrailerFilter = (key, value) => {
+        const newFilters = {...preferences.trailerFilters, [key]: value};
+        updatePreferences('trailerFilters', newFilters);
+    };
+
+    const resetTrailerFilters = () => {
+        updatePreferences('trailerFilters', {...defaultPreferences.trailerFilters});
+    };
+
+    const updateEquipmentFilter = (key, value) => {
+        const newFilters = {...preferences.equipmentFilters, [key]: value};
+        updatePreferences('equipmentFilters', newFilters);
+    };
+
+    const resetEquipmentFilters = () => {
+        updatePreferences('equipmentFilters', {...defaultPreferences.equipmentFilters});
+    };
+
+    const updateMixerFilter = (key, value) => {
+        const newFilters = {...preferences.mixerFilters, [key]: value};
+        updatePreferences('mixerFilters', newFilters);
+    };
+
+    const resetMixerFilters = () => {
+        updatePreferences('mixerFilters', {...defaultPreferences.mixerFilters});
+    };
+
+    const updateOperatorFilter = (key, value) => {
+        const newFilters = {...preferences.operatorFilters, [key]: value};
+        updatePreferences('operatorFilters', newFilters);
+    };
+
+    const resetOperatorFilters = () => {
+        updatePreferences('operatorFilters', {...defaultPreferences.operatorFilters});
     };
 
     const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized);
@@ -279,29 +274,7 @@ export const PreferencesProvider = ({children}) => {
     const toggleShowOnlineOverlay = () => updatePreferences('showOnlineOverlay', !preferences.showOnlineOverlay);
     const toggleAutoOverview = () => updatePreferences('autoOverview', !preferences.autoOverview);
     const setThemeMode = (mode) => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode);
-    const setAccentColor = (color) => (color === 'red' || color === 'blue' || color === 'orange' || color === 'green' || color === 'darkgrey') && updatePreferences('accentColor', color);
-
-    const updateManagerFilter = (key, value) => {
-        setPreferences(prev => ({
-            ...prev,
-            managerFilters: {
-                ...prev.managerFilters,
-                [key]: value
-            }
-        }))
-    }
-
-    const resetManagerFilters = () => {
-        setPreferences(prev => ({
-            ...prev,
-            managerFilters: {
-                searchText: '',
-                selectedPlant: '',
-                roleFilter: '',
-                viewMode: 'grid'
-            }
-        }))
-    }
+    const setAccentColor = (color) => (color === 'red' || color === 'blue') && updatePreferences('accentColor', color);
 
     return (
         <PreferencesContext.Provider
@@ -316,17 +289,28 @@ export const PreferencesProvider = ({children}) => {
                 setAccentColor,
                 updatePreferences,
                 updateManagerFilter,
-                resetManagerFilters
+                resetManagerFilters,
+                updateTractorFilter,
+                resetTractorFilters,
+                updateTrailerFilter,
+                resetTrailerFilters,
+                updateEquipmentFilter,
+                resetEquipmentFilters,
+                updateMixerFilter,
+                resetMixerFilters,
+                updateOperatorFilter,
+                resetOperatorFilters
             }}
         >
             {children}
         </PreferencesContext.Provider>
     );
 };
+
 export const debugForceCreatePreferences = async (userId) => {
     if (!userId) return false;
     try {
-        const {error} = await supabase
+        await supabase
             .from('users_preferences')
             .insert([{
                 user_id: userId,

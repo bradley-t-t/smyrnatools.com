@@ -61,7 +61,11 @@ function SettingsView() {
     };
 
     const handleViewModeChange = (mode) => {
-        updatePreferences('defaultViewMode', mode)
+        if (preferences.defaultViewMode === mode) {
+            updatePreferences('defaultViewMode', null)
+        } else {
+            updatePreferences('defaultViewMode', mode)
+        }
         setShowFeedback(true)
         setTimeout(() => setShowFeedback(false), 2000)
     };
@@ -147,6 +151,14 @@ function SettingsView() {
                                     <span>{opt.label}</span>
                                 </label>
                             ))}
+                            <button
+                                className="view-mode-option"
+                                style={{marginLeft: 12}}
+                                onClick={() => handleViewModeChange(preferences.defaultViewMode)}
+                                disabled={preferences.defaultViewMode === null}
+                            >
+                                Clear Selection
+                            </button>
                         </div>
                     </div>
                 </div>
