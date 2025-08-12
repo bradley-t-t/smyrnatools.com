@@ -7,7 +7,7 @@ function VersionPopup({ version }) {
     if (!version) return null
     return (
         <div className="version-popup-centered">
-            Version: {version}
+            Version: {version} Author: Trenton Taylor
         </div>
     )
 }

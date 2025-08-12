@@ -83,12 +83,11 @@
     padding: 0 8px;
 }
 
-.online-users-minimized-compact .action-button.circle.icon-only {
+.online-users-minimized-compact .action-button.icon-only {
     margin-left: 2px;
     background: none;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -100,11 +99,13 @@
     max-width: 32px;
     max-height: 32px;
     color: white;
+    border: none;
+    border-radius: 0;
 }
 
-.online-users-minimized-compact .action-button.circle.icon-only:hover {
-    background-color: var(--card-bg);
-    color: var(--accent);
+.online-users-minimized-compact .action-button.icon-only:hover {
+    background: none;
+    color: white;
 }
 
 .online-users-minimized-compact .action-button.circle,

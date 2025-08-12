@@ -37,8 +37,8 @@ function OnlineUsersOverlay() {
             {isMinimized ? (
                 <div className="online-users-minimized-compact" onClick={toggleMinimize}>
                     <span className="user-count">{onlineUsers.length}</span>
-                    <button className="action-button circle icon-only" title="Expand">
-                        <i className="fas fa-chevron-up"></i>
+                    <button className="action-button icon-only" title="Expand">
+                        <i className="fas fa-user"></i>
                     </button>
                 </div>
             ) : (
