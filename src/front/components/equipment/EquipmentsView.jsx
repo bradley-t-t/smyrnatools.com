@@ -411,7 +411,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                         key={equipment.id}
                                         equipment={equipment}
                                         plantName={getPlantName(equipment.assignedPlant)}
-                                        onSelect={handleSelectEquipment}
+                                        onSelect={() => handleSelectEquipment(equipment.id)}
                                     />
                                 ))}
                             </div>

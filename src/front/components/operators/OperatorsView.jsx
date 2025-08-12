@@ -516,7 +516,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                         }}
                                         plantName={getPlantName(operator.plantCode)}
                                         trainers={trainers}
-                                        onSelect={handleSelectOperator}
+                                        onSelect={() => handleSelectOperator(operator)}
                                         rating={operator.rating}
                                     />
                                 ))}

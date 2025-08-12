@@ -60,6 +60,8 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
     const [debugMsg, setDebugMsg] = useState('')
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false)
+    const [confirmationChecks, setConfirmationChecks] = useState([false, false])
 
     let weekRange = ''
     if (report.weekIso) {
@@ -95,6 +97,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         e.preventDefault()
         setError('')
         setSuccess(false)
+        if (report.name === 'plant_manager') {
+            setShowConfirmationModal(true)
+            return
+        }
         if (report.name !== 'general_manager') {
             for (const field of report.fields) {
                 if (field.required && (!form[field.name] || (Array.isArray(form[field.name]) && form[field.name].length === 0))) {
@@ -104,6 +110,20 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             }
         }
         setSubmitting(true)
+        try {
+            await onSubmit(form, 'submit')
+            setSuccess(true)
+        } catch (err) {
+            setError(err?.message || 'Error submitting report')
+        }
+        setSubmitting(false)
+    }
+
+    async function handleConfirmedSubmit() {
+        setShowConfirmationModal(false)
+        setSubmitting(true)
+        setError('')
+        setSuccess(false)
         try {
             await onSubmit(form, 'submit')
             setSuccess(true)
@@ -1070,6 +1090,70 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                     onBack()
                                 }}
                             >Discard & Leave</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showConfirmationModal && (
+                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto', background: 'var(--background)', borderRadius: 10, padding: 32}}>
+                        <h2 style={{marginBottom: 18}}>Confirm Submission</h2>
+                        <div style={{marginBottom: 18, fontWeight: 500, color: 'var(--text-primary)'}}>Please confirm the following before submitting:</div>
+                        <div style={{marginBottom: 12}}>
+                            <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
+                                <input
+                                    type="checkbox"
+                                    checked={confirmationChecks[0]}
+                                    onChange={e => setConfirmationChecks([e.target.checked, confirmationChecks[1]])}
+                                />
+                                Total yardage includes all yardage we can bill for and does not include lost yardage.
+                            </label>
+                        </div>
+                        <div style={{marginBottom: 24}}>
+                            <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
+                                <input
+                                    type="checkbox"
+                                    checked={confirmationChecks[1]}
+                                    onChange={e => setConfirmationChecks([confirmationChecks[0], e.target.checked])}
+                                />
+                                Total hours only includes hours from operators and not from plant managers, loader operators or any other roles.
+                            </label>
+                        </div>
+                        <div style={{display: 'flex', gap: 16, justifyContent: 'center'}}>
+                            <button
+                                type="button"
+                                style={{
+                                    background: 'var(--divider)',
+                                    color: 'var(--text-primary)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => setShowConfirmationModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                style={{
+                                    background: confirmationChecks[0] && confirmationChecks[1] ? 'var(--accent)' : 'var(--divider)',
+                                    color: confirmationChecks[0] && confirmationChecks[1] ? 'var(--text-light)' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    padding: '10px 22px',
+                                    fontWeight: 600,
+                                    fontSize: 15,
+                                    cursor: confirmationChecks[0] && confirmationChecks[1] ? 'pointer' : 'not-allowed',
+                                    opacity: confirmationChecks[0] && confirmationChecks[1] ? 1 : 0.6
+                                }}
+                                disabled={!(confirmationChecks[0] && confirmationChecks[1])}
+                                onClick={handleConfirmedSubmit}
+                            >
+                                Confirm & Submit
+                            </button>
                         </div>
                     </div>
                 </div>

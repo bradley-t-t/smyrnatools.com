@@ -421,7 +421,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                         ) : viewMode === 'grid' ? (
                             <div className={`managers-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredManagers.map(manager => (
-                                    <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={handleSelectManager} />
+                                    <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={() => handleSelectManager(manager)} />
                                 ))}
                             </div>
                         ) : viewMode === 'list' ? (

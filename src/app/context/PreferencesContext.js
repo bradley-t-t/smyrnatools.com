@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 import {logSupabaseError, supabase} from '../../services/DatabaseService';
+import {UserPreferencesService} from '../../services/UserPreferencesService';
 
 const PreferencesContext = createContext();
 
@@ -275,6 +276,18 @@ export const PreferencesProvider = ({children}) => {
     const toggleAutoOverview = () => updatePreferences('autoOverview', !preferences.autoOverview);
     const setThemeMode = (mode) => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode);
     const setAccentColor = (color) => (color === 'red' || color === 'blue') && updatePreferences('accentColor', color);
+    const saveLastViewedFilters = async (filters) => {
+        try {
+            if (!userId) return;
+            await UserPreferencesService.saveLastViewedFilters(userId, filters);
+            setPreferences(prev => ({
+                ...prev,
+                lastViewedFilters: filters
+            }));
+        } catch (error) {
+            logSupabaseError('saving last viewed filters', error);
+        }
+    };
 
     return (
         <PreferencesContext.Provider
@@ -299,7 +312,8 @@ export const PreferencesProvider = ({children}) => {
                 updateMixerFilter,
                 resetMixerFilters,
                 updateOperatorFilter,
-                resetOperatorFilters
+                resetOperatorFilters,
+                saveLastViewedFilters
             }}
         >
             {children}

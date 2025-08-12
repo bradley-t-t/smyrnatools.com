@@ -534,7 +534,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                 plantName={getPlantName(tractor.assignedPlant)}
                                 showOperatorWarning={isOperatorAssignedToMultipleTractors(tractor.assignedOperator)}
                                 onSelect={() => handleSelectTractor(tractor.id)}
-                        />
+                            />
                         ))}
                     </div>
                 ) : viewMode === 'list' ? (

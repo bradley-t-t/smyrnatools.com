@@ -11,6 +11,7 @@ import MixerOverview from './MixerOverview';
 import OperatorsView from '../operators/OperatorsView'
 import '../../styles/FilterStyles.css';
 import './styles/MixersView.css';
+import MixerDetailView from './MixerDetailView'
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
@@ -338,268 +339,280 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 
     return (
         <div className="dashboard-container mixers-view">
-            <div className="dashboard-header">
-                <h1>{title}</h1>
-                <div className="dashboard-actions">
-                    {setShowSidebar && (
-                        <button className="action-button" onClick={() => setShowSidebar(!showSidebar)}>
-                            <i className="fas fa-bars"></i> Menu
-                        </button>
-                    )}
-                    <button
-                        className="action-button primary rectangular-button"
-                        style={{marginRight: 8, minWidth: 210}}
-                        onClick={() => exportMixersToCSV(filteredMixers)}
-                    >
-                        <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
-                    </button>
-                    <button
-                        className="action-button primary rectangular-button" 
-                        onClick={() => setShowAddSheet(true)}
-                        style={{ height: '44px', lineHeight: '1' }}
-                    >
-                        <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Mixer
-                    </button>
-                </div>
-            </div>
-            <div className="search-filters">
-                <div className="search-bar">
-                    <input
-                        type="text"
-                        className="ios-search-input"
-                        placeholder="Search by truck, operator, or VIN..."
-                        value={searchText}
-                        onChange={e => {
-                            setSearchText(e.target.value);
-                            updateMixerFilter('searchText', e.target.value);
-                        }}
-                    />
-                    {searchText && (
-                        <button className="clear" onClick={() => {
-                            setSearchText('');
-                            updateMixerFilter('searchText', '');
-                        }}>
-                            <i className="fas fa-times"></i>
-                        </button>
-                    )}
-                </div>
-                <div className="filters">
-                    <div className="view-toggle-icons">
-                        <button
-                            className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                            onClick={() => handleViewModeChange('grid')}
-                            aria-label="Grid view"
-                            type="button"
-                        >
-                            <i className="fas fa-th-large"></i>
-                        </button>
-                        <button
-                            className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                            onClick={() => handleViewModeChange('list')}
-                            aria-label="List view"
-                            type="button"
-                        >
-                            <i className="fas fa-list"></i>
-                        </button>
-                    </div>
-                    <div className="filter-wrapper">
-                        <select
-                            className="ios-select"
-                            value={selectedPlant}
-                            onChange={e => {
-                                setSelectedPlant(e.target.value);
-                                updateMixerFilter('selectedPlant', e.target.value);
-                            }}
-                            aria-label="Filter by plant"
-                        >
-                            <option value="">All Plants</option>
-                            {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
-                                <option key={plant.plantCode} value={plant.plantCode}>
-                                    ({plant.plantCode}) {plant.plantName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="filter-wrapper">
-                        <select
-                            className="ios-select"
-                            value={statusFilter}
-                            onChange={e => {
-                                setStatusFilter(e.target.value);
-                                updateMixerFilter('statusFilter', e.target.value);
-                            }}
-                        >
-                            {filterOptions.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </select>
-                    </div>
-                    {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
-                        <button className="filter-reset-button" onClick={() => {
-                            setSearchText('')
-                            setSelectedPlant('')
-                            setStatusFilter('')
-                            resetMixerFilters()
-                            setViewMode(viewMode)
-                        }}>
-                            <i className="fas fa-undo"></i>
-                        </button>
-                    )}
-                    <button className="ios-button" onClick={() => setShowOverview(true)}>
-                        <i className="fas fa-chart-bar"></i> Overview
-                    </button>
-                </div>
-            </div>
-            <div className="content-container">
-                {isLoading ? (
-                    <div className="loading-container">
-                        <LoadingScreen message="Loading mixers..." inline={true} />
-                    </div>
-                ) : filteredMixers.length === 0 ? (
-                    <div className="no-results-container">
-                        <div className="no-results-icon">
-                            <i className="fas fa-truck-loading"></i>
-                        </div>
-                        <h3>No Mixers Found</h3>
-                        <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
-                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer</button>
-                    </div>
-                ) : viewMode === 'grid' ? (
-                    <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
-                        {filteredMixers.map(mixer => (
-                            <MixerCard
-                                key={mixer.id}
-                                mixer={{...mixer, operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)}}
-                                operatorName={getOperatorName(mixer.assignedOperator)}
-                                plantName={getPlantName(mixer.assignedPlant)}
-                                showOperatorWarning={isOperatorAssignedToMultipleMixers(mixer.assignedOperator)}
-                                onSelect={handleSelectMixer}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="mixers-list-table-container">
-                        <table className="mixers-list-table">
-                            <thead>
-                                <tr>
-                                    <th>Plant</th>
-                                    <th>Truck #</th>
-                                    <th>Status</th>
-                                    <th>Operator</th>
-                                    <th>Cleanliness</th>
-                                    <th>VIN</th>
-                                    <th>Verified</th>
-                                    <th>More</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredMixers.map(mixer => {
-                                    const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
-                                    const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
-                                    return (
-                                        <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
-                                            <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
-                                            <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
-                                            <td>
-                                                <span
-                                                    className="item-status-dot"
-                                                    style={{
-                                                        display: 'inline-block',
-                                                        verticalAlign: 'middle',
-                                                        marginRight: '8px',
-                                                        backgroundColor:
-                                                            mixer.status === 'Active' ? 'var(--status-active)' :
-                                                            mixer.status === 'Spare' ? 'var(--status-spare)' :
-                                                            mixer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                            mixer.status === 'Retired' ? 'var(--status-retired)' :
-                                                            'var(--accent)',
-                                                    }}
-                                                ></span>
-                                                {mixer.status ? mixer.status : "---"}
-                                            </td>
-                                            <td>
-                                                {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
-                                                {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
-                                                    <span className="warning-badge">
-                                                        <i className="fas fa-exclamation-triangle"></i>
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                {(() => {
-                                                    const rating = Math.round(mixer.cleanlinessRating || 0)
-                                                    const stars = rating > 0 ? rating : 1
-                                                    return Array.from({length: stars}).map((_, i) => (
-                                                        <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                    ))
-                                                })()}
-                                            </td>
-                                            <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
-                                            <td>
-                                                {mixer.isVerified() ? (
-                                                    <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                        <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
-                                                        Verified
-                                                    </span>
-                                                ) : (
-                                                    <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                        <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
-                                                        Not Verified
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                    <div style={{display: 'flex', alignItems: 'center'}}>
-                                                        <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                        <span>{commentsCount}</span>
-                                                    </div>
-                                                    <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
-                                                        <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                        <span>{issuesCount}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-            {showAddSheet && (
-                <MixerAddView
-                    plants={plants}
-                    operators={operators}
-                    onClose={() => setShowAddSheet(false)}
-                    onMixerAdded={newMixer => setMixers([...mixers, newMixer])}
+            {selectedMixer ? (
+                <MixerDetailView
+                    mixerId={selectedMixer.id}
+                    onClose={() => setSelectedMixer(null)}
                 />
-            )}
-            {showOverview && <OverviewPopup />}
-            {showOperatorsView && (
-                <div className="modal-backdrop" onClick={() => setShowOperatorsView(false)}>
-                    <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>Operators</h2>
-                            <button className="close-button" onClick={() => setShowOperatorsView(false)}>
-                                <i className="fas fa-times"></i>
+            ) : (
+                <>
+                    <div className="dashboard-header">
+                        <h1>{title}</h1>
+                        <div className="dashboard-actions">
+                            {setShowSidebar && (
+                                <button className="action-button" onClick={() => setShowSidebar(!showSidebar)}>
+                                    <i className="fas fa-bars"></i> Menu
+                                </button>
+                            )}
+                            <button
+                                className="action-button primary rectangular-button"
+                                style={{marginRight: 8, minWidth: 210}}
+                                onClick={() => exportMixersToCSV(filteredMixers)}
+                            >
+                                <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
+                            </button>
+                            <button
+                                className="action-button primary rectangular-button"
+                                onClick={() => setShowAddSheet(true)}
+                                style={{ height: '44px', lineHeight: '1' }}
+                            >
+                                <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Mixer
                             </button>
                         </div>
-                        <div className="modal-body">
-                            <OperatorsView
-                                title="Operator Roster"
-                                showSidebar={false}
-                                setShowSidebar={() => {}}
-                                onSelectOperator={() => {}}
-                                initialStatusFilter={operatorStatusFilter}
+                    </div>
+                    <div className="search-filters">
+                        <div className="search-bar">
+                            <input
+                                type="text"
+                                className="ios-search-input"
+                                placeholder="Search by truck, operator, or VIN..."
+                                value={searchText}
+                                onChange={e => {
+                                    setSearchText(e.target.value);
+                                    updateMixerFilter('searchText', e.target.value);
+                                }}
                             />
+                            {searchText && (
+                                <button className="clear" onClick={() => {
+                                    setSearchText('');
+                                    updateMixerFilter('searchText', '');
+                                }}>
+                                    <i className="fas fa-times"></i>
+                                </button>
+                            )}
                         </div>
-                        <div className="modal-footer">
-                            <button className="primary-button" onClick={() => setShowOperatorsView(false)}>Close</button>
+                        <div className="filters">
+                            <div className="view-toggle-icons">
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('grid')}
+                                    aria-label="Grid view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-th-large"></i>
+                                </button>
+                                <button
+                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                    onClick={() => handleViewModeChange('list')}
+                                    aria-label="List view"
+                                    type="button"
+                                >
+                                    <i className="fas fa-list"></i>
+                                </button>
+                            </div>
+                            <div className="filter-wrapper">
+                                <select
+                                    className="ios-select"
+                                    value={selectedPlant}
+                                    onChange={e => {
+                                        setSelectedPlant(e.target.value);
+                                        updateMixerFilter('selectedPlant', e.target.value);
+                                    }}
+                                    aria-label="Filter by plant"
+                                >
+                                    <option value="">All Plants</option>
+                                    {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
+                                        <option key={plant.plantCode} value={plant.plantCode}>
+                                            ({plant.plantCode}) {plant.plantName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="filter-wrapper">
+                                <select
+                                    className="ios-select"
+                                    value={statusFilter}
+                                    onChange={e => {
+                                        setStatusFilter(e.target.value);
+                                        updateMixerFilter('statusFilter', e.target.value);
+                                    }}
+                                >
+                                    {filterOptions.map(option => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                                <button className="filter-reset-button" onClick={() => {
+                                    setSearchText('')
+                                    setSelectedPlant('')
+                                    setStatusFilter('')
+                                    resetMixerFilters()
+                                    setViewMode(viewMode)
+                                }}>
+                                    <i className="fas fa-undo"></i>
+                                </button>
+                            )}
+                            <button className="ios-button" onClick={() => setShowOverview(true)}>
+                                <i className="fas fa-chart-bar"></i> Overview
+                            </button>
                         </div>
                     </div>
-                </div>
+                    <div className="content-container">
+                        {isLoading ? (
+                            <div className="loading-container">
+                                <LoadingScreen message="Loading mixers..." inline={true} />
+                            </div>
+                        ) : filteredMixers.length === 0 ? (
+                            <div className="no-results-container">
+                                <div className="no-results-icon">
+                                    <i className="fas fa-truck-loading"></i>
+                                </div>
+                                <h3>No Mixers Found</h3>
+                                <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
+                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer</button>
+                            </div>
+                        ) : viewMode === 'grid' ? (
+                            <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
+                                {filteredMixers.map(mixer => (
+                                    <MixerCard
+                                        key={mixer.id}
+                                        mixer={{...mixer, operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)}}
+                                        operatorName={getOperatorName(mixer.assignedOperator)}
+                                        plantName={getPlantName(mixer.assignedPlant)}
+                                        showOperatorWarning={isOperatorAssignedToMultipleMixers(mixer.assignedOperator)}
+                                        onSelect={() => handleSelectMixer(mixer.id)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mixers-list-table-container">
+                                <table className="mixers-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Plant</th>
+                                            <th>Truck #</th>
+                                            <th>Status</th>
+                                            <th>Operator</th>
+                                            <th>Cleanliness</th>
+                                            <th>VIN</th>
+                                            <th>Verified</th>
+                                            <th>More</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredMixers.map(mixer => {
+                                            const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
+                                            const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
+                                            return (
+                                                <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
+                                                    <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
+                                                    <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
+                                                    <td>
+                                                        <span
+                                                            className="item-status-dot"
+                                                            style={{
+                                                                display: 'inline-block',
+                                                                verticalAlign: 'middle',
+                                                                marginRight: '8px',
+                                                                width: '10px',
+                                                                height: '10px',
+                                                                borderRadius: '50%',
+                                                                backgroundColor:
+                                                                    mixer.status === 'Active' ? 'var(--status-active)' :
+                                                                    mixer.status === 'Spare' ? 'var(--status-spare)' :
+                                                                    mixer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                    mixer.status === 'Retired' ? 'var(--status-retired)' :
+                                                                    'var(--accent)'
+                                                            }}
+                                                        ></span>
+                                                        {mixer.status ? mixer.status : "---"}
+                                                    </td>
+                                                    <td>
+                                                        {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
+                                                        {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
+                                                            <span className="warning-badge">
+                                                                <i className="fas fa-exclamation-triangle"></i>
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        {(() => {
+                                                            const rating = Math.round(mixer.cleanlinessRating || 0)
+                                                            const stars = rating > 0 ? rating : 1
+                                                            return Array.from({length: stars}).map((_, i) => (
+                                                                <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                                            ))
+                                                        })()}
+                                                    </td>
+                                                    <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
+                                                    <td>
+                                                        {mixer.isVerified() ? (
+                                                            <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                                                Verified
+                                                            </span>
+                                                        ) : (
+                                                            <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                                                Not Verified
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                                <span>{commentsCount}</span>
+                                                            </div>
+                                                            <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                                <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                                <span>{issuesCount}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                    {showAddSheet && (
+                        <MixerAddView
+                            plants={plants}
+                            operators={operators}
+                            onClose={() => setShowAddSheet(false)}
+                            onMixerAdded={newMixer => setMixers([...mixers, newMixer])}
+                        />
+                    )}
+                    {showOverview && <OverviewPopup />}
+                    {showOperatorsView && (
+                        <div className="modal-backdrop" onClick={() => setShowOperatorsView(false)}>
+                            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2>Operators</h2>
+                                    <button className="close-button" onClick={() => setShowOperatorsView(false)}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div className="modal-body">
+                                    <OperatorsView
+                                        title="Operator Roster"
+                                        showSidebar={false}
+                                        setShowSidebar={() => {}}
+                                        onSelectOperator={() => {}}
+                                        initialStatusFilter={operatorStatusFilter}
+                                    />
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="primary-button" onClick={() => setShowOperatorsView(false)}>Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
