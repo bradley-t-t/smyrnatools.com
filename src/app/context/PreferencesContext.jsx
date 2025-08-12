@@ -1,18 +1,18 @@
-import React, {createContext, useContext, useState, useEffect} from "react";
+import React, {createContext, useContext, useState, useEffect} from "react"
 
-const PreferencesContext = createContext();
+const PreferencesContext = createContext()
 
 export function usePreferences() {
-    const context = useContext(PreferencesContext);
+    const context = useContext(PreferencesContext)
     if (!context) {
-        throw new Error('usePreferences must be used within a PreferencesProvider');
+        throw new Error('usePreferences must be used within a PreferencesProvider')
     }
-    return context;
+    return context
 }
 
 export function PreferencesProvider({children}) {
     const [preferences, setPreferences] = useState(() => {
-        const savedPrefs = localStorage.getItem('userPreferences');
+        const savedPrefs = localStorage.getItem('userPreferences')
         return savedPrefs ? JSON.parse(savedPrefs) : {
             accentColor: 'blue',
             operatorFilters: {
@@ -23,14 +23,15 @@ export function PreferencesProvider({children}) {
             managerFilters: {
                 searchText: '',
                 selectedPlant: '',
-                roleFilter: ''
+                roleFilter: '',
+                viewMode: 'grid'
             },
-        };
-    });
+        }
+    })
 
     useEffect(() => {
-        localStorage.setItem('userPreferences', JSON.stringify(preferences));
-    }, [preferences]);
+        localStorage.setItem('userPreferences', JSON.stringify(preferences))
+    }, [preferences])
 
     const updateOperatorFilter = (key, value) => {
         setPreferences(prev => ({
@@ -39,8 +40,8 @@ export function PreferencesProvider({children}) {
                 ...prev.operatorFilters,
                 [key]: value
             }
-        }));
-    };
+        }))
+    }
 
     const resetOperatorFilters = () => {
         setPreferences(prev => ({
@@ -50,8 +51,8 @@ export function PreferencesProvider({children}) {
                 selectedPlant: '',
                 statusFilter: ''
             }
-        }));
-    };
+        }))
+    }
 
     const updateManagerFilter = (key, value) => {
         setPreferences(prev => ({
@@ -60,8 +61,8 @@ export function PreferencesProvider({children}) {
                 ...prev.managerFilters,
                 [key]: value
             }
-        }));
-    };
+        }))
+    }
 
     const resetManagerFilters = () => {
         setPreferences(prev => ({
@@ -69,17 +70,18 @@ export function PreferencesProvider({children}) {
             managerFilters: {
                 searchText: '',
                 selectedPlant: '',
-                roleFilter: ''
+                roleFilter: '',
+                viewMode: 'grid'
             }
-        }));
-    };
+        }))
+    }
 
     const updateAccentColor = (color) => {
         setPreferences(prev => ({
             ...prev,
             accentColor: color
-        }));
-    };
+        }))
+    }
 
     const value = {
         preferences,
@@ -88,13 +90,13 @@ export function PreferencesProvider({children}) {
         updateManagerFilter,
         resetManagerFilters,
         updateAccentColor
-    };
+    }
 
     return (
         <PreferencesContext.Provider value={value}>
             {children}
         </PreferencesContext.Provider>
-    );
+    )
 }
 
-export default PreferencesProvider;
+export default PreferencesProvider

@@ -23,7 +23,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState(null);
-    const [viewMode, setViewMode] = useState(preferences.equipmentFilters?.viewMode || 'grid');
+    const [viewMode, setViewMode] = useState(preferences.equipmentFilters?.viewMode || preferences.defaultViewMode || 'grid');
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Open Issues'];
 
     useEffect(() => {
@@ -41,7 +41,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
             setSearchText(preferences.equipmentFilters.searchText || '');
             setSelectedPlant(preferences.equipmentFilters.selectedPlant || '');
             setStatusFilter(preferences.equipmentFilters.statusFilter || '');
-            setViewMode(preferences.equipmentFilters.viewMode || 'grid');
+            setViewMode(preferences.equipmentFilters.viewMode || preferences.defaultViewMode || 'grid');
         }
         if (preferences?.autoOverview) {
             setShowOverview(true);

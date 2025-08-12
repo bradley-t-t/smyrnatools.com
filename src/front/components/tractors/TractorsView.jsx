@@ -21,7 +21,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
     const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.tractorFilters?.statusFilter || '');
-    const [viewMode, setViewMode] = useState(preferences.tractorFilters?.viewMode || 'grid');
+    const [viewMode, setViewMode] = useState(preferences.tractorFilters?.viewMode || preferences.defaultViewMode || 'grid');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedTractor, setSelectedTractor] = useState(null)
@@ -44,7 +44,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             setSearchText(preferences.tractorFilters.searchText || '')
             setSelectedPlant(preferences.tractorFilters.selectedPlant || '')
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
-            setViewMode(preferences.tractorFilters.viewMode || 'grid')
+            setViewMode(preferences.tractorFilters.viewMode || preferences.defaultViewMode || 'grid')
         }
         if (preferences?.autoOverview) {
             setShowOverview(true)

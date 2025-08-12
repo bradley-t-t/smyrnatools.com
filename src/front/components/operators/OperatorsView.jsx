@@ -27,7 +27,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [trainers, setTrainers] = useState([]);
     const [scheduledOffMap, setScheduledOffMap] = useState([]);
     const [reloadFlag, setReloadFlag] = useState(false);
-    const [viewMode, setViewMode] = useState(preferences.operatorFilters?.viewMode || 'grid');
+    const [viewMode, setViewMode] = useState(preferences.operatorFilters?.viewMode || preferences.defaultViewMode || 'grid');
     const statuses = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training'];
     const filterOptions = [
         'All Statuses', 'Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training',
@@ -53,9 +53,9 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             setSearchText(preferences.operatorFilters.searchText || '');
             setSelectedPlant(preferences.operatorFilters.selectedPlant || '');
             setStatusFilter(preferences.operatorFilters.statusFilter || '');
-            setViewMode(preferences.operatorFilters.viewMode || 'grid');
+            setViewMode(preferences.operatorFilters.viewMode || preferences.defaultViewMode || 'grid');
         }
-    }, [preferences.operatorFilters]);
+    }, [preferences.operatorFilters, preferences.defaultViewMode]);
 
     useEffect(() => {
         if (initialStatusFilter) {

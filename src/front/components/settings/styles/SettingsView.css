@@ -387,6 +387,41 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
+.view-mode-toggle {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.view-mode-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-light);
+}
+
+.view-mode-option.active {
+    background: var(--accent-primary);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-color: var(--accent-primary);
+}
+
+.view-mode-option input[type="radio"] {
+    accent-color: var(--accent-primary);
+    margin-right: 8px;
+}
+
+.view-mode-option span {
+    font-weight: 500;
+}
+
 @media (max-width: 768px) {
     .settings-container {
         padding: 1rem;

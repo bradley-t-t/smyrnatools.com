@@ -21,7 +21,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
     const [searchText, setSearchText] = useState(preferences.trailerFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.trailerFilters?.selectedPlant || '');
     const [typeFilter, setTypeFilter] = useState(preferences.trailerFilters?.typeFilter || '');
-    const [viewMode, setViewMode] = useState(preferences.trailerFilters?.viewMode || 'grid');
+    const [viewMode, setViewMode] = useState(preferences.trailerFilters?.viewMode || preferences.defaultViewMode || 'grid');
     const [showAddSheet, setShowAddSheet] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
     const [selectedTrailer, setSelectedTrailer] = useState(null);
@@ -42,7 +42,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             setSearchText(preferences.trailerFilters.searchText || '');
             setSelectedPlant(preferences.trailerFilters.selectedPlant || '');
             setTypeFilter(preferences.trailerFilters.typeFilter || '');
-            setViewMode(preferences.trailerFilters.viewMode || 'grid');
+            setViewMode(preferences.trailerFilters.viewMode || preferences.defaultViewMode || 'grid');
         }
         if (preferences?.autoOverview) {
             setShowOverview(true);

@@ -21,7 +21,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
     const [selectedManager, setSelectedManager] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [availableRoles, setAvailableRoles] = useState([]);
-    const [viewMode, setViewMode] = useState(preferences.managerFilters?.viewMode || 'grid');
+    const [viewMode, setViewMode] = useState(preferences.managerFilters?.viewMode || preferences.defaultViewMode || 'grid');
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -40,9 +40,9 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
             setSearchText(preferences.managerFilters.searchText || '');
             setSelectedPlant(preferences.managerFilters.selectedPlant || '');
             setRoleFilter(preferences.managerFilters.roleFilter || '');
-            setViewMode(preferences.managerFilters.viewMode || 'grid');
+            setViewMode(preferences.managerFilters.viewMode || preferences.defaultViewMode || 'grid');
         }
-    }, [preferences.managerFilters]);
+    }, [preferences.managerFilters, preferences.defaultViewMode]);
 
     function handleViewModeChange(mode) {
         setViewMode(mode);

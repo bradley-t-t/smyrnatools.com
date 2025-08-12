@@ -18,6 +18,7 @@ const defaultPreferences = {
     showTips: true,
     showOnlineOverlay: true,
     autoOverview: false,
+    defaultViewMode: 'grid',
     mixerFilters: {
         searchText: '',
         selectedPlant: '',
@@ -144,14 +145,7 @@ export const PreferencesProvider = ({children}) => {
                 .single();
 
             if (error && error.code === 'PGRST116') {
-                await createUserPreferences(uid);
-                const {data: newData, error: newError} = await supabase
-                    .from('users_preferences')
-                    .select('*')
-                    .eq('user_id', uid)
-                    .single();
-                if (newError) throw newError;
-                setPreferencesFromData(newData);
+                setPreferences(defaultPreferences);
             } else if (error) {
                 throw error;
             } else {
@@ -172,6 +166,7 @@ export const PreferencesProvider = ({children}) => {
             showTips: data.show_tips === undefined ? true : data.show_tips,
             showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
             autoOverview: data.auto_overview === undefined ? false : data.auto_overview,
+            defaultViewMode: typeof data.default_view_mode === 'string' ? data.default_view_mode : 'grid',
             mixerFilters: data.mixer_filters ? {
                 searchText: data.mixer_filters.searchText || '',
                 selectedPlant: data.mixer_filters.selectedPlant || '',
@@ -239,410 +234,6 @@ export const PreferencesProvider = ({children}) => {
         }
     };
 
-    const toggleAutoOverview = async () => {
-        setPreferences(prev => {
-            const updated = {...prev, autoOverview: !prev.autoOverview};
-            localStorage.setItem('userPreferences', JSON.stringify(updated));
-            return updated;
-        });
-
-        await updateDatabasePreferences(userId, {
-            ...preferences,
-            autoOverview: !preferences.autoOverview
-        });
-    };
-
-    const updateOperatorFilters = async (filters) => {
-        try {
-            setPreferences(prev => {
-                const newPrefs = {...prev, operatorFilters: filters};
-                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-                return newPrefs;
-            });
-
-            const {data} = await supabase.auth.getUser();
-            if (data?.user?.id) {
-                const {data: existingPrefs} = await supabase
-                    .from('users_preferences')
-                    .select('id')
-                    .eq('user_id', data.user.id);
-
-                if (!existingPrefs || existingPrefs.length === 0) {
-                    await supabase
-                        .from('users_preferences')
-                        .insert([{
-                            user_id: data.user.id,
-                            operator_filters: filters,
-                            theme_mode: preferences.themeMode,
-                            accent_color: preferences.accentColor,
-                            navbar_minimized: preferences.navbarMinimized
-                        }]);
-                } else {
-                    await supabase
-                        .from('users_preferences')
-                        .update({
-                            operator_filters: filters,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('user_id', data.user.id);
-                }
-            }
-        } catch (error) {
-        }
-    };
-
-    const updateMixerFilters = async (filters) => {
-        try {
-            setPreferences(prev => {
-                const newPrefs = {...prev, mixerFilters: filters};
-                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-                return newPrefs;
-            });
-
-            const {data} = await supabase.auth.getUser();
-            if (data?.user?.id) {
-                const {data: existingPrefs} = await supabase
-                    .from('users_preferences')
-                    .select('id')
-                    .eq('user_id', data.user.id);
-
-                if (!existingPrefs || existingPrefs.length === 0) {
-                    await supabase
-                        .from('users_preferences')
-                        .insert([{
-                            user_id: data.user.id,
-                            mixer_filters: filters,
-                            theme_mode: preferences.themeMode,
-                            accent_color: preferences.accentColor,
-                            navbar_minimized: preferences.navbarMinimized
-                        }]);
-                } else {
-                    await supabase
-                        .from('users_preferences')
-                        .update({
-                            mixer_filters: filters,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('user_id', data.user.id);
-                }
-            }
-        } catch (error) {
-        }
-    };
-
-    const saveLastViewedFilters = async () => {
-        try {
-            const lastFilters = {...preferences.mixerFilters};
-
-            setPreferences(prev => {
-                const newPrefs = {...prev, lastViewedFilters: lastFilters};
-                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-                return newPrefs;
-            });
-
-            const {data} = await supabase.auth.getUser();
-            if (data?.user?.id) {
-                const {data: existingPrefs} = await supabase
-                    .from('users_preferences')
-                    .select('id')
-                    .eq('user_id', data.user.id);
-
-                if (!existingPrefs || existingPrefs.length === 0) {
-                    await supabase
-                        .from('users_preferences')
-                        .insert([{
-                            user_id: data.user.id,
-                            last_viewed_filters: lastFilters,
-                            mixer_filters: preferences.mixerFilters,
-                            theme_mode: preferences.themeMode,
-                            accent_color: preferences.accentColor,
-                            navbar_minimized: preferences.navbarMinimized
-                        }]);
-                } else {
-                    await supabase
-                        .from('users_preferences')
-                        .update({
-                            last_viewed_filters: lastFilters,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('user_id', data.user.id);
-                }
-            }
-        } catch (error) {
-        }
-    };
-
-    const toggleShowTips = async () => {
-        setPreferences(prev => {
-            const updated = {...prev, showTips: !prev.showTips};
-            localStorage.setItem('userPreferences', JSON.stringify(updated));
-            return updated;
-        });
-
-        await updateDatabasePreferences(userId, {
-            ...preferences,
-            showTips: !preferences.showTips
-        });
-    };
-
-    const toggleShowOnlineOverlay = async () => {
-        setPreferences(prev => {
-            const updated = {...prev, showOnlineOverlay: !prev.showOnlineOverlay};
-            localStorage.setItem('userPreferences', JSON.stringify(updated));
-            return updated;
-        });
-
-        await updateDatabasePreferences(userId, {
-            ...preferences,
-            showOnlineOverlay: !preferences.showOnlineOverlay
-        });
-    };
-
-    const updateOperatorFilter = async (key, value) => {
-        try {
-            const updatedFilters = {
-                ...preferences.operatorFilters,
-                [key]: value
-            };
-            await updateOperatorFilters(updatedFilters);
-        } catch (error) {
-        }
-    };
-
-    const updateMixerFilter = async (key, value) => {
-        try {
-            const updatedFilters = {
-                ...preferences.mixerFilters,
-                [key]: value
-            };
-            await updateMixerFilters(updatedFilters);
-        } catch (error) {
-        }
-    };
-
-    const updateManagerFilter = async (key, value) => {
-        try {
-            const updatedFilters = {
-                ...preferences.managerFilters,
-                [key]: value
-            };
-            await updateManagerFilters(updatedFilters);
-        } catch (error) {
-        }
-    };
-
-    const updateTractorFilter = async (key, value) => {
-        setPreferences(prev => {
-            const newPrefs = {...prev, tractorFilters: {...prev.tractorFilters, [key]: value}};
-            localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-            return newPrefs;
-        });
-        if (userId) {
-            await updateDatabasePreferences(userId, {...preferences, tractorFilters: {...preferences.tractorFilters, [key]: value}});
-        }
-    };
-
-    const updateTrailerFilter = async (key, value) => {
-        setPreferences(prev => {
-            const newPrefs = {...prev, trailerFilters: {...prev.trailerFilters, [key]: value}};
-            localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-            return newPrefs;
-        });
-        if (userId) {
-            await updateDatabasePreferences(userId, {...preferences, trailerFilters: {...preferences.trailerFilters, [key]: value}});
-        }
-    };
-
-    const updateEquipmentFilter = async (key, value) => {
-        setPreferences(prev => {
-            const newPrefs = {...prev, equipmentFilters: {...prev.equipmentFilters, [key]: value}};
-            localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-            return newPrefs;
-        });
-        if (userId) {
-            await updateDatabasePreferences(userId, {...preferences, equipmentFilters: {...preferences.equipmentFilters, [key]: value}});
-        }
-    };
-
-    const resetOperatorFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            statusFilter: '',
-            trainerFilter: '',
-            positionFilter: ''
-        };
-
-        await updateOperatorFilters(emptyFilters);
-    };
-
-    const resetMixerFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            statusFilter: ''
-        };
-
-        await updateMixerFilters(emptyFilters);
-    };
-
-    const resetManagerFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            roleFilter: ''
-        };
-        await updateManagerFilters(emptyFilters);
-    };
-
-    const resetTractorFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            statusFilter: '',
-            viewMode: 'grid'
-        };
-        await updateTractorFilter('searchText', '');
-        await updateTractorFilter('selectedPlant', '');
-        await updateTractorFilter('statusFilter', '');
-        await updateTractorFilter('viewMode', 'grid');
-    };
-
-    const resetTrailerFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            typeFilter: '',
-            viewMode: 'grid'
-        };
-        await updateTrailerFilter('searchText', '');
-        await updateTrailerFilter('selectedPlant', '');
-        await updateTrailerFilter('typeFilter', '');
-        await updateTrailerFilter('viewMode', 'grid');
-    };
-
-    const resetEquipmentFilters = async () => {
-        const emptyFilters = {
-            searchText: '',
-            selectedPlant: '',
-            statusFilter: '',
-            viewMode: 'grid'
-        };
-        await updateEquipmentFilter('searchText', '');
-        await updateEquipmentFilter('selectedPlant', '');
-        await updateEquipmentFilter('statusFilter', '');
-        await updateEquipmentFilter('viewMode', 'grid');
-    };
-
-    const updateManagerFilters = async (filters) => {
-        try {
-            setPreferences(prev => {
-                const newPrefs = {...prev, managerFilters: filters};
-                localStorage.setItem('userPreferences', JSON.stringify(newPrefs));
-                return newPrefs;
-            });
-
-            const {data} = await supabase.auth.getUser();
-            if (data?.user?.id) {
-                const {data: existingPrefs} = await supabase
-                    .from('users_preferences')
-                    .select('id')
-                    .eq('user_id', data.user.id);
-
-                if (!existingPrefs || existingPrefs.length === 0) {
-                    await supabase
-                        .from('users_preferences')
-                        .insert([{
-                            user_id: data.user.id,
-                            manager_filters: filters,
-                            theme_mode: preferences.themeMode,
-                            accent_color: preferences.accentColor,
-                            navbar_minimized: preferences.navbarMinimized
-                        }]);
-                } else {
-                    await supabase
-                        .from('users_preferences')
-                        .update({
-                            manager_filters: filters,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('user_id', data.user.id);
-                }
-            }
-        } catch (error) {
-        }
-    };
-
-    const createUserPreferences = async (uid) => {
-        try {
-            const {data: existingData, error: checkError} = await supabase
-                .from('users_preferences')
-                .select('id')
-                .eq('user_id', uid);
-
-            if (checkError) throw checkError;
-            if (existingData?.length > 0) return await updateDatabasePreferences(uid, preferences);
-
-            const {error} = await supabase
-                .from('users_preferences')
-                .insert([{
-                    user_id: uid,
-                    navbar_minimized: preferences.navbarMinimized,
-                    theme_mode: preferences.themeMode,
-                    accent_color: preferences.accentColor,
-                    show_tips: preferences.showTips,
-                    show_online_overlay: preferences.showOnlineOverlay,
-                    auto_overview: preferences.autoOverview,
-                    mixer_filters: preferences.mixerFilters || {
-                        searchText: '',
-                        selectedPlant: '',
-                        statusFilter: ''
-                    },
-                    operator_filters: preferences.operatorFilters || {
-                        searchText: '',
-                        selectedPlant: '',
-                        statusFilter: '',
-                        trainerFilter: ''
-                    },
-                    last_viewed_filters: preferences.lastViewedFilters
-                }]);
-
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            logSupabaseError('creating user preferences', error);
-            return false;
-        }
-    };
-
-    const updateDatabasePreferences = async (uid, prefsToUpdate) => {
-        try {
-            const updateData = {
-                navbar_minimized: prefsToUpdate.navbarMinimized,
-                theme_mode: prefsToUpdate.themeMode,
-                accent_color: prefsToUpdate.accentColor,
-                show_tips: prefsToUpdate.showTips,
-                show_online_overlay: prefsToUpdate.showOnlineOverlay,
-                auto_overview: prefsToUpdate.autoOverview,
-                mixer_filters: prefsToUpdate.mixerFilters,
-                operator_filters: prefsToUpdate.operatorFilters,
-                last_viewed_filters: prefsToUpdate.lastViewedFilters,
-                updated_at: new Date().toISOString(),
-            };
-
-            const {error} = await supabase
-                .from('users_preferences')
-                .update(updateData)
-                .eq('user_id', uid);
-
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            logSupabaseError('updating user preferences', error);
-            return false;
-        }
-    };
-
     const updatePreferences = async (keyOrObject, value) => {
         try {
             let updatedPreferences;
@@ -656,18 +247,61 @@ export const PreferencesProvider = ({children}) => {
             localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences));
 
             if (userId) {
-                const success = await updateDatabasePreferences(userId, updatedPreferences);
-                if (!success) {
-                    await createUserPreferences(userId);
-                }
+                const updateData = {
+                    navbar_minimized: updatedPreferences.navbarMinimized,
+                    theme_mode: updatedPreferences.themeMode,
+                    accent_color: updatedPreferences.accentColor,
+                    show_tips: updatedPreferences.showTips,
+                    show_online_overlay: updatedPreferences.showOnlineOverlay,
+                    auto_overview: updatedPreferences.autoOverview,
+                    default_view_mode: updatedPreferences.defaultViewMode,
+                    mixer_filters: updatedPreferences.mixerFilters,
+                    operator_filters: updatedPreferences.operatorFilters,
+                    manager_filters: updatedPreferences.managerFilters,
+                    tractor_filters: updatedPreferences.tractorFilters,
+                    trailer_filters: updatedPreferences.trailerFilters,
+                    equipment_filters: updatedPreferences.equipmentFilters,
+                    last_viewed_filters: updatedPreferences.lastViewedFilters,
+                    updated_at: new Date().toISOString(),
+                };
+
+                await supabase
+                    .from('users_preferences')
+                    .update(updateData)
+                    .eq('user_id', userId);
             }
         } catch (error) {
         }
     };
 
     const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized);
+    const toggleShowTips = () => updatePreferences('showTips', !preferences.showTips);
+    const toggleShowOnlineOverlay = () => updatePreferences('showOnlineOverlay', !preferences.showOnlineOverlay);
+    const toggleAutoOverview = () => updatePreferences('autoOverview', !preferences.autoOverview);
     const setThemeMode = (mode) => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode);
     const setAccentColor = (color) => (color === 'red' || color === 'blue' || color === 'orange' || color === 'green' || color === 'darkgrey') && updatePreferences('accentColor', color);
+
+    const updateManagerFilter = (key, value) => {
+        setPreferences(prev => ({
+            ...prev,
+            managerFilters: {
+                ...prev.managerFilters,
+                [key]: value
+            }
+        }))
+    }
+
+    const resetManagerFilters = () => {
+        setPreferences(prev => ({
+            ...prev,
+            managerFilters: {
+                searchText: '',
+                selectedPlant: '',
+                roleFilter: '',
+                viewMode: 'grid'
+            }
+        }))
+    }
 
     return (
         <PreferencesContext.Provider
@@ -681,29 +315,14 @@ export const PreferencesProvider = ({children}) => {
                 setThemeMode,
                 setAccentColor,
                 updatePreferences,
-                updateMixerFilters,
-                updateMixerFilter,
-                resetMixerFilters,
-                updateManagerFilters,
                 updateManagerFilter,
-                resetManagerFilters,
-                updateOperatorFilters,
-                updateOperatorFilter,
-                resetOperatorFilters,
-                saveLastViewedFilters,
-                updateTractorFilter,
-                resetTractorFilters,
-                updateTrailerFilter,
-                resetTrailerFilters,
-                updateEquipmentFilter,
-                resetEquipmentFilters
+                resetManagerFilters
             }}
         >
             {children}
         </PreferencesContext.Provider>
     );
 };
-
 export const debugForceCreatePreferences = async (userId) => {
     if (!userId) return false;
     try {
@@ -713,7 +332,8 @@ export const debugForceCreatePreferences = async (userId) => {
                 user_id: userId,
                 navbar_minimized: false,
                 theme_mode: 'light',
-                accent_color: 'blue'
+                accent_color: 'blue',
+                default_view_mode: 'grid'
             }]);
     } catch (error) {
         return false;

@@ -17,8 +17,13 @@ const ACCENT_OPTIONS = [
     { key: 'blue', label: 'Blue', className: 'blue' }
 ];
 
+const VIEW_MODE_OPTIONS = [
+    { key: 'grid', label: 'Grid' },
+    { key: 'list', label: 'List' }
+];
+
 function SettingsView() {
-    const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, toggleAutoOverview, setThemeMode, setAccentColor} = usePreferences();
+    const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, toggleAutoOverview, setThemeMode, setAccentColor, updatePreferences} = usePreferences();
     const [showFeedback, setShowFeedback] = useState(false);
     const [userId, setUserId] = useState(null);
     const [version, setVersion] = useState('');
@@ -53,6 +58,12 @@ function SettingsView() {
         changeFunction(...args);
         setShowFeedback(true);
         setTimeout(() => setShowFeedback(false), 2000);
+    };
+
+    const handleViewModeChange = (mode) => {
+        updatePreferences('defaultViewMode', mode)
+        setShowFeedback(true)
+        setTimeout(() => setShowFeedback(false), 2000)
     };
 
     return (
@@ -118,6 +129,23 @@ function SettingsView() {
                                     <div className={`color-preview ${opt.className}`}></div>
                                     <span>{opt.label}</span>
                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="settings-section">
+                        <h3>Default View Mode</h3>
+                        <div className="view-mode-toggle">
+                            {VIEW_MODE_OPTIONS.map(opt => (
+                                <label key={opt.key} className={`view-mode-option${preferences.defaultViewMode === opt.key ? ' active' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="defaultViewMode"
+                                        value={opt.key}
+                                        checked={preferences.defaultViewMode === opt.key}
+                                        onChange={() => handleViewModeChange(opt.key)}
+                                    />
+                                    <span>{opt.label}</span>
+                                </label>
                             ))}
                         </div>
                     </div>

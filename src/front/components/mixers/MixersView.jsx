@@ -26,7 +26,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [selectedMixer, setSelectedMixer] = useState(null);
     const [showOperatorsView, setShowOperatorsView] = useState(false)
     const [operatorStatusFilter, setOperatorStatusFilter] = useState('')
-    const [viewMode, setViewMode] = useState(preferences.mixerFilters?.viewMode || 'grid')
+    const [viewMode, setViewMode] = useState(preferences.mixerFilters?.viewMode || preferences.defaultViewMode || 'grid')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     useEffect(() => {
@@ -44,6 +44,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
             setStatusFilter(preferences.mixerFilters.statusFilter || '');
         }
+        setViewMode(preferences.mixerFilters?.viewMode || preferences.defaultViewMode || 'grid')
         if (preferences?.autoOverview) {
             setShowOverview(true);
         }
