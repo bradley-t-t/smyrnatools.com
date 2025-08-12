@@ -54,11 +54,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
 
     const daysSinceService = getDaysSince(trailer.lastServiceDate);
 
-    const accentColor = preferences.accentColor === 'red'
-        ? 'var(--accent)'
-        : preferences.accentColor === 'darkgrey'
-            ? 'var(--accent)'
-            : 'var(--accent)';
+    const accentColor = 'var(--accent)';
 
     let statusColor = 'var(--accent)';
     if (trailer.status === 'Active') statusColor = 'var(--status-active)';
@@ -79,33 +75,32 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                 right: 0,
                 zIndex: 10
             }} />
-            {commentsCount > 0 && (
-                <div
-                    className="comments-badge"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: openIssuesCount > 0 ? '62px' : '22px',
-                        zIndex: 4
-                    }}
-                    title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}
-                >
-                    <i className="fas fa-comments comment-icon"></i>
-                    <span>{commentsCount}</span>
-                </div>
-            )}
             {openIssuesCount > 0 && (
                 <div
-                    className="issues-badge"
+                    className="trailer-issues-badge"
                     style={{
                         position: 'absolute',
                         top: '12px',
-                        right: '22px',
                         zIndex: 4
                     }}
                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>
                     <span>{openIssuesCount}</span>
+                </div>
+            )}
+            {commentsCount > 0 && (
+                <div
+                    className="trailer-comments-badge"
+                    style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: openIssuesCount > 0 ? '72px' : '20px',
+                        zIndex: 4
+                    }}
+                    title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}
+                >
+                    <i className="fas fa-comments trailer-comment-icon"></i>
+                    <span>{commentsCount}</span>
                 </div>
             )}
             <div className="card-content">

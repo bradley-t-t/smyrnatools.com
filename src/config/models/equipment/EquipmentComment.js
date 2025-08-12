@@ -1,25 +1,26 @@
 export class EquipmentComment {
-    constructor({
-                    id,
-                    equipmentId,
-                    text,
-                    author,
-                    createdAt
-                }) {
-        this.id = id;
-        this.equipmentId = equipmentId;
-        this.text = text;
-        this.author = author;
-        this.createdAt = createdAt ? new Date(createdAt) : null;
+    constructor(data = {}) {
+        this.id = data.id ?? null;
+        this.equipmentId = data.equipment_id ?? '';
+        this.text = data.text ?? '';
+        this.author = data.author ?? '';
+        this.createdAt = typeof data.created_at === 'string' && !isNaN(Date.parse(data.created_at))
+            ? data.created_at
+            : new Date().toISOString();
     }
 
-    static fromRow(data) {
-        return new EquipmentComment({
-            id: data.id,
-            equipmentId: data.equipment_id,
-            text: data.text,
-            author: data.author,
-            createdAt: data.created_at
-        });
+    static fromRow(row) {
+        if (!row) return null;
+        return new EquipmentComment(row);
+    }
+
+    toRow() {
+        return {
+            id: this.id,
+            equipment_id: this.equipmentId,
+            text: this.text,
+            author: this.author,
+            created_at: this.createdAt
+        };
     }
 }

@@ -88,11 +88,10 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
 
     function handleSelectEquipment(equipmentId) {
         const equipment = equipments.find(e => e.id === equipmentId);
-        if (equipment) {
-            saveLastViewedFilters();
-            setSelectedEquipment(equipment);
-            if (onSelectEquipment) onSelectEquipment(equipmentId);
-        }
+        if (!equipment || !equipment.id) return;
+        saveLastViewedFilters();
+        setSelectedEquipment(equipment);
+        if (onSelectEquipment) onSelectEquipment(equipmentId);
     }
 
     function handleStatusClick(status) {
@@ -409,8 +408,8 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                     </thead>
                                     <tbody>
                                         {filteredEquipments.map(equipment => {
-                                            const commentsCount = Array.isArray(equipment.comments) ? equipment.comments.length : 0
                                             const issuesCount = Array.isArray(equipment.issues) ? equipment.issues.filter(issue => !issue.time_completed).length : 0
+                                            const commentsCount = Array.isArray(equipment.comments) ? equipment.comments.length : 0
                                             return (
                                                 <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)} style={{cursor: 'pointer'}}>
                                                     <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
@@ -454,12 +453,12 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                                     <td>
                                                         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                                                             <div style={{display: 'flex', alignItems: 'center'}}>
-                                                                <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                                <span>{commentsCount}</span>
-                                                            </div>
-                                                            <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
                                                                 <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                                 <span>{issuesCount}</span>
+                                                            </div>
+                                                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-comment" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                                <span>{commentsCount}</span>
                                                             </div>
                                                         </div>
                                                     </td>

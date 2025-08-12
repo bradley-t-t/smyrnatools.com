@@ -15,6 +15,11 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!equipmentId) {
+            setError('No equipment ID provided. Cannot load maintenance issues.');
+            setIsLoading(false);
+            return;
+        }
         fetchIssues();
     }, [equipmentId]);
 
@@ -42,7 +47,6 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
         if (!window.confirm('Are you sure you want to delete this maintenance issue?')) {
             return;
         }
-
         try {
             await EquipmentService.deleteIssue(issueId);
             fetchIssues();
@@ -62,17 +66,14 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
 
     const handleAddIssue = async (e) => {
         e.preventDefault();
-
         if (!newIssue.trim()) {
             setError('Please enter an issue description');
             return;
         }
-
         setIsSubmitting(true);
         setError(null);
-
         try {
-            const result = await EquipmentService.addIssue(equipmentId, newIssue, severity);
+            await EquipmentService.addIssue(equipmentId, newIssue, severity);
             setNewIssue('');
             setSeverity('Medium');
             await fetchIssues();
@@ -106,8 +107,7 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
                         details: err.originalError?.details
                     }
                 }));
-            } catch (e) {
-            }
+            } catch (e) {}
             setError(errorMessage);
         } finally {
             setIsSubmitting(false);
@@ -138,7 +138,7 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
     return (
         <div className="issue-modal-backdrop" onClick={handleBackdropClick}>
             <div className="issue-modal">
-                <div className="issue-modal-header" style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
+                <div className="issue-modal-header">
                     <h2>Maintenance Issues for Equipment {equipmentNumber || equipmentId}</h2>
                     <button className="close-button" onClick={onClose}>
                         <i className="fas fa-times"></i>
@@ -175,7 +175,6 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
                                 type="submit"
                                 className="add-issue-button"
                                 disabled={isSubmitting || !newIssue.trim()}
-                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
                             >
                                 {isSubmitting ? 'Adding...' : 'Add Issue'}
                             </button>

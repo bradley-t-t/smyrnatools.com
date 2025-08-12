@@ -7,9 +7,9 @@ import { DatabaseUtility } from '../utils/DatabaseUtility';
 import { v4 as uuidv4 } from 'uuid';
 
 const EQUIPMENTS_TABLE = 'heavy_equipment';
-const HISTORY_TABLE = 'equipment_history';
-const EQUIPMENTS_COMMENTS_TABLE = 'equipment_comments';
-const EQUIPMENT_MAINTENANCE_TABLE = 'equipment_maintenance';
+const HISTORY_TABLE = 'heavy_equipment_history';
+const EQUIPMENTS_COMMENTS_TABLE = 'heavy_equipment_comments';
+const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance';
 
 const formatDate = date => {
     if (!date) return null;
@@ -28,10 +28,7 @@ export class EquipmentService {
             .select('*')
             .order('identifying_number', { ascending: true });
 
-        if (error) {
-            console.error('Error fetching equipments:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data.map(equipment => Equipment.fromApiFormat(equipment));
     }
@@ -49,10 +46,7 @@ export class EquipmentService {
             .eq('id', id)
             .single();
 
-        if (error) {
-            console.error(`Error fetching equipment with ID ${id}:`, error);
-            throw error;
-        }
+        if (error) throw error;
 
         if (!data) return null;
 
@@ -61,7 +55,6 @@ export class EquipmentService {
 
     static async fetchEquipmentById(id) {
         if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-            console.error(`Invalid equipment ID: ${id}`);
             throw new Error('Invalid equipment ID');
         }
 
@@ -78,10 +71,7 @@ export class EquipmentService {
             .eq('status', 'Active')
             .order('identifying_number', { ascending: true });
 
-        if (error) {
-            console.error('Error fetching active equipments:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data.map(equipment => Equipment.fromApiFormat(equipment));
     }
@@ -100,10 +90,7 @@ export class EquipmentService {
         }
 
         const { data, error } = await query;
-        if (error) {
-            console.error(`Error fetching history for equipment ${equipmentId}:`, error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data.map(entry => EquipmentHistory.fromApiFormat(entry));
     }
@@ -132,10 +119,7 @@ export class EquipmentService {
             .select()
             .single();
 
-        if (error) {
-            console.error('Error adding equipment:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         return Equipment.fromApiFormat(data);
     }
@@ -185,17 +169,13 @@ export class EquipmentService {
             .select()
             .single();
 
-        if (error) {
-            console.error(`Error updating equipment with ID ${id}:`, error);
-            throw error;
-        }
+        if (error) throw error;
 
         const historyEntries = this._createHistoryEntries(id, currentEquipment, equipment, userId);
         if (historyEntries.length) {
-            const { error: historyError } = await supabase
+            await supabase
                 .from(HISTORY_TABLE)
                 .insert(historyEntries);
-            if (historyError) console.error('Error saving equipment history:', historyError);
         }
 
         return Equipment.fromApiFormat(data);
@@ -204,22 +184,15 @@ export class EquipmentService {
     static async deleteEquipment(id) {
         if (!id) throw new Error('Equipment ID is required');
 
-        const { error: historyError } = await supabase
+        await supabase
             .from(HISTORY_TABLE)
             .delete()
             .eq('equipment_id', id);
 
-        if (historyError) console.error(`Error deleting history for equipment ${id}:`, historyError);
-
-        const { error } = await supabase
+        await supabase
             .from(EQUIPMENTS_TABLE)
             .delete()
             .eq('id', id);
-
-        if (error) {
-            console.error(`Error deleting equipment with ID ${id}:`, error);
-            throw error;
-        }
 
         return true;
     }
@@ -246,10 +219,7 @@ export class EquipmentService {
             .select()
             .single();
 
-        if (error) {
-            console.error(`Error creating history entry for equipment ${equipmentId}:`, error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data;
     }
@@ -270,10 +240,7 @@ export class EquipmentService {
         if (equipmentId) query = query.eq('equipment_id', equipmentId);
 
         const { data, error } = await query;
-        if (error) {
-            console.error('Error fetching cleanliness history:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data;
     }
@@ -294,10 +261,7 @@ export class EquipmentService {
         if (equipmentId) query = query.eq('equipment_id', equipmentId);
 
         const { data, error } = await query;
-        if (error) {
-            console.error('Error fetching condition history:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data;
     }
@@ -311,10 +275,7 @@ export class EquipmentService {
             .eq('status', status)
             .order('identifying_number', { ascending: true });
 
-        if (error) {
-            console.error(`Error fetching equipments with status ${status}:`, error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data.map(equipment => Equipment.fromApiFormat(equipment));
     }
@@ -328,10 +289,7 @@ export class EquipmentService {
             .ilike('identifying_number', `%${query.trim()}%`)
             .order('identifying_number', { ascending: true });
 
-        if (error) {
-            console.error(`Error searching equipments with query ${query}:`, error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data.map(equipment => Equipment.fromApiFormat(equipment));
     }
@@ -342,10 +300,7 @@ export class EquipmentService {
             .select('*')
             .order('identifying_number', { ascending: true });
 
-        if (error) {
-            console.error('Error fetching equipments needing service:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         const thresholdDate = new Date();
         thresholdDate.setDate(thresholdDate.getDate() - dayThreshold);
@@ -362,10 +317,7 @@ export class EquipmentService {
             .select('*')
             .eq('equipment_id', equipmentId)
             .order('created_at', { ascending: false });
-        if (error) {
-            console.error(`Error fetching comments for equipment ${equipmentId}:`, error);
-            throw error;
-        }
+        if (error) throw error;
         return data?.map(row => EquipmentComment.fromRow(row)) ?? [];
     }
 
@@ -374,6 +326,7 @@ export class EquipmentService {
         if (!text?.trim()) throw new Error('Comment text is required');
         if (!author?.trim()) throw new Error('Author is required');
         const comment = {
+            id: uuidv4(),
             equipment_id: equipmentId,
             text: text.trim(),
             author: author.trim(),
@@ -384,10 +337,7 @@ export class EquipmentService {
             .insert([comment])
             .select()
             .single();
-        if (error) {
-            console.error(`Error adding comment to equipment ${equipmentId}:`, error);
-            throw error;
-        }
+        if (error) throw error;
         return data ? EquipmentComment.fromRow(data) : null;
     }
 
@@ -397,10 +347,7 @@ export class EquipmentService {
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .delete()
             .eq('id', commentId);
-        if (error) {
-            console.error(`Error deleting comment ${commentId}:`, error);
-            throw error;
-        }
+        if (error) throw error;
         return true;
     }
 
@@ -410,10 +357,7 @@ export class EquipmentService {
             .select('equipment_id, changed_at')
             .order('changed_at', { ascending: false });
 
-        if (error) {
-            console.error('Error fetching history dates:', error);
-            return {};
-        }
+        if (error) return {};
 
         const historyDates = {};
         data.forEach(entry => {
@@ -469,6 +413,7 @@ export class EquipmentService {
     }
 
     static async fetchIssues(equipmentId) {
+        if (!equipmentId) throw new Error('Equipment ID is required');
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .select('*')
@@ -496,33 +441,13 @@ export class EquipmentService {
             .insert([payload])
             .select()
             .single();
-        if (error) {
-            const enhancedError = new Error(`Database error (${error.code}): ${error.message}${error.hint ? ' - ' + error.hint : ''}`);
-            enhancedError.originalError = error;
-            enhancedError.details = error.details;
-            try {
-                const schemaInfo = await DatabaseUtility.checkTableSchema(supabase, EQUIPMENT_MAINTENANCE_TABLE);
-                localStorage.setItem('equipment_maintenance_error', JSON.stringify({
-                    timestamp: new Date().toISOString(),
-                    equipmentId,
-                    severity,
-                    error: error.message,
-                    stack: error.stack,
-                    originalError: {
-                        message: error.message,
-                        code: error.code,
-                        details: error.details
-                    },
-                    schemaInfo
-                }));
-            } catch (e) {}
-            throw enhancedError;
-        }
+        if (error) throw error;
         if (!data) throw new Error('Database insert succeeded but no data was returned');
         return data;
     }
 
     static async deleteIssue(issueId) {
+        if (!issueId) throw new Error('Issue ID is required');
         const { error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .delete()
@@ -532,6 +457,7 @@ export class EquipmentService {
     }
 
     static async completeIssue(issueId) {
+        if (!issueId) throw new Error('Issue ID is required');
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .update({ time_completed: new Date().toISOString() })
