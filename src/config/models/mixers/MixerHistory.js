@@ -19,9 +19,7 @@ export class MixerHistory {
             try {
                 if (oldValue?.includes('T')) oldValue = oldValue.split('T')[0];
                 if (newValue?.includes('T')) newValue = newValue.split('T')[0];
-            } catch (error) {
-                console.error('Error formatting date in history:', error);
-            }
+            } catch (error) {}
         }
 
         return new MixerHistory({
@@ -62,9 +60,14 @@ export class MixerHistoryUtils {
 
         if (['last_service_date', 'last_chip_date'].includes(fieldName)) {
             try {
-                const date = new Date(value);
-                if (!isNaN(date.getTime())) return date.toLocaleDateString();
-            } catch (error) {}
+                const parts = value.split('-')
+                if (parts.length === 3) {
+                    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))
+                    if (!isNaN(date.getTime())) return date.toLocaleDateString()
+                }
+                const date = new Date(value)
+                if (!isNaN(date.getTime())) return date.toLocaleDateString()
+            } catch {}
         }
 
         if (fieldName === 'cleanliness_rating') {
@@ -96,8 +99,7 @@ export class MixerHistoryUtils {
 
         try {
             return new Date(date1).toISOString().split('T')[0] === new Date(date2).toISOString().split('T')[0];
-        } catch (error) {
-            console.error('Error comparing dates:', error);
+        } catch {
             return false;
         }
     }

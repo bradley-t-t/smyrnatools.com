@@ -7,6 +7,7 @@ import {MixerComment} from '../config/models/mixers/MixerComment';
 import {MixerImage} from '../config/models/mixers/MixerImage';
 import { DatabaseUtility } from '../utils/DatabaseUtility';
 import { v4 as uuidv4 } from 'uuid';
+import {MixerHistoryUtils} from '../config/models/mixers/MixerHistory';
 
 const MIXERS_TABLE = 'mixers';
 const HISTORY_TABLE = 'mixers_history';
@@ -477,26 +478,27 @@ export class MixerService {
             let newValue = newMixer[field];
 
             if (field === 'lastServiceDate' || field === 'lastChipDate') {
+                if (MixerHistoryUtils.areSameDates(oldValue, newValue)) return entries
                 oldValue = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null;
                 newValue = newValue ? new Date(newValue).toISOString().split('T')[0] : null;
             } else if (field === 'cleanlinessRating' || field === 'year') {
+                if (Number(oldValue) === Number(newValue)) return entries
                 oldValue = oldValue != null ? Number(oldValue) : null;
                 newValue = newValue != null ? Number(newValue) : null;
             } else {
+                if ((oldValue?.toString().trim() ?? null) === (newValue?.toString().trim() ?? null)) return entries
                 oldValue = oldValue?.toString().trim() ?? null;
                 newValue = newValue?.toString().trim() ?? null;
             }
 
-            if (oldValue !== newValue) {
-                entries.push({
-                    mixer_id: mixerId,
-                    field_name: dbField,
-                    old_value: oldValue?.toString() ?? null,
-                    new_value: newValue?.toString() ?? null,
-                    changed_at: new Date().toISOString(),
-                    changed_by: userId
-                });
-            }
+            entries.push({
+                mixer_id: mixerId,
+                field_name: dbField,
+                old_value: oldValue?.toString() ?? null,
+                new_value: newValue?.toString() ?? null,
+                changed_at: new Date().toISOString(),
+                changed_by: userId
+            });
             return entries;
         }, []);
     }
@@ -605,6 +607,45 @@ export class MixerService {
             .update({ time_completed: new Date().toISOString() })
             .eq('id', issueId);
         if (error) throw error;
+        return true;
+    }
+
+    static async addIssue(mixerId, issue, severity) {
+        if (!mixerId) throw new Error('Mixer ID is required');
+        if (!issue?.trim()) throw new Error('Issue description is required');
+        if (!['Low', 'Medium', 'High'].includes(severity)) throw new Error('Severity must be Low, Medium, or High');
+        const {data, error} = await supabase
+            .from(MIXERS_MAINTENANCE_TABLE)
+            .insert({
+                id: uuidv4(),
+                mixer_id: mixerId,
+                issue: issue.trim(),
+                severity,
+                time_created: new Date().toISOString()
+            })
+            .select()
+            .single();
+        if (error) {
+            if (
+                error.message &&
+                error.message.includes('not-null constraint') &&
+                error.message.includes('id')
+            ) {
+                throw new Error('Failed to add issue. Missing required field: ID');
+            }
+            throw error;
+        }
+        return data;
+    }
+
+    static async deleteIssue(issueId) {
+        if (!issueId) throw new Error('Issue ID is required');
+        const { error, count } = await supabase
+            .from(MIXERS_MAINTENANCE_TABLE)
+            .delete({ count: 'exact' })
+            .eq('id', issueId);
+        if (error) throw error;
+        if (count === 0) throw new Error('Issue not found or already deleted');
         return true;
     }
 }

@@ -84,12 +84,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                 errorMessage += 'The severity value is invalid (must be Low, Medium, or High).';
             } else if (err.message.includes('duplicate key')) {
                 errorMessage += 'A similar issue already exists.';
-            } else if (err.message.includes('not-null constraint')) {
-                errorMessage += 'Missing required field: ' +
-                    (err.message.includes('mixer_id') ? 'mixer ID' :
-                        err.message.includes('issue') ? 'issue description' :
-                            err.message.includes('severity') ? 'severity' :
-                                err.message.includes('id') ? 'ID' : 'unknown field');
+            } else if (err.message.includes('Failed to add issue. Missing required field: ID')) {
+                errorMessage += 'Missing required field: ID';
             } else if (err.message.includes('Could not find') && err.message.includes('column')) {
                 errorMessage += 'Database schema mismatch. ' + err.message;
             } else {
@@ -138,7 +134,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
     return (
         <div className="issue-modal-backdrop" onClick={handleBackdropClick}>
             <div className="issue-modal">
-                <div className="issue-modal-header" style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
+                <div className="issue-modal-header" style={{ backgroundColor: 'var(--accent)' }}>
                     <h2>Maintenance Issues for Mixer {mixerNumber || mixerId}</h2>
                     <button className="close-button" onClick={onClose}>
                         <i className="fas fa-times"></i>
@@ -175,7 +171,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                 type="submit"
                                 className="add-issue-button"
                                 disabled={isSubmitting || !newIssue.trim()}
-                                style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}
+                                style={{ backgroundColor: 'var(--accent)' }}
                             >
                                 {isSubmitting ? 'Adding...' : 'Add Issue'}
                             </button>
