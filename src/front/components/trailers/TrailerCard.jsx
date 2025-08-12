@@ -81,7 +81,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                     style={{
                         position: 'absolute',
                         top: '12px',
-                        zIndex: 4
+                        zIndex: 4,
                     }}
                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>

@@ -44,28 +44,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
 
     const cardProps = onSelect ? { onClick: handleCardClick } : {};
 
-    const getDaysSince = (dateStr) => {
-        if (!dateStr) return null;
-        const date = new Date(dateStr);
-        const today = new Date();
-        const diffTime = Math.abs(today - date);
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-
-    const daysSinceService = getDaysSince(equipment.lastServiceDate);
-
-    const getIconMargin = () => {
-        let margin = 0;
-        if (openIssuesCount > 0) margin += 30;
-        if (commentsCount > 0) margin += 30;
-        return margin > 0 ? `${margin}px` : undefined;
-    };
-
-    const accentColor = preferences.accentColor === 'red'
-        ? 'var(--accent)'
-        : preferences.accentColor === 'darkgrey'
-            ? 'var(--accent)'
-            : 'var(--accent)';
+    const accentColor = 'var(--accent)';
 
     let statusColor = 'var(--accent)';
     if (equipment.status === 'Active') statusColor = 'var(--status-active)';
@@ -86,34 +65,33 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                 right: 0,
                 zIndex: 10
             }} />
-            {commentsCount > 0 && (
+            {openIssuesCount > 0 && (
                 <div
-                    className="comments-badge"
+                    className="equipment-issues-badge"
                     style={{
                         position: 'absolute',
                         top: '12px',
-                        right: openIssuesCount > 0 ? '92px' : '42px',
+                        zIndex: 4,
+                        right: '20px'
+                    }}
+                    title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
+                    <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>
+                    <span>{openIssuesCount}</span>
+                </div>
+            )}
+            {commentsCount > 0 && (
+                <div
+                    className="equipment-comments-badge"
+                    style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: openIssuesCount > 0 ? '72px' : '20px',
                         zIndex: 4
                     }}
                     title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}
                 >
-                    <i className="fas fa-comments comment-icon"></i>
+                    <i className="fas fa-comments equipment-comment-icon"></i>
                     <span>{commentsCount}</span>
-                </div>
-            )}
-            {openIssuesCount > 0 && (
-                <div
-                    className="issues-badge"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '42px',
-                        zIndex: 4
-                    }}
-                    title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}
-                >
-                    <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>
-                    <span>{openIssuesCount}</span>
                 </div>
             )}
             <div className="card-content">
