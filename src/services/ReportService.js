@@ -135,6 +135,59 @@ class ReportServiceImpl {
 
     exportReportFieldsToCSV(report, form) {
         if (!report || !Array.isArray(report.fields)) return
+        if (report.name === 'general_manager') {
+            const plantCodes = Object.keys(form)
+                .filter(key => key.startsWith('total_yardage_'))
+                .map(key => key.replace('total_yardage_', ''))
+            if (plantCodes.length === 0) return
+            const headers = [
+                'Plant Code',
+                'Active Operators',
+                'Runnable Trucks',
+                'Down Trucks',
+                'Operators Starting',
+                'New Operators Training',
+                'Operators Leaving',
+                'Total Yardage',
+                'Total Hours',
+                'Yards/Hour',
+                'Comments'
+            ]
+            const rows = plantCodes.map(pc => {
+                const yardage = Number(form[`total_yardage_${pc}`]) || 0
+                const hours = Number(form[`total_hours_${pc}`]) || 0
+                const yph = hours > 0 ? (yardage / hours).toFixed(2) : ''
+                return [
+                    pc,
+                    form[`active_operators_${pc}`] || '',
+                    form[`runnable_trucks_${pc}`] || '',
+                    form[`down_trucks_${pc}`] || '',
+                    form[`operators_starting_${pc}`] || '',
+                    form[`new_operators_training_${pc}`] || '',
+                    form[`operators_leaving_${pc}`] || '',
+                    yardage,
+                    hours,
+                    yph,
+                    form[`comments_${pc}`] || ''
+                ]
+            })
+            const csvRows = [headers, ...rows]
+            const csvContent = csvRows.map(r =>
+                r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+            ).join('\r\n')
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${report.title || report.name}.csv`
+            document.body.appendChild(a)
+            a.click()
+            setTimeout(() => {
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+            }, 0)
+            return
+        }
         const headers = report.fields.map(f => f.label || f.name)
         const values = report.fields.map(f => form[f.name] || '')
         const csvRows = [headers, values]

@@ -47,5 +47,20 @@ export const reportTypes = [
         required: false
       }
     ]
+  },
+  {
+    name: "general_manager",
+    title: "General Manager Report",
+    frequency: "weekly",
+    assignment: ["reports.assigned.general_manager"],
+    manage: ["reports.manage.general_manager"],
+    fields: [
+      {
+        name: "plant_fields",
+        label: "Plant Fields",
+        type: "dynamic_plant_fields",
+        required: true
+      }
+    ]
   }
 ]
