@@ -221,8 +221,12 @@ export const PreferencesProvider = ({children}) => {
         updatePreferences('managerFilters', newFilters);
     };
 
-    const resetManagerFilters = () => {
-        updatePreferences('managerFilters', {...defaultPreferences.managerFilters});
+    const resetManagerFilters = (options = {}) => {
+        let newFilters = {...defaultPreferences.managerFilters}
+        if (options.keepViewMode && options.currentViewMode !== undefined) {
+            newFilters.viewMode = options.currentViewMode
+        }
+        updatePreferences('managerFilters', newFilters);
     };
 
     const updateTractorFilter = (key, value) => {
@@ -248,8 +252,12 @@ export const PreferencesProvider = ({children}) => {
         updatePreferences('equipmentFilters', newFilters);
     };
 
-    const resetEquipmentFilters = () => {
-        updatePreferences('equipmentFilters', {...defaultPreferences.equipmentFilters});
+    const resetEquipmentFilters = (options = {}) => {
+        let newFilters = {...defaultPreferences.equipmentFilters}
+        if (options.keepViewMode && options.currentViewMode !== undefined) {
+            newFilters.viewMode = options.currentViewMode
+        }
+        updatePreferences('equipmentFilters', newFilters);
     };
 
     const updateMixerFilter = (key, value) => {
@@ -257,8 +265,12 @@ export const PreferencesProvider = ({children}) => {
         updatePreferences('mixerFilters', newFilters);
     };
 
-    const resetMixerFilters = () => {
-        updatePreferences('mixerFilters', {...defaultPreferences.mixerFilters});
+    const resetMixerFilters = (options = {}) => {
+        let newFilters = {...defaultPreferences.mixerFilters}
+        if (options.keepViewMode && options.currentViewMode !== undefined) {
+            newFilters.viewMode = options.currentViewMode
+        }
+        updatePreferences('mixerFilters', newFilters);
     };
 
     const updateOperatorFilter = (key, value) => {
@@ -266,8 +278,12 @@ export const PreferencesProvider = ({children}) => {
         updatePreferences('operatorFilters', newFilters);
     };
 
-    const resetOperatorFilters = () => {
-        updatePreferences('operatorFilters', {...defaultPreferences.operatorFilters});
+    const resetOperatorFilters = (options = {}) => {
+        let newFilters = {...defaultPreferences.operatorFilters}
+        if (options.keepViewMode && options.currentViewMode !== undefined) {
+            newFilters.viewMode = options.currentViewMode
+        }
+        updatePreferences('operatorFilters', newFilters);
     };
 
     const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized);

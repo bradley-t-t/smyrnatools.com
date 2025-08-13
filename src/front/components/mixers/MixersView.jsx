@@ -447,8 +447,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     setSearchText('')
                                     setSelectedPlant('')
                                     setStatusFilter('')
-                                    resetMixerFilters()
-                                    setViewMode(viewMode)
+                                    resetMixerFilters({ keepViewMode: true, currentViewMode: viewMode })
                                 }}>
                                     <i className="fas fa-undo"></i>
                                 </button>

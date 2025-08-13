@@ -44,15 +44,19 @@ export function PreferencesProvider({children}) {
         }))
     }
 
-    const resetOperatorFilters = () => {
+    const resetOperatorFilters = (options = {}) => {
+        let newFilters = {
+            searchText: '',
+            selectedPlant: '',
+            statusFilter: '',
+            viewMode: 'grid'
+        }
+        if (options.keepViewMode && options.currentViewMode !== undefined) {
+            newFilters.viewMode = options.currentViewMode
+        }
         setPreferences(prev => ({
             ...prev,
-            operatorFilters: {
-                searchText: '',
-                selectedPlant: '',
-                statusFilter: '',
-                viewMode: 'grid'
-            }
+            operatorFilters: newFilters
         }))
     }
 
@@ -66,15 +70,19 @@ export function PreferencesProvider({children}) {
         }))
     }
 
-    const resetManagerFilters = () => {
+    const resetManagerFilters = (options = {}) => {
+        let newFilters = {
+            searchText: '',
+            selectedPlant: '',
+            roleFilter: '',
+            viewMode: 'grid'
+        }
+        if (options.keepViewMode && options.currentViewMode !== undefined) {
+            newFilters.viewMode = options.currentViewMode
+        }
         setPreferences(prev => ({
             ...prev,
-            managerFilters: {
-                searchText: '',
-                selectedPlant: '',
-                roleFilter: '',
-                viewMode: 'grid'
-            }
+            managerFilters: newFilters
         }))
     }
 

@@ -379,8 +379,7 @@ function EquipmentsView({ title = 'Equipment Fleet', showSidebar, setShowSidebar
                                     setSearchText('')
                                     setSelectedPlant('')
                                     setStatusFilter('')
-                                    resetEquipmentFilters?.()
-                                    setViewMode(viewMode)
+                                    resetEquipmentFilters({ keepViewMode: true, currentViewMode: viewMode })
                                 }}>
                                     <i className="fas fa-undo"></i>
                                 </button>

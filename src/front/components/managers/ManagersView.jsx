@@ -391,11 +391,11 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                             </div>
                             {(searchText || selectedPlant || roleFilter) && (
                                 <button className="filter-reset-button" onClick={() => {
+                                    const currentViewMode = viewMode
                                     setSearchText('')
                                     setSelectedPlant('')
                                     setRoleFilter('')
-                                    resetManagerFilters?.()
-                                    setViewMode(viewMode)
+                                    resetManagerFilters?.({ keepViewMode: true, currentViewMode })
                                 }}>
                                     <i className="fas fa-undo"></i>
                                 </button>

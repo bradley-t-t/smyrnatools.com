@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import './styles/OperatorsView.css';
-import '../../styles/FilterStyles.css';
-import { supabase } from '../../../services/DatabaseService';
-import { UserService } from '../../../services/UserService';
-import LoadingScreen from '../common/LoadingScreen';
-import OperatorDetailView from './OperatorDetailView';
-import OperatorCard from './OperatorCard';
-import OperatorsOverview from './OperatorsOverview';
-import OperatorAddView from './OperatorAddView';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import FormatUtility from '../../../utils/FormatUtility';
+import React, { useEffect, useState } from 'react'
+import './styles/OperatorsView.css'
+import '../../styles/FilterStyles.css'
+import { supabase } from '../../../services/DatabaseService'
+import { UserService } from '../../../services/UserService'
+import LoadingScreen from '../common/LoadingScreen'
+import OperatorDetailView from './OperatorDetailView'
+import OperatorCard from './OperatorCard'
+import OperatorsOverview from './OperatorsOverview'
+import OperatorAddView from './OperatorAddView'
+import { usePreferences } from '../../../app/context/PreferencesContext'
+import FormatUtility from '../../../utils/FormatUtility'
 
 function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator, initialStatusFilter }) {
     const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences()
@@ -345,6 +345,14 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         }
     }
 
+    function handleResetFilters() {
+        const currentViewMode = viewMode
+        setSearchText('')
+        setSelectedPlant('')
+        setStatusFilter('')
+        resetOperatorFilters({ keepViewMode: true, currentViewMode })
+    }
+
     return (
         <div className="dashboard-container operators-view">
             {showDetailView && selectedOperator && (
@@ -432,8 +440,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                     }}
                                     aria-label="Filter by plant"
                                     style={{
-                                        '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                                        '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                        '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
+                                        '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
                                     }}
                                 >
                                     <option value="">All Plants</option>
@@ -458,8 +466,8 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                         updateOperatorFilter('statusFilter', value)
                                     }}
                                     style={{
-                                        '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                                        '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                        '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
+                                        '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
                                     }}
                                 >
                                     {filterOptions.map(option => (
@@ -468,14 +476,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                 </select>
                             </div>
                             {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
-                                <button className="filter-reset-button" onClick={() => {
-                                    setSearchText('')
-                                    setSelectedPlant('')
-                                    setStatusFilter('')
-                                    updateOperatorFilter('searchText', '')
-                                    updateOperatorFilter('selectedPlant', '')
-                                    updateOperatorFilter('statusFilter', '')
-                                }}>
+                                <button className="filter-reset-button" onClick={handleResetFilters}>
                                     <i className="fas fa-undo"></i>
                                 </button>
                             )}

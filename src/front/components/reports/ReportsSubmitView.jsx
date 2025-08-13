@@ -5,12 +5,19 @@ import { ReportService } from '../../../services/ReportService'
 import { PlantManagerSubmitPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
 import { DistrictManagerSubmitPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
 import { PlantProductionSubmitPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
-import { WeeklyGeneralManagerReportPlugin } from './plugins/WeeklyGeneralManagerReportPlugin'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
     district_manager: DistrictManagerSubmitPlugin,
     plant_production: PlantProductionSubmitPlugin
+}
+
+function getTruckNumberForOperator(row, mixers) {
+    if (row && row.truck_number) return row.truck_number
+    if (!row || !row.name) return ''
+    const mixer = mixers.find(m => m.assigned_operator === row.name)
+    if (mixer && mixer.truck_number) return mixer.truck_number
+    return ''
 }
 
 function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly, allReports, managerEditUser, userProfiles }) {
@@ -38,16 +45,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [lostColor, setLostColor] = useState('')
     const [lostLabel, setLostLabel] = useState('')
     const [carouselIndex, setCarouselIndex] = useState(0)
-    const [rowStep, setRowStep] = useState(0)
     const [operatorOptions, setOperatorOptions] = useState([])
     const [mixers, setMixers] = useState([])
     const [plants, setPlants] = useState([])
-    const [plantIndex, setPlantIndex] = useState(0)
-    const [historyWeeks, setHistoryWeeks] = useState([])
-    const [historyWeekIndex, setHistoryWeekIndex] = useState(0)
-    const [historyReports, setHistoryReports] = useState([])
-    const [showHistoryPopup, setShowHistoryPopup] = useState(false)
-    const [historySearch, setHistorySearch] = useState('')
     const [excludedOperators, setExcludedOperators] = useState([])
     const [saveMessage, setSaveMessage] = useState('')
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false)
@@ -75,6 +75,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             setForm({ ...form, rows: updatedRows })
             return
         }
+        if (report.name === 'general_manager' && name.startsWith('plant_field_')) {
+            setForm({ ...form, [name]: e.target.value })
+            return
+        }
         let value = e.target.value
         if (
             ['total_yards_lost', 'yardage_lost', 'lost_yardage', 'Yardage Lost', 'yardage_lost'].includes(name)
@@ -100,6 +104,28 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 if (field.required && (!form[field.name] || (Array.isArray(form[field.name]) && form[field.name].length === 0))) {
                     setError('Please fill out all required fields before submitting.')
                     return
+                }
+            }
+        } else {
+            if (plants.length > 0) {
+                for (const plant of plants) {
+                    const code = plant.plant_code
+                    const requiredFields = [
+                        `active_operators_${code}`,
+                        `runnable_trucks_${code}`,
+                        `down_trucks_${code}`,
+                        `operators_starting_${code}`,
+                        `new_operators_training_${code}`,
+                        `operators_leaving_${code}`,
+                        `total_yardage_${code}`,
+                        `total_hours_${code}`
+                    ]
+                    for (const field of requiredFields) {
+                        if (form[field] === undefined || form[field] === '' || form[field] === null) {
+                            setError('Please fill out all required fields before submitting.')
+                            return
+                        }
+                    }
                 }
             }
         }
@@ -171,16 +197,20 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             loads: '',
             comments: ''
         }
-        setForm(f => ({
-            ...f,
-            rows: [...(f.rows || []), newRow]
-        }))
-        setCarouselIndex((form.rows || []).length)
+        setForm(f => {
+            const rows = [...(f.rows || []), newRow]
+            return { ...f, rows }
+        })
+        setCarouselIndex(form.rows ? form.rows.length : 0)
     }
 
     function handleBackClick() {
-        if (hasUnsavedChanges) setShowUnsavedChangesModal(true)
-        else onBack()
+        if (hasUnsavedChanges) {
+            handleSaveDraft({ preventDefault: () => {} })
+            setTimeout(() => onBack(), 800)
+        } else {
+            onBack()
+        }
     }
 
     useEffect(() => {
@@ -450,42 +480,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         editingUserName = managerEditUser.slice(0, 8)
     }
 
-    useEffect(() => {
-        async function fetchHistoryReports() {
-            if (report.name !== 'general_manager' || !user?.id) {
-                setHistoryReports([])
-                setHistoryWeeks([])
-                return
-            }
-            const { data, error } = await supabase
-                .from('reports')
-                .select('id,week,data,completed')
-                .eq('report_name', 'general_manager')
-                .eq('user_id', user.id)
-                .order('week', { ascending: false })
-            let reports = Array.isArray(data) ? data : []
-            let weeks = reports.map(r => r.week ? new Date(r.week).toISOString().slice(0, 10) : '').filter(Boolean)
-            if (report.weekIso && !weeks.includes(report.weekIso)) {
-                weeks = [report.weekIso, ...weeks]
-                reports = [{ week: report.weekIso, data: form, completed: !!initialData?.completed }, ...reports]
-            }
-            setHistoryReports(reports)
-            setHistoryWeeks(weeks)
-            setHistoryWeekIndex(weeks.findIndex(w => w === report.weekIso) !== -1 ? weeks.findIndex(w => w === report.weekIso) : 0)
-        }
-        fetchHistoryReports()
-    }, [report.name, user, report.weekIso, initialData, form])
-    function getHistoryFormForWeek(weekIso) {
-        const found = historyReports.find(r => r.week && new Date(r.week).toISOString().slice(0, 10) === weekIso)
-        return found && found.data ? found.data : {}
+    function renderGeneralManagerFields() {
+        return null
     }
-    function isCurrentWeek(weekIso) {
-        return false
-    }
-    const filteredHistoryWeeks = historyWeeks.filter(weekIso =>
-        ReportService.getWeekRangeFromIso(weekIso).toLowerCase().includes(historySearch.toLowerCase()) ||
-        (isCurrentWeek(weekIso) && 'current week'.includes(historySearch.toLowerCase()))
-    )
 
     return (
         <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
@@ -562,634 +559,448 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                     )}
                 </div>
                 <form className="report-form-body-wide" onSubmit={handleSubmit}>
-                    {report.name === 'general_manager' ? (
-                        <>
-                            <div style={{ width: '100%', marginBottom: 32 }}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'flex-end',
-                                    marginBottom: 12
-                                }}>
-                                    <div>
-                                        <div style={{
-                                            fontWeight: 800,
-                                            fontSize: 22,
-                                            color: 'var(--accent)',
-                                            letterSpacing: '0.03em',
-                                            marginBottom: 4
-                                        }}>
-                                            {plants[plantIndex]?.plant_name || ''}
-                                        </div>
-                                        <div style={{
-                                            fontWeight: 600,
-                                            fontSize: 16,
-                                            color: 'var(--text-secondary)'
-                                        }}>
-                                            {plants[plantIndex]?.plant_code || ''}
-                                        </div>
+                    <div className="report-form-fields-grid">
+                        {report.name === 'plant_production' ? (
+                            <>
+                                <div style={{ display: 'flex', gap: 24, width: '100%', marginBottom: 18 }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label>
+                                            Plant
+                                            <span className="report-modal-required">*</span>
+                                        </label>
+                                        <select
+                                            value={form.plant || ''}
+                                            onChange={e => {
+                                                const newPlant = e.target.value
+                                                setForm(f => ({ ...f, plant: newPlant, rows: [] }))
+                                                setCarouselIndex(0)
+                                            }}
+                                            required
+                                            disabled={readOnly}
+                                            style={{
+                                                background: 'var(--background)',
+                                                border: '1.5px solid var(--divider)',
+                                                borderRadius: 8,
+                                                fontSize: 16,
+                                                width: '100%',
+                                                height: 44,
+                                                padding: '0 16px',
+                                                color: 'var(--text-primary)',
+                                                boxShadow: '0 1px 4px var(--shadow-xs)',
+                                                transition: 'border 0.2s, box-shadow 0.2s',
+                                                outline: 'none',
+                                                appearance: 'none',
+                                                cursor: readOnly ? 'not-allowed' : 'pointer',
+                                                lineHeight: 1.2
+                                            }}
+                                            className="plant-prod-input plant-prod-select"
+                                        >
+                                            <option value="">Select Plant...</option>
+                                            {plants.map(p => (
+                                                <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                    <div style={{ display: 'flex', gap: 10 }}>
-                                        <button
-                                            type="button"
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                        <label>
+                                            Report Date
+                                            <span className="report-modal-required">*</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={form.report_date || ''}
+                                            onChange={e => setForm(f => ({ ...f, report_date: e.target.value }))}
+                                            required
+                                            disabled={readOnly}
                                             style={{
-                                                background: plantIndex > 0 ? 'var(--accent)' : 'var(--divider)',
-                                                color: plantIndex > 0 ? 'var(--text-light)' : 'var(--text-secondary)',
-                                                border: 'none',
+                                                background: 'var(--background)',
+                                                border: '1.5px solid var(--divider)',
                                                 borderRadius: 8,
-                                                padding: '8px 22px',
-                                                fontWeight: 600,
                                                 fontSize: 16,
-                                                cursor: plantIndex > 0 ? 'pointer' : 'not-allowed',
-                                                opacity: plantIndex > 0 ? 1 : 0.6
+                                                width: 180,
+                                                height: 44,
+                                                padding: '0 16px',
+                                                color: 'var(--text-primary)',
+                                                boxShadow: '0 1px 4px var(--shadow-xs)',
+                                                transition: 'border 0.2s, box-shadow 0.2s',
+                                                outline: 'none',
+                                                cursor: readOnly ? 'not-allowed' : 'pointer',
+                                                lineHeight: 1.2
                                             }}
-                                            disabled={plantIndex === 0}
-                                            onClick={() => setPlantIndex(i => Math.max(0, i - 1))}
-                                        >
-                                            Prev
-                                        </button>
-                                        <button
-                                            type="button"
-                                            style={{
-                                                background: plantIndex < plants.length - 1 ? 'var(--accent)' : 'var(--divider)',
-                                                color: plantIndex < plants.length - 1 ? 'var(--text-light)' : 'var(--text-secondary)',
-                                                border: 'none',
-                                                borderRadius: 8,
-                                                padding: '8px 22px',
-                                                fontWeight: 600,
-                                                fontSize: 16,
-                                                cursor: plantIndex < plants.length - 1 ? 'pointer' : 'not-allowed',
-                                                opacity: plantIndex < plants.length - 1 ? 1 : 0.6
-                                            }}
-                                            disabled={plantIndex === plants.length - 1}
-                                            onClick={() => setPlantIndex(i => Math.min(plants.length - 1, i + 1))}
-                                        >
-                                            Next
-                                        </button>
+                                            className="plant-prod-input plant-prod-date"
+                                        />
                                     </div>
                                 </div>
-                                <div style={{
-                                    width: '100%',
-                                    height: 1,
-                                    background: 'var(--divider)',
-                                    margin: '8px 0 24px 0'
-                                }} />
-                                <div style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <div style={{
-                                        width: '100%',
-                                        maxWidth: 500,
-                                        background: 'var(--background-elevated)',
-                                        borderRadius: 18,
-                                        boxShadow: '0 2px 12px var(--shadow-sm)',
-                                        padding: '32px 24px',
-                                        marginBottom: 24,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 18
-                                    }}>
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '1fr 1fr',
-                                            gap: 18
-                                        }}>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Active Operators
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`active_operators_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`active_operators_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
+                                <style>
+                                    {`
+                                    .plant-prod-select:focus, .plant-prod-date:focus {
+                                        border: 1.5px solid var(--accent);
+                                        box-shadow: 0 2px 8px var(--shadow-sm);
+                                    }
+                                    .plant-prod-select:hover, .plant-prod-date:hover {
+                                        border: 1.5px solid var(--accent);
+                                    }
+                                    .plant-prod-input::placeholder {
+                                        color: var(--text-primary);
+                                        opacity: 1;
+                                    }
+                                    `}
+                                </style>
+                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
+                                    <label>Operators</label>
+                                    <div>
+                                        {form.plant && (form.rows || []).length === 0 && (
+                                            <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
+                                                No active operators for this plant.
                                             </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Runnable Trucks<span className="report-modal-required">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`runnable_trucks_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`runnable_trucks_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    required
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
+                                        )}
+                                        {!form.plant && (
+                                            <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
+                                                Please wait, loading plant assignment...
                                             </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Down Trucks
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`down_trucks_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`down_trucks_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Operators Starting<span className="report-modal-required">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`operators_starting_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`operators_starting_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    required
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    New Operators Training
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`new_operators_training_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`new_operators_training_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Operators Leaving<span className="report-modal-required">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`operators_leaving_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`operators_leaving_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    required
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Total Yardage<span className="report-modal-required">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`total_yardage_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`total_yardage_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    required
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Total Hours<span className="report-modal-required">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={plants[plantIndex]?.plant_code ? form[`total_hours_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`total_hours_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    required
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 17,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 600
-                                                    }}
-                                                />
-                                            </div>
-                                            <div style={{ gridColumn: '1 / span 2' }}>
-                                                <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, display: 'block' }}>
-                                                    Comments
-                                                </label>
-                                                <textarea
-                                                    value={plants[plantIndex]?.plant_code ? form[`comments_${plants[plantIndex].plant_code}`] || '' : ''}
-                                                    onChange={e => {
-                                                        if (plants[plantIndex]?.plant_code) {
-                                                            setForm(f => ({ ...f, [`comments_${plants[plantIndex].plant_code}`]: e.target.value }))
-                                                        }
-                                                    }}
-                                                    disabled={readOnly}
-                                                    style={{
-                                                        width: '100%',
-                                                        fontSize: 16,
-                                                        padding: '10px 14px',
-                                                        borderRadius: 8,
-                                                        border: '1.5px solid var(--divider)',
-                                                        background: 'var(--background)',
-                                                        color: 'var(--text-primary)',
-                                                        fontWeight: 500,
-                                                        minHeight: 48
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div style={{
-                                            marginTop: 32,
-                                            width: '100%',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center'
-                                        }}>
-                                            <WeeklyGeneralManagerReportPlugin
-                                                plantCode={plants[plantIndex]?.plant_code || ''}
-                                                yardage={plants[plantIndex]?.plant_code ? form[`total_yardage_${plants[plantIndex].plant_code}`] : ''}
-                                                hours={plants[plantIndex]?.plant_code ? form[`total_hours_${plants[plantIndex].plant_code}`] : ''}
-                                                averages={
-                                                    (() => {
-                                                        if (!plants.length) return null
-                                                        let totalRunnable = 0
-                                                        let totalStarting = 0
-                                                        let totalLeaving = 0
-                                                        let totalYardage = 0
-                                                        let totalHours = 0
-                                                        let count = 0
-                                                        plants.forEach(p => {
-                                                            const pc = p.plant_code
-                                                            const r = Number(form[`runnable_trucks_${pc}`]) || 0
-                                                            const s = Number(form[`operators_starting_${pc}`]) || 0
-                                                            const l = Number(form[`operators_leaving_${pc}`]) || 0
-                                                            const y = Number(form[`total_yardage_${pc}`]) || 0
-                                                            const h = Number(form[`total_hours_${pc}`]) || 0
-                                                            totalRunnable += r
-                                                            totalStarting += s
-                                                            totalLeaving += l
-                                                            totalYardage += y
-                                                            totalHours += h
-                                                            count += 1
-                                                        })
-                                                        const avgYph = totalHours > 0 ? totalYardage / totalHours : null
-                                                        return {
-                                                            runnableTrucks: count ? (totalRunnable / count).toFixed(2) : '-',
-                                                            operatorsStarting: count ? (totalStarting / count).toFixed(2) : '-',
-                                                            operatorsLeaving: count ? (totalLeaving / count).toFixed(2) : '-',
-                                                            yardage: count ? (totalYardage / count).toFixed(2) : '-',
-                                                            hours: count ? (totalHours / count).toFixed(2) : '-',
-                                                            yph: avgYph
-                                                        }
-                                                    })()
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                    <div style={{ width: '100%', maxWidth: 700, margin: '24px auto 0 auto' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                            <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--accent)' }}>
-                                                Previous Weeks Statistics
-                                            </div>
-                                            <div>
-                                                <button
-                                                    type="button"
-                                                    style={{
-                                                        background: 'var(--background)',
-                                                        border: '1.5px solid var(--divider)',
-                                                        borderRadius: 8,
-                                                        fontSize: 15,
-                                                        padding: '6px 14px',
-                                                        color: 'var(--text-primary)',
-                                                        minWidth: 180,
-                                                        boxShadow: '0 1px 4px var(--shadow-xs)',
-                                                        outline: 'none',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                    onClick={() => setShowHistoryPopup(true)}
-                                                >
-                                                    {historyWeeks.length > 0 && historyWeeks[historyWeekIndex]
-                                                        ? isCurrentWeek(historyWeeks[historyWeekIndex])
-                                                            ? 'Current Week'
-                                                            : ReportService.getWeekRangeFromIso(historyWeeks[historyWeekIndex])
-                                                        : 'Select Week'}
-                                                </button>
-                                                {showHistoryPopup && (
-                                                    <div style={{
-                                                        position: 'fixed',
-                                                        top: 0,
-                                                        left: 0,
-                                                        width: '100vw',
-                                                        height: '100vh',
-                                                        background: 'rgba(0,0,0,0.3)',
-                                                        zIndex: 9999,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}>
-                                                        <div style={{
-                                                            background: 'var(--background)',
-                                                            borderRadius: 12,
-                                                            boxShadow: '0 2px 16px var(--shadow-lg)',
-                                                            width: '90%',
-                                                            maxWidth: 420,
-                                                            maxHeight: '80vh',
-                                                            overflow: 'hidden',
-                                                            display: 'flex',
-                                                            flexDirection: 'column'
-                                                        }}>
-                                                            <div style={{
-                                                                padding: '18px 18px 8px 18px',
-                                                                borderBottom: '1px solid var(--divider)',
+                                        )}
+                                        {(form.rows || []).length > 0 && (
+                                            <div style={{ marginBottom: 18 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16, width: '100%' }}>
+                                                    {form.rows.map((row, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            onClick={() => { setCarouselIndex(idx) }}
+                                                            style={{
+                                                                minWidth: 32,
+                                                                height: 32,
+                                                                borderRadius: 16,
+                                                                background: idx === carouselIndex ? 'var(--accent)' : 'var(--divider)',
+                                                                color: idx === carouselIndex ? 'var(--text-light)' : 'var(--text-secondary)',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: 12
-                                                            }}>
+                                                                justifyContent: 'center',
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                cursor: 'pointer',
+                                                                border: idx === carouselIndex ? '2px solid var(--accent)' : '1px solid var(--divider)',
+                                                                transition: 'background 0.2s'
+                                                            }}
+                                                        >
+                                                            {idx + 1}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        border: '1px solid var(--divider)',
+                                                        borderRadius: 10,
+                                                        background: 'var(--background-elevated)',
+                                                        boxShadow: '0 1px 4px var(--shadow-sm)',
+                                                        padding: 0,
+                                                        color: 'var(--text-primary)',
+                                                        width: '100%'
+                                                    }}
+                                                >
+                                                    {form.rows[carouselIndex] && (
+                                                        <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Name</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={operatorOptions.find(opt => opt.value === form.rows[carouselIndex]?.name)?.label || ''}
+                                                                        disabled
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ width: 120 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Truck #</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
+                                                                        disabled
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Start Time</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="Start Time"
+                                                                        value={form.rows[carouselIndex]?.start_time || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>1st Load</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="1st Load"
+                                                                        value={form.rows[carouselIndex]?.first_load || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>EOD In Yard</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="EOD"
+                                                                        value={form.rows[carouselIndex]?.eod_in_yard || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Punch Out</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        placeholder="Punch Out"
+                                                                        value={form.rows[carouselIndex]?.punch_out || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
+                                                                        disabled={readOnly ? true : false}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 18 }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Total Loads</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        placeholder="Total Loads"
+                                                                        value={form.rows[carouselIndex]?.loads || ''}
+                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'loads')}
+                                                                        disabled={readOnly}
+                                                                        style={{
+                                                                            background: 'var(--background)',
+                                                                            border: '1px solid var(--divider)',
+                                                                            borderRadius: 6,
+                                                                            fontSize: 15,
+                                                                            width: '100%',
+                                                                            padding: '7px 10px',
+                                                                            color: 'var(--text-primary)'
+                                                                        }}
+                                                                        className="plant-prod-input"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label style={{ fontWeight: 600, fontSize: 15 }}>Comments</label>
                                                                 <input
                                                                     type="text"
-                                                                    value={historySearch}
-                                                                    onChange={e => setHistorySearch(e.target.value)}
-                                                                    placeholder="Search week range..."
-                                                                    className="history-search-input"
+                                                                    placeholder="Comments"
+                                                                    value={form.rows[carouselIndex]?.comments || ''}
+                                                                    onChange={e => handleChange(e, 'rows', carouselIndex, 'comments')}
+                                                                    disabled={readOnly}
                                                                     style={{
-                                                                        width: '100%',
-                                                                        fontSize: 15,
-                                                                        padding: '8px 12px',
-                                                                        borderRadius: 8,
-                                                                        border: '1.5px solid var(--divider)',
                                                                         background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
                                                                         color: 'var(--text-primary)'
                                                                     }}
+                                                                    className="plant-prod-input"
                                                                 />
-                                                                <button
-                                                                    type="button"
-                                                                    style={{
-                                                                        background: 'var(--divider)',
-                                                                        color: 'var(--text-primary)',
-                                                                        border: 'none',
-                                                                        borderRadius: 8,
-                                                                        padding: '8px 14px',
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15,
-                                                                        cursor: 'pointer'
-                                                                    }}
-                                                                    onClick={() => setShowHistoryPopup(false)}
-                                                                >
-                                                                    Close
-                                                                </button>
-                                                            </div>
-                                                            <div style={{
-                                                                overflowY: 'auto',
-                                                                flex: 1,
-                                                                padding: '8px 0'
-                                                            }}>
-                                                                {filteredHistoryWeeks.length === 0 ? (
-                                                                    <div style={{
-                                                                        padding: '24px',
-                                                                        textAlign: 'center',
-                                                                        color: 'var(--text-secondary)'
-                                                                    }}>
-                                                                        No reports found
-                                                                    </div>
-                                                                ) : (
-                                                                    filteredHistoryWeeks.map((weekIso, idx) => (
-                                                                        <button
-                                                                            key={weekIso}
-                                                                            type="button"
-                                                                            style={{
-                                                                                width: '100%',
-                                                                                textAlign: 'left',
-                                                                                padding: '12px 18px',
-                                                                                background: historyWeeks[historyWeekIndex] === weekIso ? 'var(--accent)' : 'var(--background)',
-                                                                                color: historyWeeks[historyWeekIndex] === weekIso ? 'var(--text-light)' : 'var(--text-primary)',
-                                                                                border: 'none',
-                                                                                borderBottom: '1px solid var(--divider)',
-                                                                                fontWeight: 600,
-                                                                                fontSize: 15,
-                                                                                cursor: 'pointer'
-                                                                            }}
-                                                                            onClick={() => {
-                                                                                setHistoryWeekIndex(historyWeeks.indexOf(weekIso))
-                                                                                setShowHistoryPopup(false)
-                                                                            }}
-                                                                        >
-                                                                            <span style={{
-                                                                                color: historyWeeks[historyWeekIndex] === weekIso ? 'var(--text-light)' : 'var(--text-primary)'
-                                                                            }}>
-                                                                                {isCurrentWeek(weekIso) ? 'Current Week' : ReportService.getWeekRangeFromIso(weekIso)}
-                                                                            </span>
-                                                                        </button>
-                                                                    ))
-                                                                )}
                                                             </div>
                                                         </div>
+                                                    )}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px 18px 24px' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleExcludeOperator(carouselIndex)}
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                background: 'var(--divider)',
+                                                                color: 'var(--text-primary)',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                padding: '6px 18px',
+                                                                cursor: 'pointer',
+                                                                marginRight: 12
+                                                            }}
+                                                        >
+                                                            Exclude Operator
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
+                                                            disabled={carouselIndex === 0}
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                background: 'var(--accent)',
+                                                                color: 'var(--text-light)',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                padding: '6px 18px',
+                                                                cursor: carouselIndex === 0 ? 'not-allowed' : 'pointer',
+                                                                opacity: carouselIndex === 0 ? 0.5 : 1
+                                                            }}
+                                                        >
+                                                            &#8592; Prev Operator
+                                                        </button>
+                                                        <span style={{ fontWeight: 600, fontSize: 15 }}>
+                                                            Operator {carouselIndex + 1} of {form.rows.length}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCarouselIndex(i => Math.min(i + 1, form.rows.length - 1))}
+                                                            disabled={carouselIndex === form.rows.length - 1}
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 15,
+                                                                background: 'var(--accent)',
+                                                                color: 'var(--text-light)',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                padding: '6px 18px',
+                                                                cursor: carouselIndex === form.rows.length - 1 ? 'not-allowed' : 'pointer',
+                                                                opacity: carouselIndex === form.rows.length - 1 ? 0.5 : 1
+                                                            }}
+                                                        >
+                                                            Next Operator &#8594;
+                                                        </button>
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <table style={{ width: 'calc(100% + 125px)', borderCollapse: 'collapse', background: 'var(--background-elevated)', borderRadius: 12, boxShadow: '0 1px 6px var(--shadow-xs)' }}>
-                                            <thead>
-                                                <tr style={{ background: 'var(--background)', color: 'var(--text-secondary)', fontWeight: 700, fontSize: 12 }}>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'left' }}>Plant</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Runnable Trucks</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Operators Starting</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Operators Leaving</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Yardage</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Hours</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Yards/Hour</th>
-                                                    <th style={{ padding: '12px 8px', borderBottom: '1px solid var(--divider)', textAlign: 'right' }}>Variance</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {plants.map(plant => {
-                                                    const isCurrent = isCurrentWeek(historyWeeks[historyWeekIndex])
-                                                    let runnableTrucks, operatorsStarting, operatorsLeaving, yardage, hours, yph
-                                                    if (isCurrent) {
-                                                        runnableTrucks = form[`runnable_trucks_${plant.plant_code}`] || '-'
-                                                        operatorsStarting = form[`operators_starting_${plant.plant_code}`] || '-'
-                                                        operatorsLeaving = form[`operators_leaving_${plant.plant_code}`] || '-'
-                                                        yardage = Number(form[`total_yardage_${plant.plant_code}`]) || 0
-                                                        hours = Number(form[`total_hours_${plant.plant_code}`]) || 0
-                                                        yph = hours > 0 ? (yardage / hours).toFixed(2) : '-'
-                                                    } else {
-                                                        const historyForm = getHistoryFormForWeek(historyWeeks[historyWeekIndex])
-                                                        runnableTrucks = historyForm?.[`runnable_trucks_${plant.plant_code}`] || '-'
-                                                        operatorsStarting = historyForm?.[`operators_starting_${plant.plant_code}`] || '-'
-                                                        operatorsLeaving = historyForm?.[`operators_leaving_${plant.plant_code}`] || '-'
-                                                        yardage = Number(historyForm?.[`total_yardage_${plant.plant_code}`]) || 0
-                                                        hours = Number(historyForm?.[`total_hours_${plant.plant_code}`]) || 0
-                                                        yph = hours > 0 ? (yardage / hours).toFixed(2) : '-'
-                                                    }
-                                                    let prevForm = null
-                                                    if (historyWeekIndex + 1 < historyWeeks.length) {
-                                                        prevForm = getHistoryFormForWeek(historyWeeks[historyWeekIndex + 1])
-                                                    }
-                                                    const prevYardage = prevForm ? Number(prevForm[`total_yardage_${plant.plant_code}`]) || 0 : null
-                                                    function getVarianceColor(curr, prev) {
-                                                        if (!prev || prev === 0) return 'var(--text-secondary)'
-                                                        const percent = ((curr - prev) / prev) * 100
-                                                        if (percent >= 5) return 'var(--success)'
-                                                        if (percent <= -5) return 'var(--error)'
-                                                        return 'var(--warning)'
-                                                    }
-                                                    function showYardageVariance(curr, prev) {
-                                                        if (!prev || prev === 0) return '-'
-                                                        const percent = ((curr - prev) / prev) * 100
-                                                        if (isNaN(percent)) return '-'
-                                                        if (percent === 0) return '0%'
-                                                        return (percent > 0 ? '+' : '') + percent.toFixed(1) + '%'
-                                                    }
-                                                    const varianceValue = showYardageVariance(yardage, prevYardage)
-                                                    const varianceColor = getVarianceColor(yardage, prevYardage)
-                                                    return (
-                                                        <tr key={plant.plant_code} style={{ borderBottom: '1px solid var(--divider)' }}>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'left', color: 'var(--text-primary)', fontWeight: 600 }}>{plant.plant_name}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-primary)' }}>{runnableTrucks}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-primary)' }}>{operatorsStarting}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-primary)' }}>{operatorsLeaving}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-primary)' }}>{yardage || '-'}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-primary)' }}>{hours || '-'}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-primary)' }}>{yph}</td>
-                                                            <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: varianceColor }}>
-                                                                {varianceValue}
-                                                            </td>
-                                                        </tr>
-                                                    )
-                                                })}
-                                            </tbody>
-                                        </table>
+                                        )}
+                                        {excludedOperators.length > 0 && (
+                                            <div style={{ marginTop: 18, marginBottom: 18 }}>
+                                                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>
+                                                    Excluded Operators
+                                                </div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                    {excludedOperators.map(opId => {
+                                                        const op = operatorOptions.find(opt => opt.value === opId)
+                                                        return (
+                                                            <button
+                                                                key={opId}
+                                                                type="button"
+                                                                onClick={() => handleReincludeOperator(opId)}
+                                                                style={{
+                                                                    background: 'var(--divider)',
+                                                                    color: 'var(--text-primary)',
+                                                                    border: 'none',
+                                                                    borderRadius: 6,
+                                                                    padding: '6px 14px',
+                                                                    fontWeight: 600,
+                                                                    fontSize: 15,
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                {op ? op.label : opId} (Re-include)
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                        </>
-                    ) : (
-                        report.fields.map(field => (
-                            <div key={field.name} className="report-form-field-wide">
-                                <label>
-                                    {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                    {field.required && <span className="report-modal-required">*</span>}
-                                </label>
-                                {field.type === 'textarea' ? (
-                                    <textarea
-                                        value={form[field.name] || ''}
-                                        onChange={e => handleChange(e, field.name)}
-                                        required={field.required}
-                                        disabled={readOnly}
-                                    />
-                                ) : field.type === 'select' ? (
-                                    <select
-                                        value={form[field.name] || ''}
-                                        onChange={e => handleChange(e, field.name)}
-                                        required={field.required}
-                                        disabled={readOnly}
-                                    >
-                                        <option value="">Select...</option>
-                                        {field.options?.map(opt => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <input
-                                        type={field.type}
-                                        value={form[field.name] || ''}
-                                        onChange={e => handleChange(e, field.name)}
-                                        required={field.required}
-                                        disabled={readOnly}
-                                    />
-                                )}
-                            </div>
-                        ))
-                    )}
+                            </>
+                        ) : report.name === 'general_manager' ? (
+                            null
+                        ) : (
+                            report.fields.map(field => (
+                                <div key={field.name} className="report-form-field-wide">
+                                    <label>
+                                        {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                        {field.required && <span className="report-modal-required">*</span>}
+                                    </label>
+                                    {field.type === 'textarea' ? (
+                                        <textarea
+                                            value={form[field.name] || ''}
+                                            onChange={e => handleChange(e, field.name)}
+                                            required={field.required}
+                                            disabled={readOnly}
+                                        />
+                                    ) : field.type === 'select' ? (
+                                        <select
+                                            value={form[field.name] || ''}
+                                            onChange={e => handleChange(e, field.name)}
+                                            required={field.required}
+                                            disabled={readOnly}
+                                        >
+                                            <option value="">Select...</option>
+                                            {field.options?.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type={field.type}
+                                            value={form[field.name] || ''}
+                                            onChange={e => handleChange(e, field.name)}
+                                            required={field.required}
+                                            disabled={readOnly}
+                                        />
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
                     {PluginComponent && (
                         <>
                             <PluginComponent
@@ -1278,38 +1089,6 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                     )}
                 </form>
             </div>
-            {showUnsavedChangesModal && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
-                        <h2>Unsaved Changes</h2>
-                        <p>You have unsaved changes that will be lost if you navigate away. What would you like to do?</p>
-                        <div className="confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowUnsavedChangesModal(false)}>Continue Editing</button>
-                            <button
-                                className="primary-button"
-                                onClick={async () => {
-                                    setShowUnsavedChangesModal(false)
-                                    try {
-                                        await handleSaveDraft({ preventDefault: () => {} })
-                                        setTimeout(() => onBack(), 800)
-                                    } catch {
-                                    }
-                                }}
-                                disabled={submitting || savingDraft}
-                                style={{background: 'var(--accent)', opacity: submitting || savingDraft ? '0.6' : '1', cursor: submitting || savingDraft ? 'not-allowed' : 'pointer'}}
-                            >Save & Leave</button>
-                            <button
-                                className="danger-button"
-                                onClick={() => {
-                                    setShowUnsavedChangesModal(false)
-                                    setHasUnsavedChanges(false)
-                                    onBack()
-                                }}
-                            >Discard & Leave</button>
-                        </div>
-                    </div>
-                </div>
-            )}
             {showConfirmationModal && (
                 <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
                     <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto', background: 'var(--background)', borderRadius: 10, padding: 32}}>
