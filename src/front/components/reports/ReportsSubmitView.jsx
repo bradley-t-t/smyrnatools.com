@@ -349,95 +349,17 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     }, [initialData])
 
     useEffect(() => {
-        let yards = null
-        let hours = null
-        let lostVal = null
-
-        if (report.name === 'plant_manager') {
-            yards = parseFloat(form.yardage)
-            hours = parseFloat(form.total_hours)
-            if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) {
-                lostVal = Number(form.total_yards_lost)
-            }
-        } else {
-            yards = parseFloat(form.total_yards_delivered)
-            hours = parseFloat(form.total_operator_hours)
-            if (
-                typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))
-            ) {
-                lostVal = Number(form.yardage_lost)
-            } else if (
-                typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))
-            ) {
-                lostVal = Number(form.lost_yardage)
-            } else if (
-                typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))
-            ) {
-                lostVal = Number(form['Yardage Lost'])
-            } else if (
-                typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
-            ) {
-                lostVal = Number(form['yardage_lost'])
-            }
-        }
-
-        if (lostVal !== null && lostVal < 0) {
-            lostVal = 0
-            let updatedForm = { ...form }
-            if (report.name === 'plant_manager' && typeof form.total_yards_lost !== 'undefined') {
-                updatedForm.total_yards_lost = 0
-            }
-            if (typeof form.yardage_lost !== 'undefined') updatedForm.yardage_lost = 0
-            if (typeof form.lost_yardage !== 'undefined') updatedForm.lost_yardage = 0
-            if (typeof form['Yardage Lost'] !== 'undefined') updatedForm['Yardage Lost'] = 0
-            if (typeof form['yardage_lost'] !== 'undefined') updatedForm['yardage_lost'] = 0
-            setForm(updatedForm)
-        }
-
-        const yphVal = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
-        setYph(yphVal)
-        let grade = ''
-        if (yphVal !== null) {
-            if (yphVal >= 6) grade = 'excellent'
-            else if (yphVal >= 4) grade = 'good'
-            else if (yphVal >= 3) grade = 'average'
-            else grade = 'poor'
-        }
-        setYphGrade(grade)
-        let color = ''
-        if (grade === 'excellent') color = 'var(--excellent)'
-        else if (grade === 'good') color = 'var(--success)'
-        else if (grade === 'average') color = 'var(--warning)'
-        else if (grade === 'poor') color = 'var(--error)'
+        let { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel } = ReportService.getYardageMetrics(form)
+        setYph(yph)
+        setYphGrade(yphGrade)
+        setYphLabel(yphLabel)
+        setLost(lost)
+        setLostGrade(lostGrade)
+        setLostLabel(lostLabel)
+        let color = ReportService.getYphColor(yphGrade)
         setYphColor(color)
-        let label = ''
-        if (grade === 'excellent') label = 'Excellent'
-        else if (grade === 'good') label = 'Good'
-        else if (grade === 'average') label = 'Average'
-        else if (grade === 'poor') label = 'Poor'
-        setYphLabel(label)
-
-        setLost(lostVal)
-        let lostGradeVal = ''
-        if (lostVal !== null) {
-            if (lostVal === 0) lostGradeVal = 'excellent'
-            else if (lostVal < 5) lostGradeVal = 'good'
-            else if (lostVal < 10) lostGradeVal = 'average'
-            else lostGradeVal = 'poor'
-        }
-        setLostGrade(lostGradeVal)
-        let lostColorVal = ''
-        if (lostGradeVal === 'excellent') lostColorVal = 'var(--excellent)'
-        else if (lostGradeVal === 'good') lostColorVal = 'var(--success)'
-        else if (lostGradeVal === 'average') lostColorVal = 'var(--warning)'
-        else if (lostGradeVal === 'poor') lostColorVal = 'var(--error)'
+        let lostColorVal = ReportService.getYphColor(lostGrade)
         setLostColor(lostColorVal)
-        let lostLabelVal = ''
-        if (lostGradeVal === 'excellent') lostLabelVal = 'Excellent'
-        else if (lostGradeVal === 'good') lostLabelVal = 'Good'
-        else if (lostGradeVal === 'average') lostLabelVal = 'Average'
-        else if (lostGradeVal === 'poor') lostLabelVal = 'Poor'
-        setLostLabel(lostLabelVal)
     }, [form, report.name])
 
     useEffect(() => {

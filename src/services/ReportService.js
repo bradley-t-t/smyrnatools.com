@@ -206,6 +206,178 @@ class ReportServiceImpl {
             URL.revokeObjectURL(url)
         }, 0)
     }
+
+    getYardageMetrics(form) {
+        let yards = parseFloat(form.total_yards_delivered || form['Yardage'] || form['yardage'])
+        let hours = parseFloat(form.total_operator_hours || form['Total Hours'] || form['total_hours'] || form['total_operator_hours'])
+        let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
+        let yphGrade = ''
+        if (yph !== null) {
+            if (yph >= 6) yphGrade = 'excellent'
+            else if (yph >= 4) yphGrade = 'good'
+            else if (yph >= 3) yphGrade = 'average'
+            else yphGrade = 'poor'
+        }
+        let yphLabel = ''
+        if (yphGrade === 'excellent') yphLabel = 'Excellent'
+        else if (yphGrade === 'good') yphLabel = 'Good'
+        else if (yphGrade === 'average') yphLabel = 'Average'
+        else if (yphGrade === 'poor') yphLabel = 'Poor'
+
+        let lost = null
+        if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) {
+            lost = Number(form.total_yards_lost)
+        } else if (
+            typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))
+        ) {
+            lost = Number(form.yardage_lost)
+        } else if (
+            typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))
+        ) {
+            lost = Number(form.lost_yardage)
+        } else if (
+            typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))
+        ) {
+            lost = Number(form['Yardage Lost'])
+        } else if (
+            typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
+        ) {
+            lost = Number(form['yardage_lost'])
+        }
+        if (lost !== null && lost < 0) {
+            lost = 0
+        }
+        let lostGrade = ''
+        if (lost !== null) {
+            if (lost === 0) lostGrade = 'excellent'
+            else if (lost < 5) lostGrade = 'good'
+            else if (lost < 10) lostGrade = 'average'
+            else lostGrade = 'poor'
+        }
+        let lostLabel = ''
+        if (lostGrade === 'excellent') lostLabel = 'Excellent'
+        else if (lostGrade === 'good') lostLabel = 'Good'
+        else if (lostGrade === 'average') lostLabel = 'Average'
+        else if (lostGrade === 'poor') lostLabel = 'Poor'
+
+        return { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel }
+    }
+
+    getYphColor(grade) {
+        if (grade === 'excellent') return 'var(--excellent)'
+        if (grade === 'good') return 'var(--success)'
+        if (grade === 'average') return 'var(--warning)'
+        if (grade === 'poor') return 'var(--error)'
+        return ''
+    }
+
+    getPlantProductionInsights(rows) {
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string') return null
+            const [h, m] = timeStr.split(':').map(Number)
+            if (isNaN(h) || isNaN(m)) return null
+            return h * 60 + m
+        }
+        function isExcludedRow(row) {
+            if (!row) return true
+            const keys = Object.keys(row).filter(k => k !== 'name' && k !== 'truck_number')
+            return keys.every(k => row[k] === '' || row[k] === undefined || row[k] === null || row[k] === 0)
+        }
+        let totalLoads = 0
+        let totalHours = 0
+        let totalElapsedStart = 0
+        let totalElapsedEnd = 0
+        let countElapsedStart = 0
+        let countElapsedEnd = 0
+        let warnings = []
+        let loadsPerHourSum = 0
+        let loadsPerHourCount = 0
+        const includedRows = rows.filter(row => !isExcludedRow(row))
+        includedRows.forEach((row, idx) => {
+            const start = parseTimeToMinutes(row.start_time)
+            const firstLoad = parseTimeToMinutes(row.first_load)
+            const punchOut = parseTimeToMinutes(row.punch_out)
+            const eod = parseTimeToMinutes(row.eod_in_yard)
+            const loads = Number(row.loads)
+            let hours = null
+            if (start !== null && punchOut !== null) {
+                hours = (punchOut - start) / 60
+                if (hours > 0) totalHours += hours
+            }
+            if (!isNaN(loads)) totalLoads += loads
+            if (start !== null && firstLoad !== null) {
+                const elapsed = firstLoad - start
+                if (!isNaN(elapsed)) {
+                    totalElapsedStart += elapsed
+                    countElapsedStart++
+                    if (elapsed > 15) {
+                        warnings.push({
+                            row: rows.indexOf(row),
+                            message: `Start to 1st Load is ${elapsed} min (> 15 min)`
+                        })
+                    }
+                }
+            }
+            if (eod !== null && punchOut !== null) {
+                const elapsed = punchOut - eod
+                if (!isNaN(elapsed)) {
+                    totalElapsedEnd += elapsed
+                    countElapsedEnd++
+                    if (elapsed > 15) {
+                        warnings.push({
+                            row: rows.indexOf(row),
+                            message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
+                        })
+                    }
+                }
+            }
+            if (!isNaN(loads) && hours && hours > 0) {
+                loadsPerHourSum += loads / hours
+                loadsPerHourCount++
+            }
+            if (!isNaN(loads) && loads < 3) {
+                warnings.push({
+                    row: rows.indexOf(row),
+                    message: `Total Loads is ${loads} (< 3)`
+                })
+            }
+            if (hours !== null && hours > 14) {
+                warnings.push({
+                    row: rows.indexOf(row),
+                    message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`
+                })
+            }
+        })
+        const avgElapsedStart = countElapsedStart ? totalElapsedStart / countElapsedStart : null
+        const avgElapsedEnd = countElapsedEnd ? totalElapsedEnd / countElapsedEnd : null
+        const avgLoads = includedRows.length ? totalLoads / includedRows.length : null
+        const avgHours = includedRows.length ? totalHours / includedRows.length : null
+        const avgLoadsPerHour = loadsPerHourCount ? loadsPerHourSum / loadsPerHourCount : null
+        let avgWarnings = []
+        if (avgElapsedStart !== null && avgElapsedStart > 15) {
+            avgWarnings.push(`Avg Start to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`)
+        }
+        if (avgElapsedEnd !== null && avgElapsedEnd > 15) {
+            avgWarnings.push(`Avg EOD to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`)
+        }
+        if (avgLoads !== null && avgLoads < 3) {
+            avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`)
+        }
+        if (avgHours !== null && avgHours > 14) {
+            avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`)
+        }
+        return {
+            totalLoads,
+            totalHours,
+            avgElapsedStart,
+            avgElapsedEnd,
+            avgLoads,
+            avgHours,
+            avgLoadsPerHour,
+            warnings,
+            avgWarnings
+        }
+    }
 }
 
 export const ReportService = new ReportServiceImpl()

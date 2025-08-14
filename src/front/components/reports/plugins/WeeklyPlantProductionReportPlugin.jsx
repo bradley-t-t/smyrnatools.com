@@ -1,177 +1,8 @@
 import React from 'react'
-
-function parseTimeToMinutes(timeStr) {
-    if (!timeStr || typeof timeStr !== 'string') return null
-    const [h, m] = timeStr.split(':').map(Number)
-    if (isNaN(h) || isNaN(m)) return null
-    return h * 60 + m
-}
+import { ReportService } from '../../../../services/ReportService'
 
 function getRows(form) {
     return Array.isArray(form.rows) ? form.rows : []
-}
-
-function isExcludedRow(row) {
-    if (!row) return true
-    const keys = Object.keys(row).filter(k => k !== 'name' && k !== 'truck_number')
-    return keys.every(k => row[k] === '' || row[k] === undefined || row[k] === null || row[k] === 0)
-}
-
-function getInsights(rows) {
-    let totalLoads = 0
-    let totalHours = 0
-    let totalElapsedStart = 0
-    let totalElapsedEnd = 0
-    let countElapsedStart = 0
-    let countElapsedEnd = 0
-    let warnings = []
-    let loadsPerHourSum = 0
-    let loadsPerHourCount = 0
-
-    const includedRows = rows.filter(row => !isExcludedRow(row))
-
-    includedRows.forEach((row, idx) => {
-        const start = parseTimeToMinutes(row.start_time)
-        const firstLoad = parseTimeToMinutes(row.first_load)
-        const punchOut = parseTimeToMinutes(row.punch_out)
-        const eod = parseTimeToMinutes(row.eod_in_yard)
-        const loads = Number(row.loads)
-
-        let hours = null
-        if (start !== null && punchOut !== null) {
-            hours = (punchOut - start) / 60
-            if (hours > 0) totalHours += hours
-        }
-
-        if (!isNaN(loads)) totalLoads += loads
-
-        if (start !== null && firstLoad !== null) {
-            const elapsed = firstLoad - start
-            if (!isNaN(elapsed)) {
-                totalElapsedStart += elapsed
-                countElapsedStart++
-                if (elapsed > 15) {
-                    warnings.push({
-                        row: rows.indexOf(row),
-                        message: `Start to 1st Load is ${elapsed} min (> 15 min)`
-                    })
-                }
-            }
-        }
-
-        if (eod !== null && punchOut !== null) {
-            const elapsed = punchOut - eod
-            if (!isNaN(elapsed)) {
-                totalElapsedEnd += elapsed
-                countElapsedEnd++
-                if (elapsed > 15) {
-                    warnings.push({
-                        row: rows.indexOf(row),
-                        message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
-                    })
-                }
-            }
-        }
-
-        if (!isNaN(loads) && hours && hours > 0) {
-            loadsPerHourSum += loads / hours
-            loadsPerHourCount++
-        }
-
-        if (!isNaN(loads) && loads < 3) {
-            warnings.push({
-                row: rows.indexOf(row),
-                message: `Total Loads is ${loads} (< 3)`
-            })
-        }
-
-        if (hours !== null && hours > 14) {
-            warnings.push({
-                row: rows.indexOf(row),
-                message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`
-            })
-        }
-    })
-
-    const avgElapsedStart = countElapsedStart ? totalElapsedStart / countElapsedStart : null
-    const avgElapsedEnd = countElapsedEnd ? totalElapsedEnd / countElapsedEnd : null
-    const avgLoads = includedRows.length ? totalLoads / includedRows.length : null
-    const avgHours = includedRows.length ? totalHours / includedRows.length : null
-    const avgLoadsPerHour = loadsPerHourCount ? loadsPerHourSum / loadsPerHourCount : null
-
-    let avgWarnings = []
-    if (avgElapsedStart !== null && avgElapsedStart > 15) {
-        avgWarnings.push(`Avg Start to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`)
-    }
-    if (avgElapsedEnd !== null && avgElapsedEnd > 15) {
-        avgWarnings.push(`Avg EOD to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`)
-    }
-    if (avgLoads !== null && avgLoads < 3) {
-        avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`)
-    }
-    if (avgHours !== null && avgHours > 14) {
-        avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`)
-    }
-
-    return {
-        totalLoads,
-        totalHours,
-        avgElapsedStart,
-        avgElapsedEnd,
-        avgLoads,
-        avgHours,
-        avgLoadsPerHour,
-        warnings,
-        avgWarnings
-    }
-}
-
-function StatCard({ label, value, highlight }) {
-    return (
-        <div
-            style={{
-                flex: 1,
-                minWidth: 120,
-                background: 'var(--background-elevated)',
-                borderRadius: 10,
-                border: '1px solid var(--divider)',
-                margin: 6,
-                padding: '18px 0 12px 0',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                fontWeight: 600,
-                fontSize: 16,
-                boxShadow: '0 1px 4px var(--shadow-sm)'
-            }}
-        >
-            <div style={{ fontSize: 28, fontWeight: 700, color: highlight ? 'var(--accent)' : 'var(--text-primary)' }}>{value}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{label}</div>
-        </div>
-    )
-}
-
-function WarningCard({ message }) {
-    return (
-        <div
-            style={{
-                background: 'var(--warning-bg)',
-                color: 'var(--warning)',
-                border: '1px solid var(--warning)',
-                borderRadius: 8,
-                padding: '10px 16px',
-                margin: '8px 0',
-                fontWeight: 600,
-                fontSize: 15,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
-            }}
-        >
-            <span style={{ fontSize: 18, marginRight: 6 }}>⚠</span>
-            <span>{message}</span>
-        </div>
-    )
 }
 
 function getOperatorName(row, operatorOptions) {
@@ -185,6 +16,12 @@ function getOperatorName(row, operatorOptions) {
 }
 
 function RowCard({ row, idx, operatorOptions }) {
+    function parseTimeToMinutes(timeStr) {
+        if (!timeStr || typeof timeStr !== 'string') return null
+        const [h, m] = timeStr.split(':').map(Number)
+        if (isNaN(h) || isNaN(m)) return null
+        return h * 60 + m
+    }
     const start = parseTimeToMinutes(row.start_time)
     const punch = parseTimeToMinutes(row.punch_out)
     const firstLoad = parseTimeToMinutes(row.first_load)
@@ -276,6 +113,54 @@ function RowCard({ row, idx, operatorOptions }) {
                     <div style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{row.comments || ''}</div>
                 </div>
             </div>
+        </div>
+    )
+}
+
+function StatCard({ label, value, highlight }) {
+    return (
+        <div
+            style={{
+                flex: 1,
+                minWidth: 120,
+                background: 'var(--background-elevated)',
+                borderRadius: 10,
+                border: '1px solid var(--divider)',
+                margin: 6,
+                padding: '18px 0 12px 0',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                fontWeight: 600,
+                fontSize: 16,
+                boxShadow: '0 1px 4px var(--shadow-sm)'
+            }}
+        >
+            <div style={{ fontSize: 28, fontWeight: 700, color: highlight ? 'var(--accent)' : 'var(--text-primary)' }}>{value}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{label}</div>
+        </div>
+    )
+}
+
+function WarningCard({ message }) {
+    return (
+        <div
+            style={{
+                background: 'var(--warning-bg)',
+                color: 'var(--warning)',
+                border: '1px solid var(--warning)',
+                borderRadius: 8,
+                padding: '10px 16px',
+                margin: '8px 0',
+                fontWeight: 600,
+                fontSize: 15,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+            }}
+        >
+            <span style={{ fontSize: 18, marginRight: 6 }}>⚠</span>
+            <span>{message}</span>
         </div>
     )
 }
@@ -388,7 +273,7 @@ function exportRowsToCSV(rows, operatorOptions, reportDate) {
 
 export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
     const rows = getRows(form)
-    const insights = getInsights(rows)
+    const insights = ReportService.getPlantProductionInsights(rows)
     const reportDate = form.report_date || ''
     const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
     if (!rows.length) return null
@@ -415,7 +300,7 @@ export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
 
 export function PlantProductionReviewPlugin({ form, operatorOptions }) {
     const rows = getRows(form)
-    const insights = getInsights(rows)
+    const insights = ReportService.getPlantProductionInsights(rows)
     const reportDate = form.report_date || ''
     const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
     if (!rows.length) return null

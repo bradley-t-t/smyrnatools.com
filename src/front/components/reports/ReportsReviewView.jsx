@@ -181,70 +181,9 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     let weekRangeHeader = weekRange
     let reportTitle = report.title || 'Report Review'
 
-    let yards = parseFloat(form.total_yards_delivered || form['Yardage'] || form['yardage'])
-    let hours = parseFloat(form.total_operator_hours || form['Total Hours'] || form['total_hours'] || form['total_operator_hours'])
-    let yph = !isNaN(yards) && !isNaN(hours) && hours > 0 ? yards / hours : null
-    let yphGrade = ''
-    if (yph !== null) {
-        if (yph >= 6) yphGrade = 'excellent'
-        else if (yph >= 4) yphGrade = 'good'
-        else if (yph >= 3) yphGrade = 'average'
-        else yphGrade = 'poor'
-    }
-    let yphColor = ''
-    if (yphGrade === 'excellent') yphColor = 'var(--excellent)'
-    else if (yphGrade === 'good') yphColor = 'var(--success)'
-    else if (yphGrade === 'average') yphColor = 'var(--warning)'
-    else if (yphGrade === 'poor') yphColor = 'var(--error)'
-
-    let yphLabel = ''
-    if (yphGrade === 'excellent') yphLabel = 'Excellent'
-    else if (yphGrade === 'good') yphLabel = 'Good'
-    else if (yphGrade === 'average') yphLabel = 'Average'
-    else if (yphGrade === 'poor') yphLabel = 'Poor'
-
-    let lost = null
-    if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) {
-        lost = Number(form.total_yards_lost)
-    } else if (
-        typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))
-    ) {
-        lost = Number(form.yardage_lost)
-    } else if (
-        typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))
-    ) {
-        lost = Number(form.lost_yardage)
-    } else if (
-        typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))
-    ) {
-        lost = Number(form['Yardage Lost'])
-    } else if (
-        typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
-    ) {
-        lost = Number(form['yardage_lost'])
-    }
-    if (lost !== null && lost < 0) {
-        lost = 0
-    }
-
-    let lostGrade = ''
-    if (lost !== null) {
-        if (lost === 0) lostGrade = 'excellent'
-        else if (lost < 5) lostGrade = 'good'
-        else if (lost < 10) lostGrade = 'average'
-        else lostGrade = 'poor'
-    }
-    let lostColor = ''
-    if (lostGrade === 'excellent') lostColor = 'var(--excellent)'
-    else if (lostGrade === 'good') lostColor = 'var(--success)'
-    else if (lostGrade === 'average') lostColor = 'var(--warning)'
-    else if (lostGrade === 'poor') lostColor = 'var(--error)'
-
-    let lostLabel = ''
-    if (lostGrade === 'excellent') lostLabel = 'Excellent'
-    else if (lostGrade === 'good') lostLabel = 'Good'
-    else if (lostGrade === 'average') lostLabel = 'Average'
-    else if (lostGrade === 'poor') lostLabel = 'Poor'
+    let { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel } = ReportService.getYardageMetrics(form)
+    let yphColor = ReportService.getYphColor(yphGrade)
+    let lostColor = ReportService.getYphColor(lostGrade)
 
     const PluginComponent = plugins[report.name]
     const isSubmitted = !!initialData?.completed

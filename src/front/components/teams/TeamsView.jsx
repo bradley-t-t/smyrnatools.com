@@ -59,6 +59,10 @@ function TeamsView() {
     const [currentUserId, setCurrentUserId] = useState('');
     const [showOverview, setShowOverview] = useState(false);
     const [scheduledOff, setScheduledOff] = useState({});
+    const [viewMode, setViewMode] = useState(() => {
+        const lastUsed = localStorage.getItem('teams_last_view_mode');
+        return lastUsed || 'grid';
+    });
 
     useEffect(() => {
         async function fetchCurrentUserAndPlant() {
@@ -241,6 +245,16 @@ function TeamsView() {
 
     const saturdayStatus = getTeamWorkingThisSaturday();
 
+    function handleViewModeChange(mode) {
+        if (viewMode === mode) {
+            setViewMode('grid');
+            localStorage.setItem('teams_last_view_mode', 'grid');
+        } else {
+            setViewMode(mode);
+            localStorage.setItem('teams_last_view_mode', mode);
+        }
+    }
+
     return (
         <div className="dashboard-container teams-view">
             {!canEditPlant && selectedPlant !== '' && (
@@ -274,6 +288,24 @@ function TeamsView() {
                     )}
                 </div>
                 <div className="filters">
+                    <div className="view-toggle-icons">
+                        <button
+                            className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('grid')}
+                            aria-label="Grid view"
+                            type="button"
+                        >
+                            <i className="fas fa-th-large"></i>
+                        </button>
+                        <button
+                            className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                            onClick={() => handleViewModeChange('list')}
+                            aria-label="List view"
+                            type="button"
+                        >
+                            <i className="fas fa-list"></i>
+                        </button>
+                    </div>
                     <div className="filter-wrapper">
                         <select
                             className="ios-select"
@@ -324,136 +356,164 @@ function TeamsView() {
                     <LoadingScreen message="Loading teams..." inline={true} />
                 ) : (
                     <>
-                        <div className="teams-split-cards">
-                            <div
-                                className={`team-card team-A${dragOverTeam === 'A' ? ' drag-over' : ''}`}
-                                onDragOver={e => { e.preventDefault(); handleDragOver('A'); }}
-                                onDrop={() => handleDrop('A')}
-                                onDragLeave={() => setDragOverTeam(null)}
-                            >
-                                <div className="team-card-header">
-                                    A Team
-                                    <span
-                                        className="team-saturday-status"
-                                        style={{
-                                            marginLeft: 12,
-                                            fontSize: 14,
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        {saturdayStatus.A}
-                                    </span>
-                                </div>
-                                <div className="team-card-body">
-                                    {filteredTeams.A.filter(op =>
-                                        (!searchText ||
-                                            op.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                                            (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
-                                    ).length === 0 && (
-                                        <div className="no-operators">
-                                            <span className="no-operators-inner">
-                                                <i className="fas fa-hand-pointer"></i>
-                                                No operators<br />
-                                                <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
-                                            </span>
-                                        </div>
-                                    )}
-                                    {filteredTeams.A.filter(op =>
-                                        (!searchText ||
-                                            op.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                                            (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
-                                    ).map(op => (
-                                        <div
-                                            key={op.employee_id}
-                                            draggable={canEditPlant}
-                                            onDragStart={() => handleDragStart(op, 'A')}
-                                            onDragEnd={handleDragEnd}
-                                            className="operator-card-wrapper"
-                                            style={!canEditPlant ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        {viewMode === 'grid' ? (
+                            <div className="teams-split-cards">
+                                <div
+                                    className={`team-card team-A${dragOverTeam === 'A' ? ' drag-over' : ''}`}
+                                    onDragOver={e => { e.preventDefault(); handleDragOver('A'); }}
+                                    onDrop={() => handleDrop('A')}
+                                    onDragLeave={() => setDragOverTeam(null)}
+                                >
+                                    <div className="team-card-header">
+                                        A Team
+                                        <span
+                                            className="team-saturday-status"
+                                            style={{
+                                                marginLeft: 12,
+                                                fontSize: 14,
+                                                fontWeight: 500
+                                            }}
                                         >
-                                            <OperatorCard
-                                                operator={{
-                                                    ...op,
-                                                    employeeId: op.employee_id,
-                                                    smyrnaId: op.smyrna_id,
-                                                    pendingStartDate: op.pending_start_date,
-                                                    isTrainer: op.is_trainer
-                                                }}
-                                                plantName={plants.find(p => p.plant_code === selectedPlant)?.plant_name || selectedPlant}
-                                                trainers={teams.A.concat(teams.B)}
-                                            />
-                                        </div>
-                                    ))}
+                                            {saturdayStatus.A}
+                                        </span>
+                                    </div>
+                                    <div className="team-card-body">
+                                        {filteredTeams.A.filter(op =>
+                                            (!searchText ||
+                                                op.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                                                (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
+                                        ).length === 0 && (
+                                            <div className="no-operators">
+                                                <span className="no-operators-inner">
+                                                    <i className="fas fa-hand-pointer"></i>
+                                                    No operators<br />
+                                                    <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
+                                                </span>
+                                            </div>
+                                        )}
+                                        {filteredTeams.A.filter(op =>
+                                            (!searchText ||
+                                                op.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                                                (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
+                                        ).map(op => (
+                                            <div
+                                                key={op.employee_id}
+                                                draggable={canEditPlant}
+                                                onDragStart={() => handleDragStart(op, 'A')}
+                                                onDragEnd={handleDragEnd}
+                                                className="operator-card-wrapper"
+                                                style={!canEditPlant ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                            >
+                                                <OperatorCard
+                                                    operator={{
+                                                        ...op,
+                                                        employeeId: op.employee_id,
+                                                        smyrnaId: op.smyrna_id,
+                                                        pendingStartDate: op.pending_start_date,
+                                                        isTrainer: op.is_trainer
+                                                    }}
+                                                    plantName={plants.find(p => p.plant_code === selectedPlant)?.plant_name || selectedPlant}
+                                                    trainers={teams.A.concat(teams.B)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div
+                                    className={`team-card team-B${dragOverTeam === 'B' ? ' drag-over' : ''}`}
+                                    onDragOver={e => { e.preventDefault(); handleDragOver('B'); }}
+                                    onDrop={() => handleDrop('B')}
+                                    onDragLeave={() => setDragOverTeam(null)}
+                                >
+                                    <div className="team-card-header">
+                                        B Team
+                                        <span
+                                            className="team-saturday-status"
+                                            style={{
+                                                marginLeft: 12,
+                                                fontSize: 14,
+                                                fontWeight: 500
+                                            }}
+                                        >
+                                            {saturdayStatus.B}
+                                        </span>
+                                    </div>
+                                    <div className="team-card-body">
+                                        {filteredTeams.B.filter(op =>
+                                            (!searchText ||
+                                                op.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                                                (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
+                                        ).length === 0 && (
+                                            <div className="no-operators">
+                                                <span className="no-operators-inner">
+                                                    <i className="fas fa-hand-pointer"></i>
+                                                    No operators<br />
+                                                    <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
+                                                </span>
+                                            </div>
+                                        )}
+                                        {filteredTeams.B.filter(op =>
+                                            (!searchText ||
+                                                op.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                                                (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
+                                        ).map(op => (
+                                            <div
+                                                key={op.employee_id}
+                                                draggable={canEditPlant}
+                                                onDragStart={() => handleDragStart(op, 'B')}
+                                                onDragEnd={handleDragEnd}
+                                                className="operator-card-wrapper"
+                                                style={!canEditPlant ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                            >
+                                                <OperatorCard
+                                                    operator={{
+                                                        ...op,
+                                                        employeeId: op.employee_id,
+                                                        smyrnaId: op.smyrna_id,
+                                                        pendingStartDate: op.pending_start_date,
+                                                        isTrainer: op.is_trainer
+                                                    }}
+                                                    plantName={plants.find(p => p.plant_code === selectedPlant)?.plant_name || selectedPlant}
+                                                    trainers={teams.A.concat(teams.B)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                            <div
-                                className={`team-card team-B${dragOverTeam === 'B' ? ' drag-over' : ''}`}
-                                onDragOver={e => { e.preventDefault(); handleDragOver('B'); }}
-                                onDrop={() => handleDrop('B')}
-                                onDragLeave={() => setDragOverTeam(null)}
-                            >
-                                <div className="team-card-header">
-                                    B Team
-                                    <span
-                                        className="team-saturday-status"
-                                        style={{
-                                            marginLeft: 12,
-                                            fontSize: 14,
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        {saturdayStatus.B}
-                                    </span>
-                                </div>
-                                <div className="team-card-body">
-                                    {filteredTeams.B.filter(op =>
-                                        (!searchText ||
-                                            op.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                                            (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
-                                    ).length === 0 && (
-                                        <div className="no-operators">
-                                            <span className="no-operators-inner">
-                                                <i className="fas fa-hand-pointer"></i>
-                                                No operators<br />
-                                                <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
-                                            </span>
-                                        </div>
-                                    )}
-                                    {filteredTeams.B.filter(op =>
-                                        (!searchText ||
-                                            op.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                                            (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
-                                    ).map(op => (
-                                        <div
-                                            key={op.employee_id}
-                                            draggable={canEditPlant}
-                                            onDragStart={() => handleDragStart(op, 'B')}
-                                            onDragEnd={handleDragEnd}
-                                            className="operator-card-wrapper"
-                                            style={!canEditPlant ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                                        >
-                                            <OperatorCard
-                                                operator={{
-                                                    ...op,
-                                                    employeeId: op.employee_id,
-                                                    smyrnaId: op.smyrna_id,
-                                                    pendingStartDate: op.pending_start_date,
-                                                    isTrainer: op.is_trainer
-                                                }}
-                                                plantName={plants.find(p => p.plant_code === selectedPlant)?.plant_name || selectedPlant}
-                                                trainers={teams.A.concat(teams.B)}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                        ) : (
+                            <div className="teams-list-table-container">
+                                <table className="teams-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Team</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {['A', 'B'].map(teamKey =>
+                                            filteredTeams[teamKey].filter(op =>
+                                                (!searchText ||
+                                                    op.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                                                    (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
+                                            ).map(op => (
+                                                <tr key={op.employee_id} style={{cursor: 'pointer'}}>
+                                                    <td>{teamKey}</td>
+                                                    <td>{op.name}</td>
+                                                    <td>{op.status || "---"}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                        <div className="teams-rotation-note">
+                        )}
+                        <div className="teams-rotation-note teams-rotation-note-centered">
                             <em>
                                 Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to Work</b> Saturday. Teams alternate weekly.
                             </em>
-                        </div>
-                        <div className="teams-rotation-note">
+                            <br />
                             <em>
                                 Operators scheduled off for this Saturday will not be listed.
                             </em>
