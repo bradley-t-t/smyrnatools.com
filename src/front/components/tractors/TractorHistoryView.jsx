@@ -4,7 +4,7 @@ import {usePreferences} from '../../../app/context/PreferencesContext';
 import {TractorService} from '../../../services/TractorService';
 import {OperatorService} from '../../../services/OperatorService';
 import LoadingScreen from '../common/LoadingScreen';
-import UserLabel from '../users/UserLabel';
+import UserLabel from '../common/UserLabel';
 import './styles/TractorHistoryView.css';
 
 function TractorHistoryView({tractor, onClose}) {

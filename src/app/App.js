@@ -8,11 +8,11 @@ import ManagersView from '../front/components/managers/ManagersView'
 import SettingsView from '../front/components/settings/SettingsView'
 import MixerDetailView from '../front/components/mixers/MixerDetailView'
 import OperatorsView from '../front/components/operators/OperatorsView'
-import LoginView from '../front/components/auth/LoginView'
+import LoginView from '../front/components/login/LoginView'
 import LoadingScreen from '../front/components/common/LoadingScreen'
-import MyAccountView from '../front/components/users/MyAccountView'
+import MyAccountView from '../front/components/myaccount/MyAccountView'
 import Navigation from "../front/components/common/Navigation"
-import GuestView from '../front/components/auth/GuestView'
+import GuestView from '../front/components/guest/GuestView'
 import ListView from '../front/components/list/ListView'
 import {AuthProvider} from './context/AuthContext'
 import {PreferencesProvider} from './context/PreferencesContext'
@@ -29,6 +29,7 @@ import TrailersView from '../front/components/trailers/TrailersView'
 import EquipmentsView from '../front/components/equipment/EquipmentsView'
 import '../front/styles/Theme.css'
 import '../front/styles/Global.css'
+import PlantsView from '../front/components/plants/PlantsView'
 
 function VersionPopup({ version }) {
     if (!version) return null
@@ -63,7 +64,7 @@ function UpdateLoadingScreen({ version }) {
         <div className="loading-screen full-page">
             <div className="loading-content">
                 <div className="loading-animation">
-                    <img src={require('../front/assets/images/SmyrnaLogo.png')} alt="Loading" className="bouncing-logo"/>
+                    <img src={require('../assets/images/SmyrnaLogo.png')} alt="Loading" className="bouncing-logo"/>
                 </div>
                 <p className="loading-message">Smyrna Tools is Updating...</p>
                 <div style={{
@@ -344,6 +345,15 @@ function AppContent() {
                 <WebView
                     url={webViewURL}
                     onClose={() => setWebViewURL(null)}
+                />
+            )
+        }
+        if (selectedView === 'Plants') {
+            return (
+                <PlantsView
+                    title="Plants"
+                    showSidebar={false}
+                    setShowSidebar={() => {}}
                 />
             )
         }

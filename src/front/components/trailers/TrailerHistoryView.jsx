@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import { TrailerService } from '../../../services/TrailerService';
 import LoadingScreen from '../common/LoadingScreen';
-import UserLabel from '../users/UserLabel';
+import UserLabel from '../common/UserLabel';
 import './styles/TrailerHistoryView.css';
 
 function TrailerHistoryView({ trailer, onClose }) {

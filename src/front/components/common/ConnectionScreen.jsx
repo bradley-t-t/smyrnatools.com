@@ -1,6 +1,6 @@
 import React from 'react'
 import './styles/ConnectionScreen.css'
-import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png'
+import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 
 function ConnectionScreen({ message = 'Connection lost. Trying to reconnect...', fullPage = true }) {

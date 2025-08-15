@@ -1,0 +1,220 @@
+.plant-detail-view {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background-color: var(--detail-header-bg);
+    border-bottom: 1px solid var(--border-light);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    margin-right: 16px;
+    border-radius: 6px;
+    background-color: var(--accent);
+    color: var(--text-light);
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.back-button:hover {
+    background-color: var(--accent-dark);
+    transform: translateX(-2px);
+}
+
+.detail-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.detail-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 100%;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mixer-card.plant-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    cursor: default;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-content {
+    flex: 1;
+    padding: var(--spacing-lg);
+    padding-top: calc(var(--spacing-lg) + 4px);
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-lg);
+}
+
+.mixer-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.plant-icon {
+    font-size: 16px;
+}
+
+.detail-card {
+    background-color: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.detail-card h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group {
+    margin-bottom: 20px;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+    transform: translateY(-1px);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.primary-button, .save-button {
+    background-color: var(--accent);
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.primary-button:hover, .save-button:hover {
+    background-color: var(--accent-dark);
+}
+
+.cancel-button {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+    background-color: var(--bg-hover);
+}
+
+.message {
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.message.success {
+    background-color: var(--success-bg, rgba(56, 161, 105, 0.2));
+    color: var(--success);
+}
+
+.message.error {
+    background-color: var(--danger-bg, rgba(229, 62, 62, 0.2));
+    color: var(--danger);
+}

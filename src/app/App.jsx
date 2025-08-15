@@ -18,6 +18,7 @@ import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import { PreferencesProvider } from './context/PreferencesContext';
 import { AccountProvider } from './context/AccountContext';
 import ListView from '../front/components/list/ListView';
+import PlantsView from '../front/components/plants/PlantsView';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/account" element={<MyAccountPage />} />
               <Route path="/list" element={<ListView />} />
+              <Route path="/plants" element={<PlantsView />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

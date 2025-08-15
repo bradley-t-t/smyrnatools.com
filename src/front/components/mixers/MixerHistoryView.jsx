@@ -3,7 +3,7 @@ import {usePreferences} from '../../../app/context/PreferencesContext';
 import {MixerService} from '../../../services/MixerService';
 import {OperatorService} from '../../../services/OperatorService';
 import LoadingScreen from '../common/LoadingScreen';
-import UserLabel from '../users/UserLabel';
+import UserLabel from '../common/UserLabel';
 import './styles/MixerHistoryView.css';
 
 function MixerHistoryView({mixer, onClose}) {

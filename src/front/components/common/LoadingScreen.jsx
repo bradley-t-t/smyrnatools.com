@@ -1,6 +1,6 @@
 import React from 'react';
 import './styles/LoadingScreen.css';
-import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
+import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import ThemeUtility from '../../../utils/ThemeUtility';
 

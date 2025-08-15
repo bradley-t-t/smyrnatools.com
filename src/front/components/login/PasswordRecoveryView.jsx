@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {supabase} from '../../../services/DatabaseService';
 import './styles/LoginView.css';
-import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
+import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png';
 
 function PasswordRecoveryView({onBackToLogin}) {
     const [stage, setStage] = useState('email');

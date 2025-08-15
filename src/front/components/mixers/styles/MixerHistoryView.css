@@ -1,3 +1,5 @@
+@import url('../../common/styles/UserLabel.css');
+
 .history-modal-backdrop {
     position: fixed;
     top: 0;
@@ -240,8 +242,6 @@
     border-top: 1px solid var(--border-light);
     margin-top: 6px;
 }
-
-@import url('../../users/styles/UserLabel.css');
 
 .value-label {
     font-weight: 500;

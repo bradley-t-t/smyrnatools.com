@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import { supabase } from '../../../services/DatabaseService';
-import UserLabel from '../users/UserLabel';
+import UserLabel from '../common/UserLabel';
 import './styles/EquipmentHistoryView.css';
 
 function EquipmentHistoryView({ equipment, onClose }) {

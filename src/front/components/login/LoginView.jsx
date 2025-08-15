@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../app/context/AuthContext';
 import { AuthUtility } from '../../../utils/AuthUtility';
-import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png';
+import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png';
 import PasswordRecoveryView from './PasswordRecoveryView';
-import BG from '../../assets/images/BG.png';
+import BG from '../../../assets/images/BG.png';
 import './styles/LoginView.css';
 
 function VersionPopup({ version }) {
@@ -34,6 +34,7 @@ function LoginView() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [passwordStrength, setPasswordStrength] = useState({ value: '', color: '' });
     const { signIn, signUp, loading, error } = useAuth();
     const timeoutRef = useRef(null);
@@ -78,10 +79,18 @@ function LoginView() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    useEffect(() => {
+        if (error) {
+            setErrorMessage(error);
+            setSuccessMessage('');
+        }
+    }, [error]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting || loading) return;
         setErrorMessage('');
+        setSuccessMessage('');
         setIsSubmitting(true);
 
         if (timeoutRef.current) {
@@ -95,12 +104,14 @@ function LoginView() {
         try {
             if (isSignUp) {
                 if (!email || !password || !confirmPassword || !firstName || !lastName) {
-                    setErrorMessage('All fields are required.');
+                    setErrorMessage('Please complete all fields.');
+                    setSuccessMessage('');
                     setIsSubmitting(false);
                     return;
                 }
                 if (password !== confirmPassword) {
                     setErrorMessage('Passwords do not match.');
+                    setSuccessMessage('');
                     setIsSubmitting(false);
                     return;
                 }
@@ -108,28 +119,31 @@ function LoginView() {
                 const normLast = normalizeName(lastName);
                 await signUp(email, password, normFirst, normLast);
                 setErrorMessage('');
-                alert('Account created successfully! Redirecting...');
+                setSuccessMessage('Account created successfully. Redirecting...');
                 setTimeout(() => forceReload(), 1000);
             } else {
                 if (!email || !password) {
-                    setErrorMessage('Please enter both email and password.');
+                    setErrorMessage('Please enter your email and password.');
+                    setSuccessMessage('');
                     setIsSubmitting(false);
                     return;
                 }
                 await signIn(email, password);
                 setErrorMessage('');
+                setSuccessMessage('Signed in successfully. Redirecting...');
                 setTimeout(() => forceReload(), 500);
             }
         } catch (err) {
             setErrorMessage(
                 err.message.includes('Load failed')
-                    ? 'Connection failed. Check your internet.'
+                    ? 'Unable to connect. Please check your internet connection.'
                     : err.message.includes('timeout')
-                        ? 'Operation timed out. Try again.'
+                        ? 'The request timed out. Please try again.'
                         : err.message.includes('Invalid email or password')
-                            ? 'Incorrect email or password.'
-                            : 'Authentication error occurred.'
+                            ? 'Incorrect email or password. Please try again.'
+                            : 'An authentication error occurred. Please try again.'
             );
+            setSuccessMessage('');
             setIsSubmitting(false);
         } finally {
             if (timeoutRef.current) {
@@ -286,16 +300,6 @@ function LoginView() {
                                         </div>
                                     </>
                                 )}
-                                {(errorMessage || error) && (
-                                    <div className="error-message" role="alert">
-                                        {errorMessage || error}
-                                    </div>
-                                )}
-                                {isSubmitting && (
-                                    <div className="success-message" role="status">
-                                        {isSignUp ? 'Creating your account...' : 'Signing you in...'}
-                                    </div>
-                                )}
                                 <button
                                     type="submit"
                                     className="login-btn"
@@ -311,6 +315,12 @@ function LoginView() {
                     </span>
                                     ) : isSignUp ? 'Create Account' : 'Sign In'}
                                 </button>
+                                {errorMessage && (
+                                    <div className="error-message">{errorMessage}</div>
+                                )}
+                                {successMessage && (
+                                    <div className="success-message">{successMessage}</div>
+                                )}
                             </form>
                             <div className="login-footer">
                                 {isSignUp ? 'Already have an account?' : "Don't have an account?"}

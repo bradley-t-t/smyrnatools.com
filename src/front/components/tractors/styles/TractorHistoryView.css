@@ -242,7 +242,7 @@
     margin-top: 6px;
 }
 
-@import url('../../users/styles/UserLabel.css');
+@import url('../../common/styles/UserLabel.css');
 
 .value-label {
     font-weight: 500;

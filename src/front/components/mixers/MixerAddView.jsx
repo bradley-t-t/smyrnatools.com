@@ -106,8 +106,8 @@ function MixerAddView({plants, onClose, onMixerAdded}) {
                                         >
                                             <option value="">Select Plant</option>
                                             {plants?.length ? plants.map(plant => (
-                                                <option key={plant.plantCode} value={plant.plantCode}>
-                                                    ({plant.plantCode}) {plant.plantName}
+                                                <option key={plant.plant_code} value={plant.plant_code}>
+                                                    ({plant.plant_code}) {plant.plant_name}
                                                 </option>
                                             )) : <option disabled>Loading plants...</option>}
                                         </select>

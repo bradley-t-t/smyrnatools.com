@@ -1,0 +1,138 @@
+.plants-view {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--background);
+    color: var(--text-primary);
+}
+
+.plants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.plant-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+}
+
+.plant-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+    border-color: rgba(49, 130, 206, 0.2);
+}
+
+.plant-card-header {
+    padding: 18px 20px 10px 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--divider);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.plant-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.plant-icon {
+    font-size: 16px;
+}
+
+.plant-card-body {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.plant-detail-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.plant-detail-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 80px;
+}
+
+.plant-detail-value {
+    color: var(--text-primary);
+    font-weight: 400;
+}
+
+.plants-list-table-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.plants-list-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    font-size: 15px;
+}
+
+.plants-list-table th,
+.plants-list-table td {
+    padding: 13px 18px;
+    text-align: left;
+    border-bottom: 1px solid var(--divider);
+}
+
+.plants-list-table th {
+    background: var(--background);
+    color: var(--primary);
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    letter-spacing: 0.01em;
+    font-size: 1rem;
+}
+
+.plants-list-table tr:last-child td {
+    border-bottom: none;
+}
+
+.plants-list-table tbody tr {
+    transition: background 0.15s;
+}
+
+.plants-list-table tbody tr:hover {
+    background: rgba(49,130,206,0.06);
+}
+
+.plants-list-table td {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    vertical-align: middle;
+}
+
