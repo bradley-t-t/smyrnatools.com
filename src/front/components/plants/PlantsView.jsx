@@ -4,7 +4,6 @@ import LoadingScreen from '../common/LoadingScreen'
 import '../../styles/FilterStyles.css'
 import './styles/PlantsView.css'
 import PlantsDetailView from './PlantsDetailView'
-import PlantsCard from './PlantsCard'
 import PlantsAddView from './PlantsAddView'
 
 function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {

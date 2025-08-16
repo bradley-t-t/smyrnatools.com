@@ -65,10 +65,10 @@ const menuItems = [
     {text: 'Operators', id: 'Operators', permission: 'operators.view', alwaysVisible: false},
     {text: 'Scheduled Off', id: 'ScheduledOff', permission: 'operators_scheduled_off.view', alwaysVisible: false},
     {text: 'Managers', id: 'Managers', permission: 'managers.view', alwaysVisible: false},
-    {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
     {text: 'Reports', id: 'Reports', permission: 'reports.view', alwaysVisible: false},
-    {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false}
+    {text: 'Plants', id: 'Plants', permission: 'plants.view', alwaysVisible: false},
+    {text: 'Regions', id: 'Regions', permission: 'regions.view', alwaysVisible: false}
 ]
 
 export default function Navigation({

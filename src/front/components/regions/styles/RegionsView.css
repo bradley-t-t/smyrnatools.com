@@ -1,11 +1,11 @@
-.plants-view {
+.regions-view {
     width: 100%;
     min-height: 100vh;
     background: var(--background);
     color: var(--text-primary);
 }
 
-.plants-grid {
+.regions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
@@ -14,7 +14,7 @@
     margin: 0 auto;
 }
 
-.plant-badge {
+.region-badge {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -23,11 +23,11 @@
     font-weight: 600;
 }
 
-.plant-icon {
+.region-icon {
     font-size: 16px;
 }
 
-.plant-card-body {
+.region-card-body {
     padding: 16px 20px;
     display: flex;
     flex-direction: column;
@@ -35,31 +35,31 @@
     font-size: 15px;
 }
 
-.plant-detail-row {
+.region-detail-row {
     display: flex;
     gap: 10px;
     align-items: center;
 }
 
-.plant-detail-label {
+.region-detail-label {
     color: var(--text-secondary);
     font-weight: 500;
     min-width: 80px;
 }
 
-.plant-detail-value {
+.region-detail-value {
     color: var(--text-primary);
     font-weight: 400;
 }
 
-.plants-list-table-container {
+.regions-list-table-container {
     width: 100%;
     max-width: 1000px;
     margin: 0 auto;
     padding: 1rem;
 }
 
-.plants-list-table {
+.regions-list-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
@@ -69,14 +69,14 @@
     font-size: 15px;
 }
 
-.plants-list-table th,
-.plants-list-table td {
+.regions-list-table th,
+.regions-list-table td {
     padding: 13px 18px;
     text-align: left;
     border-bottom: 1px solid var(--divider);
 }
 
-.plants-list-table th {
+.regions-list-table th {
     background: var(--background);
     color: var(--primary);
     font-weight: 700;
@@ -87,21 +87,20 @@
     font-size: 1rem;
 }
 
-.plants-list-table tr:last-child td {
+.regions-list-table tr:last-child td {
     border-bottom: none;
 }
 
-.plants-list-table tbody tr {
+.regions-list-table tbody tr {
     transition: background 0.15s;
 }
 
-.plants-list-table tbody tr:hover {
+.regions-list-table tbody tr:hover {
     background: rgba(49,130,206,0.06);
 }
 
-.plants-list-table td {
+.regions-list-table td {
     color: var(--text-primary);
     font-size: 0.98rem;
     vertical-align: middle;
 }
-

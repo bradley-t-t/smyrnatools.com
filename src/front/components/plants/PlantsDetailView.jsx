@@ -3,9 +3,9 @@ import {PlantService} from '../../../services/PlantService'
 import './styles/PlantsDetailView.css'
 import '../mixers/styles/MixerDetailView.css'
 
-function PlantsDetailView({plant, onClose, onDelete, onUpdate}) {
+function PlantsDetailView({plant, onClose, onDelete}) {
     const [plantName, setPlantName] = useState(plant.plant_name || plant.plantName || '')
-    const [plantCode] = useState(plant.plant_code || plant.plantCode || '')
+    const [plantCode, setPlantCode] = useState(plant.plant_code || plant.plantCode || '')
     const [isSaving, setIsSaving] = useState(false)
     const [message, setMessage] = useState('')
     const [isDeleting, setIsDeleting] = useState(false)
@@ -17,9 +17,6 @@ function PlantsDetailView({plant, onClose, onDelete, onUpdate}) {
         try {
             await PlantService.updatePlant(plantCode, plantName)
             setMessage('Changes saved')
-            if (onUpdate) {
-                onUpdate(plantCode, plantName)
-            }
             setTimeout(() => setMessage(''), 2000)
         } catch (e) {
             setMessage('Error saving changes')
@@ -76,6 +73,7 @@ function PlantsDetailView({plant, onClose, onDelete, onUpdate}) {
                             type="text"
                             className="form-control"
                             value={plantCode}
+                            onChange={e => setPlantCode(e.target.value)}
                             disabled
                         />
                     </div>

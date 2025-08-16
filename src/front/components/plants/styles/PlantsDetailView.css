@@ -62,33 +62,6 @@
     box-sizing: border-box;
 }
 
-.mixer-card.plant-card {
-    background-color: var(--card-bg);
-    border-radius: var(--border-radius-lg);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    cursor: default;
-    border: 1px solid rgba(0, 0, 0, 0.03);
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.card-content {
-    flex: 1;
-    padding: var(--spacing-lg);
-    padding-top: calc(var(--spacing-lg) + 4px);
-    display: flex;
-    flex-direction: column;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--spacing-lg);
-}
 
 .mixer-name {
     margin: 0;

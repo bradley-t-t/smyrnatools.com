@@ -30,6 +30,7 @@ import EquipmentsView from '../front/components/equipment/EquipmentsView'
 import '../front/styles/Theme.css'
 import '../front/styles/Global.css'
 import PlantsView from '../front/components/plants/PlantsView'
+import RegionsView from '../front/components/regions/RegionsView'
 
 function VersionPopup({ version }) {
     if (!version) return null
@@ -354,6 +355,13 @@ function AppContent() {
                     title="Plants"
                     showSidebar={false}
                     setShowSidebar={() => {}}
+                />
+            )
+        }
+        if (selectedView === 'Regions') {
+            return (
+                <RegionsView
+                    title="Regions"
                 />
             )
         }
