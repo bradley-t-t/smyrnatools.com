@@ -25,7 +25,7 @@ export function useUserPresence() {
                 setError(err.message || 'Failed to get online users');
                 setLoading(false);
             });
-            const handlePresenceChange = (users) => {
+            const handlePresenceChange = users => {
                 if (!isMounted) return;
                 setOnlineUsers(users);
             };

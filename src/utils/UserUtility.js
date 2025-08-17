@@ -1,4 +1,4 @@
-const uuidUtility = {
+const userUtility = {
     generateUUID() {
         if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
             return crypto.randomUUID()
@@ -9,14 +9,14 @@ const uuidUtility = {
             arr[6] = (arr[6] & 0x0f) | 0x40
             arr[8] = (arr[8] & 0x3f) | 0x80
             return [
-                uuidUtility._byteToHex(arr[0]), uuidUtility._byteToHex(arr[1]),
-                uuidUtility._byteToHex(arr[2]), uuidUtility._byteToHex(arr[3]), '-',
-                uuidUtility._byteToHex(arr[4]), uuidUtility._byteToHex(arr[5]), '-',
-                uuidUtility._byteToHex(arr[6]), uuidUtility._byteToHex(arr[7]), '-',
-                uuidUtility._byteToHex(arr[8]), uuidUtility._byteToHex(arr[9]), '-',
-                uuidUtility._byteToHex(arr[10]), uuidUtility._byteToHex(arr[11]),
-                uuidUtility._byteToHex(arr[12]), uuidUtility._byteToHex(arr[13]),
-                uuidUtility._byteToHex(arr[14]), uuidUtility._byteToHex(arr[15])
+                userUtility._byteToHex(arr[0]), userUtility._byteToHex(arr[1]),
+                userUtility._byteToHex(arr[2]), userUtility._byteToHex(arr[3]), '-',
+                userUtility._byteToHex(arr[4]), userUtility._byteToHex(arr[5]), '-',
+                userUtility._byteToHex(arr[6]), userUtility._byteToHex(arr[7]), '-',
+                userUtility._byteToHex(arr[8]), userUtility._byteToHex(arr[9]), '-',
+                userUtility._byteToHex(arr[10]), userUtility._byteToHex(arr[11]),
+                userUtility._byteToHex(arr[12]), userUtility._byteToHex(arr[13]),
+                userUtility._byteToHex(arr[14]), userUtility._byteToHex(arr[15])
             ].join('')
         }
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -38,5 +38,6 @@ const uuidUtility = {
     }
 }
 
-export const generateUUID = uuidUtility.generateUUID
-export default uuidUtility
+export const generateUUID = userUtility.generateUUID
+export const isValidUUID = userUtility.isValidUUID
+export default userUtility

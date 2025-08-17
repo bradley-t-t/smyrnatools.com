@@ -1,67 +1,56 @@
-import supabase from './DatabaseService';
-import { UserService } from './UserService';
-import {Equipment} from "../config/models/equipment/Equipment";
-import {EquipmentHistory} from "../config/models/equipment/EquipmentHistory";
-import {EquipmentComment} from "../config/models/equipment/EquipmentComment";
-import { DatabaseUtility } from '../utils/DatabaseUtility';
-import { v4 as uuidv4 } from 'uuid';
+import supabase from './DatabaseService'
+import { UserService } from './UserService'
+import { Equipment } from '../config/models/equipment/Equipment'
+import { EquipmentHistory } from '../config/models/equipment/EquipmentHistory'
+import { EquipmentComment } from '../config/models/equipment/EquipmentComment'
+import { v4 as uuidv4 } from 'uuid'
 
-const EQUIPMENTS_TABLE = 'heavy_equipment';
-const HISTORY_TABLE = 'heavy_equipment_history';
-const EQUIPMENTS_COMMENTS_TABLE = 'heavy_equipment_comments';
-const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance';
+const EQUIPMENTS_TABLE = 'heavy_equipment'
+const HISTORY_TABLE = 'heavy_equipment_history'
+const EQUIPMENTS_COMMENTS_TABLE = 'heavy_equipment_comments'
+const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance'
 
 const formatDate = date => {
-    if (!date) return null;
-    if (date instanceof Date) return date.toISOString();
+    if (!date) return null
+    if (date instanceof Date) return date.toISOString()
     if (typeof date === 'string') {
-        const parsed = new Date(date);
-        return isNaN(parsed.getTime()) ? null : date;
+        const parsed = new Date(date)
+        return isNaN(parsed.getTime()) ? null : date
     }
-    return null;
-};
+    return null
+}
 
-export class EquipmentService {
+class EquipmentServiceImpl {
     static async getAllEquipments() {
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
-            .order('identifying_number', { ascending: true });
-
-        if (error) throw error;
-
-        return data.map(equipment => Equipment.fromApiFormat(equipment));
+            .order('identifying_number', { ascending: true })
+        if (error) throw error
+        return data.map(equipment => new Equipment(equipment))
     }
 
     static async fetchEquipments() {
-        return this.getAllEquipments();
+        return this.getAllEquipments()
     }
 
     static async getEquipmentById(id) {
-        if (!id) throw new Error('Equipment ID is required');
-
+        if (!id) throw new Error('Equipment ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .eq('id', id)
-            .single();
-
-        if (error) throw error;
-
-        if (!data) return null;
-
-        return Equipment.fromApiFormat(data);
+            .single()
+        if (error) throw error
+        if (!data) return null
+        return new Equipment(data)
     }
 
     static async fetchEquipmentById(id) {
-        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-            throw new Error('Invalid equipment ID');
-        }
-
-        const equipment = await this.getEquipmentById(id);
-        if (!equipment) return null;
-
-        return equipment;
+        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid equipment ID')
+        const equipment = await this.getEquipmentById(id)
+        if (!equipment) return null
+        return equipment
     }
 
     static async getActiveEquipments() {
@@ -69,30 +58,22 @@ export class EquipmentService {
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .eq('status', 'Active')
-            .order('identifying_number', { ascending: true });
-
-        if (error) throw error;
-
-        return data.map(equipment => Equipment.fromApiFormat(equipment));
+            .order('identifying_number', { ascending: true })
+        if (error) throw error
+        return data.map(equipment => new Equipment(equipment))
     }
 
     static async getEquipmentHistory(equipmentId, limit = null) {
-        if (!equipmentId) throw new Error('Equipment ID is required');
-
+        if (!equipmentId) throw new Error('Equipment ID is required')
         let query = supabase
             .from(HISTORY_TABLE)
             .select('*')
             .eq('equipment_id', equipmentId)
-            .order('changed_at', { ascending: false });
-
-        if (limit && Number.isInteger(limit) && limit > 0) {
-            query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        return data.map(entry => EquipmentHistory.fromApiFormat(entry));
+            .order('changed_at', { ascending: false })
+        if (limit && Number.isInteger(limit) && limit > 0) query = query.limit(limit)
+        const { data, error } = await query
+        if (error) throw error
+        return data.map(entry => new EquipmentHistory(entry))
     }
 
     static async addEquipment(equipment, userId) {
@@ -111,41 +92,36 @@ export class EquipmentService {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             updated_by: userId
-        };
-
+        }
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .insert([apiData])
             .select()
-            .single();
-
-        if (error) throw error;
-
-        return Equipment.fromApiFormat(data);
+            .single()
+        if (error) throw error
+        return new Equipment(data)
     }
 
     static async createEquipment(equipment, userId) {
         if (!userId) {
-            const user = await UserService.getCurrentUser();
-            userId = typeof user === 'object' && user !== null ? user.id : user;
-            if (!userId) throw new Error('Authentication required');
+            const user = await UserService.getCurrentUser()
+            userId = typeof user === 'object' && user !== null ? user.id : user
+            if (!userId) throw new Error('Authentication required')
         }
-        if (equipment.id) delete equipment.id;
-        return this.addEquipment(equipment, userId);
+        if (equipment.id) delete equipment.id
+        return this.addEquipment(equipment, userId)
     }
 
     static async updateEquipment(equipmentId, equipment, userId, prevEquipmentState = null) {
-        const id = typeof equipmentId === 'object' ? equipmentId.id : equipmentId;
-        if (!id) throw new Error('Equipment ID is required');
+        const id = typeof equipmentId === 'object' ? equipmentId.id : equipmentId
+        if (!id) throw new Error('Equipment ID is required')
         if (!userId) {
-            const user = await UserService.getCurrentUser();
-            userId = typeof user === 'object' && user !== null ? user.id : user;
+            const user = await UserService.getCurrentUser()
+            userId = typeof user === 'object' && user !== null ? user.id : user
         }
-        if (!userId) throw new Error('User ID is required');
-
-        const currentEquipment = prevEquipmentState || await this.getEquipmentById(id);
-        if (!currentEquipment) throw new Error(`Equipment with ID ${id} not found`);
-
+        if (!userId) throw new Error('User ID is required')
+        const currentEquipment = prevEquipmentState || await this.getEquipmentById(id)
+        if (!currentEquipment) throw new Error(`Equipment with ID ${id} not found`)
         const apiData = {
             identifying_number: equipment.identifyingNumber,
             assigned_plant: equipment.assignedPlant,
@@ -160,52 +136,44 @@ export class EquipmentService {
             year_made: equipment.yearMade ? parseInt(equipment.yearMade) : null,
             updated_at: new Date().toISOString(),
             updated_by: userId
-        };
-
+        }
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .update(apiData)
             .eq('id', id)
             .select()
-            .single();
-
-        if (error) throw error;
-
-        const historyEntries = this._createHistoryEntries(id, currentEquipment, equipment, userId);
+            .single()
+        if (error) throw error
+        const historyEntries = this._createHistoryEntries(id, currentEquipment, equipment, userId)
         if (historyEntries.length) {
             await supabase
                 .from(HISTORY_TABLE)
-                .insert(historyEntries);
+                .insert(historyEntries)
         }
-
-        return Equipment.fromApiFormat(data);
+        return new Equipment(data)
     }
 
     static async deleteEquipment(id) {
-        if (!id) throw new Error('Equipment ID is required');
-
+        if (!id) throw new Error('Equipment ID is required')
         await supabase
             .from(HISTORY_TABLE)
             .delete()
-            .eq('equipment_id', id);
-
+            .eq('equipment_id', id)
         await supabase
             .from(EQUIPMENTS_TABLE)
             .delete()
-            .eq('id', id);
-
-        return true;
+            .eq('id', id)
+        return true
     }
 
     static async createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy) {
-        if (!equipmentId || !fieldName) throw new Error('Equipment ID and field name are required');
-        let userId = changedBy;
+        if (!equipmentId || !fieldName) throw new Error('Equipment ID and field name are required')
+        let userId = changedBy
         if (!userId) {
-            const user = await UserService.getCurrentUser();
-            userId = typeof user === 'object' && user !== null ? user.id : user;
+            const user = await UserService.getCurrentUser()
+            userId = typeof user === 'object' && user !== null ? user.id : user
         }
-        if (!userId) userId = '00000000-0000-0000-0000-000000000000';
-
+        if (!userId) userId = '00000000-0000-0000-0000-000000000000'
         const { data, error } = await supabase
             .from(HISTORY_TABLE)
             .insert({
@@ -217,17 +185,14 @@ export class EquipmentService {
                 changed_by: userId
             })
             .select()
-            .single();
-
-        if (error) throw error;
-
-        return data;
+            .single()
+        if (error) throw error
+        return data
     }
 
     static async getCleanlinessHistory(equipmentId = null, months = 6) {
-        const threshold = new Date();
-        threshold.setMonth(threshold.getMonth() - months);
-
+        const threshold = new Date()
+        threshold.setMonth(threshold.getMonth() - months)
         let query = supabase
             .from(HISTORY_TABLE)
             .select('*')
@@ -235,20 +200,16 @@ export class EquipmentService {
             .gte('changed_at', threshold.toISOString())
             .order('changed_at', { ascending: true })
             .abortSignal(AbortSignal.timeout(5000))
-            .limit(200);
-
-        if (equipmentId) query = query.eq('equipment_id', equipmentId);
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        return data;
+            .limit(200)
+        if (equipmentId) query = query.eq('equipment_id', equipmentId)
+        const { data, error } = await query
+        if (error) throw error
+        return data
     }
 
     static async getConditionHistory(equipmentId = null, months = 6) {
-        const threshold = new Date();
-        threshold.setMonth(threshold.getMonth() - months);
-
+        const threshold = new Date()
+        threshold.setMonth(threshold.getMonth() - months)
         let query = supabase
             .from(HISTORY_TABLE)
             .select('*')
@@ -256,116 +217,102 @@ export class EquipmentService {
             .gte('changed_at', threshold.toISOString())
             .order('changed_at', { ascending: true })
             .abortSignal(AbortSignal.timeout(5000))
-            .limit(200);
-
-        if (equipmentId) query = query.eq('equipment_id', equipmentId);
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        return data;
+            .limit(200)
+        if (equipmentId) query = query.eq('equipment_id', equipmentId)
+        const { data, error } = await query
+        if (error) throw error
+        return data
     }
 
     static async getEquipmentsByStatus(status) {
-        if (!status) throw new Error('Status is required');
-
+        if (!status) throw new Error('Status is required')
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .eq('status', status)
-            .order('identifying_number', { ascending: true });
-
-        if (error) throw error;
-
-        return data.map(equipment => Equipment.fromApiFormat(equipment));
+            .order('identifying_number', { ascending: true })
+        if (error) throw error
+        return data.map(equipment => new Equipment(equipment))
     }
 
     static async searchEquipmentsByIdentifyingNumber(query) {
-        if (!query?.trim()) throw new Error('Search query is required');
-
+        if (!query?.trim()) throw new Error('Search query is required')
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .ilike('identifying_number', `%${query.trim()}%`)
-            .order('identifying_number', { ascending: true });
-
-        if (error) throw error;
-
-        return data.map(equipment => Equipment.fromApiFormat(equipment));
+            .order('identifying_number', { ascending: true })
+        if (error) throw error
+        return data.map(equipment => new Equipment(equipment))
     }
 
     static async getEquipmentsNeedingService(dayThreshold = 30) {
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
-            .order('identifying_number', { ascending: true });
-
-        if (error) throw error;
-
-        const thresholdDate = new Date();
-        thresholdDate.setDate(thresholdDate.getDate() - dayThreshold);
-
+            .order('identifying_number', { ascending: true })
+        if (error) throw error
+        const thresholdDate = new Date()
+        thresholdDate.setDate(thresholdDate.getDate() - dayThreshold)
         return data
             .filter(equipment => !equipment.last_service_date || new Date(equipment.last_service_date) < thresholdDate)
-            .map(equipment => Equipment.fromApiFormat(equipment));
+            .map(equipment => new Equipment(equipment))
     }
 
     static async fetchComments(equipmentId) {
-        if (!equipmentId) throw new Error('Equipment ID is required');
+        if (!equipmentId) throw new Error('Equipment ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .select('*')
             .eq('equipment_id', equipmentId)
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data?.map(row => EquipmentComment.fromRow(row)) ?? [];
+            .order('created_at', { ascending: false })
+        if (error) throw error
+        return data?.map(row => EquipmentComment.fromRow(row)) ?? []
     }
 
     static async addComment(equipmentId, text, author) {
-        if (!equipmentId) throw new Error('Equipment ID is required');
-        if (!text?.trim()) throw new Error('Comment text is required');
-        if (!author?.trim()) throw new Error('Author is required');
+        if (!equipmentId) throw new Error('Equipment ID is required')
+        if (!text?.trim()) throw new Error('Comment text is required')
+        if (!author?.trim()) throw new Error('Author is required')
         const comment = {
             id: uuidv4(),
             equipment_id: equipmentId,
             text: text.trim(),
             author: author.trim(),
             created_at: new Date().toISOString()
-        };
+        }
         const { data, error } = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .insert([comment])
             .select()
-            .single();
-        if (error) throw error;
-        return data ? EquipmentComment.fromRow(data) : null;
+            .single()
+        if (error) throw error
+        return data ? EquipmentComment.fromRow(data) : null
     }
 
     static async deleteComment(commentId) {
-        if (!commentId) throw new Error('Comment ID is required');
+        if (!commentId) throw new Error('Comment ID is required')
         const { error } = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .delete()
-            .eq('id', commentId);
-        if (error) throw error;
-        return true;
+            .eq('id', commentId)
+        if (error) throw error
+        return true
     }
 
     static async _fetchHistoryDates() {
         const { data, error } = await supabase
             .from(HISTORY_TABLE)
             .select('equipment_id, changed_at')
-            .order('changed_at', { ascending: false });
-
-        if (error) return {};
-
-        const historyDates = {};
+            .order('changed_at', { ascending: false })
+        if (error) return {}
+        const historyDates = {}
         data.forEach(entry => {
             if (!historyDates[entry.equipment_id] || new Date(entry.changed_at) > new Date(historyDates[entry.equipment_id])) {
-                historyDates[entry.equipment_id] = entry.changed_at;
+                historyDates[entry.equipment_id] = entry.changed_at
             }
-        });
-        return historyDates;
+        })
+        return historyDates
     }
 
     static _createHistoryEntries(equipmentId, currentEquipment, newEquipment, userId) {
@@ -381,23 +328,20 @@ export class EquipmentService {
             { field: 'equipmentMake', dbField: 'equipment_make' },
             { field: 'equipmentModel', dbField: 'equipment_model' },
             { field: 'yearMade', dbField: 'year_made' }
-        ];
-
+        ]
         return fieldsToTrack.reduce((entries, { field, dbField }) => {
-            let oldValue = currentEquipment[field];
-            let newValue = newEquipment[field];
-
+            let oldValue = currentEquipment[field]
+            let newValue = newEquipment[field]
             if (field === 'lastServiceDate') {
-                oldValue = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null;
-                newValue = newValue ? new Date(newValue).toISOString().split('T')[0] : null;
+                oldValue = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null
+                newValue = newValue ? new Date(newValue).toISOString().split('T')[0] : null
             } else if (field === 'cleanlinessRating' || field === 'conditionRating' || field === 'yearMade' || field === 'hoursMileage') {
-                oldValue = oldValue != null ? Number(oldValue) : null;
-                newValue = newValue != null ? Number(newValue) : null;
+                oldValue = oldValue != null ? Number(oldValue) : null
+                newValue = newValue != null ? Number(newValue) : null
             } else {
-                oldValue = oldValue?.toString().trim() ?? null;
-                newValue = newValue?.toString().trim() ?? null;
+                oldValue = oldValue?.toString().trim() ?? null
+                newValue = newValue?.toString().trim() ?? null
             }
-
             if (oldValue !== newValue) {
                 entries.push({
                     equipment_id: equipmentId,
@@ -406,28 +350,28 @@ export class EquipmentService {
                     new_value: newValue?.toString() ?? null,
                     changed_at: new Date().toISOString(),
                     changed_by: userId
-                });
+                })
             }
-            return entries;
-        }, []);
+            return entries
+        }, [])
     }
 
     static async fetchIssues(equipmentId) {
-        if (!equipmentId) throw new Error('Equipment ID is required');
+        if (!equipmentId) throw new Error('Equipment ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .select('*')
             .eq('equipment_id', equipmentId)
-            .order('time_created', { ascending: false });
-        if (error) throw error;
-        return data ?? [];
+            .order('time_created', { ascending: false })
+        if (error) throw error
+        return data ?? []
     }
 
     static async addIssue(equipmentId, issueText, severity) {
-        if (!equipmentId) throw new Error('Equipment ID is required');
-        if (!issueText?.trim()) throw new Error('Issue description is required');
-        const validSeverities = ['Low', 'Medium', 'High'];
-        const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium';
+        if (!equipmentId) throw new Error('Equipment ID is required')
+        if (!issueText?.trim()) throw new Error('Issue description is required')
+        const validSeverities = ['Low', 'Medium', 'High']
+        const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium'
         const payload = {
             id: uuidv4(),
             equipment_id: equipmentId,
@@ -435,36 +379,38 @@ export class EquipmentService {
             severity: finalSeverity,
             time_created: new Date().toISOString(),
             time_completed: null
-        };
+        }
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .insert([payload])
             .select()
-            .single();
-        if (error) throw error;
-        if (!data) throw new Error('Database insert succeeded but no data was returned');
-        return data;
+            .single()
+        if (error) throw error
+        if (!data) throw new Error('Database insert succeeded but no data was returned')
+        return data
     }
 
     static async deleteIssue(issueId) {
-        if (!issueId) throw new Error('Issue ID is required');
+        if (!issueId) throw new Error('Issue ID is required')
         const { error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .delete()
-            .eq('id', issueId);
-        if (error) throw error;
-        return true;
+            .eq('id', issueId)
+        if (error) throw error
+        return true
     }
 
     static async completeIssue(issueId) {
-        if (!issueId) throw new Error('Issue ID is required');
+        if (!issueId) throw new Error('Issue ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .update({ time_completed: new Date().toISOString() })
             .eq('id', issueId)
             .select()
-            .single();
-        if (error) throw error;
-        return data;
+            .single()
+        if (error) throw error
+        return data
     }
 }
+
+export const EquipmentService = EquipmentServiceImpl

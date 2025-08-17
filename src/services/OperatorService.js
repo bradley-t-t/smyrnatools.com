@@ -1,269 +1,154 @@
-import supabase from './DatabaseService';
-import { Operator } from '../config/models/operators/Operator';
-import UUIDUtility from '../utils/UUIDUtility';
+import supabase from './DatabaseService'
+import { Operator } from '../config/models/operators/Operator'
+import UserUtility from '../utils/UserUtility'
 
-const OPERATORS_TABLE = 'operators';
+const OPERATORS_TABLE = 'operators'
 
-export class OperatorService {
-    static async getAllOperators() {
+class OperatorServiceImpl {
+    async getAllOperators() {
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
-            .order('name');
-
-        if (error) {
-            console.error('Error fetching operators:', error);
-            throw new Error(`Failed to fetch operators: ${error.message} (Code: ${error.code})`);
-        }
-
-        return data.map(op => Operator.fromApiFormat(op));
+            .order('name')
+        if (error) throw new Error(error.message)
+        return data.map(op => new Operator(op))
     }
 
-    static async fetchActiveOperators() {
+    async fetchActiveOperators() {
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('status', 'Active')
-            .order('name');
-
-        if (error) {
-            console.error('Error fetching active operators:', error);
-            throw new Error(`Failed to fetch active operators: ${error.message} (Code: ${error.code})`);
-        }
-
-        return data.map(op => Operator.fromApiFormat(op));
+            .order('name')
+        if (error) throw new Error(error.message)
+        return data.map(op => new Operator(op))
     }
 
-    static async fetchOperatorsByPlant(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required');
-
+    async fetchOperatorsByPlant(plantCode) {
+        if (!plantCode) throw new Error('Plant code is required')
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('plant_code', plantCode)
             .eq('position', 'Mixer Operator')
-            .order('name');
-
-        if (error) {
-            console.error(`Error fetching operators for plant ${plantCode}:`, error);
-            throw new Error(`Failed to fetch operators for plant ${plantCode}: ${error.message} (Code: ${error.code})`);
-        }
-
-        return data.map(op => Operator.fromApiFormat(op));
+            .order('name')
+        if (error) throw new Error(error.message)
+        return data.map(op => new Operator(op))
     }
 
-    static async fetchTractorOperators() {
+    async fetchTractorOperators() {
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('position', 'Tractor Operator')
-            .order('name');
-
-        if (error) {
-            console.error('Error fetching tractor operators:', error);
-            throw new Error(`Failed to fetch tractor operators: ${error.message} (Code: ${error.code})`);
-        }
-
-        return data.map(op => Operator.fromApiFormat(op));
+            .order('name')
+        if (error) throw new Error(error.message)
+        return data.map(op => new Operator(op))
     }
 
-    static async getOperatorByEmployeeId(employeeId) {
-        if (!employeeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId)) {
-            throw new Error('Invalid Employee ID');
-        }
-
+    async getOperatorByEmployeeId(employeeId) {
+        if (!employeeId || !UserUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', employeeId)
-            .single();
-
-        if (error || !data) {
-            console.error(`Error fetching operator with ID ${employeeId}:`, error);
-            return null;
-        }
-
-        data.smyrna_id = data.smyrna_id ?? '';
-        return Operator.fromApiFormat(data);
+            .single()
+        if (error || !data) return null
+        data.smyrna_id = data.smyrna_id ?? ''
+        return new Operator(data)
     }
 
-    static async createOperator(operator) {
-        const operatorInstance = operator instanceof Operator ? operator : new Operator({
-            employee_id: UUIDUtility.isValidUUID(operator.employee_id) ? operator.employee_id : UUIDUtility.generateUUID(),
-            smyrna_id: null,
-            name: operator.name?.trim(),
-            plant_code: operator.plant_code,
-            status: operator.status ?? 'Active',
-            is_trainer: operator.is_trainer ?? false,
-            assigned_trainer: UUIDUtility.safeUUID(operator.assigned_trainer),
-            position: operator.position || null,
-            created_at: operator.created_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            updated_at: operator.updated_at ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            pending_start_date: operator.pending_start_date ?? operator.pendingStartDate ?? null
-        });
-
-        const insertObj = operatorInstance.toApiFormat();
-
-        if (!UUIDUtility.isValidUUID(insertObj.employee_id)) {
-            throw new Error('Invalid employee_id: Must be a valid UUID');
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from(OPERATORS_TABLE)
-                .insert([insertObj])
-                .select()
-                .single();
-
-            if (error) {
-                throw new Error(`Failed to add operator: ${error.message} (Code: ${error.code})`);
-            }
-
-            return Operator.fromApiFormat(data);
-        } catch (error) {
-            throw error;
-        }
+    async createOperator(operator) {
+        const op = operator instanceof Operator ? operator : new Operator(operator)
+        if (!UserUtility.isValidUUID(op.employee_id)) op.employee_id = UserUtility.generateUUID()
+        const insertObj = { ...op }
+        const { data, error } = await supabase
+            .from(OPERATORS_TABLE)
+            .insert([insertObj])
+            .select()
+            .single()
+        if (error) throw new Error(error.message)
+        return new Operator(data)
     }
 
-    static async updateOperator(operator) {
-        if (!operator.employeeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(operator.employeeId)) {
-            throw new Error('Invalid Employee ID');
-        }
-
+    async updateOperator(operator) {
+        if (!operator.employeeId || !UserUtility.isValidUUID(operator.employeeId)) throw new Error('Invalid Employee ID')
         const { data: currentData, error: lookupError } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', operator.employeeId)
-            .single();
-
-        if (lookupError || !currentData) {
-            throw new Error('Operator not found');
-        }
-
-        const operatorInstance = operator instanceof Operator ? operator : new Operator({
-            employee_id: operator.employeeId,
-            smyrna_id: null,
-            name: operator.name?.trim(),
-            plant_code: operator.plantCode,
-            status: operator.status,
-            is_trainer: operator.isTrainer,
-            assigned_trainer: (operator.assignedTrainer && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(operator.assignedTrainer)) ? operator.assignedTrainer : null,
-            position: operator.position || null,
-            created_at: operator.createdAt ?? currentData.created_at,
-            updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            pending_start_date: operator.pendingStartDate ?? operator.pending_start_date ?? null
-        });
-
-        const updateObj = operatorInstance.toApiFormat();
-
-        if (!UUIDUtility.isValidUUID(updateObj.employee_id)) {
-            throw new Error('Invalid employee_id: Must be a valid UUID');
-        }
-
+            .single()
+        if (lookupError || !currentData) throw new Error('Operator not found')
+        const op = operator instanceof Operator ? operator : new Operator(operator)
+        op.created_at = operator.createdAt ?? currentData.created_at
+        op.updated_at = new Date().toISOString()
+        const updateObj = { ...op }
         const { error } = await supabase
             .from(OPERATORS_TABLE)
             .update(updateObj)
-            .eq('employee_id', operatorInstance.employeeId);
-
-        if (error) {
-            throw new Error(`Failed to update operator: ${error.message} (Code: ${error.code})`);
-        }
-
-        return operatorInstance;
+            .eq('employee_id', op.employeeId)
+        if (error) throw new Error(error.message)
+        return op
     }
 
-    static async deleteOperator(employeeId) {
-        if (!employeeId || !UUIDUtility.isValidUUID(employeeId)) {
-            throw new Error('Invalid Employee ID: Must be a valid UUID.');
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from(OPERATORS_TABLE)
-                .delete()
-                .eq('employee_id', employeeId)
-                .select();
-
-            if (error) {
-                console.error(`Error deleting operator with ID ${employeeId}:`, error);
-                throw new Error(`Failed to delete operator: ${error.message} (Code: ${error.code})`);
-            }
-
-            if (!data || data.length === 0) {
-                console.error(`Operator with ID ${employeeId} was not found or could not be deleted.`);
-                throw new Error(`Operator with ID ${employeeId} was not deleted.`);
-            }
-
-            console.log(`Operator with ID ${employeeId} successfully deleted.`);
-            return true;
-        } catch (error) {
-            console.error('Error during operator deletion:', error);
-            throw error;
-        }
+    async deleteOperator(employeeId) {
+        if (!employeeId || !UserUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
+        const { data, error } = await supabase
+            .from(OPERATORS_TABLE)
+            .delete()
+            .eq('employee_id', employeeId)
+            .select()
+        if (error) throw new Error(error.message)
+        if (!data || data.length === 0) throw new Error('Operator was not deleted')
+        return true
     }
 
-    static async getAllTrainers() {
+    async getAllTrainers() {
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('is_trainer', true)
-            .order('name');
-
-        if (error) {
-            console.error('Error fetching trainers:', error);
-            throw new Error(`Failed to fetch trainers: ${error.message} (Code: ${error.code})`);
-        }
-
-        return data.map(op => Operator.fromApiFormat(op));
+            .order('name')
+        if (error) throw new Error(error.message)
+        return data.map(op => new Operator(op))
     }
 
-    static async fetchOperators() {
+    async fetchOperators() {
         const [{ data: activeData, error: activeError }, { data: otherData, error: otherError }] = await Promise.all([
             supabase.from(OPERATORS_TABLE).select('*').eq('status', 'Active').order('name'),
             supabase.from(OPERATORS_TABLE).select('*').not('status', 'eq', 'Active').order('name')
-        ]);
-
-        if (activeError || otherError) {
-            console.error('Error fetching operators:', activeError || otherError);
-            throw new Error(`Failed to fetch operators: ${(activeError || otherError).message} (Code: ${(activeError || otherError).code})`);
-        }
-
-        return [...activeData, ...otherData].map(op => Operator.fromApiFormat(op));
+        ])
+        if (activeError || otherError) throw new Error((activeError || otherError).message)
+        return [...activeData, ...otherData].map(op => new Operator(op))
     }
 
-    static async fetchOperatorsWithAvailability(mixers = []) {
-        const operators = await this.fetchOperators();
+    async fetchOperatorsWithAvailability(mixers = []) {
+        const operators = await this.fetchOperators()
         return operators.map(operator => ({
             ...operator,
             isAvailable: operator.status === 'Active' && !mixers.some(mixer =>
                 mixer.assignedOperator === operator.employeeId && mixer.status === 'Active'
             )
-        }));
+        }))
     }
 
-    static isOperatorAssigned(operatorId, mixers = []) {
-        if (!operatorId || operatorId === '0') return false;
+    isOperatorAssigned(operatorId, mixers = []) {
+        if (!operatorId || operatorId === '0') return false
         return mixers.some(mixer =>
             mixer.assignedOperator === operatorId && mixer.status === 'Active'
-        );
+        )
     }
 
-    static async getOperatorById(employeeId) {
-        if (!employeeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId)) {
-            throw new Error('Invalid Employee ID');
-        }
-
+    async getOperatorById(employeeId) {
+        if (!employeeId || !UserUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
         const { data, error } = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', employeeId)
-            .single();
-
-        if (error || !data) {
-            console.error(`Error fetching operator ${employeeId}:`, error);
-            return null;
-        }
-
-        return Operator.fromApiFormat(data);
+            .single()
+        if (error || !data) return null
+        return new Operator(data)
     }
 }
+
+export const OperatorService = new OperatorServiceImpl()

@@ -5,13 +5,7 @@ class ReportServiceImpl {
         monday.setHours(0, 0, 0, 0)
         const saturday = new Date(monday)
         saturday.setDate(monday.getDate() + 5)
-        function formatDateMMDDYY(date) {
-            const mm = date.getMonth() + 1
-            const dd = date.getDate()
-            const yy = date.getFullYear().toString().slice(-2)
-            return `${mm}-${dd}-${yy}`
-        }
-        return `${formatDateMMDDYY(monday)} through ${formatDateMMDDYY(saturday)}`
+        return `${this.formatDateMMDDYY(monday)} through ${this.formatDateMMDDYY(saturday)}`
     }
 
     getMondayAndSaturday(date = new Date()) {
@@ -27,8 +21,7 @@ class ReportServiceImpl {
     }
 
     getMondayISO(date) {
-        const { monday } = this.getMondayAndSaturday(date)
-        return monday.toISOString().slice(0, 10)
+        return this.getMondayAndSaturday(date).monday.toISOString().slice(0, 10)
     }
 
     formatDateMMDDYY(date) {
@@ -43,14 +36,14 @@ class ReportServiceImpl {
     }
 
     getPlantNameFromReport(report) {
-        if (report.data && report.data.plant) return report.data.plant
-        if (report.data && report.data.rows && report.data.rows[0] && report.data.rows[0].plant_code) return report.data.rows[0].plant_code
+        if (report.data?.plant) return report.data.plant
+        if (report.data?.rows?.[0]?.plant_code) return report.data.rows[0].plant_code
         return ''
     }
 
     getPlantNameFromWeekItem(item) {
-        if (item.report && item.report.data && item.report.data.plant) return item.report.data.plant
-        if (item.report && item.report.data && item.report.data.rows && item.report.data.rows[0] && item.report.data.rows[0].plant_code) return item.report.data.rows[0].plant_code
+        if (item.report?.data?.plant) return item.report.data.plant
+        if (item.report?.data?.rows?.[0]?.plant_code) return item.report.data.rows[0].plant_code
         return ''
     }
 
@@ -62,7 +55,7 @@ class ReportServiceImpl {
     }
 
     getOperatorName(row, operatorOptions) {
-        if (!row || !row.name) return ''
+        if (!row?.name) return ''
         if (Array.isArray(operatorOptions)) {
             const found = operatorOptions.find(opt => opt.value === row.name)
             if (found) return found.label

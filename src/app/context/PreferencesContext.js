@@ -1,15 +1,13 @@
-import React, {createContext, useContext, useEffect, useState} from 'react';
-import {logSupabaseError, supabase} from '../../services/DatabaseService';
-import {UserPreferencesService} from '../../services/UserPreferencesService';
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { logSupabaseError, supabase } from '../../services/DatabaseService'
+import { UserPreferencesService } from '../../services/UserPreferencesService'
 
-const PreferencesContext = createContext();
+const PreferencesContext = createContext()
 
 export function usePreferences() {
-    const context = useContext(PreferencesContext);
-    if (!context) {
-        throw new Error('usePreferences must be used within a PreferencesProvider');
-    }
-    return context;
+    const context = useContext(PreferencesContext)
+    if (!context) throw new Error('usePreferences must be used within a PreferencesProvider')
+    return context
 }
 
 const defaultPreferences = {
@@ -30,7 +28,6 @@ const defaultPreferences = {
         searchText: '',
         selectedPlant: '',
         statusFilter: '',
-        trainerFilter: '',
         viewMode: 'grid'
     },
     managerFilters: {
@@ -58,107 +55,96 @@ const defaultPreferences = {
         viewMode: 'grid'
     },
     lastViewedFilters: null
-};
+}
 
-export const PreferencesProvider = ({children}) => {
-    const [preferences, setPreferences] = useState(defaultPreferences);
-    const [loading, setLoading] = useState(true);
-    const [userId, setUserId] = useState(null);
+export const PreferencesProvider = ({ children }) => {
+    const [preferences, setPreferences] = useState(defaultPreferences)
+    const [loading, setLoading] = useState(true)
+    const [userId, setUserId] = useState(null)
 
     useEffect(() => {
         const applyThemeFromStorage = () => {
             try {
-                const savedPrefs = localStorage.getItem('userPreferences');
+                const savedPrefs = localStorage.getItem('userPreferences')
                 if (savedPrefs) {
-                    const parsedPrefs = JSON.parse(savedPrefs);
-                    setPreferences(parsedPrefs);
-                    document.documentElement.classList.toggle('dark-mode', parsedPrefs.themeMode === 'dark');
-                    document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey');
-                    document.documentElement.classList.add(`accent-${parsedPrefs.accentColor}`);
+                    const parsedPrefs = JSON.parse(savedPrefs)
+                    setPreferences(parsedPrefs)
+                    document.documentElement.classList.toggle('dark-mode', parsedPrefs.themeMode === 'dark')
+                    document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
+                    document.documentElement.classList.add(`accent-${parsedPrefs.accentColor}`)
                 }
-            } catch (error) {
-            }
-        };
-
-        applyThemeFromStorage();
-
-        const handleStorageChange = (e) => {
-            if (e.key === 'userPreferences') {
-                applyThemeFromStorage();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+            } catch {}
+        }
+        applyThemeFromStorage()
+        const handleStorageChange = e => {
+            if (e.key === 'userPreferences') applyThemeFromStorage()
+        }
+        window.addEventListener('storage', handleStorageChange)
+        return () => window.removeEventListener('storage', handleStorageChange)
+    }, [])
 
     useEffect(() => {
         const initializeUser = async () => {
             try {
-                const {data: {session}} = await supabase.auth.getSession();
-                const sessionUserId = session?.user?.id || sessionStorage.getItem('userId');
+                const { data: { session } } = await supabase.auth.getSession()
+                const sessionUserId = session?.user?.id || sessionStorage.getItem('userId')
                 if (sessionUserId) {
-                    setUserId(sessionUserId);
-                    await fetchUserPreferences(sessionUserId);
+                    setUserId(sessionUserId)
+                    await fetchUserPreferences(sessionUserId)
                 } else {
-                    setLoading(false);
+                    setLoading(false)
                 }
-            } catch (error) {
-                setLoading(false);
+            } catch {
+                setLoading(false)
             }
-        };
-
-        initializeUser();
-
-        const {data: authListener} = supabase.auth.onAuthStateChange((event, session) => {
+        }
+        initializeUser()
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN' && session?.user?.id) {
-                setUserId(session.user.id);
-                setTimeout(() => fetchUserPreferences(session.user.id), 500);
+                setUserId(session.user.id)
+                setTimeout(() => fetchUserPreferences(session.user.id), 500)
             } else if (event === 'SIGNED_OUT') {
-                setUserId(null);
-                setPreferences(defaultPreferences);
-                localStorage.removeItem('userPreferences');
-                document.documentElement.classList.remove('dark-mode', 'accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey');
+                setUserId(null)
+                setPreferences(defaultPreferences)
+                localStorage.removeItem('userPreferences')
+                document.documentElement.classList.remove('dark-mode', 'accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
             }
-        });
-
-        return () => authListener.subscription?.unsubscribe();
-    }, []);
+        })
+        return () => authListener.subscription?.unsubscribe()
+    }, [])
 
     useEffect(() => {
-        document.documentElement.classList.toggle('dark-mode', preferences.themeMode === 'dark');
-        document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey');
-        document.documentElement.classList.add(`accent-${preferences.accentColor}`);
+        document.documentElement.classList.toggle('dark-mode', preferences.themeMode === 'dark')
+        document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
+        document.documentElement.classList.add(`accent-${preferences.accentColor}`)
         try {
-            localStorage.setItem('userPreferences', JSON.stringify(preferences));
-        } catch (error) {
-        }
-    }, [preferences]);
+            localStorage.setItem('userPreferences', JSON.stringify(preferences))
+        } catch {}
+    }, [preferences])
 
-    const fetchUserPreferences = async (uid) => {
+    const fetchUserPreferences = async uid => {
         try {
-            setLoading(true);
-            const {data, error} = await supabase
+            setLoading(true)
+            const { data, error } = await supabase
                 .from('users_preferences')
                 .select('*')
                 .eq('user_id', uid)
-                .single();
-
+                .single()
             if (error && error.code === 'PGRST116') {
-                setPreferences(defaultPreferences);
+                setPreferences(defaultPreferences)
             } else if (error) {
-                throw error;
+                throw error
             } else {
-                setPreferencesFromData(data);
+                setPreferencesFromData(data)
             }
         } catch (error) {
-            logSupabaseError('fetching preferences', error);
+            logSupabaseError('fetching preferences', error)
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
-    const setPreferencesFromData = (data) => {
+    const setPreferencesFromData = data => {
         const newPreferences = {
             navbarMinimized: data.navbar_minimized,
             themeMode: data.theme_mode,
@@ -167,27 +153,26 @@ export const PreferencesProvider = ({children}) => {
             showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
             autoOverview: data.auto_overview === undefined ? false : data.auto_overview,
             defaultViewMode: data.default_view_mode === undefined ? null : data.default_view_mode,
-            mixerFilters: data.mixer_filters ? {...data.mixer_filters, viewMode: data.mixer_filters.viewMode || 'grid'} : {...defaultPreferences.mixerFilters},
-            operatorFilters: data.operator_filters ? {...data.operator_filters, viewMode: data.operator_filters.viewMode || 'grid'} : {...defaultPreferences.operatorFilters},
-            managerFilters: data.manager_filters ? {...data.manager_filters, viewMode: data.manager_filters.viewMode || 'grid'} : {...defaultPreferences.managerFilters},
-            tractorFilters: data.tractor_filters ? {...data.tractor_filters, viewMode: data.tractor_filters.viewMode || 'grid'} : {...defaultPreferences.tractorFilters},
-            trailerFilters: data.trailer_filters ? {...data.trailer_filters, viewMode: data.trailer_filters.viewMode || 'grid'} : {...defaultPreferences.trailerFilters},
-            equipmentFilters: data.equipment_filters ? {...data.equipment_filters, viewMode: data.equipment_filters.viewMode || 'grid'} : {...defaultPreferences.equipmentFilters},
+            mixerFilters: data.mixer_filters ? { ...data.mixer_filters, viewMode: data.mixer_filters.viewMode || 'grid' } : { ...defaultPreferences.mixerFilters },
+            operatorFilters: data.operator_filters ? { ...data.operator_filters, viewMode: data.operator_filters.viewMode || 'grid' } : { ...defaultPreferences.operatorFilters },
+            managerFilters: data.manager_filters ? { ...data.manager_filters, viewMode: data.manager_filters.viewMode || 'grid' } : { ...defaultPreferences.managerFilters },
+            tractorFilters: data.tractor_filters ? { ...data.tractor_filters, viewMode: data.tractor_filters.viewMode || 'grid' } : { ...defaultPreferences.tractorFilters },
+            trailerFilters: data.trailer_filters ? { ...data.trailer_filters, viewMode: data.trailer_filters.viewMode || 'grid' } : { ...defaultPreferences.trailerFilters },
+            equipmentFilters: data.equipment_filters ? { ...data.equipment_filters, viewMode: data.equipment_filters.viewMode || 'grid' } : { ...defaultPreferences.equipmentFilters },
             lastViewedFilters: data.last_viewed_filters
-        };
-        setPreferences(newPreferences);
-        try {
-            localStorage.setItem('userPreferences', JSON.stringify(newPreferences));
-        } catch (error) {
         }
-    };
+        setPreferences(newPreferences)
+        try {
+            localStorage.setItem('userPreferences', JSON.stringify(newPreferences))
+        } catch {}
+    }
 
     const updatePreferences = async (keyOrObject, value) => {
         let updatedPreferences
         if (typeof keyOrObject === 'string') {
-            updatedPreferences = {...preferences, [keyOrObject]: value}
+            updatedPreferences = { ...preferences, [keyOrObject]: value }
         } else {
-            updatedPreferences = {...preferences, ...keyOrObject}
+            updatedPreferences = { ...preferences, ...keyOrObject }
         }
         setPreferences(updatedPreferences)
         localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences))
@@ -207,103 +192,103 @@ export const PreferencesProvider = ({children}) => {
                 trailer_filters: updatedPreferences.trailerFilters,
                 equipment_filters: updatedPreferences.equipmentFilters,
                 last_viewed_filters: updatedPreferences.lastViewedFilters,
-                updated_at: new Date().toISOString(),
-            };
+                updated_at: new Date().toISOString()
+            }
             await supabase
                 .from('users_preferences')
                 .update(updateData)
                 .eq('user_id', userId)
         }
-    };
+    }
 
     const updateManagerFilter = (key, value) => {
-        const newFilters = {...preferences.managerFilters, [key]: value};
-        updatePreferences('managerFilters', newFilters);
-    };
+        const newFilters = { ...preferences.managerFilters, [key]: value }
+        updatePreferences('managerFilters', newFilters)
+    }
 
     const resetManagerFilters = (options = {}) => {
-        let newFilters = {...defaultPreferences.managerFilters}
+        let newFilters = { ...defaultPreferences.managerFilters }
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
-        updatePreferences('managerFilters', newFilters);
-    };
+        updatePreferences('managerFilters', newFilters)
+    }
 
     const updateTractorFilter = (key, value) => {
-        const newFilters = {...preferences.tractorFilters, [key]: value};
-        updatePreferences('tractorFilters', newFilters);
-    };
+        const newFilters = { ...preferences.tractorFilters, [key]: value }
+        updatePreferences('tractorFilters', newFilters)
+    }
 
     const resetTractorFilters = () => {
-        updatePreferences('tractorFilters', {...defaultPreferences.tractorFilters});
-    };
+        updatePreferences('tractorFilters', { ...defaultPreferences.tractorFilters })
+    }
 
     const updateTrailerFilter = (key, value) => {
-        const newFilters = {...preferences.trailerFilters, [key]: value};
-        updatePreferences('trailerFilters', newFilters);
-    };
+        const newFilters = { ...preferences.trailerFilters, [key]: value }
+        updatePreferences('trailerFilters', newFilters)
+    }
 
     const resetTrailerFilters = () => {
-        updatePreferences('trailerFilters', {...defaultPreferences.trailerFilters});
-    };
+        updatePreferences('trailerFilters', { ...defaultPreferences.trailerFilters })
+    }
 
     const updateEquipmentFilter = (key, value) => {
-        const newFilters = {...preferences.equipmentFilters, [key]: value};
-        updatePreferences('equipmentFilters', newFilters);
-    };
+        const newFilters = { ...preferences.equipmentFilters, [key]: value }
+        updatePreferences('equipmentFilters', newFilters)
+    }
 
     const resetEquipmentFilters = (options = {}) => {
-        let newFilters = {...defaultPreferences.equipmentFilters}
+        let newFilters = { ...defaultPreferences.equipmentFilters }
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
-        updatePreferences('equipmentFilters', newFilters);
-    };
+        updatePreferences('equipmentFilters', newFilters)
+    }
 
     const updateMixerFilter = (key, value) => {
-        const newFilters = {...preferences.mixerFilters, [key]: value};
-        updatePreferences('mixerFilters', newFilters);
-    };
+        const newFilters = { ...preferences.mixerFilters, [key]: value }
+        updatePreferences('mixerFilters', newFilters)
+    }
 
     const resetMixerFilters = (options = {}) => {
-        let newFilters = {...defaultPreferences.mixerFilters}
+        let newFilters = { ...defaultPreferences.mixerFilters }
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
-        updatePreferences('mixerFilters', newFilters);
-    };
+        updatePreferences('mixerFilters', newFilters)
+    }
 
     const updateOperatorFilter = (key, value) => {
-        const newFilters = {...preferences.operatorFilters, [key]: value};
-        updatePreferences('operatorFilters', newFilters);
-    };
+        const newFilters = { ...preferences.operatorFilters, [key]: value }
+        updatePreferences('operatorFilters', newFilters)
+    }
 
     const resetOperatorFilters = (options = {}) => {
-        let newFilters = {...defaultPreferences.operatorFilters}
+        let newFilters = { ...defaultPreferences.operatorFilters }
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
-        updatePreferences('operatorFilters', newFilters);
-    };
+        updatePreferences('operatorFilters', newFilters)
+    }
 
-    const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized);
-    const toggleShowTips = () => updatePreferences('showTips', !preferences.showTips);
-    const toggleShowOnlineOverlay = () => updatePreferences('showOnlineOverlay', !preferences.showOnlineOverlay);
-    const toggleAutoOverview = () => updatePreferences('autoOverview', !preferences.autoOverview);
-    const setThemeMode = (mode) => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode);
-    const setAccentColor = (color) => (color === 'red' || color === 'blue') && updatePreferences('accentColor', color);
-    const saveLastViewedFilters = async (filters) => {
+    const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized)
+    const toggleShowTips = () => updatePreferences('showTips', !preferences.showTips)
+    const toggleShowOnlineOverlay = () => updatePreferences('showOnlineOverlay', !preferences.showOnlineOverlay)
+    const toggleAutoOverview = () => updatePreferences('autoOverview', !preferences.autoOverview)
+    const setThemeMode = mode => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode)
+    const setAccentColor = color => (color === 'red' || color === 'blue') && updatePreferences('accentColor', color)
+    const saveLastViewedFilters = async filters => {
         try {
-            if (!userId) return;
-            await UserPreferencesService.saveLastViewedFilters(userId, filters);
+            if (!userId) return
+            await UserPreferencesService.saveLastViewedFilters(userId, filters)
             setPreferences(prev => ({
                 ...prev,
                 lastViewedFilters: filters
-            }));
+            }))
         } catch (error) {
-            logSupabaseError('saving last viewed filters', error);
+            logSupabaseError('saving last viewed filters', error)
         }
-    };
+    }
 
     return (
         <PreferencesContext.Provider
@@ -334,11 +319,11 @@ export const PreferencesProvider = ({children}) => {
         >
             {children}
         </PreferencesContext.Provider>
-    );
-};
+    )
+}
 
-export const debugForceCreatePreferences = async (userId) => {
-    if (!userId) return false;
+export const debugForceCreatePreferences = async userId => {
+    if (!userId) return false
     try {
         await supabase
             .from('users_preferences')
@@ -348,9 +333,9 @@ export const debugForceCreatePreferences = async (userId) => {
                 theme_mode: 'light',
                 accent_color: 'blue',
                 default_view_mode: 'grid'
-            }]);
-    } catch (error) {
-        return false;
+            }])
+    } catch {
+        return false
     }
-    return true;
+    return true
 }

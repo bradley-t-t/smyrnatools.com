@@ -3,7 +3,7 @@ import './styles/ListAddView.css';
 import {ListService} from '../../../services/ListService';
 import {UserService} from '../../../services/UserService';
 import {usePreferences} from '../../../app/context/PreferencesContext';
-import {generateUUID} from '../../../utils/UUIDUtility';
+import {generateUUID} from '../../../utils/UserUtility';
 
 function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
     const {preferences} = usePreferences();

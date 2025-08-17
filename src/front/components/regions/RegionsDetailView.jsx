@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { RegionService } from '../../../services/RegionService'
+import { PlantService } from '../../../services/PlantService'
 import './styles/RegionsDetailView.css'
 import '../mixers/styles/MixerDetailView.css'
 
@@ -19,13 +20,31 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
             let all = []
             let regionPlants = []
             try {
-                all = await RegionService.fetchAllPlants()
-            } catch {}
+                const rawPlants = await PlantService.fetchAllPlants()
+                all = Array.isArray(rawPlants)
+                    ? rawPlants
+                        .filter(p => p.plant_code && p.plant_name && String(p.plant_code).trim() && String(p.plant_name).trim())
+                        .map(p => ({
+                            plant_code: p.plant_code,
+                            plant_name: p.plant_name
+                        }))
+                    : []
+            } catch {
+                all = []
+            }
             try {
                 regionPlants = await RegionService.fetchRegionPlants(region.region_code || region.regionCode)
-            } catch {}
-            setAllPlants(Array.isArray(all) ? all : [])
-            setPlantCodes(Array.isArray(regionPlants) ? regionPlants.map(p => p.plant_code || p.plantCode) : [])
+            } catch {
+                regionPlants = []
+            }
+            setAllPlants(all)
+            setPlantCodes(
+                Array.isArray(regionPlants)
+                    ? regionPlants
+                        .map(p => p.plant_code || p.plantCode)
+                        .filter(code => !!code && all.some(ap => ap.plant_code === code))
+                    : []
+            )
             setLoading(false)
         }
         fetchPlants()
@@ -67,7 +86,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
         if (allSelected) {
             setPlantCodes([])
         } else {
-            setPlantCodes(allPlants.map(p => p.plant_code || p.plantCode))
+            setPlantCodes(allPlants.map(p => p.plant_code))
         }
     }
 
@@ -79,7 +98,8 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
         }
     }
 
-    const visiblePlants = Array.isArray(allPlants) ? allPlants.filter(p => (p.plant_code || p.plantCode)) : []
+    const visiblePlants = Array.isArray(allPlants) ? allPlants : []
+    const noPlantsAvailable = !loading && visiblePlants.length === 0
 
     return (
         <div className="plant-detail-view">
@@ -125,8 +145,8 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                     </div>
                     <div className="form-group">
                         <label>Plants</label>
-                        <div className="plants-chip-selector-list">
-                            <div className="plants-chip-selector-header">
+                        <div className="plants-selector-creative">
+                            <div className="plants-selector-header">
                                 <span
                                     className={`plants-chip-select-all${allSelected ? ' selected' : ''}`}
                                     onClick={handleSelectAll}
@@ -138,45 +158,37 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     {allSelected ? 'Unselect All' : 'Select All'}
                                 </span>
                                 <span className="plants-chip-select-count">
-                                    {plantCodes.length} of {visiblePlants.length} selected
+                                    {loading
+                                        ? 'Loading...'
+                                        : `${plantCodes.length} of ${allPlants.length} selected`}
                                 </span>
                             </div>
-                            <div className="plants-chip-list">
-                                {loading ? (
-                                    <div className="plants-loading">Loading plants...</div>
-                                ) : visiblePlants.length > 0 ? (
-                                    visiblePlants.map(plant => {
-                                        const code = plant.plant_code || plant.plantCode
-                                        const selected = plantCodes.includes(code)
-                                        return (
-                                            <span
-                                                key={code}
-                                                className={`plant-chip${selected ? ' selected' : ''}`}
-                                                onClick={() => handlePlantToggle(code)}
-                                                tabIndex={0}
-                                                onKeyDown={e => {
-                                                    if (e.key === ' ' || e.key === 'Enter') handlePlantToggle(code)
-                                                }}
-                                            >
-                                                <span className="plant-chip-code">{code}</span>
-                                                <span className="plant-chip-name">{plant.plant_name || plant.plantName}</span>
-                                                {selected && (
-                                                    <span className="plant-chip-remove" title="Remove from region" onClick={e => {
-                                                        e.stopPropagation()
-                                                        handlePlantToggle(code)
-                                                    }}>
-                                                        ×
-                                                    </span>
-                                                )}
-                                            </span>
-                                        )
-                                    })
-                                ) : (
-                                    <div className="no-plants">
-                                        No plants available. Please add plants to the system.
-                                    </div>
-                                )}
-                            </div>
+                            {loading ? (
+                                <div className="plants-loading">Loading plants...</div>
+                            ) : noPlantsAvailable ? (
+                                <div className="no-plants">
+                                    No plants available. Please add plants to the system.
+                                </div>
+                            ) : (
+                                <div className="plants-selector-grid">
+                                    {visiblePlants.map(plant => (
+                                        <div
+                                            key={plant.plant_code}
+                                            className={`plant-tile${plantCodes.includes(plant.plant_code) ? ' selected' : ''}`}
+                                            tabIndex={0}
+                                            onClick={() => handlePlantToggle(plant.plant_code)}
+                                            onKeyDown={e => {
+                                                if (e.key === ' ' || e.key === 'Enter') handlePlantToggle(plant.plant_code)
+                                            }}
+                                        >
+                                            <div className="plant-tile-content">
+                                                <span className="plant-tile-code">{plant.plant_code}</span>
+                                                <span className="plant-tile-name">{plant.plant_name}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="form-actions">

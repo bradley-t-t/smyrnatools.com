@@ -1,16 +1,14 @@
-import React, {createContext, useContext, useState, useEffect} from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 
 const PreferencesContext = createContext()
 
 export function usePreferences() {
     const context = useContext(PreferencesContext)
-    if (!context) {
-        throw new Error('usePreferences must be used within a PreferencesProvider')
-    }
+    if (!context) throw new Error('usePreferences must be used within a PreferencesProvider')
     return context
 }
 
-export function PreferencesProvider({children}) {
+export function PreferencesProvider({ children }) {
     const [preferences, setPreferences] = useState(() => {
         const savedPrefs = localStorage.getItem('userPreferences')
         return savedPrefs ? JSON.parse(savedPrefs) : {
@@ -26,7 +24,7 @@ export function PreferencesProvider({children}) {
                 selectedPlant: '',
                 roleFilter: '',
                 viewMode: 'grid'
-            },
+            }
         }
     })
 
@@ -86,7 +84,7 @@ export function PreferencesProvider({children}) {
         }))
     }
 
-    const updateAccentColor = (color) => {
+    const updateAccentColor = color => {
         setPreferences(prev => ({
             ...prev,
             accentColor: color

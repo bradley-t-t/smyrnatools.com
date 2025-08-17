@@ -1,11 +1,10 @@
 import { supabase } from './DatabaseService';
 import { UserService } from './UserService';
 
-class PresenceServiceImpl {
+class UserPresenceService {
     constructor() {
-        this.onlineUsers = new Map();
-        this.subscriptions = [];
         this.listeners = [];
+        this.subscriptions = [];
         this.isSetup = false;
         this.currentUserId = null;
         this.heartbeatInterval = null;
@@ -35,101 +34,77 @@ class PresenceServiceImpl {
             window.addEventListener('offline', this.handleOnlineStatusChange.bind(this, false));
             this.isSetup = true;
             return true;
-        } catch (error) {
+        } catch {
             return false;
         }
     }
 
     async setUserOnline(userId) {
         if (!userId) return false;
-        try {
-            const now = new Date().toISOString();
-            const { error } = await supabase
-                .from('users_presence')
-                .upsert({
-                    user_id: userId,
-                    is_online: true,
-                    last_seen: now,
-                    updated_at: now
-                }, {
-                    onConflict: 'user_id'
-                });
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            return false;
-        }
+        const now = new Date().toISOString();
+        const { error } = await supabase
+            .from('users_presence')
+            .upsert({
+                user_id: userId,
+                is_online: true,
+                last_seen: now,
+                updated_at: now
+            }, { onConflict: 'user_id' });
+        if (error) return false;
+        return true;
     }
 
     async setUserOffline(userId) {
         if (!userId) return false;
-        try {
-            const now = new Date().toISOString();
-            const { error } = await supabase
-                .from('users_presence')
-                .update({
-                    is_online: false,
-                    last_seen: now,
-                    updated_at: now
-                })
-                .eq('user_id', userId);
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            return false;
-        }
+        const now = new Date().toISOString();
+        const { error } = await supabase
+            .from('users_presence')
+            .update({
+                is_online: false,
+                last_seen: now,
+                updated_at: now
+            })
+            .eq('user_id', userId);
+        if (error) return false;
+        return true;
     }
 
     async updateHeartbeat() {
         if (!this.currentUserId) return false;
-        try {
-            const now = new Date().toISOString();
-            const { error } = await supabase
-                .from('users_presence')
-                .update({
-                    last_seen: now,
-                    updated_at: now
-                })
-                .eq('user_id', this.currentUserId);
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            return false;
-        }
+        const now = new Date().toISOString();
+        const { error } = await supabase
+            .from('users_presence')
+            .update({
+                last_seen: now,
+                updated_at: now
+            })
+            .eq('user_id', this.currentUserId);
+        if (error) return false;
+        return true;
     }
 
     startHeartbeat() {
-        if (this.heartbeatInterval) {
-            clearInterval(this.heartbeatInterval);
-        }
-        this.heartbeatInterval = setInterval(() => {
-            this.updateHeartbeat();
-        }, 30000);
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = setInterval(() => this.updateHeartbeat(), 30000);
     }
 
     startCleanup() {
-        if (this.cleanupInterval) {
-            clearInterval(this.cleanupInterval);
-        }
+        if (this.cleanupInterval) clearInterval(this.cleanupInterval);
         this.cleanupInterval = setInterval(async () => {
-            try {
-                const staleTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-                const { error } = await supabase
-                    .from('users_presence')
-                    .update({
-                        is_online: false,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('is_online', true)
-                    .lt('last_seen', staleTime);
-                if (!error) {
-                    this.notifyListeners();
-                }
-            } catch (error) {}
+            const staleTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+            const { error } = await supabase
+                .from('users_presence')
+                .update({
+                    is_online: false,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('is_online', true)
+                .lt('last_seen', staleTime);
+            if (!error) this.notifyListeners();
         }, 60000);
     }
 
-    handlePresenceChange(payload) {
+    handlePresenceChange() {
         this.notifyListeners();
     }
 
@@ -138,17 +113,17 @@ class PresenceServiceImpl {
             const data = new FormData();
             data.append('user_id', this.currentUserId);
             navigator.sendBeacon('/api/set-offline', data);
-            this.setUserOffline(this.currentUserId).catch(console.error);
+            this.setUserOffline(this.currentUserId);
         }
     }
 
     handleOnlineStatusChange(isOnline) {
         if (!this.currentUserId) return;
         if (isOnline) {
-            this.setUserOnline(this.currentUserId).catch(console.error);
+            this.setUserOnline(this.currentUserId);
             this.startHeartbeat();
         } else {
-            this.setUserOffline(this.currentUserId).catch(console.error);
+            this.setUserOffline(this.currentUserId);
             if (this.heartbeatInterval) {
                 clearInterval(this.heartbeatInterval);
                 this.heartbeatInterval = null;
@@ -163,27 +138,26 @@ class PresenceServiceImpl {
                 .select('user_id, last_seen')
                 .eq('is_online', true)
                 .order('last_seen', { ascending: false });
-            if (error) throw error;
-            const onlineUsers = [];
+            if (error) return [];
+            const users = [];
             for (const presence of data) {
                 try {
-                    const userProfile = await UserService.getUserDisplayName(presence.user_id);
-                    onlineUsers.push({
+                    const name = await UserService.getUserDisplayName(presence.user_id);
+                    users.push({
                         id: presence.user_id,
-                        name: userProfile,
+                        name,
                         lastSeen: presence.last_seen
                     });
-                } catch (e) {}
+                } catch {}
             }
-            return onlineUsers;
-        } catch (error) {
+            return users;
+        } catch {
             return [];
         }
     }
 
     addListener(callback) {
-        if (typeof callback !== 'function') return;
-        this.listeners.push(callback);
+        if (typeof callback === 'function') this.listeners.push(callback);
     }
 
     removeListener(callback) {
@@ -195,7 +169,7 @@ class PresenceServiceImpl {
             this.listeners.forEach(listener => {
                 try {
                     listener(users);
-                } catch (error) {}
+                } catch {}
             });
         });
     }
@@ -213,18 +187,17 @@ class PresenceServiceImpl {
         window.removeEventListener('online', this.handleOnlineStatusChange.bind(this, true));
         window.removeEventListener('offline', this.handleOnlineStatusChange.bind(this, false));
         this.subscriptions.forEach(subscription => {
-            if (subscription && subscription.unsubscribe) {
-                subscription.unsubscribe();
-            }
+            if (subscription?.unsubscribe) subscription.unsubscribe();
         });
         this.subscriptions = [];
         this.listeners = [];
         if (this.currentUserId) {
-            this.setUserOffline(this.currentUserId).catch(console.error);
+            this.setUserOffline(this.currentUserId);
             this.currentUserId = null;
         }
         this.isSetup = false;
     }
 }
 
-export const UserPresenceService = new PresenceServiceImpl();
+const instance = new UserPresenceService();
+export { instance as UserPresenceService };
