@@ -15,17 +15,12 @@ function getOperatorName(row, operatorOptions) {
     return row.name
 }
 
-function RowCard({ row, idx, operatorOptions }) {
-    function parseTimeToMinutes(timeStr) {
-        if (!timeStr || typeof timeStr !== 'string') return null
-        const [h, m] = timeStr.split(':').map(Number)
-        if (isNaN(h) || isNaN(m)) return null
-        return h * 60 + m
-    }
-    const start = parseTimeToMinutes(row.start_time)
-    const punch = parseTimeToMinutes(row.punch_out)
-    const firstLoad = parseTimeToMinutes(row.first_load)
-    const eod = parseTimeToMinutes(row.eod_in_yard)
+function RowCard({ row, operatorOptions }) {
+    const parse = ReportService.parseTimeToMinutes.bind(ReportService)
+    const start = parse(row.start_time)
+    const punch = parse(row.punch_out)
+    const firstLoad = parse(row.first_load)
+    const eod = parse(row.eod_in_yard)
     const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : null
     const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : null
     const totalHours = (start !== null && punch !== null) ? (punch - start) / 60 : null
@@ -197,80 +192,6 @@ function CardAverages({ insights }) {
     )
 }
 
-function exportRowsToCSV(rows, operatorOptions, reportDate) {
-    if (!Array.isArray(rows) || rows.length === 0) return
-    const dateStr = reportDate ? ` - ${reportDate}` : ''
-    const title = `Plant Production Report${dateStr}`
-    const headers = [
-        title,
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        ''
-    ]
-    const tableHeaders = [
-        'Operator Name',
-        'Truck Number',
-        'Start Time',
-        '1st Load',
-        'Elapsed (Start→1st)',
-        'EOD In Yard',
-        'Punch Out',
-        'Elapsed (EOD→Punch)',
-        'Total Loads',
-        'Total Hours',
-        'Loads/Hour',
-        'Comments'
-    ]
-    const csvRows = [headers, tableHeaders]
-    rows.forEach(row => {
-        const start = parseTimeToMinutes(row.start_time)
-        const firstLoad = parseTimeToMinutes(row.first_load)
-        const eod = parseTimeToMinutes(row.eod_in_yard)
-        const punch = parseTimeToMinutes(row.punch_out)
-        const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : ''
-        const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : ''
-        const totalHours = (start !== null && punch !== null) ? ((punch - start) / 60) : ''
-        const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
-        csvRows.push([
-            getOperatorName(row, operatorOptions),
-            row.truck_number || '',
-            row.start_time || '',
-            row.first_load || '',
-            elapsedStart !== '' ? `${elapsedStart} min` : '',
-            row.eod_in_yard || '',
-            row.punch_out || '',
-            elapsedEnd !== '' ? `${elapsedEnd} min` : '',
-            row.loads || '',
-            totalHours !== '' ? totalHours.toFixed(2) : '',
-            loadsPerHour,
-            row.comments || ''
-        ])
-    })
-    const csvContent = csvRows.map(r =>
-        r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-    ).join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const safeDate = reportDate ? reportDate.replace(/[^0-9\-]/g, '') : ''
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Plant Production Report${safeDate ? ' - ' + safeDate : ''}.csv`
-    document.body.appendChild(a)
-    a.click()
-    setTimeout(() => {
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }, 0)
-}
-
 export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
     const rows = getRows(form)
     const insights = ReportService.getPlantProductionInsights(rows)
@@ -291,7 +212,7 @@ export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
             <CardAverages insights={insights} />
             <div>
                 {rows.map((row, i) => (
-                    <RowCard row={row} idx={i} key={i} operatorOptions={operatorOptions} />
+                    <RowCard row={row} key={i} operatorOptions={operatorOptions} />
                 ))}
             </div>
         </div>
@@ -318,7 +239,7 @@ export function PlantProductionReviewPlugin({ form, operatorOptions }) {
             <CardAverages insights={insights} />
             <div>
                 {rows.map((row, i) => (
-                    <RowCard row={row} idx={i} key={i} operatorOptions={operatorOptions} />
+                    <RowCard row={row} key={i} operatorOptions={operatorOptions} />
                 ))}
             </div>
         </div>
