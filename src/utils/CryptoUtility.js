@@ -1,13 +1,13 @@
 const HASH_TIMEOUT = 5000
 
-const CryptoUtility = {
-    async sha256Hash(data) {
+const CryptoUtility = Object.freeze({
+    async crypto(data) {
         if (!crypto?.subtle) {
-            return CryptoUtility.simpleHash(data)
+            return CryptoUtility.hash(data)
         }
         try {
             const encoder = new TextEncoder()
-            const dataBuffer = encoder.encode(data)
+            const dataBuffer = encoder.encode(typeof data === 'string' ? data : String(data))
             const hashPromise = crypto.subtle.digest('SHA-256', dataBuffer)
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('SHA-256 hash timed out')), HASH_TIMEOUT))
@@ -15,23 +15,23 @@ const CryptoUtility = {
             return Array.from(new Uint8Array(hashBuffer))
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')
-        } catch (error) {
-            return CryptoUtility.simpleHash(data)
+        } catch {
+            return CryptoUtility.hash(data)
         }
     },
-    simpleHash(data) {
-        let hash = 0
+    hash(data) {
+        let hash = 5381
         for (let i = 0; i < data.length; i++) {
-            const char = data.charCodeAt(i)
-            hash = ((hash << 5) - hash) + char
-            hash = hash & hash
+            hash = ((hash << 5) + hash) ^ data.charCodeAt(i)
         }
-        return (hash >>> 0).toString(16).padStart(64, '0')
+        let hex = (hash >>> 0).toString(16)
+        while (hex.length < 64) hex += '0'
+        return hex.slice(0, 64)
     },
     generateUUID() {
         return crypto.randomUUID()
     }
-}
+})
 
 export default CryptoUtility
-export {CryptoUtility}
+export { CryptoUtility }

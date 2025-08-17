@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { reportTypes } from '../../../config/types/ReportTypes'
+import { reportTypes, reportTypeMap } from '../../../config/types/ReportTypes'
 import './styles/ReportsView.css'
 import ReportsSubmitView from './ReportsSubmitView'
 import ReportsReviewView from './ReportsReviewView'
@@ -67,7 +67,7 @@ function ReportsView() {
                     ? data.map(r => ({
                         id: r.id,
                         name: r.report_name,
-                        title: (reportTypes.find(rt => rt.name === r.report_name) || {}).title || r.report_name,
+                        title: (reportTypeMap[r.report_name] || {}).title || r.report_name,
                         completed: !!r.completed,
                         completedDate: r.submitted_at,
                         data: r.data,
@@ -110,8 +110,14 @@ function ReportsView() {
             const assigned = {}
             const review = {}
             for (const rt of reportTypes) {
-                assigned[rt.name] = await UserService.hasPermission(u.id, `reports.assigned.${rt.name}`)
-                review[rt.name] = await UserService.hasPermission(u.id, `reports.review.${rt.name}`)
+                assigned[rt.name] = await UserService.hasPermission(u.id, rt.assignment[0])
+                review[rt.name] = false
+                for (const perm of rt.review) {
+                    if (await UserService.hasPermission(u.id, perm)) {
+                        review[rt.name] = true
+                        break
+                    }
+                }
             }
             setHasAssigned(assigned)
             setHasReviewPermission(review)
@@ -266,7 +272,7 @@ function ReportsView() {
                     {
                         id: data.id,
                         name: data.report_name,
-                        title: (reportTypes.find(rt => rt.name === data.report_name) || {}).title || data.report_name,
+                        title: (reportTypeMap[data.report_name] || {}).title || data.report_name,
                         completed: !!data.completed,
                         completedDate: data.submitted_at,
                         data: data.data,
@@ -341,7 +347,7 @@ function ReportsView() {
                     {
                         id: data.id,
                         name: data.report_name,
-                        title: (reportTypes.find(rt => rt.name === data.report_name) || {}).title || data.report_name,
+                        title: (reportTypeMap[data.report_name] || {}).title || data.report_name,
                         completed: !!data.completed,
                         completedDate: data.submitted_at,
                         data: data.data,
@@ -394,7 +400,7 @@ function ReportsView() {
             setSubmitInitialData({
                 id: data.id,
                 name: data.report_name,
-                title: (reportTypes.find(rt => rt.name === data.report_name) || {}).title || data.report_name,
+                title: (reportTypeMap[data.report_name] || {}).title || data.report_name,
                 completed: !!data.completed,
                 completedDate: data.submitted_at,
                 data: data.data,
@@ -492,9 +498,14 @@ function ReportsView() {
                                 }}
                             >
                                 <option value="">All Report Types</option>
-                                {permittedReportTypes.map(rt => (
-                                    <option key={rt.name} value={rt.name}>{rt.title}</option>
-                                ))}
+                                {reportTypes
+                                    .filter(rt =>
+                                        (tab === 'all' && hasAssigned[rt.name]) ||
+                                        (tab === 'review' && hasReviewPermission[rt.name])
+                                    )
+                                    .map(rt => (
+                                        <option key={rt.name} value={rt.name}>{rt.title}</option>
+                                    ))}
                             </select>
                             <select
                                 value={filterPlant}
@@ -755,7 +766,7 @@ function ReportsView() {
                 )}
                 {showForm && (
                     <ReportsSubmitView
-                        report={showForm}
+                        report={reportTypeMap[showForm.name] || showForm}
                         initialData={submitInitialData}
                         onBack={() => {
                             setShowForm(null)
@@ -776,7 +787,7 @@ function ReportsView() {
                 )}
                 {showReview && (
                     <ReportsReviewView
-                        report={showReview}
+                        report={reportTypeMap[showReview.name] || showReview}
                         initialData={reviewData}
                         onBack={() => {
                             setShowReview(null)

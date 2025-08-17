@@ -30,7 +30,7 @@ const AuthUtility = {
     async hashPassword(password, salt) {
         try {
             const data = password + salt
-            const hashPromise = cryptoUtility.sha256Hash(data)
+            const hashPromise = cryptoUtility.crypto(data)
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Password hash timed out')), PWD_HASH_TIMEOUT))
             return await Promise.race([hashPromise, timeoutPromise])

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserPresenceService } from '../../services/UserPresenceService';
 
-export function useUserPresence() {
+export function useUserHook() {
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
