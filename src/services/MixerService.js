@@ -6,7 +6,9 @@ import { UserService } from './UserService'
 import { MixerComment } from '../config/models/mixers/MixerComment'
 import { MixerImage } from '../config/models/mixers/MixerImage'
 import { v4 as uuidv4 } from 'uuid'
-import { MixerHistoryUtils } from '../config/models/mixers/MixerHistory'
+import { DateUtility } from '../utils/DateUtility'
+import { HistoryUtility } from '../utils/HistoryUtility'
+import { ValidationUtility } from '../utils/ValidationUtility'
 
 const MIXERS_TABLE = 'mixers'
 const HISTORY_TABLE = 'mixers_history'
@@ -14,16 +16,6 @@ const MIXERS_COMMENTS_TABLE = 'mixers_comments'
 const MIXERS_IMAGES_TABLE = 'mixers_images'
 const MIXERS_MAINTENANCE_TABLE = 'mixers_maintenance'
 const BUCKET_NAME = 'smyrna'
-
-const formatDate = date => {
-    if (!date) return null
-    if (date instanceof Date) return date.toISOString()
-    if (typeof date === 'string') {
-        const parsed = new Date(date)
-        return isNaN(parsed.getTime()) ? null : date
-    }
-    return null
-}
 
 class MixerServiceImpl {
     static async getAllMixers() {
@@ -42,7 +34,7 @@ class MixerServiceImpl {
     }
 
     static async getMixerById(id) {
-        if (!id) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(id, 'Mixer ID is required')
         const { data, error } = await supabase
             .from(MIXERS_TABLE)
             .select('*')
@@ -55,12 +47,10 @@ class MixerServiceImpl {
     }
 
     static async fetchMixerById(id) {
-        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid mixer ID')
+        ValidationUtility.requireUUID(id, 'Invalid mixer ID')
         const mixer = await this.getMixerById(id)
         if (!mixer) return null
-        mixer.isVerified = function(latestHistoryDate) {
-            return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate)
-        }
+        mixer.isVerified = function(latestHistoryDate) { return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate) }
         return mixer
     }
 
@@ -88,7 +78,7 @@ class MixerServiceImpl {
     }
 
     static async getMixerHistory(mixerId, limit = null) {
-        if (!mixerId) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         let query = supabase
             .from(HISTORY_TABLE)
             .select('*')
@@ -101,20 +91,21 @@ class MixerServiceImpl {
     }
 
     static async addMixer(mixer, userId) {
+        const now = DateUtility.nowDb()
         const apiData = {
             truck_number: mixer.truckNumber ?? mixer.truck_number,
             assigned_plant: mixer.assignedPlant ?? mixer.assigned_plant,
             assigned_operator: mixer.assignedOperator ?? mixer.assigned_operator ?? null,
-            last_service_date: formatDate(mixer.lastServiceDate ?? mixer.last_service_date),
-            last_chip_date: formatDate(mixer.lastChipDate ?? mixer.last_chip_date),
+            last_service_date: DateUtility.toDbTimestamp(mixer.lastServiceDate ?? mixer.last_service_date),
+            last_chip_date: DateUtility.toDbTimestamp(mixer.lastChipDate ?? mixer.last_chip_date),
             cleanliness_rating: mixer.cleanlinessRating ?? mixer.cleanliness_rating ?? 0,
             vin: mixer.vin,
             make: mixer.make,
             model: mixer.model,
             year: mixer.year,
             status: mixer.status ?? 'Active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: now,
+            updated_at: now,
             updated_by: userId
         }
         const { data, error } = await supabase
@@ -138,7 +129,7 @@ class MixerServiceImpl {
 
     static async updateMixer(mixerId, mixer, userId, prevMixerState = null) {
         const id = typeof mixerId === 'object' ? mixerId.id : mixerId
-        if (!id) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(id, 'Mixer ID is required')
         if (!userId) {
             const user = await UserService.getCurrentUser()
             userId = typeof user === 'object' && user !== null ? user.id : user
@@ -155,15 +146,15 @@ class MixerServiceImpl {
             truck_number: mixer.truckNumber,
             assigned_plant: mixer.assignedPlant,
             assigned_operator: assignedOperator,
-            last_service_date: formatDate(mixer.lastServiceDate),
-            last_chip_date: formatDate(mixer.lastChipDate),
+            last_service_date: DateUtility.toDbTimestamp(mixer.lastServiceDate),
+            last_chip_date: DateUtility.toDbTimestamp(mixer.lastChipDate),
             cleanliness_rating: mixer.cleanlinessRating,
             vin: mixer.vin,
             make: mixer.make,
             model: mixer.model,
             year: mixer.year,
-            status: status,
-            updated_at: new Date().toISOString(),
+            status,
+            updated_at: DateUtility.nowDb(),
             updated_by: userId,
             updated_last: mixer.updatedLast ?? currentMixer.updatedLast
         }
@@ -174,30 +165,38 @@ class MixerServiceImpl {
             .select()
             .single()
         if (error) throw error
-        const historyEntries = this._createHistoryEntries(id, currentMixer, { ...mixer, assignedOperator, status }, userId)
-        if (historyEntries.length) {
-            await supabase
-                .from(HISTORY_TABLE)
-                .insert(historyEntries)
-        }
+        const historyEntries = HistoryUtility.buildChanges(id,
+            [
+                { field: 'truckNumber', dbField: 'truck_number', entityIdColumn: 'mixer_id' },
+                { field: 'assignedPlant', dbField: 'assigned_plant', entityIdColumn: 'mixer_id' },
+                { field: 'assignedOperator', dbField: 'assigned_operator', entityIdColumn: 'mixer_id' },
+                { field: 'lastServiceDate', dbField: 'last_service_date', type: 'date', entityIdColumn: 'mixer_id' },
+                { field: 'lastChipDate', dbField: 'last_chip_date', type: 'date', entityIdColumn: 'mixer_id' },
+                { field: 'cleanlinessRating', dbField: 'cleanliness_rating', type: 'number', entityIdColumn: 'mixer_id' },
+                { field: 'vin', dbField: 'vin', entityIdColumn: 'mixer_id' },
+                { field: 'make', dbField: 'make', entityIdColumn: 'mixer_id' },
+                { field: 'model', dbField: 'model', entityIdColumn: 'mixer_id' },
+                { field: 'year', dbField: 'year', type: 'number', entityIdColumn: 'mixer_id' },
+                { field: 'status', dbField: 'status', entityIdColumn: 'mixer_id' }
+            ],
+            currentMixer,
+            { ...mixer, assignedOperator, status },
+            userId
+        )
+        if (historyEntries.length) await supabase.from(HISTORY_TABLE).insert(historyEntries)
         return new Mixer(data)
     }
 
     static async deleteMixer(id) {
-        if (!id) throw new Error('Mixer ID is required')
-        await supabase
-            .from(HISTORY_TABLE)
-            .delete()
-            .eq('mixer_id', id)
-        await supabase
-            .from(MIXERS_TABLE)
-            .delete()
-            .eq('id', id)
+        ValidationUtility.requireUUID(id, 'Mixer ID is required')
+        await supabase.from(HISTORY_TABLE).delete().eq('mixer_id', id)
+        await supabase.from(MIXERS_TABLE).delete().eq('id', id)
         return true
     }
 
     static async createHistoryEntry(mixerId, fieldName, oldValue, newValue, changedBy) {
-        if (!mixerId || !fieldName) throw new Error('Mixer ID and field name are required')
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
+        if (!fieldName) throw new Error('Field name required')
         let userId = changedBy
         if (!userId) {
             const user = await UserService.getCurrentUser()
@@ -238,7 +237,7 @@ class MixerServiceImpl {
     }
 
     static async getMixersByOperator(operatorId) {
-        if (!operatorId) throw new Error('Operator ID is required')
+        ValidationUtility.requireUUID(operatorId, 'Operator ID is required')
         const { data, error } = await supabase
             .from(MIXERS_TABLE)
             .select('*')
@@ -284,7 +283,7 @@ class MixerServiceImpl {
     }
 
     static async fetchComments(mixerId) {
-        if (!mixerId) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         const { data, error } = await supabase
             .from(MIXERS_COMMENTS_TABLE)
             .select('*')
@@ -295,7 +294,7 @@ class MixerServiceImpl {
     }
 
     static async addComment(mixerId, text, author) {
-        if (!mixerId) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim()) throw new Error('Author is required')
         const comment = {
@@ -314,7 +313,7 @@ class MixerServiceImpl {
     }
 
     static async deleteComment(commentId) {
-        if (!commentId) throw new Error('Comment ID is required')
+        ValidationUtility.requireUUID(commentId, 'Comment ID is required')
         const { error } = await supabase
             .from(MIXERS_COMMENTS_TABLE)
             .delete()
@@ -330,57 +329,12 @@ class MixerServiceImpl {
             .order('changed_at', { ascending: false })
         if (error) return {}
         const historyDates = {}
-        data.forEach(entry => {
-            if (!historyDates[entry.mixer_id] || new Date(entry.changed_at) > new Date(historyDates[entry.mixer_id])) {
-                historyDates[entry.mixer_id] = entry.changed_at
-            }
-        })
+        data.forEach(entry => { if (!historyDates[entry.mixer_id] || new Date(entry.changed_at) > new Date(historyDates[entry.mixer_id])) historyDates[entry.mixer_id] = entry.changed_at })
         return historyDates
     }
 
-    static _createHistoryEntries(mixerId, currentMixer, newMixer, userId) {
-        const fieldsToTrack = [
-            { field: 'truckNumber', dbField: 'truck_number' },
-            { field: 'assignedPlant', dbField: 'assigned_plant' },
-            { field: 'assignedOperator', dbField: 'assigned_operator' },
-            { field: 'lastServiceDate', dbField: 'last_service_date' },
-            { field: 'lastChipDate', dbField: 'last_chip_date' },
-            { field: 'cleanlinessRating', dbField: 'cleanliness_rating' },
-            { field: 'vin', dbField: 'vin' },
-            { field: 'make', dbField: 'make' },
-            { field: 'model', dbField: 'model' },
-            { field: 'year', dbField: 'year' },
-            { field: 'status', dbField: 'status' }
-        ]
-        return fieldsToTrack.reduce((entries, { field, dbField }) => {
-            let oldValue = currentMixer[field]
-            let newValue = newMixer[field]
-            if (field === 'lastServiceDate' || field === 'lastChipDate') {
-                if (MixerHistoryUtils.areSameDates(oldValue, newValue)) return entries
-                oldValue = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null
-                newValue = newValue ? new Date(newValue).toISOString().split('T')[0] : null
-            } else if (field === 'cleanlinessRating' || field === 'year') {
-                if (Number(oldValue) === Number(newValue)) return entries
-                oldValue = oldValue != null ? Number(oldValue) : null
-                newValue = newValue != null ? Number(newValue) : null
-            } else {
-                if ((oldValue?.toString().trim() ?? null) === (newValue?.toString().trim() ?? null)) return entries
-                oldValue = oldValue?.toString().trim() ?? null
-                newValue = newValue?.toString().trim() ?? null
-            }
-            entries.push({
-                mixer_id: mixerId,
-                field_name: dbField,
-                old_value: oldValue?.toString() ?? null,
-                new_value: newValue?.toString() ?? null,
-                changed_at: new Date().toISOString(),
-                changed_by: userId
-            })
-            return entries
-        }, [])
-    }
-
     static async fetchMixerImages(mixerId) {
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         const { data, error } = await supabase
             .from(MIXERS_IMAGES_TABLE)
             .select('*')
@@ -390,23 +344,16 @@ class MixerServiceImpl {
     }
 
     static async uploadMixerImage(mixerId, file) {
-        if (!mixerId) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         if (!file) throw new Error('File is required')
         const fileExt = file.name.split('.').pop()
         const fileName = `mixer_${mixerId}_${uuidv4()}.${fileExt}`
         const filePath = `${BUCKET_NAME}/mixer_images/${fileName}`
-        const { error: uploadError } = await supabase
-            .storage
-            .from(BUCKET_NAME)
-            .upload(`mixer_images/${fileName}`, file)
+        const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(`mixer_images/${fileName}`, file)
         if (uploadError) throw uploadError
         const { data, error } = await supabase
             .from(MIXERS_IMAGES_TABLE)
-            .insert({
-                mixer_id: mixerId,
-                image_url: filePath,
-                created_at: new Date().toISOString()
-            })
+            .insert({ mixer_id: mixerId, image_url: filePath, created_at: new Date().toISOString() })
             .select()
             .single()
         if (error) throw error
@@ -414,7 +361,7 @@ class MixerServiceImpl {
     }
 
     static async deleteMixerImage(imageId) {
-        if (!imageId) throw new Error('Image ID is required')
+        ValidationUtility.requireUUID(imageId, 'Image ID is required')
         const { data: imageData, error: fetchError } = await supabase
             .from(MIXERS_IMAGES_TABLE)
             .select('image_url')
@@ -422,10 +369,7 @@ class MixerServiceImpl {
             .single()
         if (fetchError) throw fetchError
         if (imageData) {
-            const { error: deleteFileError } = await supabase
-                .storage
-                .from(BUCKET_NAME)
-                .delete([imageData.image_url])
+            const { error: deleteFileError } = await supabase.storage.from(BUCKET_NAME).delete([imageData.image_url])
             if (deleteFileError) throw deleteFileError
         }
         const { error } = await supabase
@@ -437,6 +381,7 @@ class MixerServiceImpl {
     }
 
     static async fetchIssues(mixerId) {
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         const { data, error } = await supabase
             .from(MIXERS_MAINTENANCE_TABLE)
             .select('*')
@@ -447,7 +392,7 @@ class MixerServiceImpl {
     }
 
     static async completeIssue(issueId) {
-        if (!issueId) throw new Error('Issue ID is required')
+        ValidationUtility.requireUUID(issueId, 'Issue ID is required')
         const { error } = await supabase
             .from(MIXERS_MAINTENANCE_TABLE)
             .update({ time_completed: new Date().toISOString() })
@@ -457,18 +402,12 @@ class MixerServiceImpl {
     }
 
     static async addIssue(mixerId, issue, severity) {
-        if (!mixerId) throw new Error('Mixer ID is required')
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         if (!issue?.trim()) throw new Error('Issue description is required')
         if (!['Low', 'Medium', 'High'].includes(severity)) throw new Error('Severity must be Low, Medium, or High')
         const { data, error } = await supabase
             .from(MIXERS_MAINTENANCE_TABLE)
-            .insert({
-                id: uuidv4(),
-                mixer_id: mixerId,
-                issue: issue.trim(),
-                severity,
-                time_created: new Date().toISOString()
-            })
+            .insert({ id: uuidv4(), mixer_id: mixerId, issue: issue.trim(), severity, time_created: new Date().toISOString() })
             .select()
             .single()
         if (error) throw error
@@ -476,7 +415,7 @@ class MixerServiceImpl {
     }
 
     static async deleteIssue(issueId) {
-        if (!issueId) throw new Error('Issue ID is required')
+        ValidationUtility.requireUUID(issueId, 'Issue ID is required')
         const { error, count } = await supabase
             .from(MIXERS_MAINTENANCE_TABLE)
             .delete({ count: 'exact' })

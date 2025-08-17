@@ -1,23 +1,24 @@
-import MixerUtility from '../../../utils/MixerUtility';
+import MixerUtility from '../../../utils/MixerUtility'
+import { DateUtility } from '../../../utils/DateUtility'
 
 export class Mixer {
     constructor(data = {}) {
-        this.id = data.id ?? null;
-        this.truckNumber = data.truck_number ?? '';
-        this.assignedPlant = data.assigned_plant ?? '';
-        this.assignedOperator = data.assigned_operator ?? '';
-        this.lastServiceDate = data.last_service_date ?? null;
-        this.lastChipDate = data.last_chip_date ?? null;
-        this.cleanlinessRating = data.cleanliness_rating ?? 0;
-        this.status = data.status ?? 'Active';
-        this.createdAt = data.created_at ?? new Date().toISOString();
-        this.updatedAt = data.updated_at ?? new Date().toISOString();
-        this.updatedLast = data.updated_last ?? new Date().toISOString();
-        this.updatedBy = data.updated_by ?? null;
-        this.vin = data.vin ?? '';
-        this.make = data.make ?? '';
-        this.model = data.model ?? '';
-        this.year = data.year ?? '';
+        this.id = data.id ?? null
+        this.truckNumber = data.truck_number ?? ''
+        this.assignedPlant = data.assigned_plant ?? ''
+        this.assignedOperator = data.assigned_operator ?? ''
+        this.lastServiceDate = data.last_service_date ?? null
+        this.lastChipDate = data.last_chip_date ?? null
+        this.cleanlinessRating = data.cleanliness_rating ?? 0
+        this.status = data.status ?? 'Active'
+        this.createdAt = data.created_at ?? new Date().toISOString()
+        this.updatedAt = data.updated_at ?? new Date().toISOString()
+        this.updatedLast = data.updated_last ?? new Date().toISOString()
+        this.updatedBy = data.updated_by ?? null
+        this.vin = data.vin ?? ''
+        this.make = data.make ?? ''
+        this.model = data.model ?? ''
+        this.year = data.year ?? ''
     }
 
     static fromApiFormat(data) {
@@ -35,30 +36,17 @@ export class Mixer {
     }
 
     toApiFormat() {
-        const formatDateForDb = date => {
-            if (!date) return null;
-            const d = new Date(date);
-            if (isNaN(d.getTime())) return null;
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const hours = String(d.getHours()).padStart(2, '0');
-            const minutes = String(d.getMinutes()).padStart(2, '0');
-            const seconds = String(d.getSeconds()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+00`;
-        };
-
         const apiObject = {
             truck_number: this.truckNumber,
             assigned_plant: this.assignedPlant,
             assigned_operator: this.assignedOperator || null,
-            last_service_date: formatDateForDb(this.lastServiceDate),
-            last_chip_date: formatDateForDb(this.lastChipDate),
+            last_service_date: DateUtility.toDbTimestamp(this.lastServiceDate),
+            last_chip_date: DateUtility.toDbTimestamp(this.lastChipDate),
             cleanliness_rating: this.cleanlinessRating,
             status: this.status,
-            created_at: formatDateForDb(this.createdAt) || formatDateForDb(new Date()),
-            updated_at: formatDateForDb(this.updatedAt),
-            updated_last: formatDateForDb(this.updatedLast),
+            created_at: DateUtility.toDbTimestamp(this.createdAt) || DateUtility.nowDb(),
+            updated_at: DateUtility.toDbTimestamp(this.updatedAt) || DateUtility.nowDb(),
+            updated_last: DateUtility.toDbTimestamp(this.updatedLast),
             updated_by: this.updatedBy,
             vin: this.vin,
             make: this.make,
@@ -76,12 +64,12 @@ export class Mixer {
 
     getDaysSinceService() {
         if (!this.lastServiceDate) return null;
-        return Math.ceil((new Date() - new Date(this.lastServiceDate)) / (1000 * 60 * 60 * 24));
+        return Math.ceil((new Date() - new Date(this.lastServiceDate)) / 86400000);
     }
 
     getDaysSinceChip() {
         if (!this.lastChipDate) return null;
-        return Math.ceil((new Date() - new Date(this.lastChipDate)) / (1000 * 60 * 60 * 24));
+        return Math.ceil((new Date() - new Date(this.lastChipDate)) / 86400000);
     }
 
     getStatus() {

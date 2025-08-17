@@ -4,6 +4,9 @@ import { Equipment } from '../config/models/equipment/Equipment'
 import { EquipmentHistory } from '../config/models/equipment/EquipmentHistory'
 import { EquipmentComment } from '../config/models/equipment/EquipmentComment'
 import { v4 as uuidv4 } from 'uuid'
+import { DateUtility } from '../utils/DateUtility'
+import { HistoryUtility } from '../utils/HistoryUtility'
+import { ValidationUtility } from '../utils/ValidationUtility'
 
 const EQUIPMENTS_TABLE = 'heavy_equipment'
 const HISTORY_TABLE = 'heavy_equipment_history'
@@ -11,13 +14,6 @@ const EQUIPMENTS_COMMENTS_TABLE = 'heavy_equipment_comments'
 const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance'
 
 class EquipmentServiceImpl {
-    static formatDateForDb(date) {
-        if (!date) return null
-        const d = date instanceof Date ? date : new Date(date)
-        if (isNaN(d.getTime())) return null
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}+00`
-    }
-
     static async getAllEquipments() {
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
@@ -27,12 +23,10 @@ class EquipmentServiceImpl {
         return data.map(equipment => new Equipment(equipment))
     }
 
-    static async fetchEquipments() {
-        return this.getAllEquipments()
-    }
+    static async fetchEquipments() { return this.getAllEquipments() }
 
     static async getEquipmentById(id) {
-        if (!id) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(id, 'Equipment ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
@@ -44,10 +38,8 @@ class EquipmentServiceImpl {
     }
 
     static async fetchEquipmentById(id) {
-        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid equipment ID')
-        const equipment = await this.getEquipmentById(id)
-        if (!equipment) return null
-        return equipment
+        ValidationUtility.requireUUID(id, 'Invalid equipment ID')
+        return this.getEquipmentById(id)
     }
 
     static async getActiveEquipments() {
@@ -61,7 +53,7 @@ class EquipmentServiceImpl {
     }
 
     static async getEquipmentHistory(equipmentId, limit = null) {
-        if (!equipmentId) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         let query = supabase
             .from(HISTORY_TABLE)
             .select('*')
@@ -74,13 +66,13 @@ class EquipmentServiceImpl {
     }
 
     static async addEquipment(equipment, userId) {
-        const now = this.formatDateForDb(new Date())
+        const now = DateUtility.nowDb()
         const apiData = {
             identifying_number: equipment.identifyingNumber ?? equipment.identifying_number,
             assigned_plant: equipment.assignedPlant ?? equipment.assigned_plant,
             equipment_type: equipment.equipmentType ?? equipment.equipment_type,
             status: equipment.status ?? 'Active',
-            last_service_date: this.formatDateForDb(equipment.lastServiceDate ?? equipment.last_service_date),
+            last_service_date: DateUtility.toDbTimestamp(equipment.lastServiceDate ?? equipment.last_service_date),
             hours_mileage: equipment.hoursMileage ?? equipment.hours_mileage ?? null,
             cleanliness_rating: equipment.cleanlinessRating ?? equipment.cleanliness_rating ?? null,
             condition_rating: equipment.conditionRating ?? equipment.condition_rating ?? null,
@@ -112,7 +104,7 @@ class EquipmentServiceImpl {
 
     static async updateEquipment(equipmentId, equipment, userId, prevEquipmentState = null) {
         const id = typeof equipmentId === 'object' ? equipmentId.id : equipmentId
-        if (!id) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(id, 'Equipment ID is required')
         if (!userId) {
             const user = await UserService.getCurrentUser()
             userId = typeof user === 'object' && user !== null ? user.id : user
@@ -125,14 +117,14 @@ class EquipmentServiceImpl {
             assigned_plant: equipment.assignedPlant,
             equipment_type: equipment.equipmentType,
             status: equipment.status,
-            last_service_date: this.formatDateForDb(equipment.lastServiceDate),
+            last_service_date: DateUtility.toDbTimestamp(equipment.lastServiceDate),
             hours_mileage: equipment.hoursMileage ? parseFloat(equipment.hoursMileage) : null,
             cleanliness_rating: equipment.cleanlinessRating,
             condition_rating: equipment.conditionRating,
             equipment_make: equipment.equipmentMake,
             equipment_model: equipment.equipmentModel,
             year_made: equipment.yearMade ? parseInt(equipment.yearMade) : null,
-            updated_at: this.formatDateForDb(new Date()),
+            updated_at: DateUtility.nowDb(),
             updated_by: userId
         }
         const { data, error } = await supabase
@@ -142,30 +134,40 @@ class EquipmentServiceImpl {
             .select()
             .single()
         if (error) throw error
-        const historyEntries = this._createHistoryEntries(id, currentEquipment, equipment, userId)
+        const historyEntries = HistoryUtility.buildChanges(id,
+            [
+                { field: 'identifyingNumber', dbField: 'identifying_number' },
+                { field: 'assignedPlant', dbField: 'assigned_plant' },
+                { field: 'equipmentType', dbField: 'equipment_type' },
+                { field: 'status', dbField: 'status' },
+                { field: 'lastServiceDate', dbField: 'last_service_date', type: 'date' },
+                { field: 'hoursMileage', dbField: 'hours_mileage', type: 'number' },
+                { field: 'cleanlinessRating', dbField: 'cleanliness_rating', type: 'number' },
+                { field: 'conditionRating', dbField: 'condition_rating', type: 'number' },
+                { field: 'equipmentMake', dbField: 'equipment_make' },
+                { field: 'equipmentModel', dbField: 'equipment_model' },
+                { field: 'yearMade', dbField: 'year_made', type: 'number' }
+            ],
+            currentEquipment,
+            equipment,
+            userId
+        )
         if (historyEntries.length) {
-            await supabase
-                .from(HISTORY_TABLE)
-                .insert(historyEntries)
+            await supabase.from(HISTORY_TABLE).insert(historyEntries)
         }
         return new Equipment(data)
     }
 
     static async deleteEquipment(id) {
-        if (!id) throw new Error('Equipment ID is required')
-        await supabase
-            .from(HISTORY_TABLE)
-            .delete()
-            .eq('equipment_id', id)
-        await supabase
-            .from(EQUIPMENTS_TABLE)
-            .delete()
-            .eq('id', id)
+        ValidationUtility.requireUUID(id, 'Equipment ID is required')
+        await supabase.from(HISTORY_TABLE).delete().eq('equipment_id', id)
+        await supabase.from(EQUIPMENTS_TABLE).delete().eq('id', id)
         return true
     }
 
     static async createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy) {
-        if (!equipmentId || !fieldName) throw new Error('Equipment ID and field name are required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID and field name are required')
+        if (!fieldName) throw new Error('Field name required')
         let userId = changedBy
         if (!userId) {
             const user = await UserService.getCurrentUser()
@@ -258,7 +260,7 @@ class EquipmentServiceImpl {
     }
 
     static async fetchComments(equipmentId) {
-        if (!equipmentId) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .select('*')
@@ -269,7 +271,7 @@ class EquipmentServiceImpl {
     }
 
     static async addComment(equipmentId, text, author) {
-        if (!equipmentId) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim()) throw new Error('Author is required')
         const comment = {
@@ -289,7 +291,7 @@ class EquipmentServiceImpl {
     }
 
     static async deleteComment(commentId) {
-        if (!commentId) throw new Error('Comment ID is required')
+        ValidationUtility.requireUUID(commentId, 'Comment ID is required')
         const { error } = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .delete()
@@ -313,49 +315,8 @@ class EquipmentServiceImpl {
         return historyDates
     }
 
-    static _createHistoryEntries(equipmentId, currentEquipment, newEquipment, userId) {
-        const fieldsToTrack = [
-            { field: 'identifyingNumber', dbField: 'identifying_number' },
-            { field: 'assignedPlant', dbField: 'assigned_plant' },
-            { field: 'equipmentType', dbField: 'equipment_type' },
-            { field: 'status', dbField: 'status' },
-            { field: 'lastServiceDate', dbField: 'last_service_date' },
-            { field: 'hoursMileage', dbField: 'hours_mileage' },
-            { field: 'cleanlinessRating', dbField: 'cleanliness_rating' },
-            { field: 'conditionRating', dbField: 'condition_rating' },
-            { field: 'equipmentMake', dbField: 'equipment_make' },
-            { field: 'equipmentModel', dbField: 'equipment_model' },
-            { field: 'yearMade', dbField: 'year_made' }
-        ]
-        return fieldsToTrack.reduce((entries, { field, dbField }) => {
-            let oldValue = currentEquipment[field]
-            let newValue = newEquipment[field]
-            if (field === 'lastServiceDate') {
-                oldValue = oldValue ? new Date(oldValue).toISOString().split('T')[0] : null
-                newValue = newValue ? new Date(newValue).toISOString().split('T')[0] : null
-            } else if (field === 'cleanlinessRating' || field === 'conditionRating' || field === 'yearMade' || field === 'hoursMileage') {
-                oldValue = oldValue != null ? Number(oldValue) : null
-                newValue = newValue != null ? Number(newValue) : null
-            } else {
-                oldValue = oldValue?.toString().trim() ?? null
-                newValue = newValue?.toString().trim() ?? null
-            }
-            if (oldValue !== newValue) {
-                entries.push({
-                    equipment_id: equipmentId,
-                    field_name: dbField,
-                    old_value: oldValue?.toString() ?? null,
-                    new_value: newValue?.toString() ?? null,
-                    changed_at: new Date().toISOString(),
-                    changed_by: userId
-                })
-            }
-            return entries
-        }, [])
-    }
-
     static async fetchIssues(equipmentId) {
-        if (!equipmentId) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .select('*')
@@ -366,7 +327,7 @@ class EquipmentServiceImpl {
     }
 
     static async addIssue(equipmentId, issueText, severity) {
-        if (!equipmentId) throw new Error('Equipment ID is required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         if (!issueText?.trim()) throw new Error('Issue description is required')
         const validSeverities = ['Low', 'Medium', 'High']
         const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium'
@@ -389,7 +350,7 @@ class EquipmentServiceImpl {
     }
 
     static async deleteIssue(issueId) {
-        if (!issueId) throw new Error('Issue ID is required')
+        ValidationUtility.requireUUID(issueId, 'Issue ID is required')
         const { error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .delete()
@@ -399,7 +360,7 @@ class EquipmentServiceImpl {
     }
 
     static async completeIssue(issueId) {
-        if (!issueId) throw new Error('Issue ID is required')
+        ValidationUtility.requireUUID(issueId, 'Issue ID is required')
         const { data, error } = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .update({ time_completed: new Date().toISOString() })

@@ -22,6 +22,12 @@ const AuthUtility = {
     emailIsValid(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     },
+    normalizeName(name) {
+        if (!name) return ''
+        const n = name.replace(/\s+/g, '')
+        if (!n) return ''
+        return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
+    },
     generateSalt() {
         const randomBytes = new Uint8Array(16)
         crypto.getRandomValues(randomBytes)

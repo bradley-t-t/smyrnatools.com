@@ -1,0 +1,59 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended"
+  ],
+  "plugins": ["react"],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {},
+  "overrides": [
+    {
+      "files": ["src/front/components/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-globals": ["error", "fetch", "axios"],
+        "no-restricted-imports": ["error", {
+          "paths": [
+            {
+              "name": "../../services/DatabaseService",
+              "importNames": ["supabase"],
+              "message": "Do not import supabase directly; use a Service method."
+            },
+            {
+              "name": "../../services/DatabaseService",
+              "message": "Do not import the default export (supabase) directly; use a Service method."
+            },
+            {
+              "name": "../../../services/DatabaseService",
+              "importNames": ["supabase"],
+              "message": "Do not import supabase directly; use a Service method."
+            },
+            {
+              "name": "../../../services/DatabaseService",
+              "message": "Do not import the default export (supabase) directly; use a Service method."
+            },
+            {
+              "name": "../../../../services/DatabaseService",
+              "importNames": ["supabase"],
+              "message": "Do not import supabase directly; use a Service method."
+            },
+            {
+              "name": "../../../../services/DatabaseService",
+              "message": "Do not import the default export (supabase) directly; use a Service method."
+            }
+          ],
+          "patterns": ["**/services/DatabaseService"]
+        }]
+      }
+    }
+  ]
+}
