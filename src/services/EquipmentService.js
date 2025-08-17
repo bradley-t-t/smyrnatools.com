@@ -10,17 +10,14 @@ const HISTORY_TABLE = 'heavy_equipment_history'
 const EQUIPMENTS_COMMENTS_TABLE = 'heavy_equipment_comments'
 const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance'
 
-const formatDate = date => {
-    if (!date) return null
-    if (date instanceof Date) return date.toISOString()
-    if (typeof date === 'string') {
-        const parsed = new Date(date)
-        return isNaN(parsed.getTime()) ? null : date
-    }
-    return null
-}
-
 class EquipmentServiceImpl {
+    static formatDateForDb(date) {
+        if (!date) return null
+        const d = date instanceof Date ? date : new Date(date)
+        if (isNaN(d.getTime())) return null
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}+00`
+    }
+
     static async getAllEquipments() {
         const { data, error } = await supabase
             .from(EQUIPMENTS_TABLE)
@@ -77,20 +74,21 @@ class EquipmentServiceImpl {
     }
 
     static async addEquipment(equipment, userId) {
+        const now = this.formatDateForDb(new Date())
         const apiData = {
             identifying_number: equipment.identifyingNumber ?? equipment.identifying_number,
             assigned_plant: equipment.assignedPlant ?? equipment.assigned_plant,
             equipment_type: equipment.equipmentType ?? equipment.equipment_type,
             status: equipment.status ?? 'Active',
-            last_service_date: formatDate(equipment.lastServiceDate ?? equipment.last_service_date),
+            last_service_date: this.formatDateForDb(equipment.lastServiceDate ?? equipment.last_service_date),
             hours_mileage: equipment.hoursMileage ?? equipment.hours_mileage ?? null,
             cleanliness_rating: equipment.cleanlinessRating ?? equipment.cleanliness_rating ?? null,
             condition_rating: equipment.conditionRating ?? equipment.condition_rating ?? null,
             equipment_make: equipment.equipmentMake ?? equipment.equipment_make,
             equipment_model: equipment.equipmentModel ?? equipment.equipment_model,
             year_made: equipment.yearMade ?? equipment.year_made ?? null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: now,
+            updated_at: now,
             updated_by: userId
         }
         const { data, error } = await supabase
@@ -127,14 +125,14 @@ class EquipmentServiceImpl {
             assigned_plant: equipment.assignedPlant,
             equipment_type: equipment.equipmentType,
             status: equipment.status,
-            last_service_date: formatDate(equipment.lastServiceDate),
+            last_service_date: this.formatDateForDb(equipment.lastServiceDate),
             hours_mileage: equipment.hoursMileage ? parseFloat(equipment.hoursMileage) : null,
             cleanliness_rating: equipment.cleanlinessRating,
             condition_rating: equipment.conditionRating,
             equipment_make: equipment.equipmentMake,
             equipment_model: equipment.equipmentModel,
             year_made: equipment.yearMade ? parseInt(equipment.yearMade) : null,
-            updated_at: new Date().toISOString(),
+            updated_at: this.formatDateForDb(new Date()),
             updated_by: userId
         }
         const { data, error } = await supabase

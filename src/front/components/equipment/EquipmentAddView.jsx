@@ -23,22 +23,11 @@ function EquipmentAddView({ plants, onClose, onEquipmentAdded }) {
             const userId = AuthService.currentUser?.id || sessionStorage.getItem('userId');
             if (!userId) throw new Error('User ID not available. Please log in again.');
 
-            const formatDateForDb = date => {
-                if (!date) return null;
-                const d = new Date(date);
-                if (isNaN(d.getTime())) return null;
-                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}+00`;
-            };
-
-            const now = formatDateForDb(new Date());
             const newEquipment = {
                 identifying_number: identifyingNumber,
                 assigned_plant: assignedPlant,
                 equipment_type: equipmentType,
-                status,
-                created_at: now,
-                updated_at: now,
-                updated_by: userId
+                status
             };
 
             const savedEquipment = await EquipmentService.createEquipment(newEquipment, userId);

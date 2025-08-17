@@ -158,13 +158,6 @@ function EquipmentDetailView({ equipmentId, onClose }) {
         try {
             const userId = await UserService.getCurrentUser();
 
-            const formatDate = date => {
-                if (!date) return null;
-                const parsedDate = date instanceof Date ? date : new Date(date);
-                if (isNaN(parsedDate.getTime())) return null;
-                return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`;
-            };
-
             const updatedEquipment = {
                 ...equipment,
                 id: equipment.id,
@@ -174,7 +167,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
                 status,
                 cleanlinessRating: cleanlinessRating || null,
                 conditionRating: conditionRating || null,
-                lastServiceDate: formatDate(lastServiceDate),
+                lastServiceDate,
                 hoursMileage: hoursMileage ? parseFloat(hoursMileage) : null,
                 equipmentMake: make,
                 equipmentModel: model,
@@ -183,7 +176,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
                 updatedBy: userId
             };
 
-            await EquipmentService.updateEquipment(updatedEquipment.id, updatedEquipment);
+            await EquipmentService.updateEquipment(updatedEquipment.id, updatedEquipment, userId);
             setEquipment(updatedEquipment);
 
             setMessage('Changes saved successfully!');
@@ -217,7 +210,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
         if (!showDeleteConfirmation) return setShowDeleteConfirmation(true);
 
         try {
-            await supabase.from('heavy_equipment').delete().eq('id', equipment.id);
+            await EquipmentService.deleteEquipment(equipment.id);
             alert('Equipment deleted successfully');
             onClose();
         } catch (error) {
@@ -248,18 +241,15 @@ function EquipmentDetailView({ equipmentId, onClose }) {
     useEffect(() => {
         async function fetchCommentsAndIssues() {
             if (!equipmentId) return;
-            const { data: commentData } = await supabase
-                .from('equipment_comments')
-                .select('*')
-                .eq('equipment_id', equipmentId)
-                .order('created_at', { ascending: false });
-            setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
-            const { data: issueData } = await supabase
-                .from('equipment_maintenance')
-                .select('*')
-                .eq('equipment_id', equipmentId)
-                .order('created_at', { ascending: false });
-            setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
+            try {
+                const comments = await EquipmentService.fetchComments(equipmentId);
+                setComments(Array.isArray(comments) ? comments.filter(c => c && (c.comment || c.text)) : []);
+                const issues = await EquipmentService.fetchIssues(equipmentId);
+                setIssues(Array.isArray(issues) ? issues.filter(i => i && (i.issue || i.title || i.description)) : []);
+            } catch {
+                setComments([]);
+                setIssues([]);
+            }
         }
         fetchCommentsAndIssues();
     }, [equipmentId]);
