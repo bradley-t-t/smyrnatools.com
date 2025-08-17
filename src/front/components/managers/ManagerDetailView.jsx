@@ -1,14 +1,12 @@
-import React, {useState, useEffect} from 'react';
-import {supabase} from '../../../services/DatabaseService';
+import React, {useEffect, useState} from 'react';
+import {DatabaseService, supabase} from '../../../services/DatabaseService';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import ManagerCard from './ManagerCard';
 import {useAuth} from '../../../app/context/AuthContext';
 import './styles/ManagerDetailView.css';
 import {UserService} from '../../../services/UserService';
-import {DatabaseService} from '../../../services/DatabaseService';
 import {AuthUtility} from '../../../utils/AuthUtility';
-import ThemeUtility from '../../../utils/ThemeUtility';
 
 function ManagerDetailView({managerId, onClose}) {
     const {preferences} = usePreferences();
@@ -39,7 +37,8 @@ function ManagerDetailView({managerId, onClose}) {
 
     useEffect(() => {
         if (managerId) {
-            Promise.all([fetchManagerDetails(), fetchPlants(), fetchRoles(), fetchCurrentUserRole()]).catch(() => {});
+            Promise.all([fetchManagerDetails(), fetchPlants(), fetchRoles(), fetchCurrentUserRole()]).catch(() => {
+            });
         }
     }, [managerId]);
 
@@ -108,7 +107,10 @@ function ManagerDetailView({managerId, onClose}) {
     async function fetchManagerDetails() {
         setIsLoading(true);
         try {
-            const [{data: userData, error: userError}, {data: profileData, error: profileError}, {data: permissionData, error: permissionError}] = await Promise.all([
+            const [{data: userData, error: userError}, {data: profileData, error: profileError}, {
+                data: permissionData,
+                error: permissionError
+            }] = await Promise.all([
                 supabase.from('users').select('*').eq('id', managerId).single(),
                 supabase.from('users_profiles').select('*').eq('id', managerId).single(),
                 supabase.from('users_permissions').select('role_id').eq('user_id', managerId).single()
@@ -215,11 +217,18 @@ function ManagerDetailView({managerId, onClose}) {
             };
             const {error: permError} = existingPermission?.length
                 ? await supabase.from('users_permissions').update(updateData).eq('user_id', managerId)
-                : await supabase.from('users_permissions').insert({...updateData, user_id: managerId, created_at: new Date().toISOString()});
+                : await supabase.from('users_permissions').insert({
+                    ...updateData,
+                    user_id: managerId,
+                    created_at: new Date().toISOString()
+                });
             if (permError) throw permError;
 
             if (showPasswordField && password) {
-                const {data: userData, error: userFetchError} = await supabase.from('users').select('salt').eq('id', managerId).single();
+                const {
+                    data: userData,
+                    error: userFetchError
+                } = await supabase.from('users').select('salt').eq('id', managerId).single();
                 if (userFetchError) throw userFetchError;
                 const passwordHash = await AuthUtility.hashPassword(password, userData.salt);
                 const {error: passwordError} = await supabase.from('users').update({
@@ -292,7 +301,7 @@ function ManagerDetailView({managerId, onClose}) {
                     <div className="header-right"></div>
                 </div>
                 <div className="detail-content">
-                    <LoadingScreen message="Loading manager details..." inline={true} />
+                    <LoadingScreen message="Loading manager details..." inline={true}/>
                 </div>
             </div>
         );
@@ -350,11 +359,11 @@ function ManagerDetailView({managerId, onClose}) {
                 {isReadOnly && (
                     <div className="message warning" style={{marginBottom: '16px'}}>
                         <i className="fas fa-lock" style={{marginRight: '8px'}}></i>
-                        View-Only Mode | You can't edit this manager.
+                        View-Only Mode | You can&#39;t edit this manager.
                     </div>
                 )}
                 <div className="manager-card-preview">
-                    <ManagerCard manager={manager} plantName={getPlantName(manager.plantCode)} />
+                    <ManagerCard manager={manager} plantName={getPlantName(manager.plantCode)}/>
                 </div>
                 <div className="detail-card">
                     <div className="card-header">
@@ -364,12 +373,16 @@ function ManagerDetailView({managerId, onClose}) {
                     <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
                             <span className="metadata-label">Created:</span>
-                            <span className="metadata-value">{manager.createdAt ? new Date(manager.createdAt).toLocaleString() : 'Not Assigned'}</span>
+                            <span
+                                className="metadata-value">{manager.createdAt ? new Date(manager.createdAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         <div className="metadata-row">
                             <span className="metadata-label">Last Updated:</span>
-                            <span className="metadata-value">{manager.updatedAt ? new Date(manager.updatedAt).toLocaleString() : 'Not Assigned'}</span>
-                            <button onClick={() => fetchRoles()} style={{marginLeft: '10px', fontSize: '10px'}}>Refresh roles</button>
+                            <span
+                                className="metadata-value">{manager.updatedAt ? new Date(manager.updatedAt).toLocaleString() : 'Not Assigned'}</span>
+                            <button onClick={() => fetchRoles()} style={{marginLeft: '10px', fontSize: '10px'}}>Refresh
+                                roles
+                            </button>
                         </div>
                     </div>
                     <div className="form-group">
@@ -443,7 +456,8 @@ function ManagerDetailView({managerId, onClose}) {
                         <div className="password-header">
                             <label>Password</label>
                             {!showPasswordField && !isReadOnly && (
-                                <button className="text-button" onClick={() => setShowPasswordField(true)}>Change Password</button>
+                                <button className="text-button" onClick={() => setShowPasswordField(true)}>Change
+                                    Password</button>
                             )}
                         </div>
                         {showPasswordField && (
@@ -455,7 +469,10 @@ function ManagerDetailView({managerId, onClose}) {
                                     placeholder="Enter new password"
                                     className="form-control"
                                 />
-                                <button className="text-button small" onClick={() => { setShowPasswordField(false); setPassword(''); }}>
+                                <button className="text-button small" onClick={() => {
+                                    setShowPasswordField(false);
+                                    setPassword('');
+                                }}>
                                     Cancel
                                 </button>
                             </div>
@@ -467,19 +484,33 @@ function ManagerDetailView({managerId, onClose}) {
                         <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>
                             {isSaving ? 'Saving...' : 'Save Changes'}
                         </button>
-                        <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)} disabled={isSaving}>
+                        <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)}
+                                disabled={isSaving}>
                             Delete Manager
                         </button>
                     </div>
                 )}
             </div>
             {showDeleteConfirmation && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
+                <div className="confirmation-modal" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999
+                }}>
                     <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
-                        <p>Are you sure you want to delete {manager.firstName} {manager.lastName}? This action cannot be undone.</p>
-                        <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                        <p>Are you sure you want to delete {manager.firstName} {manager.lastName}? This action cannot be
+                            undone.</p>
+                        <div className="confirmation-actions"
+                             style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel
+                            </button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>

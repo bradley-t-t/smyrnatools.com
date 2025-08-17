@@ -89,8 +89,8 @@
 
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary, #18181b) ;
-    color: var(--text-primary, #f5f5f5) ;
+    background: var(--bg-primary, #18181b);
+    color: var(--text-primary, #f5f5f5);
 }
 
 .teams-overview-table {

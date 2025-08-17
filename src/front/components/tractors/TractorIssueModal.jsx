@@ -26,11 +26,11 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
         setIsLoading(true)
         setError(null)
         try {
-            const { data: fetchedIssues } = await supabase
+            const {data: fetchedIssues} = await supabase
                 .from('tractors_maintenance')
                 .select('*')
                 .eq('tractor_id', tractorId)
-                .order('time_created', { ascending: false })
+                .order('time_created', {ascending: false})
             setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : [])
         } catch (err) {
             setError(LOAD_ISSUES_ERROR)
@@ -56,7 +56,7 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
         try {
             await supabase
                 .from('tractors_maintenance')
-                .update({ time_completed: new Date().toISOString() })
+                .update({time_completed: new Date().toISOString()})
                 .eq('id', issueId)
             fetchIssues()
         } catch (err) {
@@ -150,7 +150,7 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
                         <h3>Issues History</h3>
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading issues..." inline={true} />
+                                <LoadingScreen message="Loading issues..." inline={true}/>
                             </div>
                         ) : issues.length === 0 ? (
                             <div className="empty-issues">

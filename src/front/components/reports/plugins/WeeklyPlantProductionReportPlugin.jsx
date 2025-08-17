@@ -1,5 +1,5 @@
 import React from 'react'
-import { ReportService } from '../../../../services/ReportService'
+import {ReportService} from '../../../../services/ReportService'
 
 function getRows(form) {
     return Array.isArray(form.rows) ? form.rows : []
@@ -15,7 +15,7 @@ function getOperatorName(row, operatorOptions) {
     return row.name
 }
 
-function RowCard({ row, operatorOptions }) {
+function RowCard({row, operatorOptions}) {
     const parse = ReportService.parseTimeToMinutes.bind(ReportService)
     const start = parse(row.start_time)
     const punch = parse(row.punch_out)
@@ -46,10 +46,11 @@ function RowCard({ row, operatorOptions }) {
                 borderBottom: '1px solid var(--divider)',
                 background: 'var(--background)'
             }}>
-                <div style={{ flex: 2, fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
-                    {getOperatorName(row, operatorOptions) || <span style={{ color: 'var(--text-secondary)' }}>No Name</span>}
+                <div style={{flex: 2, fontWeight: 700, fontSize: 17, color: 'var(--accent)'}}>
+                    {getOperatorName(row, operatorOptions) ||
+                        <span style={{color: 'var(--text-secondary)'}}>No Name</span>}
                 </div>
-                <div style={{ flex: 1, fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>
+                <div style={{flex: 1, fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)'}}>
                     Truck #{row.truck_number || '--'}
                 </div>
             </div>
@@ -59,60 +60,66 @@ function RowCard({ row, operatorOptions }) {
                 gap: 0,
                 padding: '14px 18px'
             }}>
-                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Start</div>
-                    <div style={{ fontWeight: 600 }}>{row.start_time || '--'}</div>
+                <div style={{flex: 1, minWidth: 160, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Start</div>
+                    <div style={{fontWeight: 600}}>{row.start_time || '--'}</div>
                 </div>
-                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>1st Load</div>
-                    <div style={{ fontWeight: 600 }}>{row.first_load || '--'}</div>
+                <div style={{flex: 1, minWidth: 160, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>1st Load</div>
+                    <div style={{fontWeight: 600}}>{row.first_load || '--'}</div>
                 </div>
-                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Elapsed (Start→1st)</div>
-                    <div style={{ fontWeight: 600, color: elapsedStart > 15 ? 'var(--warning)' : undefined }}>
+                <div style={{flex: 1, minWidth: 160, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Elapsed (Start→1st)</div>
+                    <div style={{fontWeight: 600, color: elapsedStart > 15 ? 'var(--warning)' : undefined}}>
                         {elapsedStart !== null ? `${elapsedStart} min` : '--'}
                     </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>EOD In Yard</div>
-                    <div style={{ fontWeight: 600 }}>{row.eod_in_yard || '--'}</div>
+                <div style={{flex: 1, minWidth: 160, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>EOD In Yard</div>
+                    <div style={{fontWeight: 600}}>{row.eod_in_yard || '--'}</div>
                 </div>
-                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Punch Out</div>
-                    <div style={{ fontWeight: 600 }}>{row.punch_out || '--'}</div>
+                <div style={{flex: 1, minWidth: 160, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Punch Out</div>
+                    <div style={{fontWeight: 600}}>{row.punch_out || '--'}</div>
                 </div>
-                <div style={{ flex: 1, minWidth: 160, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Elapsed (EOD→Punch)</div>
-                    <div style={{ fontWeight: 600, color: elapsedEnd > 15 ? 'var(--warning)' : undefined }}>
+                <div style={{flex: 1, minWidth: 160, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Elapsed (EOD→Punch)</div>
+                    <div style={{fontWeight: 600, color: elapsedEnd > 15 ? 'var(--warning)' : undefined}}>
                         {elapsedEnd !== null ? `${elapsedEnd} min` : '--'}
                     </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 120, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Total Loads</div>
-                    <div style={{ fontWeight: 600, color: row.loads !== undefined && row.loads !== '' && Number(row.loads) < 3 ? 'var(--warning)' : undefined }}>
+                <div style={{flex: 1, minWidth: 120, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Total Loads</div>
+                    <div style={{
+                        fontWeight: 600,
+                        color: row.loads !== undefined && row.loads !== '' && Number(row.loads) < 3 ? 'var(--warning)' : undefined
+                    }}>
                         {row.loads || '--'}
                     </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 120, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Total Hours</div>
-                    <div style={{ fontWeight: 600, color: totalHours !== null && totalHours > 14 ? 'var(--warning)' : undefined }}>
+                <div style={{flex: 1, minWidth: 120, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Total Hours</div>
+                    <div style={{
+                        fontWeight: 600,
+                        color: totalHours !== null && totalHours > 14 ? 'var(--warning)' : undefined
+                    }}>
                         {totalHours !== null ? totalHours.toFixed(2) : '--'}
                     </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 120, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loads/Hour</div>
-                    <div style={{ fontWeight: 600 }}>{loadsPerHour || '--'}</div>
+                <div style={{flex: 1, minWidth: 120, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Loads/Hour</div>
+                    <div style={{fontWeight: 600}}>{loadsPerHour || '--'}</div>
                 </div>
-                <div style={{ flex: 2, minWidth: 180, marginBottom: 10 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Comments</div>
-                    <div style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{row.comments || ''}</div>
+                <div style={{flex: 2, minWidth: 180, marginBottom: 10}}>
+                    <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>Comments</div>
+                    <div style={{fontWeight: 500, color: 'var(--text-secondary)'}}>{row.comments || ''}</div>
                 </div>
             </div>
         </div>
     )
 }
 
-function StatCard({ label, value, highlight }) {
+function StatCard({label, value, highlight}) {
     return (
         <div
             style={{
@@ -131,13 +138,17 @@ function StatCard({ label, value, highlight }) {
                 boxShadow: '0 1px 4px var(--shadow-sm)'
             }}
         >
-            <div style={{ fontSize: 28, fontWeight: 700, color: highlight ? 'var(--accent)' : 'var(--text-primary)' }}>{value}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{label}</div>
+            <div style={{
+                fontSize: 28,
+                fontWeight: 700,
+                color: highlight ? 'var(--accent)' : 'var(--text-primary)'
+            }}>{value}</div>
+            <div style={{fontSize: 13, color: 'var(--text-secondary)', marginTop: 4}}>{label}</div>
         </div>
     )
 }
 
-function WarningCard({ message }) {
+function WarningCard({message}) {
     return (
         <div
             style={{
@@ -154,19 +165,19 @@ function WarningCard({ message }) {
                 gap: 8
             }}
         >
-            <span style={{ fontSize: 18, marginRight: 6 }}>⚠</span>
+            <span style={{fontSize: 18, marginRight: 6}}>⚠</span>
             <span>{message}</span>
         </div>
     )
 }
 
-function CardAverages({ insights }) {
+function CardAverages({insights}) {
     return (
         <div>
             {insights.avgWarnings && insights.avgWarnings.length > 0 && (
                 <div>
                     {insights.avgWarnings.map((msg, i) => (
-                        <WarningCard key={i} message={msg} />
+                        <WarningCard key={i} message={msg}/>
                     ))}
                 </div>
             )}
@@ -180,26 +191,30 @@ function CardAverages({ insights }) {
                     justifyContent: 'center'
                 }}
             >
-                <StatCard label="Total Loads" value={insights.totalLoads} />
-                <StatCard label="Total Hours" value={insights.totalHours !== null ? insights.totalHours.toFixed(2) : '--'} />
-                <StatCard label="Avg Loads" value={insights.avgLoads !== null ? insights.avgLoads.toFixed(2) : '--'} />
-                <StatCard label="Avg Hours" value={insights.avgHours !== null ? insights.avgHours.toFixed(2) : '--'} />
-                <StatCard label="Avg Loads/Hour" value={insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'} />
-                <StatCard label="Avg Elapsed (Start→1st)" value={insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'} />
-                <StatCard label="Avg Elapsed (EOD→Punch)" value={insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'} />
+                <StatCard label="Total Loads" value={insights.totalLoads}/>
+                <StatCard label="Total Hours"
+                          value={insights.totalHours !== null ? insights.totalHours.toFixed(2) : '--'}/>
+                <StatCard label="Avg Loads" value={insights.avgLoads !== null ? insights.avgLoads.toFixed(2) : '--'}/>
+                <StatCard label="Avg Hours" value={insights.avgHours !== null ? insights.avgHours.toFixed(2) : '--'}/>
+                <StatCard label="Avg Loads/Hour"
+                          value={insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'}/>
+                <StatCard label="Avg Elapsed (Start→1st)"
+                          value={insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'}/>
+                <StatCard label="Avg Elapsed (EOD→Punch)"
+                          value={insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'}/>
             </div>
         </div>
     )
 }
 
-export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
+export function PlantProductionSubmitPlugin({form, operatorOptions}) {
     const rows = getRows(form)
     const insights = ReportService.getPlantProductionInsights(rows)
     const reportDate = form.report_date || ''
     const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
     if (!rows.length) return null
     return (
-        <div style={{ marginTop: 32 }}>
+        <div style={{marginTop: 32}}>
             <div style={{
                 fontWeight: 700,
                 fontSize: 22,
@@ -209,24 +224,24 @@ export function PlantProductionSubmitPlugin({ form, operatorOptions }) {
             }}>
                 {`Plant Production Report${reportDate ? ` - ${reportDate}` : ''}${plantCode ? ` - ${plantCode}'s Report` : ''}`}
             </div>
-            <CardAverages insights={insights} />
+            <CardAverages insights={insights}/>
             <div>
                 {rows.map((row, i) => (
-                    <RowCard row={row} key={i} operatorOptions={operatorOptions} />
+                    <RowCard row={row} key={i} operatorOptions={operatorOptions}/>
                 ))}
             </div>
         </div>
     )
 }
 
-export function PlantProductionReviewPlugin({ form, operatorOptions }) {
+export function PlantProductionReviewPlugin({form, operatorOptions}) {
     const rows = getRows(form)
     const insights = ReportService.getPlantProductionInsights(rows)
     const reportDate = form.report_date || ''
     const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
     if (!rows.length) return null
     return (
-        <div style={{ marginTop: 32 }}>
+        <div style={{marginTop: 32}}>
             <div style={{
                 fontWeight: 700,
                 fontSize: 22,
@@ -236,10 +251,10 @@ export function PlantProductionReviewPlugin({ form, operatorOptions }) {
             }}>
                 {`Plant Production Report${reportDate ? ` - ${reportDate}` : ''}${plantCode ? ` - ${plantCode}'s Report` : ''}`}
             </div>
-            <CardAverages insights={insights} />
+            <CardAverages insights={insights}/>
             <div>
                 {rows.map((row, i) => (
-                    <RowCard row={row} key={i} operatorOptions={operatorOptions} />
+                    <RowCard row={row} key={i} operatorOptions={operatorOptions}/>
                 ))}
             </div>
         </div>

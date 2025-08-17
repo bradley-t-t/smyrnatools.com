@@ -2,10 +2,10 @@ import React, {useEffect, useState} from 'react'
 import {ListService} from '../../../services/ListService'
 import './styles/ListOverview.css'
 
-function ListOverview({totalItems = 0, overdueItems = 0, listItems = [], selectedPlant = ''}) {
-    const [plants, setPlants] = useState([])
+function ListOverview({listItems = [], selectedPlant = ''}) {
+    const [, setPlants] = useState([])
     const [plantDistribution, setPlantDistribution] = useState({})
-    const [isLoading, setIsLoading] = useState(false)
+    const [, setIsLoading] = useState(false)
 
     useEffect(() => {
         async function fetchPlants() {
@@ -17,6 +17,7 @@ function ListOverview({totalItems = 0, overdueItems = 0, listItems = [], selecte
                 setIsLoading(false)
             }
         }
+
         fetchPlants()
     }, [])
 

@@ -1,19 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import { TrailerService } from '../../../services/TrailerService';
+import React, {useEffect, useState} from 'react';
+import {usePreferences} from '../../../app/context/PreferencesContext';
+import {TrailerService} from '../../../services/TrailerService';
 import LoadingScreen from '../common/LoadingScreen';
 import UserLabel from '../common/UserLabel';
 import './styles/TrailerHistoryView.css';
 
-function TrailerHistoryView({ trailer, onClose }) {
-    const { preferences } = usePreferences();
+function TrailerHistoryView({trailer, onClose}) {
+    const {preferences} = usePreferences();
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [sortConfig, setSortConfig] = useState({
-        key: 'changedAt',
-        direction: 'descending'
-    });
 
     useEffect(() => {
         fetchHistory();
@@ -55,7 +51,7 @@ function TrailerHistoryView({ trailer, onClose }) {
     const formatDate = (dateString) => {
         if (!dateString) return 'Not Assigned';
         const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
     };
 
     const getHistoryItemColor = (fieldName) => {
@@ -83,59 +79,18 @@ function TrailerHistoryView({ trailer, onClose }) {
         return value;
     };
 
-    const sortedHistory = React.useMemo(() => {
-        let sortableItems = [...history];
-        if (sortConfig !== null) {
-            sortableItems.sort((a, b) => {
-                let aValue, bValue;
-                if (sortConfig.key === 'changedAt') {
-                    aValue = a.changedAt || a.changed_at;
-                    bValue = b.changedAt || b.changed_at;
-                } else if (sortConfig.key === 'fieldName') {
-                    aValue = a.fieldName || a.field_name;
-                    bValue = b.fieldName || b.field_name;
-                } else if (sortConfig.key === 'oldValue') {
-                    aValue = a.oldValue || a.old_value;
-                    bValue = b.oldValue || b.old_value;
-                } else if (sortConfig.key === 'newValue') {
-                    aValue = a.newValue || a.new_value;
-                    bValue = b.newValue || b.new_value;
-                } else if (sortConfig.key === 'changedBy') {
-                    aValue = a.changedBy || a.changed_by;
-                    bValue = b.changedBy || b.changed_by;
-                }
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-        return sortableItems;
-    }, [history, sortConfig]);
-
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
                 <div className="history-modal-header"
-                     style={{ backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896' }}>
+                     style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                     <h2>History for Trailer #{trailer.trailerNumber}</h2>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>
                 <div className="history-modal-content">
                     {isLoading ? (
                         <div className="loading-spinner-container">
-                            <LoadingScreen message="Loading history..." inline={true} />
+                            <LoadingScreen message="Loading history..." inline={true}/>
                         </div>
                     ) : error ? (
                         <div className="error-message">
@@ -145,31 +100,36 @@ function TrailerHistoryView({ trailer, onClose }) {
                     ) : history.length === 0 ? (
                         <div className="empty-history">
                             <p>No history records found for this trailer.</p>
-                            <p className="empty-subtext">History entries will appear here when changes are made to this trailer.</p>
+                            <p className="empty-subtext">History entries will appear here when changes are made to this
+                                trailer.</p>
                         </div>
                     ) : (
                         <div className="history-timeline">
-                            {sortedHistory.map((entry, index) => (
+                            {history.map((entry, index) => (
                                 <div
                                     key={entry.id || index}
                                     className="history-item"
-                                    style={{ backgroundColor: getHistoryItemColor(entry.fieldName || entry.field_name) }}
+                                    style={{backgroundColor: getHistoryItemColor(entry.fieldName || entry.field_name)}}
                                 >
                                     <div className="history-item-header">
-                                        <div className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
-                                        <div className="history-timestamp">{formatDate(entry.changedAt || entry.changed_at)}</div>
+                                        <div
+                                            className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
+                                        <div
+                                            className="history-timestamp">{formatDate(entry.changedAt || entry.changed_at)}</div>
                                     </div>
                                     <div className="history-change">
                                         <div className="history-old-value">
-                                            <span className="value-label">From:</span> {formatValue(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value)}
+                                            <span
+                                                className="value-label">From:</span> {formatValue(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value)}
                                         </div>
                                         <div className="history-arrow">→</div>
                                         <div className="history-new-value">
-                                            <span className="value-label">To:</span> {formatValue(entry.fieldName || entry.field_name, entry.newValue || entry.new_value)}
+                                            <span
+                                                className="value-label">To:</span> {formatValue(entry.fieldName || entry.field_name, entry.newValue || entry.new_value)}
                                         </div>
                                     </div>
                                     <div className="history-user">
-                                        <UserLabel userId={entry.changedBy || entry.changed_by} showInitials={true} />
+                                        <UserLabel userId={entry.changedBy || entry.changed_by} showInitials={true}/>
                                     </div>
                                 </div>
                             ))}

@@ -3,7 +3,7 @@ const FormatUtility = {
         if (!dateStr) return ''
         const date = new Date(dateStr)
         if (isNaN(date.getTime())) return dateStr
-        const options = { month: 'long', day: 'numeric', year: 'numeric' }
+        const options = {month: 'long', day: 'numeric', year: 'numeric'}
         const formatted = date.toLocaleDateString('en-US', options)
         const day = date.getDate()
         let suffix = 'th'
@@ -15,4 +15,4 @@ const FormatUtility = {
 }
 
 export default FormatUtility
-export { FormatUtility }
+export {FormatUtility}

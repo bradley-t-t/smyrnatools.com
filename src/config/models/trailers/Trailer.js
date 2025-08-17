@@ -41,6 +41,10 @@ class Trailer {
         });
     }
 
+    static ensureInstance(data) {
+        return data instanceof Trailer ? data : Trailer.fromApiFormat(data);
+    }
+
     toApiFormat() {
         return {
             id: this.id,
@@ -55,10 +59,6 @@ class Trailer {
             updated_by: this.updatedBy,
             status: this.status
         };
-    }
-
-    static ensureInstance(data) {
-        return data instanceof Trailer ? data : Trailer.fromApiFormat(data);
     }
 
     isVerified(latestHistoryDate = null) {

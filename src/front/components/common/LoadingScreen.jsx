@@ -1,11 +1,10 @@
 import React from 'react';
 import './styles/LoadingScreen.css';
 import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import ThemeUtility from '../../../utils/ThemeUtility';
+import {usePreferences} from '../../../app/context/PreferencesContext';
 
 function LoadingScreen({message = 'Loading...', fullPage = false, inline = false}) {
-    const { preferences } = usePreferences();
+    const {preferences} = usePreferences();
     const isDarkMode = preferences?.themeMode === 'dark';
     const themeClass = isDarkMode ? 'dark-mode' : '';
 

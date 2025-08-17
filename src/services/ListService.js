@@ -1,5 +1,5 @@
 import supabase from './DatabaseService'
-import { UserService } from './UserService'
+import {UserService} from './UserService'
 
 const LIST_ITEMS_TABLE = 'list_items'
 
@@ -12,10 +12,10 @@ class ListServiceImpl {
     async fetchListItems() {
         const user = await UserService.getCurrentUser()
         if (!user) throw new Error('No authenticated user')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(LIST_ITEMS_TABLE)
             .select('*')
-            .order('created_at', { ascending: false })
+            .order('created_at', {ascending: false})
         if (error) throw error
         this.listItems = data ?? []
         await this.fetchCreatorProfiles(this.listItems)
@@ -23,7 +23,7 @@ class ListServiceImpl {
     }
 
     async fetchPlants() {
-        const { data, error } = await supabase.from('plants').select('*').order('plant_code')
+        const {data, error} = await supabase.from('plants').select('*').order('plant_code')
         if (error) throw error
         this.plants = data ?? []
         return this.plants
@@ -31,12 +31,12 @@ class ListServiceImpl {
 
     async fetchCreatorProfiles(listItems) {
         const userIds = [...new Set(listItems.map(item => item.user_id).filter(id => id))]
-        const newProfiles = { ...this.creatorProfiles }
+        const newProfiles = {...this.creatorProfiles}
         if (userIds.length === 0) {
             this.creatorProfiles = newProfiles
             return this.creatorProfiles
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('users_profiles')
             .select('id, first_name, last_name')
             .in('id', userIds)
@@ -66,7 +66,7 @@ class ListServiceImpl {
             completed_at: null,
             completed_by: null
         }
-        const { error } = await supabase
+        const {error} = await supabase
             .from(LIST_ITEMS_TABLE)
             .insert(item)
         if (error) throw error
@@ -85,7 +85,7 @@ class ListServiceImpl {
             completed: item.completed ?? false,
             completed_at: item.completed_at
         }
-        const { error } = await supabase
+        const {error} = await supabase
             .from(LIST_ITEMS_TABLE)
             .update(update)
             .eq('id', item.id)
@@ -104,7 +104,7 @@ class ListServiceImpl {
             completed_at: newCompletionStatus ? now : null,
             completed_by: newCompletionStatus ? currentUserId : null
         }
-        const { error } = await supabase
+        const {error} = await supabase
             .from(LIST_ITEMS_TABLE)
             .update(update)
             .eq('id', item.id)
@@ -115,7 +115,7 @@ class ListServiceImpl {
 
     async deleteListItem(id) {
         if (!id) throw new Error('Item ID is required')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(LIST_ITEMS_TABLE)
             .delete()
             .eq('id', id)
@@ -124,7 +124,7 @@ class ListServiceImpl {
         return true
     }
 
-    getFilteredItems({ filterType, plantCode, searchTerm, showCompleted, statusFilter }) {
+    getFilteredItems({plantCode, searchTerm, showCompleted, statusFilter}) {
         let items = [...this.listItems]
         if (plantCode) items = items.filter(item => item.plant_code === plantCode)
         if (searchTerm?.trim()) {
@@ -162,7 +162,13 @@ class ListServiceImpl {
         if (!dateString) return 'N/A'
         const date = new Date(dateString)
         if (isNaN(date.getTime())) return 'Invalid Date'
-        return date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
     }
 
     formatDateForInput(dateString) {
@@ -172,37 +178,20 @@ class ListServiceImpl {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
     }
 
-    getRelativeTime(dateString) {
-        if (!dateString) return ''
-        const date = new Date(dateString)
-        if (isNaN(date.getTime())) return ''
-        const now = new Date()
-        const diffMs = now - date
-        const diffSec = Math.round(diffMs / 1000)
-        const diffMin = Math.round(diffSec / 60)
-        const diffHr = Math.round(diffMin / 60)
-        const diffDay = Math.round(diffHr / 24)
-        if (diffSec < 60) return `${diffSec} second${diffSec !== 1 ? 's' : ''} ago`
-        if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`
-        if (diffHr < 24) return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`
-        if (diffDay < 30) return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`
-        return this.formatDate(dateString)
-    }
-
     isOverdue(item) {
         return item.deadline && !item.completed && new Date(item.deadline) < new Date()
     }
 
     calculateStatusInfo(item) {
-        if (!item) return { color: 'var(--gray-500)', label: 'Unknown', icon: 'question-circle' }
-        if (item.completed) return { color: 'var(--success)', label: 'Completed', icon: 'check-circle' }
+        if (!item) return {color: 'var(--gray-500)', label: 'Unknown', icon: 'question-circle'}
+        if (item.completed) return {color: 'var(--success)', label: 'Completed', icon: 'check-circle'}
         const deadline = new Date(item.deadline)
         const now = new Date()
-        if (isNaN(deadline.getTime())) return { color: 'var(--gray-500)', label: 'No Deadline', icon: 'calendar-times' }
-        if (deadline < now) return { color: 'var(--danger)', label: 'Overdue', icon: 'exclamation-circle' }
+        if (isNaN(deadline.getTime())) return {color: 'var(--gray-500)', label: 'No Deadline', icon: 'calendar-times'}
+        if (deadline < now) return {color: 'var(--danger)', label: 'Overdue', icon: 'exclamation-circle'}
         const hours = (deadline - now) / (1000 * 60 * 60)
-        if (hours < 24) return { color: 'var(--warning)', label: 'Due Soon', icon: 'clock' }
-        return { color: 'var(--primary)', label: 'Upcoming', icon: 'calendar-check' }
+        if (hours < 24) return {color: 'var(--warning)', label: 'Due Soon', icon: 'clock'}
+        return {color: 'var(--primary)', label: 'Upcoming', icon: 'calendar-check'}
     }
 
     getPlantName(plantCode) {
@@ -233,7 +222,7 @@ class ListServiceImpl {
         const distribution = {}
         const uniquePlants = [...new Set(listItems.map(item => item.plant_code || 'Unassigned'))]
         uniquePlants.forEach(plant => {
-            distribution[plant] = { Total: 0, Pending: 0, Completed: 0, Overdue: 0 }
+            distribution[plant] = {Total: 0, Pending: 0, Completed: 0, Overdue: 0}
         })
         listItems.forEach(item => {
             const plant = item.plant_code || 'Unassigned'

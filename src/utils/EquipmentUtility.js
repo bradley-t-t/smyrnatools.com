@@ -20,7 +20,7 @@ const equipmentUtility = {
     },
     getStatusCounts(equipments) {
         if (!Array.isArray(equipments)) return {};
-        const counts = { Total: equipments.length, Active: 0, Spare: 0, 'In Shop': 0, Retired: 0 };
+        const counts = {Total: equipments.length, Active: 0, Spare: 0, 'In Shop': 0, Retired: 0};
         equipments.forEach(equipment => {
             const status = equipment.status || 'Unknown';
             if (['Active', 'Spare', 'In Shop', 'Retired'].includes(status)) counts[status]++;

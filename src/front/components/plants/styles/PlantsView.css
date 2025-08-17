@@ -65,7 +65,7 @@
     border-spacing: 0;
     background: var(--card-bg);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     font-size: 15px;
 }
 
@@ -96,7 +96,7 @@
 }
 
 .plants-list-table tbody tr:hover {
-    background: rgba(49,130,206,0.06);
+    background: rgba(49, 130, 206, 0.06);
 }
 
 .plants-list-table td {

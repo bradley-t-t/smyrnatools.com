@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react'
+import PropTypes from 'prop-types'
 import './index.css'
 import './App.css'
 import {supabase} from '../services/DatabaseService'
@@ -9,10 +10,8 @@ import SettingsView from '../front/components/settings/SettingsView'
 import MixerDetailView from '../front/components/mixers/MixerDetailView'
 import OperatorsView from '../front/components/operators/OperatorsView'
 import LoginView from '../front/components/login/LoginView'
-import LoadingScreen from '../front/components/common/LoadingScreen'
 import MyAccountView from '../front/components/myaccount/MyAccountView'
 import Navigation from "../front/components/common/Navigation"
-import GuestView from '../front/components/guest/GuestView'
 import ListView from '../front/components/list/ListView'
 import {AuthProvider} from './context/AuthContext'
 import {PreferencesProvider} from './context/PreferencesContext'
@@ -23,7 +22,6 @@ import TipBanner from '../front/components/common/TipBanner'
 import TeamsView from '../front/components/teams/TeamsView'
 import OperatorScheduledOffView from '../front/components/operators/OperatorScheduledOffView'
 import ReportsView from '../front/components/reports/ReportsView'
-import ConnectionScreen from '../front/components/common/ConnectionScreen'
 import TractorsView from '../front/components/tractors/TractorsView'
 import TrailersView from '../front/components/trailers/TrailersView'
 import EquipmentsView from '../front/components/equipment/EquipmentsView'
@@ -31,8 +29,9 @@ import '../front/styles/Theme.css'
 import '../front/styles/Global.css'
 import PlantsView from '../front/components/plants/PlantsView'
 import RegionsView from '../front/components/regions/RegionsView'
+import SmyrnaLogo from '../assets/images/SmyrnaLogo.png'
 
-function VersionPopup({ version }) {
+function VersionPopup({version}) {
     if (!version) return null
     return (
         <div className="version-popup-centered">
@@ -41,17 +40,17 @@ function VersionPopup({ version }) {
     )
 }
 
-function UpdateLoadingScreen({ version }) {
+VersionPopup.propTypes = {version: PropTypes.string}
+
+function UpdateLoadingScreen({version}) {
     const [progress, setProgress] = useState(0)
     useEffect(() => {
-        let start = Date.now()
-        let interval = setInterval(() => {
-            let elapsed = Date.now() - start
-            let minDuration = 15000
-            let randomStep = Math.floor(Math.random() * 7) + 2
-            if (progress < 100) {
-                setProgress(prev => Math.min(100, prev + randomStep))
-            }
+        const start = Date.now()
+        const interval = setInterval(() => {
+            const elapsed = Date.now() - start
+            const minDuration = 15000
+            const randomStep = Math.floor(Math.random() * 7) + 2
+            setProgress(prev => Math.min(100, prev + randomStep))
             if (elapsed >= minDuration && progress >= 100) {
                 clearInterval(interval)
                 setTimeout(() => {
@@ -65,7 +64,7 @@ function UpdateLoadingScreen({ version }) {
         <div className="loading-screen full-page">
             <div className="loading-content">
                 <div className="loading-animation">
-                    <img src={require('../assets/images/SmyrnaLogo.png')} alt="Loading" className="bouncing-logo"/>
+                    <img src={SmyrnaLogo} alt="Loading" className="bouncing-logo"/>
                 </div>
                 <p className="loading-message">Smyrna Tools is Updating...</p>
                 <div style={{
@@ -83,25 +82,22 @@ function UpdateLoadingScreen({ version }) {
                         transition: 'width 0.3s'
                     }}/>
                 </div>
-                <VersionPopup version={version} />
+                <VersionPopup version={version}/>
             </div>
         </div>
     )
 }
 
+UpdateLoadingScreen.propTypes = {version: PropTypes.string}
+
 function AppContent() {
     const [userId, setUserId] = useState(null)
     const [selectedView, setSelectedView] = useState('Mixers')
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
-    const [userRole, setUserRole] = useState('')
-    const [connectionLost, setConnectionLost] = useState(false)
-    const [userCheckFailed, setUserCheckFailed] = useState(false)
     const [title, setTitle] = useState('Mixers')
     const [selectedMixer, setSelectedMixer] = useState(null)
     const [selectedTractor, setSelectedTractor] = useState(null)
     const [webViewURL, setWebViewURL] = useState(null)
-    const [unreadMessageCount, setUnreadMessageCount] = useState(0)
-    const [loading, setLoading] = useState(true)
     const [session, setSession] = useState(null)
     const [userDisplayName, setUserDisplayName] = useState('')
     const [currentVersion, setCurrentVersion] = useState('')
@@ -109,7 +105,7 @@ function AppContent() {
     const [latestVersion, setLatestVersion] = useState('')
 
     useEffect(() => {
-        fetch('/version.json', { cache: 'no-store' })
+        fetch('/version.json', {cache: 'no-store'})
             .then(res => res.json())
             .then(data => setCurrentVersion(data.version || ''))
             .catch(() => setCurrentVersion(''))
@@ -117,8 +113,9 @@ function AppContent() {
 
     useEffect(() => {
         let intervalId
+
         function pollVersion() {
-            fetch('/version.json', { cache: 'no-store' })
+            fetch('/version.json', {cache: 'no-store'})
                 .then(res => res.json())
                 .then(data => {
                     if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
@@ -127,9 +124,8 @@ function AppContent() {
                     }
                 })
         }
-        if (currentVersion) {
-            intervalId = setInterval(pollVersion, 30000)
-        }
+
+        if (currentVersion) intervalId = setInterval(pollVersion, 30000)
         return () => {
             if (intervalId) clearInterval(intervalId)
         }
@@ -148,41 +144,25 @@ function AppContent() {
     }
 
     useEffect(() => {
-        async function checkCurrentUser() {
-            try {
-                const user = await UserService.getCurrentUser()
-                if (!user) {
-                    setUserCheckFailed(true)
-                } else {
-                    setUserCheckFailed(false)
-                }
-            } catch {
-                setUserCheckFailed(true)
-            }
-        }
-        checkCurrentUser()
+        UserService.getCurrentUser().catch(() => {
+        })
     }, [userId])
 
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768)
-        }
+        const handleResize = () => setIsMobile(window.innerWidth <= 768)
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
     useEffect(() => {
         let timeoutId
+
         function updateOnlineStatus() {
-            if (!navigator.onLine) {
-                timeoutId = setTimeout(() => {
-                    setConnectionLost(true)
-                }, 5000)
-            } else {
-                clearTimeout(timeoutId)
-                setConnectionLost(false)
-            }
+            if (!navigator.onLine) timeoutId = setTimeout(() => {
+            }, 5000)
+            else clearTimeout(timeoutId)
         }
+
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)
         updateOnlineStatus()
@@ -196,41 +176,27 @@ function AppContent() {
     useEffect(() => {
         const handleSignOut = () => {
             setUserId(null)
-            setUserRole('')
             setSelectedView('Mixers')
         }
         window.addEventListener('authSignOut', handleSignOut)
-        return () => {
-            window.removeEventListener('authSignOut', handleSignOut)
-        }
+        return () => window.removeEventListener('authSignOut', handleSignOut)
     }, [])
 
     useEffect(() => {
         const checkAuth = async () => {
-            setLoading(true)
             try {
                 const {data, error} = await supabase.auth.getSession()
-                if (error) {
-                    return
-                }
+                if (error) return
                 setSession(data.session)
                 if (data.session?.user?.id) {
                     setUserId(data.session.user.id)
                     sessionStorage.setItem('userId', data.session.user.id)
                 } else {
                     const storedUserId = sessionStorage.getItem('userId')
-                    if (storedUserId) {
-                        setUserId(storedUserId)
-                    } else {
-                        setUserId(null)
-                        setUserRole('')
-                    }
+                    setUserId(storedUserId || null)
                 }
-            } catch (error) {
+            } catch {
                 setUserId(null)
-                setUserRole('')
-            } finally {
-                setLoading(false)
             }
         }
         checkAuth()
@@ -245,71 +211,37 @@ function AppContent() {
             }
         })
         return () => {
-            if (authListener?.subscription) {
-                authListener.subscription.unsubscribe()
-            }
+            if (authListener?.subscription) authListener.subscription.unsubscribe()
         }
     }, [])
 
     const fetchUserProfile = async (user) => {
-        try {
+        const {data, error} = await supabase
+            .from('users_profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single()
+        if (!error && data && (data.first_name || data.last_name)) {
+            setTitle(`Welcome, ${data.first_name || ''} ${data.last_name || ''}`.trim())
+        }
+    }
+
+    useEffect(() => {
+        if (userId) fetchUserProfile(userId)
+    }, [userId])
+
+    useEffect(() => {
+        if (!userId) return
+        const getUserData = async () => {
             const {data, error} = await supabase
                 .from('users_profiles')
                 .select('first_name, last_name')
-                .eq('id', user.id)
+                .eq('id', userId)
                 .single()
-            if (error) {
-                return
-            }
-            if (data && (data.first_name || data.last_name)) {
-                setTitle(`Welcome, ${data.first_name || ''} ${data.last_name || ''}`.trim())
-            }
-        } catch (error) {
+            if (!error && data && (data.first_name || data.last_name)) setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim())
+            else setUserDisplayName(userId.substring(0, 8))
         }
-    }
-
-    useEffect(() => {
-        if (userId) {
-            fetchUserProfile(userId)
-            fetchUserRole(userId)
-        }
-    }, [userId])
-
-    const fetchUserRole = async (userId) => {
-        try {
-            const highestRole = await UserService.getHighestRole(userId)
-            if (highestRole && highestRole.name) {
-                setUserRole(highestRole.name.toLowerCase())
-            } else {
-                setUserRole('')
-            }
-        } catch (error) {
-            setUserRole('')
-        }
-    }
-
-    useEffect(() => {
-        if (userId) {
-            const getUserData = async () => {
-                try {
-                    const {data, error} = await supabase
-                        .from('users_profiles')
-                        .select('first_name, last_name')
-                        .eq('id', userId)
-                        .single()
-                    if (error) {
-                        return
-                    }
-                    if (data && (data.first_name || data.last_name)) {
-                        setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim())
-                    } else {
-                        setUserDisplayName(userId.substring(0, 8))
-                    }
-                } catch (error) {
-                }
-            }
-            getUserData()
-        }
+        getUserData()
     }, [userId])
 
     const handleViewSelection = (viewId) => {
@@ -322,163 +254,73 @@ function AppContent() {
                     sessionStorage.setItem('userId', data.session.user.id)
                     setSession(data.session)
                 }
-            }).catch(error => {
+            }).catch(() => {
             })
         }
-        if (selectedMixer && viewId !== 'Mixers') {
-            setSelectedMixer(null)
-        }
-        if (selectedTractor && viewId !== 'Tractors') {
-            setSelectedTractor(null)
-        }
+        if (selectedMixer && viewId !== 'Mixers') setSelectedMixer(null)
+        if (selectedTractor && viewId !== 'Tractors') setSelectedTractor(null)
     }
 
-    const handleExternalLink = (url) => {
-        setWebViewURL(url)
-    }
+    const handleExternalLink = (url) => setWebViewURL(url)
 
     const renderCurrentView = () => {
-        if (!userId) {
-            return <LoginView/>
-        }
-        if (webViewURL) {
-            return (
-                <WebView
-                    url={webViewURL}
-                    onClose={() => setWebViewURL(null)}
-                />
-            )
-        }
-        if (selectedView === 'Plants') {
-            return (
-                <PlantsView
-                    title="Plants"
-                    showSidebar={false}
-                    setShowSidebar={() => {}}
-                />
-            )
-        }
-        if (selectedView === 'Regions') {
-            return (
-                <RegionsView
-                    title="Regions"
-                />
-            )
-        }
+        if (!userId) return <LoginView/>
+        if (webViewURL) return <WebView url={webViewURL} onClose={() => setWebViewURL(null)}/>
+        if (selectedView === 'Plants') return <PlantsView title="Plants"/>
+        if (selectedView === 'Regions') return <RegionsView title="Regions"/>
         switch (selectedView) {
             case 'Mixers':
                 if (selectedMixer) {
                     try {
-                        return (
-                            <MixerDetailView
-                                mixerId={selectedMixer}
-                                onClose={() => {
-                                    setSelectedMixer(null)
-                                    setTitle('Mixers')
-                                }}
-                            />
-                        )
-                    } catch (error) {
+                        return <MixerDetailView mixerId={selectedMixer} onClose={() => {
+                            setSelectedMixer(null);
+                            setTitle('Mixers')
+                        }}/>
+                    } catch {
                         setSelectedMixer(null)
                         setTitle('Mixers')
-                        return (
-                            <MixersView
-                                onSelectMixer={(mixerId) => {
-                                    if (mixerId) {
-                                        setSelectedMixer(mixerId)
-                                        setTitle('Mixer Details')
-                                    }
-                                }}
-                            />
-                        )
-                    }
-                }
-                return (
-                    <MixersView
-                        onSelectMixer={(mixerId) => {
+                        return <MixersView onSelectMixer={(mixerId) => {
                             if (mixerId) {
-                                setSelectedMixer(mixerId)
+                                setSelectedMixer(mixerId);
                                 setTitle('Mixer Details')
                             }
-                        }}
-                    />
-                )
-            case 'Operators':
-                return (
-                    <OperatorsView
-                        title={title}
-                        showSidebar={false}
-                        setShowSidebar={() => {
-                        }}
-                    />
-                )
-            case 'Managers':
-                return (
-                    <ManagersView
-                        title={title}
-                        showSidebar={false}
-                        setShowSidebar={() => {
-                        }}
-                    />
-                )
-            case 'List':
-                return (
-                    <ListView
-                        title="Tasks List"
-                        showSidebar={false}
-                        setShowSidebar={() => {}}
-                    />
-                )
-            case 'Archive':
-                return (
-                    <ListView
-                        title="Archived Items"
-                        showSidebar={false}
-                        setShowSidebar={() => {}}
-                        showArchived={true}
-                    />
-                )
-            case 'MyAccount':
-                const effectiveUserId = userId || sessionStorage.getItem('userId') || session?.user?.id
-                if (effectiveUserId) {
-                    return <MyAccountView userId={effectiveUserId}/>
+                        }}/>
+                    }
                 }
-                return <LoginView/>
+                return <MixersView onSelectMixer={(mixerId) => {
+                    if (mixerId) {
+                        setSelectedMixer(mixerId);
+                        setTitle('Mixer Details')
+                    }
+                }}/>
+            case 'Operators':
+                return <OperatorsView title={title}/>
+            case 'Managers':
+                return <ManagersView title={title}/>
+            case 'List':
+                return <ListView title="Tasks List"/>
+            case 'Archive':
+                return <ListView title="Archived Items" showArchived/>
+            case 'MyAccount': {
+                const effectiveUserId = userId || sessionStorage.getItem('userId') || session?.user?.id
+                return effectiveUserId ? <MyAccountView userId={effectiveUserId}/> : <LoginView/>
+            }
             case 'Settings':
                 return <SettingsView/>
             case 'Teams':
-                return <TeamsView />
+                return <TeamsView/>
             case 'ScheduledOff':
-                return <OperatorScheduledOffView operatorId={userId} />
+                return <OperatorScheduledOffView operatorId={userId}/>
             case 'Reports':
-                return <ReportsView />
+                return <ReportsView/>
             case 'Tractors':
-                return (
-                    <TractorsView
-                        title="Tractor Fleet"
-                        showSidebar={false}
-                        setShowSidebar={() => {}}
-                        onSelectTractor={setSelectedTractor}
-                    />
-                )
+                return <TractorsView title="Tractor Fleet" onSelectTractor={setSelectedTractor}/>
             case 'Trailers':
-                return (
-                    <TrailersView
-                        title="Trailer Fleet"
-                        showSidebar={false}
-                        setShowSidebar={() => {}}
-                        onSelectTrailer={() => {}}
-                    />
-                )
+                return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {
+                }}/>
             case 'Heavy Equipment':
-                return (
-                    <EquipmentsView
-                        title="Equipment Fleet"
-                        showSidebar={false}
-                        setShowSidebar={() => {}}
-                        onSelectEquipment={() => {}}
-                    />
-                )
+                return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {
+                }}/>
             default:
                 return (
                     <div className="coming-soon">
@@ -489,9 +331,7 @@ function AppContent() {
         }
     }
 
-    if (updateMode) {
-        return <UpdateLoadingScreen version={latestVersion || currentVersion}/>
-    }
+    if (updateMode) return <UpdateLoadingScreen version={latestVersion || currentVersion}/>
 
     return (
         <div className="App">
@@ -500,7 +340,6 @@ function AppContent() {
                 <Navigation
                     selectedView={selectedView}
                     onSelectView={handleViewSelection}
-                    unreadMessageCount={unreadMessageCount}
                     onExternalLink={handleExternalLink}
                     userName={userDisplayName}
                     userDisplayName={userDisplayName}
@@ -528,7 +367,7 @@ function App() {
         <AuthProvider>
             <PreferencesProvider>
                 <AppContent/>
-                <div style={{ position: 'relative', zIndex: 9999 }}>
+                <div style={{position: 'relative', zIndex: 9999}}>
                     <OnlineUsersOverlay/>
                     <TipBanner/>
                 </div>

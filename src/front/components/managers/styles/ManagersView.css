@@ -23,7 +23,7 @@
 }
 
 .manager-card .manager-name {
-    color: var(--accent) ;
+    color: var(--accent);
     font-weight: 600;
 }
 
@@ -46,10 +46,10 @@
 }
 
 .empty-roles-message {
-  font-size: 0.8rem;
-  color: var(--text-light);
-  margin-top: 5px;
-  font-style: italic;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 5px;
+    font-style: italic;
 }
 
 .role-selection .role-options {
@@ -102,6 +102,7 @@
     text-align: center;
     margin-top: 4px;
 }
+
 .managers-overview-modal {
     min-width: 0;
     max-width: 700px;
@@ -492,23 +493,28 @@
         max-width: 98vw;
         padding: 16px 8px 14px 8px;
     }
+
     .overview-card {
         max-width: 98vw;
         padding: 1rem 0.5rem;
     }
+
     .status-item {
         min-width: 90px;
         padding: 0.5rem;
     }
+
     .distribution-table th,
     .distribution-table td {
         padding: 6px 4px;
     }
+
     .horizontal-role-breakdown {
         flex-direction: column;
         gap: 1rem;
         align-items: center;
     }
+
     .horizontal-role-breakdown .status-item {
         min-width: 90px;
         flex: 1 1 90px;
@@ -524,16 +530,19 @@
         margin-bottom: var(--spacing-sm);
         justify-content: flex-start;
     }
+
     .filters {
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
         width: 100%;
     }
+
     .search-bar {
         max-width: 100%;
         width: 100%;
     }
+
     .managers-grid {
         grid-template-columns: 1fr;
     }

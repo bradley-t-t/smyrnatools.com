@@ -1,19 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { usePreferences } from '../../../app/context/PreferencesContext';
+import React, {useEffect, useState} from 'react';
+import {usePreferences} from '../../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TrailerCard from './TrailerCard';
 import TrailerOverview from './TrailerOverview';
 import '../../styles/FilterStyles.css';
 import './styles/TrailersView.css';
-import { TrailerService } from '../../../services/TrailerService';
-import { TrailerUtility } from '../../../utils/TrailerUtility';
-import { PlantService } from '../../../services/PlantService';
-import { TractorService } from '../../../services/TractorService';
+import {TrailerService} from '../../../services/TrailerService';
+import {TrailerUtility} from '../../../utils/TrailerUtility';
+import {PlantService} from '../../../services/PlantService';
+import {TractorService} from '../../../services/TractorService';
 import TrailerAddView from './TrailerAddView';
 import TrailerDetailView from './TrailerDetailView';
 
-function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, onSelectTrailer }) {
-    const { preferences, resetTrailerFilters, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
+function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
+    const {
+        preferences,
+        saveLastViewedFilters,
+        updateTrailerFilter,
+        updatePreferences
+    } = usePreferences()
     const [trailers, setTrailers] = useState([])
     const [tractors, setTractors] = useState([])
     const [plants, setPlants] = useState([])
@@ -42,6 +47,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                 setIsLoading(false)
             }
         }
+
         fetchAllData()
         if (preferences?.trailerFilters) {
             setSearchText(preferences.trailerFilters.searchText || '')
@@ -64,6 +70,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             if (lastUsed) setViewMode(lastUsed)
         }
     }, [preferences.trailerFilters?.viewMode, preferences.defaultViewMode])
+
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
             setViewMode(null)
@@ -84,7 +91,8 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                 try {
                     const history = await TrailerService.getTrailerHistory(trailer.id, 1);
                     latestHistoryDate = history[0]?.changedAt || null;
-                } catch {}
+                } catch {
+                }
                 try {
                     const issues = await TrailerService.fetchIssues(trailer.id);
                     trailer.issues = issues || [];
@@ -237,7 +245,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const blob = new Blob([csvContent], {type: 'text/csv'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -280,22 +288,14 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
             return (a.trailerNumber || '').localeCompare(b.trailerNumber || '');
         });
-
-    const typeCounts = ['Cement', 'End Dump'].map(type => ({
+    ['Cement', 'End Dump'].map(type => ({
         type,
         count: trailers.filter(t => t.trailerType === type).length
     }));
-    const pastDueServiceCount = trailers.filter(t => TrailerUtility.isServiceOverdue(t.lastServiceDate)).length;
-    const verifiedCount = trailers.filter(t => t.isVerified()).length;
-    const unverifiedCount = trailers.length - verifiedCount;
-    const neverVerifiedCount = trailers.filter(t => !t.updatedLast || !t.updatedBy).length;
-    const openIssuesCount = trailers.filter(t => t.issues?.some(issue => !issue.time_completed)).length;
-
-    function averageCleanliness() {
-        const ratings = trailers.filter(t => t.cleanlinessRating).map(t => t.cleanlinessRating);
-        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'Not Assigned';
-    }
-
+    trailers.filter(t => TrailerUtility.isServiceOverdue(t.lastServiceDate)).length;
+    trailers.filter(t => t.isVerified()).length;
+    trailers.filter(t => !t.updatedLast || !t.updatedBy).length;
+    trailers.filter(t => t.issues?.some(issue => !issue.time_completed)).length;
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -343,9 +343,9 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                     <button
                         className="action-button primary rectangular-button"
                         onClick={() => setShowAddSheet(true)}
-                        style={{ height: '44px', lineHeight: '1' }}
+                        style={{height: '44px', lineHeight: '1'}}
                     >
-                        <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Trailer
+                        <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Trailer
                     </button>
                 </div>
             </div>
@@ -462,7 +462,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
             <div className="content-container">
                 {isLoading ? (
                     <div className="loading-container">
-                        <LoadingScreen message="Loading trailers..." inline={true} />
+                        <LoadingScreen message="Loading trailers..." inline={true}/>
                     </div>
                 ) : filteredTrailers.length === 0 ? (
                     <div className="no-results-container">
@@ -490,25 +490,26 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                     <div className="trailers-list-table-container">
                         <table className="trailers-list-table">
                             <thead>
-                                <tr>
-                                    <th>Plant</th>
-                                    <th>Trailer #</th>
-                                    <th>Status</th>
-                                    <th>Type</th>
-                                    <th>Cleanliness</th>
-                                    <th>Tractor</th>
-                                    <th>More</th>
-                                </tr>
+                            <tr>
+                                <th>Plant</th>
+                                <th>Trailer #</th>
+                                <th>Status</th>
+                                <th>Type</th>
+                                <th>Cleanliness</th>
+                                <th>Tractor</th>
+                                <th>More</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {filteredTrailers.map(trailer => {
-                                    const commentsCount = Array.isArray(trailer.comments) ? trailer.comments.length : 0
-                                    const issuesCount = Array.isArray(trailer.issues) ? trailer.issues.filter(issue => !issue.time_completed).length : 0
-                                    return (
-                                        <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)} style={{cursor: 'pointer'}}>
-                                            <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
-                                            <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
-                                            <td>
+                            {filteredTrailers.map(trailer => {
+                                const commentsCount = Array.isArray(trailer.comments) ? trailer.comments.length : 0
+                                const issuesCount = Array.isArray(trailer.issues) ? trailer.issues.filter(issue => !issue.time_completed).length : 0
+                                return (
+                                    <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)}
+                                        style={{cursor: 'pointer'}}>
+                                        <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
+                                        <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
+                                        <td>
                                                 <span
                                                     className="item-status-dot"
                                                     style={{
@@ -517,47 +518,50 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                                                         marginRight: '8px',
                                                         backgroundColor:
                                                             trailer.status === 'Active' ? 'var(--status-active)' :
-                                                            trailer.status === 'Spare' ? 'var(--status-spare)' :
-                                                            trailer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                            trailer.status === 'Retired' ? 'var(--status-retired)' :
-                                                            'var(--accent)',
+                                                                trailer.status === 'Spare' ? 'var(--status-spare)' :
+                                                                    trailer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                        trailer.status === 'Retired' ? 'var(--status-retired)' :
+                                                                            'var(--accent)',
                                                     }}
                                                 ></span>
-                                                {trailer.status ? trailer.status : "---"}
-                                            </td>
-                                            <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
-                                            <td>
-                                                {(() => {
-                                                    const rating = Math.round(trailer.cleanlinessRating || 0)
-                                                    const stars = rating > 0 ? rating : 1
-                                                    return Array.from({length: stars}).map((_, i) => (
-                                                        <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                    ))
-                                                })()}
-                                            </td>
-                                            <td>
-                                                {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
-                                                {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (
-                                                    <span className="warning-badge">
+                                            {trailer.status ? trailer.status : "---"}
+                                        </td>
+                                        <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
+                                        <td>
+                                            {(() => {
+                                                const rating = Math.round(trailer.cleanlinessRating || 0)
+                                                const stars = rating > 0 ? rating : 1
+                                                return Array.from({length: stars}).map((_, i) => (
+                                                    <i key={i} className="fas fa-star"
+                                                       style={{color: 'var(--accent)'}}></i>
+                                                ))
+                                            })()}
+                                        </td>
+                                        <td>
+                                            {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
+                                            {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (
+                                                <span className="warning-badge">
                                                         <i className="fas fa-exclamation-triangle"></i>
                                                     </span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                    <div style={{display: 'flex', alignItems: 'center'}}>
-                                                        <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                        <span>{commentsCount}</span>
-                                                    </div>
-                                                    <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
-                                                        <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                        <span>{issuesCount}</span>
-                                                    </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                <div style={{display: 'flex', alignItems: 'center'}}>
+                                                    <i className="fas fa-comments"
+                                                       style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                    <span>{commentsCount}</span>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
+                                                <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                    <i className="fas fa-tools"
+                                                       style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                    <span>{issuesCount}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
                             </tbody>
                         </table>
                     </div>
@@ -579,7 +583,7 @@ function TrailersView({ title = 'Trailer Fleet', showSidebar, setShowSidebar, on
                     onTrailerAdded={newTrailer => setTrailers([...trailers, newTrailer])}
                 />
             )}
-            {showOverview && <OverviewPopup />}
+            {showOverview && <OverviewPopup/>}
         </div>
     );
 }

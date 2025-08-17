@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { EquipmentService } from '../../../services/EquipmentService';
-import { PlantService } from '../../../services/PlantService';
-import { UserService } from '../../../services/UserService';
-import { supabase } from '../../../services/DatabaseService';
-import { usePreferences } from '../../../app/context/PreferencesContext';
+import React, {useEffect, useRef, useState} from 'react';
+import {EquipmentService} from '../../../services/EquipmentService';
+import {PlantService} from '../../../services/PlantService';
+import {UserService} from '../../../services/UserService';
+import {supabase} from '../../../services/DatabaseService';
+import {usePreferences} from '../../../app/context/PreferencesContext';
 import EquipmentCommentModal from './EquipmentCommentModal';
 import EquipmentIssueModal from './EquipmentIssueModal';
 import EquipmentCard from './EquipmentCard';
@@ -12,8 +12,8 @@ import EquipmentHistoryView from './EquipmentHistoryView';
 import './styles/EquipmentDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';
 
-function EquipmentDetailView({ equipmentId, onClose }) {
-    const { preferences } = usePreferences();
+function EquipmentDetailView({equipmentId, onClose}) {
+    const {preferences} = usePreferences();
     const [equipment, setEquipment] = useState(null);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +86,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
                 setHasUnsavedChanges(false);
             }
         }
+
         fetchData();
     }, [equipmentId]);
 
@@ -100,7 +101,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
                 const hasPermission = await UserService.hasPermission(userId, 'equipments.bypass.plantrestriction');
                 if (hasPermission) return setCanEditEquipment(true);
 
-                const { data: profileData } = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
+                const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
                 if (profileData && equipment) {
                     const isSamePlant = profileData.plant_code === equipment.assignedPlant;
                     setCanEditEquipment(isSamePlant);
@@ -114,6 +115,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
                 console.error('Error checking plant restriction:', error);
             }
         }
+
         checkPlantRestriction();
     }, [equipment, isLoading]);
 
@@ -251,6 +253,7 @@ function EquipmentDetailView({ equipmentId, onClose }) {
                 setIssues([]);
             }
         }
+
         fetchCommentsAndIssues();
     }, [equipmentId]);
 
@@ -294,15 +297,22 @@ ${openIssues.length > 0
     if (isLoading) {
         return (
             <div className="equipment-detail-view">
-                <div className="detail-header" style={{ backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', padding: '0 8px' }}>
-                    <button className="back-button" onClick={onClose} style={{ marginRight: '8px' }}>
+                <div className="detail-header" style={{
+                    backgroundColor: 'var(--detail-header-bg)',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 8px'
+                }}>
+                    <button className="back-button" onClick={onClose} style={{marginRight: '8px'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1 style={{ color: 'var(--text-primary)', textAlign: 'center', flex: 1, margin: '0 auto' }}>Equipment Details</h1>
-                    <div style={{ width: '36px' }}></div>
+                    <h1 style={{color: 'var(--text-primary)', textAlign: 'center', flex: 1, margin: '0 auto'}}>Equipment
+                        Details</h1>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <LoadingScreen message="Loading equipment details..." inline={true} />
+                    <LoadingScreen message="Loading equipment details..." inline={true}/>
                 </div>
             </div>
         );
@@ -311,7 +321,8 @@ ${openIssues.length > 0
     if (!equipment) {
         return (
             <div className="equipment-detail-view">
-                <div className="detail-header" style={{ backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)' }}>
+                <div className="detail-header"
+                     style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
                     <button className="back-button" onClick={onClose}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
@@ -327,8 +338,11 @@ ${openIssues.length > 0
 
     return (
         <div className="equipment-detail-view">
-            {showComments && <EquipmentCommentModal equipmentId={equipmentId} equipmentNumber={equipment?.identifyingNumber} onClose={() => setShowComments(false)} />}
-            {showIssues && <EquipmentIssueModal equipmentId={equipmentId} equipmentNumber={equipment?.identifyingNumber} onClose={() => setShowIssues(false)} />}
+            {showComments &&
+                <EquipmentCommentModal equipmentId={equipmentId} equipmentNumber={equipment?.identifyingNumber}
+                                       onClose={() => setShowComments(false)}/>}
+            {showIssues && <EquipmentIssueModal equipmentId={equipmentId} equipmentNumber={equipment?.identifyingNumber}
+                                                onClose={() => setShowIssues(false)}/>}
             {showHistory && (
                 <EquipmentHistoryView
                     equipment={equipment}
@@ -340,7 +354,8 @@ ${openIssues.length > 0
                     <div className="saving-indicator"></div>
                 </div>
             )}
-            <div className="detail-header" style={{ backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)' }}>
+            <div className="detail-header"
+                 style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
                 <div className="header-left">
                     <button className="back-button" onClick={() => handleBackClick()} aria-label="Back to equipment">
                         <i className="fas fa-arrow-left"></i>
@@ -349,7 +364,7 @@ ${openIssues.length > 0
                 </div>
                 <h1>{equipment.equipmentType} #{equipment.identifyingNumber || 'Not Assigned'}</h1>
                 <div className="header-actions">
-                    <button className="issues-button" style={{ marginRight: 0 }} onClick={handleExportEmail}>
+                    <button className="issues-button" style={{marginRight: 0}} onClick={handleExportEmail}>
                         <i className="fas fa-envelope"></i> Email
                     </button>
                     {canEditEquipment && (
@@ -373,15 +388,15 @@ ${openIssues.length > 0
                     <span>{plantRestrictionReason}</span>
                 </div>
             )}
-            <div className="detail-content" style={{ maxWidth: '1000px', margin: '0 auto', overflow: 'visible' }}>
+            <div className="detail-content" style={{maxWidth: '1000px', margin: '0 auto', overflow: 'visible'}}>
                 {message && (
                     <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
                         {message}
                     </div>
                 )}
-                <div className="equipment-card-preview" style={{ position: 'relative', zIndex: 0 }}>
+                <div className="equipment-card-preview" style={{position: 'relative', zIndex: 0}}>
                     <div ref={equipmentCardRef}>
-                        <EquipmentCard equipment={equipment} plantName={getPlantName(equipment.assignedPlant)} />
+                        <EquipmentCard equipment={equipment} plantName={getPlantName(equipment.assignedPlant)}/>
                     </div>
                 </div>
                 <div className="detail-card">
@@ -394,11 +409,14 @@ ${openIssues.length > 0
                             <h3>Basic Information</h3>
                             <div className="form-group">
                                 <label>Identifying Number</label>
-                                <input type="text" value={identifyingNumber} onChange={e => setIdentifyingNumber(e.target.value)} className="form-control" readOnly={!canEditEquipment} />
+                                <input type="text" value={identifyingNumber}
+                                       onChange={e => setIdentifyingNumber(e.target.value)} className="form-control"
+                                       readOnly={!canEditEquipment}/>
                             </div>
                             <div className="form-group">
                                 <label>Status</label>
-                                <select value={status} onChange={e => setStatus(e.target.value)} disabled={!canEditEquipment} className="form-control">
+                                <select value={status} onChange={e => setStatus(e.target.value)}
+                                        disabled={!canEditEquipment} className="form-control">
                                     <option value="">Select Status</option>
                                     <option value="Active">Active</option>
                                     <option value="Spare">Spare</option>
@@ -408,7 +426,8 @@ ${openIssues.length > 0
                             </div>
                             <div className="form-group">
                                 <label>Assigned Plant</label>
-                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)} disabled={!canEditEquipment} className="form-control">
+                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
+                                        disabled={!canEditEquipment} className="form-control">
                                     <option value="">Select Plant</option>
                                     {plants.map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
@@ -417,7 +436,8 @@ ${openIssues.length > 0
                             </div>
                             <div className="form-group">
                                 <label>Equipment Type</label>
-                                <select value={equipmentType} onChange={e => setEquipmentType(e.target.value)} disabled={!canEditEquipment} className="form-control">
+                                <select value={equipmentType} onChange={e => setEquipmentType(e.target.value)}
+                                        disabled={!canEditEquipment} className="form-control">
                                     <option value="">Select Type</option>
                                     <option value="Front-End Loader">Front-End Loader</option>
                                     <option value="Excavator">Excavator</option>
@@ -433,12 +453,17 @@ ${openIssues.length > 0
                             <h3>Maintenance Information</h3>
                             <div className="form-group">
                                 <label>Last Service Date</label>
-                                <input type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''} onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)} className="form-control" readOnly={!canEditEquipment} />
-                                {lastServiceDate && EquipmentUtility.isServiceOverdue(lastServiceDate) && <div className="warning-text">Service overdue</div>}
+                                <input type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''}
+                                       onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
+                                       className="form-control" readOnly={!canEditEquipment}/>
+                                {lastServiceDate && EquipmentUtility.isServiceOverdue(lastServiceDate) &&
+                                    <div className="warning-text">Service overdue</div>}
                             </div>
                             <div className="form-group">
                                 <label>Hours/Mileage</label>
-                                <input type="number" value={hoursMileage} onChange={e => setHoursMileage(e.target.value)} className="form-control" readOnly={!canEditEquipment} min="0" />
+                                <input type="number" value={hoursMileage}
+                                       onChange={e => setHoursMileage(e.target.value)} className="form-control"
+                                       readOnly={!canEditEquipment} min="0"/>
                             </div>
                             <div className="form-group">
                                 <label>Cleanliness Rating</label>
@@ -453,13 +478,15 @@ ${openIssues.length > 0
                                                 aria-label={`Rate ${star} of 5 stars`}
                                                 disabled={!canEditEquipment}
                                             >
-                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} style={star <= cleanlinessRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}></i>
+                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
+                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>
                                     {cleanlinessRating > 0 && (
                                         <div className="rating-value-display">
-                                            <span className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
+                                            <span
+                                                className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
                                         </div>
                                     )}
                                 </div>
@@ -477,13 +504,15 @@ ${openIssues.length > 0
                                                 aria-label={`Rate ${star} of 5 stars`}
                                                 disabled={!canEditEquipment}
                                             >
-                                                <i className={`fas fa-star ${star <= conditionRating ? 'filled' : ''}`} style={star <= conditionRating ? { color: preferences.accentColor === 'red' ? '#b80017' : '#003896' } : {}}></i>
+                                                <i className={`fas fa-star ${star <= conditionRating ? 'filled' : ''}`}
+                                                   style={star <= conditionRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>
                                     {conditionRating > 0 && (
                                         <div className="rating-value-display">
-                                            <span className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][conditionRating]}</span>
+                                            <span
+                                                className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][conditionRating]}</span>
                                         </div>
                                     )}
                                 </div>
@@ -493,15 +522,19 @@ ${openIssues.length > 0
                             <h3>Asset Details</h3>
                             <div className="form-group">
                                 <label>Make</label>
-                                <input type="text" value={make} onChange={e => setMake(e.target.value)} className="form-control" readOnly={!canEditEquipment} />
+                                <input type="text" value={make} onChange={e => setMake(e.target.value)}
+                                       className="form-control" readOnly={!canEditEquipment}/>
                             </div>
                             <div className="form-group">
                                 <label>Model</label>
-                                <input type="text" value={model} onChange={e => setModel(e.target.value)} className="form-control" readOnly={!canEditEquipment} />
+                                <input type="text" value={model} onChange={e => setModel(e.target.value)}
+                                       className="form-control" readOnly={!canEditEquipment}/>
                             </div>
                             <div className="form-group">
                                 <label>Year</label>
-                                <input type="number" value={year} onChange={e => setYear(e.target.value)} className="form-control" readOnly={!canEditEquipment} min="1900" max={new Date().getFullYear()} />
+                                <input type="number" value={year} onChange={e => setYear(e.target.value)}
+                                       className="form-control" readOnly={!canEditEquipment} min="1900"
+                                       max={new Date().getFullYear()}/>
                             </div>
                         </div>
                     </div>
@@ -509,19 +542,35 @@ ${openIssues.length > 0
                 <div className="form-actions">
                     {canEditEquipment && (
                         <>
-                            <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
-                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)} disabled={isSaving}>Delete Equipment</button>
+                            <button className="primary-button save-button" onClick={handleSave}
+                                    disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
+                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)}
+                                    disabled={isSaving}>Delete Equipment
+                            </button>
                         </>
                     )}
                 </div>
             </div>
             {showDeleteConfirmation && (
-                <div className="confirmation-modal" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-                    <div className="confirmation-content" style={{ width: '90%', maxWidth: '500px', margin: '0 auto' }}>
+                <div className="confirmation-modal" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999
+                }}>
+                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
-                        <p>Are you sure you want to delete {equipment.equipmentType} #{equipment.identifyingNumber}? This action cannot be undone.</p>
-                        <div className="confirmation-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                        <p>Are you sure you want to delete {equipment.equipmentType} #{equipment.identifyingNumber}?
+                            This action cannot be undone.</p>
+                        <div className="confirmation-actions"
+                             style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel
+                            </button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>

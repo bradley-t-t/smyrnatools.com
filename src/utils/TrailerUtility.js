@@ -21,7 +21,7 @@ const TrailerUtility = {
     },
 
     getStatusCounts(trailers) {
-        const counts = { Total: trailers.length };
+        const counts = {Total: trailers.length};
         ['Cement', 'End Dump'].forEach(type => {
             counts[type] = trailers.filter(t => t.trailerType === type).length;
         });
@@ -57,4 +57,4 @@ const TrailerUtility = {
 };
 
 export default TrailerUtility;
-export { TrailerUtility };
+export {TrailerUtility};

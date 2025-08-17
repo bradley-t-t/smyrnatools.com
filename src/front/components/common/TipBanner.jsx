@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import { UserService } from '../../../services/UserService';
+import React, {useEffect, useState} from 'react';
+import {usePreferences} from '../../../app/context/PreferencesContext';
+import {UserService} from '../../../services/UserService';
 import './styles/TipBanner.css';
 
 function TipBanner() {
-    const { preferences } = usePreferences();
+    const {preferences} = usePreferences();
     const [currentTip, setCurrentTip] = useState('');
     const [isVisible, setIsVisible] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -39,9 +39,9 @@ function TipBanner() {
     if (!isAuthenticated || !isVisible || !preferences.showTips) return null;
 
     return (
-        <div className="tip-banner" style={{ backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff' }}>
+        <div className="tip-banner" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff'}}>
             <div className="tip-content">
-                <div className="tip-icon" style={{ color: accentColor }}>
+                <div className="tip-icon" style={{color: accentColor}}>
                     <i className="fas fa-lightbulb"></i>
                 </div>
                 <div className="tip-text">{currentTip}</div>

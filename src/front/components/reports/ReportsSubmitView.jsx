@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, {useEffect, useState} from 'react'
 import './styles/ReportsSubmitView.css'
-import { supabase } from '../../../services/DatabaseService'
-import { ReportService } from '../../../services/ReportService'
-import { PlantManagerSubmitPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
-import { DistrictManagerSubmitPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
-import { PlantProductionSubmitPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
+import {supabase} from '../../../services/DatabaseService'
+import {ReportService} from '../../../services/ReportService'
+import {PlantManagerSubmitPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
+import {DistrictManagerSubmitPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
+import {PlantProductionSubmitPlugin} from './plugins/WeeklyPlantProductionReportPlugin'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
@@ -20,13 +20,23 @@ function getTruckNumberForOperator(row, mixers) {
     return ''
 }
 
-function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOnly, allReports, managerEditUser, userProfiles }) {
+function ReportsSubmitView({
+                               report,
+                               initialData,
+                               onBack,
+                               onSubmit,
+                               user,
+                               readOnly,
+                               allReports,
+                               managerEditUser,
+                               userProfiles
+                           }) {
     const [form, setForm] = useState(() => {
         if (initialData) {
             if (initialData.data) {
-                return { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData.data, ...(initialData.rows ? { rows: initialData.rows } : {}) }
+                return {...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData.data, ...(initialData.rows ? {rows: initialData.rows} : {})}
             }
-            return { ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData }
+            return {...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])), ...initialData}
         }
         return Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : '']))
     })
@@ -38,11 +48,11 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [summaryTab, setSummaryTab] = useState('summary')
     const [yph, setYph] = useState(null)
     const [yphGrade, setYphGrade] = useState('')
-    const [yphColor, setYphColor] = useState('')
+    const [, setYphColor] = useState('')
     const [yphLabel, setYphLabel] = useState('')
     const [lost, setLost] = useState(null)
     const [lostGrade, setLostGrade] = useState('')
-    const [lostColor, setLostColor] = useState('')
+    const [, setLostColor] = useState('')
     const [lostLabel, setLostLabel] = useState('')
     const [carouselIndex, setCarouselIndex] = useState(0)
     const [operatorOptions, setOperatorOptions] = useState([])
@@ -50,10 +60,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     const [plants, setPlants] = useState([])
     const [excludedOperators, setExcludedOperators] = useState([])
     const [saveMessage, setSaveMessage] = useState('')
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
-    const [debugMsg, setDebugMsg] = useState('')
+    const [, setDebugMsg] = useState('')
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [confirmationChecks, setConfirmationChecks] = useState([false, false])
 
@@ -72,11 +81,11 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             } else {
                 updatedRows[idx][colName] = e.target.value
             }
-            setForm({ ...form, rows: updatedRows })
+            setForm({...form, rows: updatedRows})
             return
         }
         if (report.name === 'general_manager' && name.startsWith('plant_field_')) {
-            setForm({ ...form, [name]: e.target.value })
+            setForm({...form, [name]: e.target.value})
             return
         }
         let value = e.target.value
@@ -88,7 +97,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         ) {
             value = 0
         }
-        setForm({ ...form, [name]: value })
+        setForm({...form, [name]: value})
     }
 
     async function handleSubmit(e) {
@@ -179,13 +188,13 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         if (newIndex >= updatedRows.length) {
             newIndex = Math.max(0, updatedRows.length - 1)
         }
-        setForm({ ...form, rows: updatedRows })
+        setForm({...form, rows: updatedRows})
         setCarouselIndex(newIndex)
     }
 
     function handleReincludeOperator(operatorId) {
         if (!operatorId) return
-        const op = operatorOptions.find(opt => opt.value === operatorId)
+        operatorOptions.find(opt => opt.value === operatorId);
         const mixer = mixers.find(m => m.assigned_operator === operatorId)
         const newRow = {
             name: operatorId,
@@ -199,14 +208,17 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         }
         setForm(f => {
             const rows = [...(f.rows || []), newRow]
-            return { ...f, rows }
+            return {...f, rows}
         })
         setCarouselIndex(form.rows ? form.rows.length : 0)
     }
 
     function handleBackClick() {
         if (hasUnsavedChanges) {
-            handleSaveDraft({ preventDefault: () => {} })
+            handleSaveDraft({
+                preventDefault: () => {
+                }
+            })
             setTimeout(() => onBack(), 800)
         } else {
             onBack()
@@ -215,10 +227,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
 
     useEffect(() => {
         async function fetchPlants() {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('plants')
                 .select('plant_code,plant_name')
-                .order('plant_code', { ascending: true })
+                .order('plant_code', {ascending: true})
             setPlants(!error && Array.isArray(data)
                 ? data.filter(p => p.plant_code && p.plant_name)
                     .sort((a, b) => {
@@ -230,6 +242,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 : []
             )
         }
+
         fetchPlants()
     }, [])
     useEffect(() => {
@@ -246,7 +259,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             } else {
                 return
             }
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('list_items')
                 .select('*')
                 .eq('completed', true)
@@ -254,12 +267,13 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 .lte('completed_at', weekEnd.toISOString())
             setMaintenanceItems(!error && Array.isArray(data) ? data : [])
         }
+
         fetchMaintenanceItems()
     }, [report.weekIso])
 
     useEffect(() => {
         if (report.name === 'plant_production' && !form.plant && user && plants.length > 0) {
-            setForm(f => ({ ...f, plant: plants[0]?.plant_code || '' }))
+            setForm(f => ({...f, plant: plants[0]?.plant_code || ''}))
         }
     }, [report.name, form.plant, user, plants])
 
@@ -268,10 +282,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             if (!plantCode) {
                 setOperatorOptions([])
                 setMixers([])
-                setForm(f => ({ ...f, rows: [] }))
+                setForm(f => ({...f, rows: []}))
                 return
             }
-            const { data: operatorsData, error: opError } = await supabase
+            const {data: operatorsData, error: opError} = await supabase
                 .from('operators')
                 .select('employee_id, name, status, plant_code, position')
                 .eq('plant_code', plantCode)
@@ -289,7 +303,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
             } else {
                 setOperatorOptions([])
             }
-            const { data: mixersData, error: mixError } = await supabase
+            const {data: mixersData, error: mixError} = await supabase
                 .from('mixers')
                 .select('assigned_operator, truck_number')
                 .eq('assigned_plant', plantCode)
@@ -316,15 +330,16 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                             comments: ''
                         })
                     })
-                    setForm(f => ({ ...f, rows }))
+                    setForm(f => ({...f, rows}))
                     setCarouselIndex(0)
                 }
             }
         }
+
         if (report.name === 'plant_production') {
             let plantCode = form.plant
             if (!plantCode) {
-                setForm(f => ({ ...f, rows: [] }))
+                setForm(f => ({...f, rows: []}))
                 return
             }
             fetchOperatorsAndMixers(plantCode)
@@ -334,13 +349,13 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     useEffect(() => {
         if (initialData) {
             if (initialData.data) {
-                setForm(f => ({
+                setForm(() => ({
                     ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])),
                     ...initialData.data,
-                    ...(initialData.rows ? { rows: initialData.rows } : {})
+                    ...(initialData.rows ? {rows: initialData.rows} : {})
                 }))
             } else {
-                setForm(f => ({
+                setForm(() => ({
                     ...Object.fromEntries(report.fields.map(f => [f.name, f.type === 'table' ? [] : ''])),
                     ...initialData
                 }))
@@ -349,7 +364,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     }, [initialData])
 
     useEffect(() => {
-        let { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel } = ReportService.getYardageMetrics(form)
+        let {yph, yphGrade, yphLabel, lost, lostGrade, lostLabel} = ReportService.getYardageMetrics(form)
         setYph(yph)
         setYphGrade(yphGrade)
         setYphLabel(yphLabel)
@@ -390,7 +405,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
 
     useEffect(() => {
         if (report.name === 'plant_manager' && user && user.plant_code) {
-            setForm(f => ({ ...f, plant: user.plant_code }))
+            setForm(f => ({...f, plant: user.plant_code}))
         }
     }, [report.name, user])
 
@@ -401,14 +416,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
     } else if (managerEditUser) {
         editingUserName = managerEditUser.slice(0, 8)
     }
-
-    function renderGeneralManagerFields() {
-        return null
-    }
-
     return (
-        <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
-            <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
+        <div style={{width: '100%', minHeight: '100vh', background: 'var(--background)'}}>
+            <div style={{maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0'}}>
                 {managerEditUser && (
                     <div style={{
                         fontWeight: 700,
@@ -420,7 +430,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                         Editing report for: {editingUserName}
                     </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
                     <button className="report-form-back" onClick={handleBackClick} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
@@ -470,12 +480,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                         </button>
                     )}
                 </div>
-                <div className="report-form-header-row" style={{ marginTop: 0 }}>
+                <div className="report-form-header-row" style={{marginTop: 0}}>
                     <div className="report-form-title">
                         {report.title || ''}
                     </div>
                     {weekRange && (
-                        <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
+                        <div style={{fontWeight: 700, fontSize: 17, color: 'var(--accent)'}}>
                             {weekRange}
                         </div>
                     )}
@@ -484,8 +494,8 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                     <div className="report-form-fields-grid">
                         {report.name === 'plant_production' ? (
                             <>
-                                <div style={{ display: 'flex', gap: 24, width: '100%', marginBottom: 18 }}>
-                                    <div style={{ flex: 1 }}>
+                                <div style={{display: 'flex', gap: 24, width: '100%', marginBottom: 18}}>
+                                    <div style={{flex: 1}}>
                                         <label>
                                             Plant
                                             <span className="report-modal-required">*</span>
@@ -494,7 +504,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                             value={form.plant || ''}
                                             onChange={e => {
                                                 const newPlant = e.target.value
-                                                setForm(f => ({ ...f, plant: newPlant, rows: [] }))
+                                                setForm(f => ({...f, plant: newPlant, rows: []}))
                                                 setCarouselIndex(0)
                                             }}
                                             required
@@ -523,7 +533,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                             ))}
                                         </select>
                                     </div>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                    <div style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-end'
+                                    }}>
                                         <label>
                                             Report Date
                                             <span className="report-modal-required">*</span>
@@ -531,7 +546,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                         <input
                                             type="date"
                                             value={form.report_date || ''}
-                                            onChange={e => setForm(f => ({ ...f, report_date: e.target.value }))}
+                                            onChange={e => setForm(f => ({...f, report_date: e.target.value}))}
                                             required
                                             disabled={readOnly}
                                             style={{
@@ -568,26 +583,35 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                     }
                                     `}
                                 </style>
-                                <div className="report-form-field-wide" style={{ gridColumn: '1 / -1' }}>
+                                <div className="report-form-field-wide" style={{gridColumn: '1 / -1'}}>
                                     <label>Operators</label>
                                     <div>
                                         {form.plant && (form.rows || []).length === 0 && (
-                                            <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
+                                            <div style={{color: 'var(--text-secondary)', margin: '16px 0'}}>
                                                 No active operators for this plant.
                                             </div>
                                         )}
                                         {!form.plant && (
-                                            <div style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
+                                            <div style={{color: 'var(--text-secondary)', margin: '16px 0'}}>
                                                 Please wait, loading plant assignment...
                                             </div>
                                         )}
                                         {(form.rows || []).length > 0 && (
-                                            <div style={{ marginBottom: 18 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16, width: '100%' }}>
+                                            <div style={{marginBottom: 18}}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    marginBottom: 16,
+                                                    width: '100%'
+                                                }}>
                                                     {form.rows.map((row, idx) => (
                                                         <div
                                                             key={idx}
-                                                            onClick={() => { setCarouselIndex(idx) }}
+                                                            onClick={() => {
+                                                                setCarouselIndex(idx)
+                                                            }}
                                                             style={{
                                                                 minWidth: 32,
                                                                 height: 32,
@@ -620,10 +644,18 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                     }}
                                                 >
                                                     {form.rows[carouselIndex] && (
-                                                        <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-                                                            <div style={{ display: 'flex', gap: 18 }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Name</label>
+                                                        <div style={{
+                                                            padding: '24px 24px 0 24px',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 18
+                                                        }}>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{
+                                                                        fontWeight: 600,
+                                                                        fontSize: 15
+                                                                    }}>Name</label>
                                                                     <input
                                                                         type="text"
                                                                         value={operatorOptions.find(opt => opt.value === form.rows[carouselIndex]?.name)?.label || ''}
@@ -640,8 +672,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                         className="plant-prod-input"
                                                                     />
                                                                 </div>
-                                                                <div style={{ width: 120 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Truck #</label>
+                                                                <div style={{width: 120}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Truck
+                                                                        #</label>
                                                                     <input
                                                                         type="text"
                                                                         value={getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
@@ -659,9 +692,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                     />
                                                                 </div>
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: 18 }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Start Time</label>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Start
+                                                                        Time</label>
                                                                     <input
                                                                         type="time"
                                                                         placeholder="Start Time"
@@ -680,8 +714,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                         className="plant-prod-input"
                                                                     />
                                                                 </div>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>1st Load</label>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>1st
+                                                                        Load</label>
                                                                     <input
                                                                         type="time"
                                                                         placeholder="1st Load"
@@ -701,9 +736,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                     />
                                                                 </div>
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: 18 }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>EOD In Yard</label>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>EOD
+                                                                        In Yard</label>
                                                                     <input
                                                                         type="time"
                                                                         placeholder="EOD"
@@ -722,8 +758,9 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                         className="plant-prod-input"
                                                                     />
                                                                 </div>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Punch Out</label>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Punch
+                                                                        Out</label>
                                                                     <input
                                                                         type="time"
                                                                         placeholder="Punch Out"
@@ -743,9 +780,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                     />
                                                                 </div>
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: 18 }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <label style={{ fontWeight: 600, fontSize: 15 }}>Total Loads</label>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Total
+                                                                        Loads</label>
                                                                     <input
                                                                         type="number"
                                                                         placeholder="Total Loads"
@@ -766,7 +804,10 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                                 </div>
                                                             </div>
                                                             <div>
-                                                                <label style={{ fontWeight: 600, fontSize: 15 }}>Comments</label>
+                                                                <label style={{
+                                                                    fontWeight: 600,
+                                                                    fontSize: 15
+                                                                }}>Comments</label>
                                                                 <input
                                                                     type="text"
                                                                     placeholder="Comments"
@@ -787,7 +828,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                             </div>
                                                         </div>
                                                     )}
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px 18px 24px' }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        padding: '18px 24px 18px 24px'
+                                                    }}>
                                                         <button
                                                             type="button"
                                                             onClick={() => handleExcludeOperator(carouselIndex)}
@@ -823,7 +869,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                                         >
                                                             &#8592; Prev Operator
                                                         </button>
-                                                        <span style={{ fontWeight: 600, fontSize: 15 }}>
+                                                        <span style={{fontWeight: 600, fontSize: 15}}>
                                                             Operator {carouselIndex + 1} of {form.rows.length}
                                                         </span>
                                                         <button
@@ -849,11 +895,11 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                             </div>
                                         )}
                                         {excludedOperators.length > 0 && (
-                                            <div style={{ marginTop: 18, marginBottom: 18 }}>
-                                                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>
+                                            <div style={{marginTop: 18, marginBottom: 18}}>
+                                                <div style={{fontWeight: 600, fontSize: 15, marginBottom: 8}}>
                                                     Excluded Operators
                                                 </div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
                                                     {excludedOperators.map(opId => {
                                                         const op = operatorOptions.find(opt => opt.value === opId)
                                                         return (
@@ -882,9 +928,7 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                     </div>
                                 </div>
                             </>
-                        ) : report.name === 'general_manager' ? (
-                            null
-                        ) : (
+                        ) : report.name === 'general_manager' ? null : (
                             report.fields.map(field => (
                                 <div key={field.name} className="report-form-field-wide">
                                     <label>
@@ -944,10 +988,12 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                         </>
                     )}
                     {error && <div className="report-modal-error">{error}</div>}
-                    {success && <div style={{ color: 'var(--success)', marginBottom: 8 }}>Report submitted successfully.</div>}
-                    {saveMessage && <div style={{ color: 'var(--success)', marginBottom: 8 }}>{saveMessage}</div>}
+                    {success &&
+                        <div style={{color: 'var(--success)', marginBottom: 8}}>Report submitted successfully.</div>}
+                    {saveMessage && <div style={{color: 'var(--success)', marginBottom: 8}}>{saveMessage}</div>}
                     {!readOnly && (
-                        <div className="report-modal-actions-wide" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <div className="report-modal-actions-wide"
+                             style={{display: 'flex', alignItems: 'center', gap: 16}}>
                             <button
                                 type="button"
                                 className="report-modal-cancel"
@@ -1012,10 +1058,30 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                 </form>
             </div>
             {showConfirmationModal && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-                    <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto', background: 'var(--background)', borderRadius: 10, padding: 32}}>
+                <div className="confirmation-modal" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                }}>
+                    <div className="confirmation-content" style={{
+                        width: '90%',
+                        maxWidth: '500px',
+                        margin: '0 auto',
+                        background: 'var(--background)',
+                        borderRadius: 10,
+                        padding: 32
+                    }}>
                         <h2 style={{marginBottom: 18}}>Confirm Submission</h2>
-                        <div style={{marginBottom: 18, fontWeight: 500, color: 'var(--text-primary)'}}>Please confirm the following before submitting:</div>
+                        <div style={{marginBottom: 18, fontWeight: 500, color: 'var(--text-primary)'}}>Please confirm
+                            the following before submitting:
+                        </div>
                         <div style={{marginBottom: 12}}>
                             <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
                                 <input
@@ -1033,7 +1099,8 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
                                     checked={confirmationChecks[1]}
                                     onChange={e => setConfirmationChecks([confirmationChecks[0], e.target.checked])}
                                 />
-                                Total hours only includes hours from operators and not from plant managers, loader operators or any other roles.
+                                Total hours only includes hours from operators and not from plant managers, loader
+                                operators or any other roles.
                             </label>
                         </div>
                         <div style={{display: 'flex', gap: 16, justifyContent: 'center'}}>
@@ -1078,4 +1145,5 @@ function ReportsSubmitView({ report, initialData, onBack, onSubmit, user, readOn
         </div>
     )
 }
+
 export default ReportsSubmitView

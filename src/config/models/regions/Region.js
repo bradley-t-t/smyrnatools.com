@@ -1,5 +1,5 @@
 class Region {
-    constructor({ id, regionCode, regionName, createdAt, updatedAt }) {
+    constructor({id, regionCode, regionName, createdAt, updatedAt}) {
         this.id = id
         this.regionCode = regionCode
         this.regionName = regionName

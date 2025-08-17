@@ -9,7 +9,7 @@ const applyInitialTheme = () => {
     try {
         const savedPrefs = localStorage.getItem('userPreferences');
         if (savedPrefs) {
-            const { themeMode, accentColor } = JSON.parse(savedPrefs);
+            const {themeMode, accentColor} = JSON.parse(savedPrefs);
             document.documentElement.classList.toggle('dark-mode', themeMode === 'dark');
             document.documentElement.classList.remove('accent-blue', 'accent-red');
             if (accentColor) document.documentElement.classList.add(`accent-${accentColor}`);
@@ -29,7 +29,7 @@ document.head.appendChild(Object.assign(document.createElement('meta'), {
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <PreferencesProvider>
-            <App />
+            <App/>
         </PreferencesProvider>
     </React.StrictMode>
 );

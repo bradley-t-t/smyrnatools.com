@@ -1,12 +1,12 @@
 import supabase from './DatabaseService'
-import { Operator } from '../config/models/operators/Operator'
+import {Operator} from '../config/models/operators/Operator'
 import UserUtility from '../utils/UserUtility'
 
 const OPERATORS_TABLE = 'operators'
 
 class OperatorServiceImpl {
     async getAllOperators() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .order('name')
@@ -15,7 +15,7 @@ class OperatorServiceImpl {
     }
 
     async fetchActiveOperators() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('status', 'Active')
@@ -26,7 +26,7 @@ class OperatorServiceImpl {
 
     async fetchOperatorsByPlant(plantCode) {
         if (!plantCode) throw new Error('Plant code is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('plant_code', plantCode)
@@ -37,7 +37,7 @@ class OperatorServiceImpl {
     }
 
     async fetchTractorOperators() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('position', 'Tractor Operator')
@@ -48,7 +48,7 @@ class OperatorServiceImpl {
 
     async getOperatorByEmployeeId(employeeId) {
         if (!employeeId || !UserUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', employeeId)
@@ -61,8 +61,8 @@ class OperatorServiceImpl {
     async createOperator(operator) {
         const op = operator instanceof Operator ? operator : new Operator(operator)
         if (!UserUtility.isValidUUID(op.employee_id)) op.employee_id = UserUtility.generateUUID()
-        const insertObj = { ...op }
-        const { data, error } = await supabase
+        const insertObj = {...op}
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .insert([insertObj])
             .select()
@@ -73,7 +73,7 @@ class OperatorServiceImpl {
 
     async updateOperator(operator) {
         if (!operator.employeeId || !UserUtility.isValidUUID(operator.employeeId)) throw new Error('Invalid Employee ID')
-        const { data: currentData, error: lookupError } = await supabase
+        const {data: currentData, error: lookupError} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', operator.employeeId)
@@ -82,8 +82,8 @@ class OperatorServiceImpl {
         const op = operator instanceof Operator ? operator : new Operator(operator)
         op.created_at = operator.createdAt ?? currentData.created_at
         op.updated_at = new Date().toISOString()
-        const updateObj = { ...op }
-        const { error } = await supabase
+        const updateObj = {...op}
+        const {error} = await supabase
             .from(OPERATORS_TABLE)
             .update(updateObj)
             .eq('employee_id', op.employeeId)
@@ -93,7 +93,7 @@ class OperatorServiceImpl {
 
     async deleteOperator(employeeId) {
         if (!employeeId || !UserUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .delete()
             .eq('employee_id', employeeId)
@@ -104,7 +104,7 @@ class OperatorServiceImpl {
     }
 
     async getAllTrainers() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('is_trainer', true)
@@ -114,7 +114,7 @@ class OperatorServiceImpl {
     }
 
     async fetchOperators() {
-        const [{ data: activeData, error: activeError }, { data: otherData, error: otherError }] = await Promise.all([
+        const [{data: activeData, error: activeError}, {data: otherData, error: otherError}] = await Promise.all([
             supabase.from(OPERATORS_TABLE).select('*').eq('status', 'Active').order('name'),
             supabase.from(OPERATORS_TABLE).select('*').not('status', 'eq', 'Active').order('name')
         ])
@@ -141,7 +141,7 @@ class OperatorServiceImpl {
 
     async getOperatorById(employeeId) {
         if (!employeeId || !UserUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', employeeId)

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {MixerService} from '../../../services/MixerService';
 import {Mixer} from '../../../config/models/mixers/Mixer';
 import {AuthService} from '../../../services/AuthService';
@@ -14,11 +14,12 @@ function MixerAddView({plants, onClose, onMixerAdded}) {
     useEffect(() => {
         async function loadMixers() {
             try {
-                const mixers = await MixerService.fetchMixers();
+                await MixerService.fetchMixers();
             } catch (error) {
                 console.error('Error loading mixers:', error);
             }
         }
+
         loadMixers();
     }, []);
 

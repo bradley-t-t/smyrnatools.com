@@ -1,5 +1,5 @@
 import supabase from './DatabaseService'
-import { Plant } from '../config/models/plants/Plant'
+import {Plant} from '../config/models/plants/Plant'
 
 const PLANTS_TABLE = 'plants'
 const PROFILES_TABLE = 'users_profiles'
@@ -10,7 +10,7 @@ class PlantServiceImpl {
     allPlants = []
 
     async fetchAllPlants() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(PLANTS_TABLE)
             .select('*')
             .order('plant_code')
@@ -27,7 +27,7 @@ class PlantServiceImpl {
         if (!plantCode) throw new Error('Plant code is required')
         const plant = this.getPlantByCode(plantCode)
         if (plant) return plant
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(PLANTS_TABLE)
             .select('*')
             .eq('plant_code', plantCode)
@@ -45,7 +45,7 @@ class PlantServiceImpl {
             created_at: now,
             updated_at: now
         }
-        const { error } = await supabase.from(PLANTS_TABLE).insert(plant)
+        const {error} = await supabase.from(PLANTS_TABLE).insert(plant)
         if (error) throw error
         await this.fetchAllPlants()
         return true
@@ -53,7 +53,7 @@ class PlantServiceImpl {
 
     async updatePlant(plantCode, plantName) {
         if (!plantCode?.trim() || !plantName?.trim()) throw new Error('Plant code and name are required')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(PLANTS_TABLE)
             .update({
                 plant_name: plantName.trim(),
@@ -67,7 +67,7 @@ class PlantServiceImpl {
 
     async deletePlant(plantCode) {
         if (!plantCode) throw new Error('Plant code is required')
-        const [{ error: profilesError }, { error }] = await Promise.all([
+        const [{error: profilesError}, {error}] = await Promise.all([
             supabase.from(PROFILES_TABLE).update({
                 plant_code: '',
                 updated_at: new Date().toISOString()
@@ -92,7 +92,7 @@ class PlantServiceImpl {
         if (!plantCode) throw new Error('Plant code is required')
         const plant = await this.fetchPlantByCode(plantCode)
         if (!plant) return null
-        const { data: regionPlants, error: regionPlantsError } = await supabase
+        const {data: regionPlants, error: regionPlantsError} = await supabase
             .from(REGION_PLANTS_TABLE)
             .select('region_id')
             .eq('plant_code', plantCode)
@@ -100,11 +100,11 @@ class PlantServiceImpl {
         const regions = regionPlants?.length
             ? await this._fetchRegions(regionPlants.map(rp => rp.region_id))
             : []
-        return { ...plant, regions }
+        return {...plant, regions}
     }
 
     async _fetchRegions(regionIds) {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(REGIONS_TABLE)
             .select('*')
             .in('id', regionIds)

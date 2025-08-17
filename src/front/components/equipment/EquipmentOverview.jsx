@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { EquipmentService } from '../../../services/EquipmentService';
+import React, {useEffect, useState} from 'react';
+import {EquipmentService} from '../../../services/EquipmentService';
 import EquipmentUtility from '../../../utils/EquipmentUtility';
-import { PlantService } from '../../../services/PlantService';
-import { supabase } from '../../../services/DatabaseService';
+import {PlantService} from '../../../services/PlantService';
+import {supabase} from '../../../services/DatabaseService';
 import LoadingScreen from '../common/LoadingScreen';
 import './styles/EquipmentOverview.css';
 
@@ -38,13 +38,14 @@ const EquipmentOverview = ({
             const equipmentsData = await EquipmentService.getAllEquipments();
             let maintenanceIssues = [];
             try {
-                const { data, error } = await supabase
+                const {data, error} = await supabase
                     .from('equipment_maintenance')
                     .select('id, equipment_id, time_completed');
                 if (!error) {
                     maintenanceIssues = data || [];
                 }
-            } catch (maintenanceError) {}
+            } catch (maintenanceError) {
+            }
             const equipmentsWithMaintenance = equipmentsData.map(equipment => ({
                 ...equipment,
                 issues: maintenanceIssues.filter(issue => issue.equipment_id === equipment.id)
@@ -71,7 +72,7 @@ const EquipmentOverview = ({
         setConditionAvg(EquipmentUtility.getConditionAverage(statsEquipments));
         setNeedServiceCount(EquipmentUtility.getNeedServiceCount(statsEquipments));
         const totalNonRetired = statsEquipments.filter(equipment => equipment.status !== 'Retired').length;
-        setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }));
+        setStatusCounts(prev => ({...prev, Total: totalNonRetired}));
         let filteredForIssues = statsEquipments;
         if (selectedPlant) {
             filteredForIssues = statsEquipments.filter(equipment => equipment.assignedPlant === selectedPlant);
@@ -116,7 +117,7 @@ const EquipmentOverview = ({
     if (isLoading) {
         return (
             <div className="equipment-overview">
-                <LoadingScreen message="Loading equipment data..." inline={true} />
+                <LoadingScreen message="Loading equipment data..." inline={true}/>
             </div>
         );
     }
@@ -124,14 +125,16 @@ const EquipmentOverview = ({
     return (
         <div className="equipment-overview">
             {filteredEquipments && equipments.length !== filteredEquipments.length && (
-                <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-                    <span className="filtered-indicator">(Filtered: {filteredEquipments.length}/{equipments.length})</span>
+                <div style={{textAlign: 'center', marginBottom: '10px'}}>
+                    <span
+                        className="filtered-indicator">(Filtered: {filteredEquipments.length}/{equipments.length})</span>
                 </div>
             )}
             {filteredEquipments && (
-                <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
-                        Showing statistics for {filteredEquipments.length} equipment {filteredEquipments.length !== 1 ? 'items' : 'item'}
+                        Showing statistics
+                        for {filteredEquipments.length} equipment {filteredEquipments.length !== 1 ? 'items' : 'item'}
                     </div>
                 </div>
             )}
@@ -144,7 +147,7 @@ const EquipmentOverview = ({
                             onClick={() => onStatusClick && onStatusClick('All Statuses')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{statusCounts.Total || 0}</div>
                             <div className="status-label">Total Equipment</div>
@@ -154,7 +157,7 @@ const EquipmentOverview = ({
                             onClick={() => onStatusClick && onStatusClick('Active')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{statusCounts.Active || 0}</div>
                             <div className="status-label">Active</div>
@@ -164,7 +167,7 @@ const EquipmentOverview = ({
                             onClick={() => onStatusClick && onStatusClick('In Shop')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{statusCounts['In Shop'] || 0}</div>
                             <div className="status-label">In Shop</div>
@@ -174,7 +177,7 @@ const EquipmentOverview = ({
                             onClick={() => onStatusClick && onStatusClick('Spare')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{statusCounts.Spare || 0}</div>
                             <div className="status-label">Spare</div>
@@ -224,7 +227,7 @@ const EquipmentOverview = ({
                 </div>
                 {(!selectedPlant || Object.keys(plantCounts).length > 1) && (
                     <div className="overview-card plant-card">
-                        <h2 style={{ marginLeft: 10 }}>Plant Distribution</h2>
+                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>

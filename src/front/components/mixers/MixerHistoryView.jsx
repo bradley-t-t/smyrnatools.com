@@ -12,7 +12,7 @@ function MixerHistoryView({mixer, onClose}) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [operators, setOperators] = useState([]);
-    const [sortConfig, setSortConfig] = useState({
+    const [sortConfig] = useState({
         key: 'changedAt',
         direction: 'descending'
     });
@@ -142,15 +142,6 @@ function MixerHistoryView({mixer, onClose}) {
         }
         return sortableItems;
     }, [history, sortConfig]);
-
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({key, direction});
-    };
-
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
@@ -163,7 +154,7 @@ function MixerHistoryView({mixer, onClose}) {
                 <div className="history-modal-content">
                     {isLoading ? (
                         <div className="loading-spinner-container">
-                            <LoadingScreen message="Loading history..." inline={true} />
+                            <LoadingScreen message="Loading history..." inline={true}/>
                         </div>
                     ) : error ? (
                         <div className="error-message">

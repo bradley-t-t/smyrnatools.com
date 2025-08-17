@@ -6,19 +6,28 @@ import {useVersion} from '../../../app/hooks/useVersion'
 import {useCurrentUserId} from '../../../app/hooks/useCurrentUserId'
 
 const ACCENT_OPTIONS = [
-    { key: 'red', label: 'Red', className: 'red' },
-    { key: 'blue', label: 'Blue', className: 'blue' }
+    {key: 'red', label: 'Red', className: 'red'},
+    {key: 'blue', label: 'Blue', className: 'blue'}
 ]
 
 const VIEW_MODE_OPTIONS = [
-    { key: 'grid', label: 'Grid' },
-    { key: 'list', label: 'List' }
+    {key: 'grid', label: 'Grid'},
+    {key: 'list', label: 'List'}
 ]
 
 function SettingsView() {
     const version = useVersion()
     const userId = useCurrentUserId()
-    const {preferences, toggleNavbarMinimized, toggleShowTips, toggleShowOnlineOverlay, toggleAutoOverview, setThemeMode, setAccentColor, updatePreferences} = usePreferences()
+    const {
+        preferences,
+        toggleNavbarMinimized,
+        toggleShowTips,
+        toggleShowOnlineOverlay,
+        toggleAutoOverview,
+        setThemeMode,
+        setAccentColor,
+        updatePreferences
+    } = usePreferences()
     const [showFeedback, setShowFeedback] = useState(false)
 
     const handleSettingChange = (changeFunction, ...args) => {
@@ -39,7 +48,7 @@ function SettingsView() {
 
     return (
         <div className="settings-container">
-            <VersionPopup version={version} />
+            <VersionPopup version={version}/>
             {showFeedback && (
                 <div className="settings-feedback">
                     <i className="fas fa-check-circle"></i> Settings saved successfully
@@ -60,7 +69,8 @@ function SettingsView() {
                     <div className="settings-section">
                         <h3>Theme Mode</h3>
                         <div className="theme-selector">
-                            <div className={`theme-option ${preferences.themeMode === 'light' ? 'active' : ''}`} onClick={() => handleSettingChange(setThemeMode, 'light')}>
+                            <div className={`theme-option ${preferences.themeMode === 'light' ? 'active' : ''}`}
+                                 onClick={() => handleSettingChange(setThemeMode, 'light')}>
                                 <div className="theme-preview light-preview">
                                     <div className="preview-navbar"></div>
                                     <div className="preview-content">
@@ -70,7 +80,8 @@ function SettingsView() {
                                 </div>
                                 <span>Light</span>
                             </div>
-                            <div className={`theme-option ${preferences.themeMode === 'dark' ? 'active' : ''}`} onClick={() => handleSettingChange(setThemeMode, 'dark')}>
+                            <div className={`theme-option ${preferences.themeMode === 'dark' ? 'active' : ''}`}
+                                 onClick={() => handleSettingChange(setThemeMode, 'dark')}>
                                 <div className="theme-preview dark-preview">
                                     <div className="preview-navbar"></div>
                                     <div className="preview-content">
@@ -86,7 +97,9 @@ function SettingsView() {
                         <h3>Accent Color</h3>
                         <div className="color-selector">
                             {ACCENT_OPTIONS.map(opt => (
-                                <div key={opt.key} className={`color-option ${opt.className} ${preferences.accentColor === opt.key ? 'active' : ''}`} onClick={() => handleSettingChange(setAccentColor, opt.key)}>
+                                <div key={opt.key}
+                                     className={`color-option ${opt.className} ${preferences.accentColor === opt.key ? 'active' : ''}`}
+                                     onClick={() => handleSettingChange(setAccentColor, opt.key)}>
                                     <div className={`color-preview ${opt.className}`}></div>
                                     <span>{opt.label}</span>
                                 </div>
@@ -97,12 +110,18 @@ function SettingsView() {
                         <h3>Default View Mode</h3>
                         <div className="view-mode-toggle">
                             {VIEW_MODE_OPTIONS.map(opt => (
-                                <label key={opt.key} className={`view-mode-option${preferences.defaultViewMode === opt.key ? ' active' : ''}`}>
-                                    <input type="radio" name="defaultViewMode" value={opt.key} checked={preferences.defaultViewMode === opt.key} onChange={() => handleViewModeChange(opt.key)} />
+                                <label key={opt.key}
+                                       className={`view-mode-option${preferences.defaultViewMode === opt.key ? ' active' : ''}`}>
+                                    <input type="radio" name="defaultViewMode" value={opt.key}
+                                           checked={preferences.defaultViewMode === opt.key}
+                                           onChange={() => handleViewModeChange(opt.key)}/>
                                     <span>{opt.label}</span>
                                 </label>
                             ))}
-                            <button className="view-mode-option" style={{marginLeft: 12}} onClick={() => handleViewModeChange(preferences.defaultViewMode)} disabled={preferences.defaultViewMode === null}>Clear Selection</button>
+                            <button className="view-mode-option" style={{marginLeft: 12}}
+                                    onClick={() => handleViewModeChange(preferences.defaultViewMode)}
+                                    disabled={preferences.defaultViewMode === null}>Clear Selection
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -118,10 +137,12 @@ function SettingsView() {
                         <div className="toggle-setting">
                             <span className="toggle-label">Minimize Navigation Bar</span>
                             <label className="switch">
-                                <input type="checkbox" checked={preferences.navbarMinimized} onChange={() => handleSettingChange(toggleNavbarMinimized)} />
+                                <input type="checkbox" checked={preferences.navbarMinimized}
+                                       onChange={() => handleSettingChange(toggleNavbarMinimized)}/>
                                 <span className="slider round"></span>
                             </label>
-                            <span className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
+                            <span
+                                className="toggle-state">{preferences.navbarMinimized ? 'Minimized' : 'Expanded'}</span>
                         </div>
                     </div>
                     <div className="settings-section">
@@ -129,7 +150,8 @@ function SettingsView() {
                         <div className="toggle-setting">
                             <span className="toggle-label">Show Tips Banner</span>
                             <label className="switch">
-                                <input type="checkbox" checked={preferences.showTips} onChange={() => handleSettingChange(toggleShowTips)} />
+                                <input type="checkbox" checked={preferences.showTips}
+                                       onChange={() => handleSettingChange(toggleShowTips)}/>
                                 <span className="slider round"></span>
                             </label>
                             <span className="toggle-state">{preferences.showTips ? 'Visible' : 'Hidden'}</span>
@@ -137,7 +159,8 @@ function SettingsView() {
                         <div className="toggle-setting">
                             <span className="toggle-label">Show Online Users Overlay</span>
                             <label className="switch">
-                                <input type="checkbox" checked={preferences.showOnlineOverlay} onChange={() => handleSettingChange(toggleShowOnlineOverlay)} />
+                                <input type="checkbox" checked={preferences.showOnlineOverlay}
+                                       onChange={() => handleSettingChange(toggleShowOnlineOverlay)}/>
                                 <span className="slider round"></span>
                             </label>
                             <span className="toggle-state">{preferences.showOnlineOverlay ? 'Visible' : 'Hidden'}</span>
@@ -145,7 +168,8 @@ function SettingsView() {
                         <div className="toggle-setting">
                             <span className="toggle-label">Pop-up Overview Automatically</span>
                             <label className="switch">
-                                <input type="checkbox" checked={preferences.autoOverview} onChange={() => handleSettingChange(toggleAutoOverview)} />
+                                <input type="checkbox" checked={preferences.autoOverview}
+                                       onChange={() => handleSettingChange(toggleAutoOverview)}/>
                                 <span className="slider round"></span>
                             </label>
                             <span className="toggle-state">{preferences.autoOverview ? 'Enabled' : 'Disabled'}</span>

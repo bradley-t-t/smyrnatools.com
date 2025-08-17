@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { isSupabaseConfigured, supabase } from '../../services/DatabaseService'
-import { AuthUtility } from '../../utils/AuthUtility'
-import { UserService } from '../../services/UserService'
+import React, {createContext, useContext, useEffect, useState} from 'react'
+import {isSupabaseConfigured, supabase} from '../../services/DatabaseService'
+import {AuthUtility} from '../../utils/AuthUtility'
+import {UserService} from '../../services/UserService'
 
 const AuthContext = createContext()
 
@@ -15,7 +15,7 @@ function normalizeName(name) {
     return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
 }
 
-export function AuthProvider({ children }) {
+export function AuthProvider({children}) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -26,9 +26,10 @@ export function AuthProvider({ children }) {
             setLoading(false)
             return
         }
+
         async function checkAuthSession() {
             try {
-                const { data } = await supabase.auth.getSession()
+                const {data} = await supabase.auth.getSession()
                 if (data?.session?.user) {
                     sessionStorage.setItem('userId', data.session.user.id)
                 }
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
                 restoreSession()
             }
         }
+
         checkAuthSession()
     }, [])
 
@@ -56,7 +58,7 @@ export function AuthProvider({ children }) {
                 clearTimeout(timeout)
                 throw new Error('Database connection not configured properly')
             }
-            const { data: users, error } = await supabase
+            const {data: users, error} = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', userId)
@@ -66,12 +68,12 @@ export function AuthProvider({ children }) {
                 setLoading(false)
                 return false
             }
-            const { data: profile } = await supabase
+            const {data: profile} = await supabase
                 .from('users_profiles')
                 .select('first_name, last_name, plant_code')
                 .eq('id', userId)
                 .single()
-            setUser({ ...users[0], profile: profile || {} })
+            setUser({...users[0], profile: profile || {}})
             clearTimeout(timeout)
             setLoading(false)
             return true
@@ -92,42 +94,43 @@ export function AuthProvider({ children }) {
         }, 15000)
         try {
             const trimmedEmail = email.trim().toLowerCase()
-            await new Promise(resolve => setTimeout(resolve, 300))
-            const { data: users, error } = await supabase
+            await new Promise(r => setTimeout(r, 300))
+            const {data: users, error} = await supabase
                 .from('users')
                 .select('id, email, password_hash, salt')
                 .eq('email', trimmedEmail)
             if (error || !users?.length) throw new Error(error?.message || 'Invalid email or password')
-            const user = users[0]
-            await new Promise(resolve => setTimeout(resolve, 200))
-            const passwordMatched = (await AuthUtility.hashPassword(password, user.salt).catch(() => null)) === user.password_hash ||
-                AuthUtility.hashPasswordSync(password, user.salt) === user.password_hash
+            const userRecord = users[0]
+            await new Promise(r => setTimeout(r, 200))
+            const passwordMatched = (await AuthUtility.hashPassword(password, userRecord.salt).catch(() => null)) === userRecord.password_hash ||
+                AuthUtility.hashPasswordSync(password, userRecord.salt) === userRecord.password_hash
             if (!passwordMatched) throw new Error('Invalid email or password')
-            const basicUser = { id: user.id, email: user.email }
+            const basicUser = {id: userRecord.id, email: userRecord.email}
             setUser(basicUser)
-            sessionStorage.setItem('userId', user.id)
+            sessionStorage.setItem('userId', userRecord.id)
             clearTimeout(safetyTimeout)
             setLoading(false)
-            window.dispatchEvent(new CustomEvent('authSuccess', { detail: { userId: user.id } }))
-            setTimeout(() => loadUserProfile(user.id).catch(() => {}), 100)
+            window.dispatchEvent(new CustomEvent('authSuccess', {detail: {userId: userRecord.id}}))
+            setTimeout(() => loadUserProfile(userRecord.id).catch(() => {
+            }), 100)
             return basicUser
-        } catch (error) {
-            setError(error.message || 'An unknown error occurred')
+        } catch (e) {
+            setError(e.message || 'An unknown error occurred')
             clearTimeout(safetyTimeout)
             setLoading(false)
-            throw error
+            throw e
         }
     }
 
     async function loadUserProfile(userId) {
         if (!userId) return
-        const { data: profileData, error } = await supabase
+        const {data: profileData, error} = await supabase
             .from('users_profiles')
             .select('first_name, last_name, plant_code')
             .eq('id', userId)
             .single()
         if (!error && profileData) {
-            setUser(currentUser => ({ ...currentUser, profile: profileData }))
+            setUser(cu => ({...cu, profile: profileData}))
         }
     }
 
@@ -145,17 +148,17 @@ export function AuthProvider({ children }) {
                 throw new Error('First and last names must be "Trenton" with proper capitalization and no spaces.')
             }
             const trimmedEmail = email.trim().toLowerCase()
-            const { data: existingUsers } = await supabase
+            const {data: existingUsers} = await supabase
                 .from('users')
                 .select('id')
                 .eq('email', trimmedEmail)
             if (existingUsers?.length) throw new Error('Email is already registered')
-            const { generateUUID } = await import('../../utils/./userUtility')
+            const {generateUUID} = await import('../../utils/./userUtility')
             const userId = generateUUID()
             const now = new Date().toISOString()
             const salt = AuthUtility.generateSalt()
             const passwordHash = await AuthUtility.hashPassword(password, salt)
-            const user = {
+            const userRecord = {
                 id: userId,
                 email: trimmedEmail,
                 password_hash: passwordHash,
@@ -171,8 +174,8 @@ export function AuthProvider({ children }) {
                 created_at: now,
                 updated_at: now
             }
-            const [{ error: userError }, { error: profileError }] = await Promise.all([
-                supabase.from('users').insert(user),
+            const [{error: userError}, {error: profileError}] = await Promise.all([
+                supabase.from('users').insert(userRecord),
                 supabase.from('users_profiles').insert(profile)
             ])
             if (userError || profileError) {
@@ -186,14 +189,14 @@ export function AuthProvider({ children }) {
             if (!(await UserService.assignRole(userId, guestRole.id))) {
                 throw new Error('Role assignment failed')
             }
-            setUser({ ...user, profile })
+            setUser({...userRecord, profile})
             sessionStorage.setItem('userId', userId)
             setLoading(false)
-            return user
-        } catch (error) {
-            setError(error.message)
+            return userRecord
+        } catch (e) {
+            setError(e.message)
             setLoading(false)
-            throw error
+            throw e
         }
     }
 
@@ -206,34 +209,9 @@ export function AuthProvider({ children }) {
         return true
     }
 
-    async function checkBiometricSupport() {
-        return navigator.credentials && window.PublicKeyCredential
-            ? await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-            : false
-    }
-
-    async function signInWithBiometric() {
-        setError(null)
-        setLoading(true)
-        try {
-            if (!(await checkBiometricSupport())) {
-                throw new Error('Biometric authentication is not supported on this device')
-            }
-            const { default: KeychainUtility } = await import('../../utils/KeychainUtility')
-            const credentials = KeychainUtility.shared.retrieveCredentials()
-            if (!credentials) {
-                throw new Error('No stored credentials found. Please sign in with email and password first.')
-            }
-            return await signIn(credentials.email, credentials.password)
-        } catch (error) {
-            setError(`Biometric authentication failed: ${error.message}`)
-            setLoading(false)
-            throw error
-        }
-    }
 
     return (
-        <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{user, loading, error, signIn, signUp, signOut, isAuthenticated: !!user}}>
             {children}
         </AuthContext.Provider>
     )

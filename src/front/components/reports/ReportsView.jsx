@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { reportTypes, reportTypeMap } from '../../../config/types/ReportTypes'
+import React, {useEffect, useState} from 'react'
+import {reportTypeMap, reportTypes} from '../../../config/types/ReportTypes'
 import './styles/ReportsView.css'
 import ReportsSubmitView from './ReportsSubmitView'
 import ReportsReviewView from './ReportsReviewView'
-import { supabase } from '../../../services/DatabaseService'
-import { UserService } from '../../../services/UserService'
-import { ReportService } from '../../../services/ReportService'
+import {supabase} from '../../../services/DatabaseService'
+import {UserService} from '../../../services/UserService'
+import {ReportService} from '../../../services/ReportService'
 
 const HARDCODED_TODAY = new Date()
 const REPORTS_START_DATE = new Date('2025-07-20')
@@ -80,15 +80,16 @@ function ReportsView() {
             )
             const userIds = Array.from(new Set((data || []).map(r => r.user_id).filter(Boolean)))
             if (userIds.length > 0) {
-                const { data: profiles, error: profileError } = await supabase
+                const {data: profiles, error: profileError} = await supabase
                     .from('users_profiles')
                     .select('id, first_name, last_name')
                     .in('id', userIds)
                 if (!profileError && Array.isArray(profiles)) {
-                    setUserProfiles(profiles.reduce((map, p) => ({ ...map, [p.id]: p }), {}))
+                    setUserProfiles(profiles.reduce((map, p) => ({...map, [p.id]: p}), {}))
                 }
             }
         }
+
         fetchUserAndReports()
     }, [])
 
@@ -122,20 +123,22 @@ function ReportsView() {
             setHasAssigned(assigned)
             setHasReviewPermission(review)
         }
+
         checkAssignedAndReview()
     }, [])
 
     useEffect(() => {
         async function fetchPlants() {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('plants')
                 .select('plant_code,plant_name')
-                .order('plant_code', { ascending: true })
+                .order('plant_code', {ascending: true})
             setPlants(!error && Array.isArray(data)
                 ? data.filter(p => p.plant_code && p.plant_name)
                 : []
             )
         }
+
         fetchPlants()
     }, [])
 
@@ -145,7 +148,7 @@ function ReportsView() {
         const currentMonday = ReportService.getMondayAndSaturday(today).monday
         let monday = ReportService.getMondayAndSaturday(startDate).monday
         while (monday <= currentMonday) {
-            weeks.push({ weekIso: ReportService.getMondayISO(monday), monday: new Date(monday) })
+            weeks.push({weekIso: ReportService.getMondayISO(monday), monday: new Date(monday)})
             monday.setDate(monday.getDate() + 7)
         }
         return weeks
@@ -154,7 +157,7 @@ function ReportsView() {
     const allWeeks = []
     reportTypes.forEach(rt => {
         if (!user || !hasAssigned[rt.name]) return
-        getDueWeeks(REPORTS_START_DATE).forEach(({ weekIso, monday }) => {
+        getDueWeeks(REPORTS_START_DATE).forEach(({weekIso, monday}) => {
             const saturday = new Date(monday)
             saturday.setDate(monday.getDate() + 5)
             const dividerMonday = new Date(monday)
@@ -226,7 +229,7 @@ function ReportsView() {
         const upsertData = {
             report_name: reportName,
             user_id: userId,
-            data: { ...formData, week: weekIso },
+            data: {...formData, week: weekIso},
             week: monday ? monday.toISOString() : null,
             completed: completed,
             submitted_at: new Date().toISOString(),
@@ -234,7 +237,7 @@ function ReportsView() {
             report_date_range_end: saturday?.toISOString() || null
         }
         let response
-        const { data: existing, error: findError } = await supabase
+        const {data: existing, error: findError} = await supabase
             .from('reports')
             .select('id')
             .eq('report_name', reportName)
@@ -259,7 +262,7 @@ function ReportsView() {
                 .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
                 .single()
         }
-        const { data, error } = response
+        const {data, error} = response
         if (error) {
             setLoadError(error.message || 'Error submitting report')
             return
@@ -301,7 +304,7 @@ function ReportsView() {
         const upsertData = {
             report_name: reportName,
             user_id: userId,
-            data: { ...formData, week: weekIso },
+            data: {...formData, week: weekIso},
             week: monday ? monday.toISOString() : null,
             completed: true,
             submitted_at: new Date().toISOString(),
@@ -309,7 +312,7 @@ function ReportsView() {
             report_date_range_end: saturday?.toISOString() || null
         }
         let response
-        const { data: existing, error: findError } = await supabase
+        const {data: existing, error: findError} = await supabase
             .from('reports')
             .select('id')
             .eq('report_name', reportName)
@@ -334,7 +337,7 @@ function ReportsView() {
                 .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
                 .single()
         }
-        const { data, error } = response
+        const {data, error} = response
         if (error) {
             setLoadError(error.message || 'Error submitting report')
             return
@@ -389,7 +392,7 @@ function ReportsView() {
             setShowForm(item)
             return
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('reports')
             .select('id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week')
             .eq('report_name', item.name)
@@ -440,16 +443,14 @@ function ReportsView() {
             return matchType && matchPlant
         })
     }).slice(0, reviewVisibleWeeks)
-
-    const permittedReportTypes = reportTypes.filter(rt =>
+    reportTypes.filter(rt =>
         (tab === 'all' && hasAssigned[rt.name]) ||
         (tab === 'review' && hasReviewPermission[rt.name])
-    )
-
+    );
     return (
         <>
             <div className="reports-root">
-                {loadError && <div style={{ color: 'var(--error)', padding: 16 }}>{loadError}</div>}
+                {loadError && <div style={{color: 'var(--error)', padding: 16}}>{loadError}</div>}
                 {!showForm && !showReview && (
                     <>
                         <div className="reports-toolbar">
@@ -556,7 +557,7 @@ function ReportsView() {
                                                 weekEnd.setDate(weekStart.getDate() + 5)
                                                 const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                 return (
-                                                    <div key={weekIso} style={{ marginBottom: 32 }}>
+                                                    <div key={weekIso} style={{marginBottom: 32}}>
                                                         <div
                                                             style={{
                                                                 fontWeight: 700,
@@ -592,7 +593,8 @@ function ReportsView() {
                                                                 statusColor = 'var(--error)'
                                                             }
                                                             return (
-                                                                <div className="reports-list-item" key={item.name + item.weekIso}>
+                                                                <div className="reports-list-item"
+                                                                     key={item.name + item.weekIso}>
                                                                     <div className="reports-list-title">
                                                                         {item.title}
                                                                         <span style={{
@@ -603,7 +605,8 @@ function ReportsView() {
                                                                             {statusText}
                                                                         </span>
                                                                     </div>
-                                                                    <button className="reports-list-action" onClick={() => handleShowForm(item)}>
+                                                                    <button className="reports-list-action"
+                                                                            onClick={() => handleShowForm(item)}>
                                                                         {buttonLabel}
                                                                     </button>
                                                                 </div>
@@ -613,7 +616,16 @@ function ReportsView() {
                                                 )
                                             })}
                                             {(myReportsVisibleWeeks < sortedMyWeeks.length || myReportsVisibleWeeks > 2) && (
-                                                <div style={{ textAlign: 'center', marginTop: 16, paddingBottom: 32, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+                                                <div style={{
+                                                    textAlign: 'center',
+                                                    marginTop: 16,
+                                                    paddingBottom: 32,
+                                                    display: 'flex',
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    gap: 16
+                                                }}>
                                                     {myReportsVisibleWeeks < sortedMyWeeks.length && (
                                                         <button
                                                             type="button"
@@ -686,7 +698,7 @@ function ReportsView() {
                                                 weekEnd.setDate(weekStart.getDate() + 5)
                                                 const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                 return (
-                                                    <div key={weekIso} style={{ marginBottom: 32 }}>
+                                                    <div key={weekIso} style={{marginBottom: 32}}>
                                                         <div
                                                             style={{
                                                                 fontWeight: 700,
@@ -704,8 +716,10 @@ function ReportsView() {
                                                                 <div className="reports-list-title">
                                                                     {report.title}
                                                                 </div>
-                                                                <div className="reports-list-date">Completed By: {getUserName(report.userId)}</div>
-                                                                <button className="reports-list-action" onClick={() => handleReview(report)}>
+                                                                <div className="reports-list-date">Completed
+                                                                    By: {getUserName(report.userId)}</div>
+                                                                <button className="reports-list-action"
+                                                                        onClick={() => handleReview(report)}>
                                                                     Review
                                                                 </button>
                                                             </div>
@@ -714,7 +728,16 @@ function ReportsView() {
                                                 )
                                             })}
                                             {(reviewVisibleWeeks < sortedReviewWeeks.length || reviewVisibleWeeks > 2) && (
-                                                <div style={{ textAlign: 'center', marginTop: 16, paddingBottom: 32, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+                                                <div style={{
+                                                    textAlign: 'center',
+                                                    marginTop: 16,
+                                                    paddingBottom: 32,
+                                                    display: 'flex',
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    gap: 16
+                                                }}>
                                                     {reviewVisibleWeeks < sortedReviewWeeks.length && (
                                                         <button
                                                             type="button"
@@ -799,7 +822,15 @@ function ReportsView() {
                     />
                 )}
             </div>
-            <div style={{ width: '100%', textAlign: 'center', marginTop: 48, marginBottom: 32, fontWeight: 600, color: 'var(--text-secondary)', paddingBottom: 32 }}>
+            <div style={{
+                width: '100%',
+                textAlign: 'center',
+                marginTop: 48,
+                marginBottom: 32,
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                paddingBottom: 32
+            }}>
                 Weekly Reports are due Saturday by end of day.
             </div>
         </>

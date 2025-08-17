@@ -44,6 +44,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 setIsLoading(false);
             }
         }
+
         fetchAllData();
         if (preferences?.mixerFilters) {
             setSearchText(preferences.mixerFilters.searchText || '');
@@ -71,7 +72,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 try {
                     const history = await MixerService.getMixerHistory(mixer.id, 1);
                     latestHistoryDate = history[0]?.changedAt || null;
-                } catch {}
+                } catch {
+                }
                 try {
                     const issues = await MixerService.fetchIssues(mixer.id);
                     mixer.issues = issues || [];
@@ -102,7 +104,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             try {
                 await MixerService.updateMixer(mixer.id, {...mixer, status: 'Spare'}, undefined, mixer);
                 mixer.status = 'Spare';
-            } catch (e) {}
+            } catch (e) {
+            }
         }
     }
 
@@ -189,12 +192,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 try {
                     const vinMixers = await MixerService.searchMixersByVin(normalizedSearch);
                     setMixers(vinMixers);
-                } catch {}
+                } catch {
+                }
                 setIsLoading(false);
             } else {
                 fetchMixers();
             }
         }
+
         if (searchText.trim().length >= 17 && /^[a-z0-9]+$/i.test(searchText.trim().replace(/\s+/g, ''))) {
             searchByVin();
         }
@@ -300,7 +305,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const blob = new Blob([csvContent], {type: 'text/csv'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -364,9 +369,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             <button
                                 className="action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}
-                                style={{ height: '44px', lineHeight: '1' }}
+                                style={{height: '44px', lineHeight: '1'}}
                             >
-                                <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Mixer
+                                <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Mixer
                             </button>
                         </div>
                     </div>
@@ -447,7 +452,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     setSearchText('')
                                     setSelectedPlant('')
                                     setStatusFilter('')
-                                    resetMixerFilters({ keepViewMode: true, currentViewMode: viewMode })
+                                    resetMixerFilters({keepViewMode: true, currentViewMode: viewMode})
                                 }}>
                                     <i className="fas fa-undo"></i>
                                 </button>
@@ -460,7 +465,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading mixers..." inline={true} />
+                                <LoadingScreen message="Loading mixers..." inline={true}/>
                             </div>
                         ) : filteredMixers.length === 0 ? (
                             <div className="no-results-container">
@@ -469,14 +474,18 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 </div>
                                 <h3>No Mixers Found</h3>
                                 <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer</button>
+                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer
+                                </button>
                             </div>
                         ) : viewMode === 'grid' ? (
                             <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredMixers.map(mixer => (
                                     <MixerCard
                                         key={mixer.id}
-                                        mixer={{...mixer, operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)}}
+                                        mixer={{
+                                            ...mixer,
+                                            operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)
+                                        }}
                                         operatorName={getOperatorName(mixer.assignedOperator)}
                                         plantName={getPlantName(mixer.assignedPlant)}
                                         showOperatorWarning={isOperatorAssignedToMultipleMixers(mixer.assignedOperator)}
@@ -488,26 +497,27 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             <div className="mixers-list-table-container">
                                 <table className="mixers-list-table">
                                     <thead>
-                                        <tr>
-                                            <th>Plant</th>
-                                            <th>Truck #</th>
-                                            <th>Status</th>
-                                            <th>Operator</th>
-                                            <th>Cleanliness</th>
-                                            <th>VIN</th>
-                                            <th>Verified</th>
-                                            <th>More</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Truck #</th>
+                                        <th>Status</th>
+                                        <th>Operator</th>
+                                        <th>Cleanliness</th>
+                                        <th>VIN</th>
+                                        <th>Verified</th>
+                                        <th>More</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredMixers.map(mixer => {
-                                            const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
-                                            const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
-                                            return (
-                                                <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
-                                                    <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
-                                                    <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
-                                                    <td>
+                                    {filteredMixers.map(mixer => {
+                                        const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
+                                        const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
+                                        return (
+                                            <tr key={mixer.id} style={{cursor: 'pointer'}}
+                                                onClick={() => handleSelectMixer(mixer.id)}>
+                                                <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
+                                                <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
+                                                <td>
                                                         <span
                                                             className="item-status-dot"
                                                             style={{
@@ -519,60 +529,71 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                                                 borderRadius: '50%',
                                                                 backgroundColor:
                                                                     mixer.status === 'Active' ? 'var(--status-active)' :
-                                                                    mixer.status === 'Spare' ? 'var(--status-spare)' :
-                                                                    mixer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                    mixer.status === 'Retired' ? 'var(--status-retired)' :
-                                                                    'var(--accent)'
+                                                                        mixer.status === 'Spare' ? 'var(--status-spare)' :
+                                                                            mixer.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                                mixer.status === 'Retired' ? 'var(--status-retired)' :
+                                                                                    'var(--accent)'
                                                             }}
                                                         ></span>
-                                                        {mixer.status ? mixer.status : "---"}
-                                                    </td>
-                                                    <td>
-                                                        {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
-                                                        {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
-                                                            <span className="warning-badge">
+                                                    {mixer.status ? mixer.status : "---"}
+                                                </td>
+                                                <td>
+                                                    {getOperatorName(mixer.assignedOperator) ? getOperatorName(mixer.assignedOperator) : "---"}
+                                                    {isOperatorAssignedToMultipleMixers(mixer.assignedOperator) && (
+                                                        <span className="warning-badge">
                                                                 <i className="fas fa-exclamation-triangle"></i>
                                                             </span>
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {(() => {
-                                                            const rating = Math.round(mixer.cleanlinessRating || 0)
-                                                            const stars = rating > 0 ? rating : 1
-                                                            return Array.from({length: stars}).map((_, i) => (
-                                                                <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                            ))
-                                                        })()}
-                                                    </td>
-                                                    <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
-                                                    <td>
-                                                        {mixer.isVerified() ? (
-                                                            <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                                <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {(() => {
+                                                        const rating = Math.round(mixer.cleanlinessRating || 0)
+                                                        const stars = rating > 0 ? rating : 1
+                                                        return Array.from({length: stars}).map((_, i) => (
+                                                            <i key={i} className="fas fa-star"
+                                                               style={{color: 'var(--accent)'}}></i>
+                                                        ))
+                                                    })()}
+                                                </td>
+                                                <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
+                                                <td>
+                                                    {mixer.isVerified() ? (
+                                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-check-circle" style={{
+                                                                    color: 'var(--success)',
+                                                                    marginRight: 6
+                                                                }}></i>
                                                                 Verified
                                                             </span>
-                                                        ) : (
-                                                            <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                                <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                                    ) : (
+                                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                                <i className="fas fa-flag"
+                                                                   style={{color: 'var(--error)', marginRight: 6}}></i>
                                                                 Not Verified
                                                             </span>
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                            <div style={{display: 'flex', alignItems: 'center'}}>
-                                                                <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                                <span>{commentsCount}</span>
-                                                            </div>
-                                                            <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
-                                                                <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                                <span>{issuesCount}</span>
-                                                            </div>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                                        <div style={{display: 'flex', alignItems: 'center'}}>
+                                                            <i className="fas fa-comments"
+                                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                            <span>{commentsCount}</span>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            marginLeft: 12
+                                                        }}>
+                                                            <i className="fas fa-tools"
+                                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                            <span>{issuesCount}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
                                     </tbody>
                                 </table>
                             </div>
@@ -586,7 +607,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             onMixerAdded={newMixer => setMixers([...mixers, newMixer])}
                         />
                     )}
-                    {showOverview && <OverviewPopup />}
+                    {showOverview && <OverviewPopup/>}
                     {showOperatorsView && (
                         <div className="modal-backdrop" onClick={() => setShowOperatorsView(false)}>
                             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -600,13 +621,17 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     <OperatorsView
                                         title="Operator Roster"
                                         showSidebar={false}
-                                        setShowSidebar={() => {}}
-                                        onSelectOperator={() => {}}
+                                        setShowSidebar={() => {
+                                        }}
+                                        onSelectOperator={() => {
+                                        }}
                                         initialStatusFilter={operatorStatusFilter}
                                     />
                                 </div>
                                 <div className="modal-footer">
-                                    <button className="primary-button" onClick={() => setShowOperatorsView(false)}>Close</button>
+                                    <button className="primary-button"
+                                            onClick={() => setShowOperatorsView(false)}>Close
+                                    </button>
                                 </div>
                             </div>
                         </div>

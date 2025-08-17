@@ -1,12 +1,12 @@
 import supabase from './DatabaseService'
-import { UserService } from './UserService'
-import { Equipment } from '../config/models/equipment/Equipment'
-import { EquipmentHistory } from '../config/models/equipment/EquipmentHistory'
-import { EquipmentComment } from '../config/models/equipment/EquipmentComment'
-import { v4 as uuidv4 } from 'uuid'
-import { DateUtility } from '../utils/DateUtility'
-import { HistoryUtility } from '../utils/HistoryUtility'
-import { ValidationUtility } from '../utils/ValidationUtility'
+import {UserService} from './UserService'
+import {Equipment} from '../config/models/equipment/Equipment'
+import {EquipmentHistory} from '../config/models/equipment/EquipmentHistory'
+import {EquipmentComment} from '../config/models/equipment/EquipmentComment'
+import {v4 as uuidv4} from 'uuid'
+import {DateUtility} from '../utils/DateUtility'
+import {HistoryUtility} from '../utils/HistoryUtility'
+import {ValidationUtility} from '../utils/ValidationUtility'
 
 const EQUIPMENTS_TABLE = 'heavy_equipment'
 const HISTORY_TABLE = 'heavy_equipment_history'
@@ -15,19 +15,21 @@ const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance'
 
 class EquipmentServiceImpl {
     static async getAllEquipments() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
-            .order('identifying_number', { ascending: true })
+            .order('identifying_number', {ascending: true})
         if (error) throw error
-        return data.map(equipment => new Equipment(equipment))
+        return data.map(row => new Equipment(row));
     }
 
-    static async fetchEquipments() { return this.getAllEquipments() }
+    static async fetchEquipments() {
+        return this.getAllEquipments()
+    }
 
     static async getEquipmentById(id) {
         ValidationUtility.requireUUID(id, 'Equipment ID is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .eq('id', id)
@@ -43,13 +45,13 @@ class EquipmentServiceImpl {
     }
 
     static async getActiveEquipments() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .eq('status', 'Active')
-            .order('identifying_number', { ascending: true })
+            .order('identifying_number', {ascending: true})
         if (error) throw error
-        return data.map(equipment => new Equipment(equipment))
+        return data.map(row => new Equipment(row))
     }
 
     static async getEquipmentHistory(equipmentId, limit = null) {
@@ -58,9 +60,9 @@ class EquipmentServiceImpl {
             .from(HISTORY_TABLE)
             .select('*')
             .eq('equipment_id', equipmentId)
-            .order('changed_at', { ascending: false })
+            .order('changed_at', {ascending: false})
         if (limit && Number.isInteger(limit) && limit > 0) query = query.limit(limit)
-        const { data, error } = await query
+        const {data, error} = await query
         if (error) throw error
         return data.map(entry => new EquipmentHistory(entry))
     }
@@ -83,7 +85,7 @@ class EquipmentServiceImpl {
             updated_at: now,
             updated_by: userId
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .insert([apiData])
             .select()
@@ -127,7 +129,7 @@ class EquipmentServiceImpl {
             updated_at: DateUtility.nowDb(),
             updated_by: userId
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .update(apiData)
             .eq('id', id)
@@ -136,17 +138,17 @@ class EquipmentServiceImpl {
         if (error) throw error
         const historyEntries = HistoryUtility.buildChanges(id,
             [
-                { field: 'identifyingNumber', dbField: 'identifying_number' },
-                { field: 'assignedPlant', dbField: 'assigned_plant' },
-                { field: 'equipmentType', dbField: 'equipment_type' },
-                { field: 'status', dbField: 'status' },
-                { field: 'lastServiceDate', dbField: 'last_service_date', type: 'date' },
-                { field: 'hoursMileage', dbField: 'hours_mileage', type: 'number' },
-                { field: 'cleanlinessRating', dbField: 'cleanliness_rating', type: 'number' },
-                { field: 'conditionRating', dbField: 'condition_rating', type: 'number' },
-                { field: 'equipmentMake', dbField: 'equipment_make' },
-                { field: 'equipmentModel', dbField: 'equipment_model' },
-                { field: 'yearMade', dbField: 'year_made', type: 'number' }
+                {field: 'identifyingNumber', dbField: 'identifying_number'},
+                {field: 'assignedPlant', dbField: 'assigned_plant'},
+                {field: 'equipmentType', dbField: 'equipment_type'},
+                {field: 'status', dbField: 'status'},
+                {field: 'lastServiceDate', dbField: 'last_service_date', type: 'date'},
+                {field: 'hoursMileage', dbField: 'hours_mileage', type: 'number'},
+                {field: 'cleanlinessRating', dbField: 'cleanliness_rating', type: 'number'},
+                {field: 'conditionRating', dbField: 'condition_rating', type: 'number'},
+                {field: 'equipmentMake', dbField: 'equipment_make'},
+                {field: 'equipmentModel', dbField: 'equipment_model'},
+                {field: 'yearMade', dbField: 'year_made', type: 'number'}
             ],
             currentEquipment,
             equipment,
@@ -174,7 +176,7 @@ class EquipmentServiceImpl {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(HISTORY_TABLE)
             .insert({
                 equipment_id: equipmentId,
@@ -198,11 +200,11 @@ class EquipmentServiceImpl {
             .select('*')
             .eq('field_name', 'cleanliness_rating')
             .gte('changed_at', threshold.toISOString())
-            .order('changed_at', { ascending: true })
+            .order('changed_at', {ascending: true})
             .abortSignal(AbortSignal.timeout(5000))
             .limit(200)
         if (equipmentId) query = query.eq('equipment_id', equipmentId)
-        const { data, error } = await query
+        const {data, error} = await query
         if (error) throw error
         return data
     }
@@ -215,57 +217,57 @@ class EquipmentServiceImpl {
             .select('*')
             .eq('field_name', 'condition_rating')
             .gte('changed_at', threshold.toISOString())
-            .order('changed_at', { ascending: true })
+            .order('changed_at', {ascending: true})
             .abortSignal(AbortSignal.timeout(5000))
             .limit(200)
         if (equipmentId) query = query.eq('equipment_id', equipmentId)
-        const { data, error } = await query
+        const {data, error} = await query
         if (error) throw error
         return data
     }
 
     static async getEquipmentsByStatus(status) {
         if (!status) throw new Error('Status is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .eq('status', status)
-            .order('identifying_number', { ascending: true })
+            .order('identifying_number', {ascending: true})
         if (error) throw error
-        return data.map(equipment => new Equipment(equipment))
+        return data.map(row => new Equipment(row))
     }
 
     static async searchEquipmentsByIdentifyingNumber(query) {
         if (!query?.trim()) throw new Error('Search query is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
             .ilike('identifying_number', `%${query.trim()}%`)
-            .order('identifying_number', { ascending: true })
+            .order('identifying_number', {ascending: true})
         if (error) throw error
-        return data.map(equipment => new Equipment(equipment))
+        return data.map(row => new Equipment(row))
     }
 
     static async getEquipmentsNeedingService(dayThreshold = 30) {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_TABLE)
             .select('*')
-            .order('identifying_number', { ascending: true })
+            .order('identifying_number', {ascending: true})
         if (error) throw error
         const thresholdDate = new Date()
         thresholdDate.setDate(thresholdDate.getDate() - dayThreshold)
         return data
             .filter(equipment => !equipment.last_service_date || new Date(equipment.last_service_date) < thresholdDate)
-            .map(equipment => new Equipment(equipment))
+            .map(row => new Equipment(row))
     }
 
     static async fetchComments(equipmentId) {
         ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .select('*')
             .eq('equipment_id', equipmentId)
-            .order('created_at', { ascending: false })
+            .order('created_at', {ascending: false})
         if (error) throw error
         return data?.map(row => EquipmentComment.fromRow(row)) ?? []
     }
@@ -281,7 +283,7 @@ class EquipmentServiceImpl {
             author: author.trim(),
             created_at: new Date().toISOString()
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .insert([comment])
             .select()
@@ -292,7 +294,7 @@ class EquipmentServiceImpl {
 
     static async deleteComment(commentId) {
         ValidationUtility.requireUUID(commentId, 'Comment ID is required')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(EQUIPMENTS_COMMENTS_TABLE)
             .delete()
             .eq('id', commentId)
@@ -301,10 +303,10 @@ class EquipmentServiceImpl {
     }
 
     static async _fetchHistoryDates() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(HISTORY_TABLE)
             .select('equipment_id, changed_at')
-            .order('changed_at', { ascending: false })
+            .order('changed_at', {ascending: false})
         if (error) return {}
         const historyDates = {}
         data.forEach(entry => {
@@ -317,11 +319,11 @@ class EquipmentServiceImpl {
 
     static async fetchIssues(equipmentId) {
         ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .select('*')
             .eq('equipment_id', equipmentId)
-            .order('time_created', { ascending: false })
+            .order('time_created', {ascending: false})
         if (error) throw error
         return data ?? []
     }
@@ -339,7 +341,7 @@ class EquipmentServiceImpl {
             time_created: new Date().toISOString(),
             time_completed: null
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .insert([payload])
             .select()
@@ -351,7 +353,7 @@ class EquipmentServiceImpl {
 
     static async deleteIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
             .delete()
             .eq('id', issueId)
@@ -361,9 +363,9 @@ class EquipmentServiceImpl {
 
     static async completeIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(EQUIPMENT_MAINTENANCE_TABLE)
-            .update({ time_completed: new Date().toISOString() })
+            .update({time_completed: new Date().toISOString()})
             .eq('id', issueId)
             .select()
             .single()

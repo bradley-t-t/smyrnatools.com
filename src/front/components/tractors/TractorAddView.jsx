@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {TractorService} from '../../../services/TractorService';
 import {Tractor} from '../../../config/models/tractors/Tractor';
 import {AuthService} from '../../../services/AuthService';
@@ -11,16 +11,15 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
     const [hasBlower, setHasBlower] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
-    const [cleanlinessRating, setCleanlinessRating] = useState(1);
-
     useEffect(() => {
         async function loadTractors() {
             try {
-                const tractors = await TractorService.fetchTractors();
+                await TractorService.fetchTractors();
             } catch (error) {
                 console.error('Error loading tractors:', error);
             }
         }
+
         loadTractors();
     }, []);
 

@@ -1,10 +1,9 @@
-import React, {useState, useEffect, useRef} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import {MixerService} from '../../../services/MixerService'
 import {PlantService} from '../../../services/PlantService'
 import {OperatorService} from '../../../services/OperatorService'
 import {UserService} from '../../../services/UserService'
 import {supabase} from '../../../services/DatabaseService'
-import {AuthUtility} from '../../../utils/AuthUtility'
 import {usePreferences} from '../../../app/context/PreferencesContext'
 import MixerHistoryView from './MixerHistoryView'
 import MixerCommentModal from './MixerCommentModal'
@@ -14,7 +13,6 @@ import OperatorSelectModal from './OperatorSelectModal'
 import './styles/MixerDetailView.css'
 import MixerUtility from '../../../utils/MixerUtility'
 import {Mixer} from "../../../config/models/mixers/Mixer"
-import ThemeUtility from "../../../utils/ThemeUtility"
 import LoadingScreen from "../common/LoadingScreen"
 
 function MixerDetailView({mixerId, onClose}) {
@@ -33,7 +31,7 @@ function MixerDetailView({mixerId, onClose}) {
     const [updatedByEmail, setUpdatedByEmail] = useState(null)
     const [message, setMessage] = useState('')
     const [showOperatorModal, setShowOperatorModal] = useState(false)
-    const [userProfile, setUserProfile] = useState(null)
+    const [, setUserProfile] = useState(null)
     const [canEditMixer, setCanEditMixer] = useState(true)
     const [plantRestrictionReason, setPlantRestrictionReason] = useState('')
     const [originalValues, setOriginalValues] = useState({})
@@ -107,6 +105,7 @@ function MixerDetailView({mixerId, onClose}) {
                 setHasUnsavedChanges(false)
             }
         }
+
         fetchData()
     }, [mixerId])
 
@@ -132,6 +131,7 @@ function MixerDetailView({mixerId, onClose}) {
             } catch (error) {
             }
         }
+
         checkPlantRestriction()
     }, [mixer, isLoading])
 
@@ -167,10 +167,10 @@ function MixerDetailView({mixerId, onClose}) {
                 if (isNaN(parsedDate.getTime())) return null
                 return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`
             }
-            let assignedOperatorValue = overrideValues.hasOwnProperty('assignedOperator')
+            let assignedOperatorValue = Object.prototype.hasOwnProperty.call(overrideValues, 'assignedOperator')
                 ? overrideValues.assignedOperator
                 : assignedOperator
-            let statusValue = overrideValues.hasOwnProperty('status')
+            let statusValue = Object.prototype.hasOwnProperty.call(overrideValues, 'status')
                 ? overrideValues.status
                 : status
             if (originalValues.status === 'Active' && statusValue !== 'Active' && assignedOperatorValue) {
@@ -184,7 +184,7 @@ function MixerDetailView({mixerId, onClose}) {
             }
             let mixerForHistory = {
                 ...mixer,
-                assignedOperator: overrideValues.hasOwnProperty('prevAssignedOperator')
+                assignedOperator: Object.prototype.hasOwnProperty.call(overrideValues, 'prevAssignedOperator')
                     ? overrideValues.prevAssignedOperator
                     : mixer.assignedOperator
             }
@@ -341,19 +341,20 @@ function MixerDetailView({mixerId, onClose}) {
     useEffect(() => {
         async function fetchCommentsAndIssues() {
             if (!mixerId) return;
-            const { data: commentData } = await supabase
+            const {data: commentData} = await supabase
                 .from('mixers_comments')
                 .select('*')
                 .eq('mixer_id', mixerId)
-                .order('created_at', { ascending: false });
+                .order('created_at', {ascending: false});
             setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
-            const { data: issueData } = await supabase
+            const {data: issueData} = await supabase
                 .from('mixers_maintenance')
                 .select('*')
                 .eq('mixer_id', mixerId)
-                .order('created_at', { ascending: false });
+                .order('created_at', {ascending: false});
             setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
         }
+
         fetchCommentsAndIssues();
     }, [mixerId]);
 
@@ -377,17 +378,17 @@ Year: ${mixer.year || ''}
 
 Comments
 ${hasComments
-        ? comments.map(c =>
-            `- ${c.author || 'Unknown'}: ${c.comment || c.text} (${new Date(c.created_at || c.createdAt).toLocaleString()})`
-        ).join('\n')
-        : 'No comments.'}
+            ? comments.map(c =>
+                `- ${c.author || 'Unknown'}: ${c.comment || c.text} (${new Date(c.created_at || c.createdAt).toLocaleString()})`
+            ).join('\n')
+            : 'No comments.'}
 
 Issues (${openIssues.length})
 ${openIssues.length > 0
-        ? openIssues.map(i =>
-            `- ${i.issue || i.title || i.description || ''} (${new Date(i.time_created || i.created_at).toLocaleString()})`
-        ).join('\n')
-        : 'No open issues.'}
+            ? openIssues.map(i =>
+                `- ${i.issue || i.title || i.description || ''} (${new Date(i.time_created || i.created_at).toLocaleString()})`
+            ).join('\n')
+            : 'No open issues.'}
 `;
         const subject = encodeURIComponent(`Mixer Summary for Truck #${mixer.truckNumber || ''}`);
         const body = encodeURIComponent(summary);
@@ -397,15 +398,22 @@ ${openIssues.length > 0
     if (isLoading) {
         return (
             <div className="operator-detail-view">
-                <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                <div className="detail-header" style={{
+                    backgroundColor: 'var(--detail-header-bg)',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 8px'
+                }}>
                     <button className="back-button" onClick={onClose} style={{marginRight: '8px'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1 style={{color: 'var(--text-primary)', textAlign: 'center', flex: 1, margin: '0 auto'}}>Mixer Details</h1>
+                    <h1 style={{color: 'var(--text-primary)', textAlign: 'center', flex: 1, margin: '0 auto'}}>Mixer
+                        Details</h1>
                     <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <LoadingScreen message="Loading mixer details..." inline={true} />
+                    <LoadingScreen message="Loading mixer details..." inline={true}/>
                 </div>
             </div>
         );
@@ -414,7 +422,8 @@ ${openIssues.length > 0
     if (!mixer) {
         return (
             <div className="mixer-detail-view">
-                <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+                <div className="detail-header"
+                     style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
                     <button className="back-button" onClick={onClose}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
@@ -430,14 +439,17 @@ ${openIssues.length > 0
 
     return (
         <div className="mixer-detail-view">
-            {showComments && <MixerCommentModal mixerId={mixerId} mixerNumber={mixer?.truckNumber} onClose={() => setShowComments(false)} />}
-            {showIssues && <MixerIssueModal mixerId={mixerId} mixerNumber={mixer?.truckNumber} onClose={() => setShowIssues(false)} />}
+            {showComments && <MixerCommentModal mixerId={mixerId} mixerNumber={mixer?.truckNumber}
+                                                onClose={() => setShowComments(false)}/>}
+            {showIssues && <MixerIssueModal mixerId={mixerId} mixerNumber={mixer?.truckNumber}
+                                            onClose={() => setShowIssues(false)}/>}
             {isSaving && (
                 <div className="saving-overlay">
                     <div className="saving-indicator"></div>
                 </div>
             )}
-            <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+            <div className="detail-header"
+                 style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
                 <div className="header-left">
                     <button className="back-button" onClick={handleBackClick} aria-label="Back to mixers">
                         <i className="fas fa-arrow-left"></i>
@@ -477,9 +489,10 @@ ${openIssues.length > 0
                         {message}
                     </div>
                 )}
-                <div className="mixer-card-preview" style={{ position: 'relative', zIndex: 0 }}>
+                <div className="mixer-card-preview" style={{position: 'relative', zIndex: 0}}>
                     <div ref={mixerCardRef}>
-                        <MixerCard mixer={mixer} operatorName={getOperatorName(mixer.assignedOperator)} plantName={getPlantName(mixer.assignedPlant)} showOperatorWarning={false} />
+                        <MixerCard mixer={mixer} operatorName={getOperatorName(mixer.assignedOperator)}
+                                   plantName={getPlantName(mixer.assignedPlant)} showOperatorWarning={false}/>
                     </div>
                 </div>
                 <div className="detail-card">
@@ -508,27 +521,33 @@ ${openIssues.length > 0
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Created</span>
-                                    <span className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
+                                    <span
+                                        className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
                             <div className="verification-item">
-                                <div className="verification-icon" style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? '#10b981' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                <div className="verification-icon"
+                                     style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? '#10b981' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
-                                    <span className="verification-value" style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'inherit' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                    <span className="verification-value"
+                                          style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'inherit' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
                                         {mixer.updatedLast ? `${new Date(mixer.updatedLast).toLocaleString()}${!Mixer.ensureInstance(mixer).isVerified() ? (new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? ' (Changes have been made)' : ' (It is a new week)') : ''}` : 'Never verified'}
                                     </span>
                                 </div>
                             </div>
-                            <div className="verification-item" title={`Last Updated: ${new Date(mixer.updatedAt).toLocaleString()}`}>
-                                <div className="verification-icon" style={{color: mixer.updatedBy ? '#10b981' : '#ef4444'}}>
+                            <div className="verification-item"
+                                 title={`Last Updated: ${new Date(mixer.updatedAt).toLocaleString()}`}>
+                                <div className="verification-icon"
+                                     style={{color: mixer.updatedBy ? '#10b981' : '#ef4444'}}>
                                     <i className="fas fa-user-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Verified By</span>
-                                    <span className="verification-value" style={{color: mixer.updatedBy ? 'inherit' : '#ef4444'}}>{mixer.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
+                                    <span className="verification-value"
+                                          style={{color: mixer.updatedBy ? 'inherit' : '#ef4444'}}>{mixer.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
                                 </div>
                             </div>
                         </div>
@@ -537,7 +556,8 @@ ${openIssues.length > 0
                         </button>
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
-                            <p>Assets require verification after any changes are made and are reset weekly. <strong>Due: Every Friday at 10:00 AM.</strong> Resets on Mondays at 5pm.</p>
+                            <p>Assets require verification after any changes are made and are reset weekly. <strong>Due:
+                                Every Friday at 10:00 AM.</strong> Resets on Mondays at 5pm.</p>
                         </div>
                     </div>
                 </div>
@@ -551,7 +571,8 @@ ${openIssues.length > 0
                             <h3>Basic Information</h3>
                             <div className="form-group">
                                 <label>Truck Number</label>
-                                <input type="text" value={truckNumber} onChange={e => setTruckNumber(e.target.value)} className="form-control" readOnly={!canEditMixer} />
+                                <input type="text" value={truckNumber} onChange={e => setTruckNumber(e.target.value)}
+                                       className="form-control" readOnly={!canEditMixer}/>
                             </div>
                             <div className="form-group">
                                 <label>Status</label>
@@ -586,7 +607,8 @@ ${openIssues.length > 0
                             </div>
                             <div className="form-group">
                                 <label>Assigned Plant</label>
-                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)} disabled={!canEditMixer} className="form-control">
+                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
+                                        disabled={!canEditMixer} className="form-control">
                                     <option value="">Select Plant</option>
                                     {plants.map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
@@ -606,9 +628,13 @@ ${openIssues.length > 0
                                         }}
                                         type="button"
                                         disabled={!canEditMixer}
-                                        style={!canEditMixer ? { cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa' } : {}}
+                                        style={!canEditMixer ? {
+                                            cursor: 'not-allowed',
+                                            opacity: 0.8,
+                                            backgroundColor: '#f8f9fa'
+                                        } : {}}
                                     >
-                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>
                                             {assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}
                                         </span>
                                     </button>
@@ -653,7 +679,7 @@ ${openIssues.length > 0
                                         ) : (
                                             lastUnassignedOperatorId && (
                                                 <button
-                                                    className="undo-operator-button"
+                                                    className="undo-operator-button unassign-operator-button"
                                                     title="Undo Unassign"
                                                     onClick={async () => {
                                                         try {
@@ -690,7 +716,6 @@ ${openIssues.length > 0
                                                         cursor: 'pointer',
                                                         boxSizing: 'border-box'
                                                     }}
-                                                    className="unassign-operator-button"
                                                 >
                                                     Undo
                                                 </button>
@@ -743,27 +768,38 @@ ${openIssues.length > 0
                             <h3>Maintenance Information</h3>
                             <div className="form-group">
                                 <label>Last Service Date</label>
-                                <input type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''} onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)} className="form-control" readOnly={!canEditMixer} />
-                                {lastServiceDate && MixerUtility.isServiceOverdue(lastServiceDate) && <div className="warning-text">Service overdue</div>}
+                                <input type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''}
+                                       onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
+                                       className="form-control" readOnly={!canEditMixer}/>
+                                {lastServiceDate && MixerUtility.isServiceOverdue(lastServiceDate) &&
+                                    <div className="warning-text">Service overdue</div>}
                             </div>
                             <div className="form-group">
                                 <label>Last Chip Date</label>
-                                <input type="date" value={lastChipDate ? formatDate(lastChipDate) : ''} onChange={e => setLastChipDate(e.target.value ? new Date(e.target.value) : null)} className="form-control" readOnly={!canEditMixer} />
-                                {lastChipDate && MixerUtility.isChipOverdue(lastChipDate) && <div className="warning-text">Chip overdue</div>}
+                                <input type="date" value={lastChipDate ? formatDate(lastChipDate) : ''}
+                                       onChange={e => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}
+                                       className="form-control" readOnly={!canEditMixer}/>
+                                {lastChipDate && MixerUtility.isChipOverdue(lastChipDate) &&
+                                    <div className="warning-text">Chip overdue</div>}
                             </div>
                             <div className="form-group">
                                 <label>Cleanliness Rating</label>
                                 <div className="cleanliness-rating-editor">
                                     <div className="star-input">
                                         {[1, 2, 3, 4, 5].map(star => (
-                                            <button key={star} type="button" className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''}`} onClick={() => canEditMixer && setCleanlinessRating(star === cleanlinessRating ? 0 : star)} aria-label={`Rate ${star} of 5 stars`} disabled={!canEditMixer}>
-                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
+                                            <button key={star} type="button"
+                                                    className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''}`}
+                                                    onClick={() => canEditMixer && setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
+                                                    aria-label={`Rate ${star} of 5 stars`} disabled={!canEditMixer}>
+                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
+                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>
                                     {cleanlinessRating > 0 && (
                                         <div className="rating-value-display">
-                                            <span className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
+                                            <span
+                                                className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
                                         </div>
                                     )}
                                 </div>
@@ -775,19 +811,23 @@ ${openIssues.length > 0
                             <h3>Asset Details</h3>
                             <div className="form-group">
                                 <label>VIN</label>
-                                <input type="text" value={vin} onChange={e => setVin(e.target.value)} className="form-control" readOnly={!canEditMixer} />
+                                <input type="text" value={vin} onChange={e => setVin(e.target.value)}
+                                       className="form-control" readOnly={!canEditMixer}/>
                             </div>
                             <div className="form-group">
                                 <label>Make</label>
-                                <input type="text" value={make} onChange={e => setMake(e.target.value)} className="form-control" readOnly={!canEditMixer} />
+                                <input type="text" value={make} onChange={e => setMake(e.target.value)}
+                                       className="form-control" readOnly={!canEditMixer}/>
                             </div>
                             <div className="form-group">
                                 <label>Model</label>
-                                <input type="text" value={model} onChange={e => setModel(e.target.value)} className="form-control" readOnly={!canEditMixer} />
+                                <input type="text" value={model} onChange={e => setModel(e.target.value)}
+                                       className="form-control" readOnly={!canEditMixer}/>
                             </div>
                             <div className="form-group">
                                 <label>Year</label>
-                                <input type="text" value={year} onChange={e => setYear(e.target.value)} className="form-control" readOnly={!canEditMixer} />
+                                <input type="text" value={year} onChange={e => setYear(e.target.value)}
+                                       className="form-control" readOnly={!canEditMixer}/>
                             </div>
                         </div>
                     </div>
@@ -795,20 +835,35 @@ ${openIssues.length > 0
                 <div className="form-actions">
                     {canEditMixer && (
                         <>
-                            <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
-                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)} disabled={isSaving}>Delete Mixer</button>
+                            <button className="primary-button save-button" onClick={handleSave}
+                                    disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
+                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)}
+                                    disabled={isSaving}>Delete Mixer
+                            </button>
                         </>
                     )}
                 </div>
             </div>
-            {showHistory && <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)} />}
+            {showHistory && <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)}/>}
             {showDeleteConfirmation && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
+                <div className="confirmation-modal" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999
+                }}>
                     <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
                         <p>Are you sure you want to delete Truck #{mixer.truckNumber}? This action cannot be undone.</p>
-                        <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                        <div className="confirmation-actions"
+                             style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel
+                            </button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>
@@ -817,4 +872,5 @@ ${openIssues.length > 0
         </div>
     );
 }
+
 export default MixerDetailView

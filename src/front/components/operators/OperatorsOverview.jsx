@@ -2,13 +2,13 @@ import React, {useEffect, useState} from 'react';
 import {supabase} from '../../../services/DatabaseService';
 import './styles/OperatorsOverview.css';
 
-const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '', onStatusClick }) => {
-    const [operators, setOperators] = useState([]);
+const OperatorsOverview = ({filteredOperators = null, selectedPlant = '', onStatusClick}) => {
+    const [, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [statusCounts, setStatusCounts] = useState({});
     const [positionCounts, setPositionCounts] = useState({});
     const [plantDistributionByStatus, setPlantDistributionByStatus] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
+    const [, setIsLoading] = useState(false);
 
     useEffect(() => {
         fetchPlants();
@@ -114,7 +114,8 @@ const OperatorsOverview = ({ filteredOperators = null, selectedPlant = '', onSta
             {filteredOperators && (
                 <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
-                        Showing statistics for {filteredOperators.length} operator{filteredOperators.length !== 1 ? 's' : ''}
+                        Showing statistics
+                        for {filteredOperators.length} operator{filteredOperators.length !== 1 ? 's' : ''}
                     </div>
                 </div>
             )}

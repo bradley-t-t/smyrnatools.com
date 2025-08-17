@@ -1,10 +1,9 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {TractorService} from '../../../services/TractorService';
 import {PlantService} from '../../../services/PlantService';
 import {OperatorService} from '../../../services/OperatorService';
 import {UserService} from '../../../services/UserService';
 import {supabase} from '../../../services/DatabaseService';
-import {AuthUtility} from '../../../utils/AuthUtility';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import TractorHistoryView from './TractorHistoryView';
 import TractorCommentModal from './TractorCommentModal';
@@ -13,7 +12,6 @@ import TractorCard from './TractorCard';
 import './styles/TractorDetailView.css';
 import {TractorUtility} from "../../../utils/TractorUtility";
 import {Tractor} from "../../../config/models/tractors/Tractor";
-import ThemeUtility from "../../../utils/ThemeUtility";
 import LoadingScreen from "../common/LoadingScreen";
 import OperatorSelectModal from "../mixers/OperatorSelectModal";
 
@@ -29,12 +27,10 @@ function TractorDetailView({tractorId, onClose}) {
     const [showComments, setShowComments] = useState(false);
     const [showIssues, setShowIssues] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [updatedByEmail, setUpdatedByEmail] = useState(null);
     const [message, setMessage] = useState('');
     const [showOperatorModal, setShowOperatorModal] = useState(false);
-    const [userProfile, setUserProfile] = useState(null);
     const [canEditTractor, setCanEditTractor] = useState(true);
     const [plantRestrictionReason, setPlantRestrictionReason] = useState('');
     const [originalValues, setOriginalValues] = useState({});
@@ -114,6 +110,7 @@ function TractorDetailView({tractorId, onClose}) {
                 setHasUnsavedChanges(false);
             }
         }
+
         fetchData();
     }, [tractorId]);
 
@@ -129,7 +126,6 @@ function TractorDetailView({tractorId, onClose}) {
                 if (hasPermission) return setCanEditTractor(true);
 
                 const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
-                setUserProfile(profileData);
 
                 if (profileData && tractor) {
                     const isSamePlant = profileData.plant_code === tractor.assignedPlant;
@@ -144,6 +140,7 @@ function TractorDetailView({tractorId, onClose}) {
                 console.error('Error checking plant restriction:', error);
             }
         }
+
         checkPlantRestriction();
     }, [tractor, isLoading]);
 
@@ -195,11 +192,11 @@ function TractorDetailView({tractorId, onClose}) {
                 return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`;
             };
 
-            let assignedOperatorValue = overrideValues.hasOwnProperty('assignedOperator')
+            let assignedOperatorValue = Object.prototype.hasOwnProperty.call(overrideValues, 'assignedOperator')
                 ? overrideValues.assignedOperator
                 : assignedOperator;
 
-            let statusValue = overrideValues.hasOwnProperty('status')
+            let statusValue = Object.prototype.hasOwnProperty.call(overrideValues, 'status')
                 ? overrideValues.status
                 : status;
 
@@ -215,7 +212,7 @@ function TractorDetailView({tractorId, onClose}) {
 
             let tractorForHistory = {
                 ...tractor,
-                assignedOperator: overrideValues.hasOwnProperty('prevAssignedOperator')
+                assignedOperator: Object.prototype.hasOwnProperty.call(overrideValues, 'prevAssignedOperator')
                     ? overrideValues.prevAssignedOperator
                     : tractor.assignedOperator
             };
@@ -332,7 +329,12 @@ function TractorDetailView({tractorId, onClose}) {
                 .eq('id', tractor.id)
                 .select()
 
-            if (error) throw new Error(`Failed to verify tractor: ${error.message}`)
+            if (error) {
+                console.error('Failed to verify tractor:', error)
+                alert(`Error verifying tractor: ${error.message}`)
+                setIsSaving(false)
+                return
+            }
             if (data?.length) {
                 setTractor(Tractor.fromApiFormat(data[0]))
                 setMessage('Tractor verified successfully!')
@@ -391,19 +393,20 @@ function TractorDetailView({tractorId, onClose}) {
     useEffect(() => {
         async function fetchCommentsAndIssues() {
             if (!tractorId) return;
-            const { data: commentData } = await supabase
+            const {data: commentData} = await supabase
                 .from('tractors_comments')
                 .select('*')
                 .eq('tractor_id', tractorId)
-                .order('created_at', { ascending: false });
+                .order('created_at', {ascending: false});
             setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
-            const { data: issueData } = await supabase
+            const {data: issueData} = await supabase
                 .from('tractors_maintenance')
                 .select('*')
                 .eq('tractor_id', tractorId)
-                .order('time_created', { ascending: false });
+                .order('time_created', {ascending: false});
             setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
         }
+
         fetchCommentsAndIssues();
     }, [tractorId]);
 
@@ -447,15 +450,22 @@ ${openIssues.length > 0
     if (isLoading) {
         return (
             <div className="operator-detail-view">
-                <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', padding: '0 8px'}}>
+                <div className="detail-header" style={{
+                    backgroundColor: 'var(--detail-header-bg)',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 8px'
+                }}>
                     <button className="back-button" onClick={onClose} style={{marginRight: '8px'}}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
-                    <h1 style={{color: 'var(--text-primary)', textAlign: 'center', flex: 1, margin: '0 auto'}}>Tractor Details</h1>
+                    <h1 style={{color: 'var(--text-primary)', textAlign: 'center', flex: 1, margin: '0 auto'}}>Tractor
+                        Details</h1>
                     <div style={{width: '36px'}}></div>
                 </div>
                 <div className="detail-content">
-                    <LoadingScreen message="Loading tractor details..." inline={true} />
+                    <LoadingScreen message="Loading tractor details..." inline={true}/>
                 </div>
             </div>
         );
@@ -464,7 +474,8 @@ ${openIssues.length > 0
     if (!tractor) {
         return (
             <div className="tractor-detail-view">
-                <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+                <div className="detail-header"
+                     style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
                     <button className="back-button" onClick={onClose}>
                         <i className="fas fa-arrow-left"></i>
                     </button>
@@ -480,14 +491,17 @@ ${openIssues.length > 0
 
     return (
         <div className="tractor-detail-view">
-            {showComments && <TractorCommentModal tractorId={tractorId} tractorNumber={tractor?.truckNumber} onClose={() => setShowComments(false)} />}
-            {showIssues && <TractorIssueModal tractorId={tractorId} tractorNumber={tractor?.truckNumber} onClose={() => setShowIssues(false)} />}
+            {showComments && <TractorCommentModal tractorId={tractorId} tractorNumber={tractor?.truckNumber}
+                                                  onClose={() => setShowComments(false)}/>}
+            {showIssues && <TractorIssueModal tractorId={tractorId} tractorNumber={tractor?.truckNumber}
+                                              onClose={() => setShowIssues(false)}/>}
             {isSaving && (
                 <div className="saving-overlay">
                     <div className="saving-indicator"></div>
                 </div>
             )}
-            <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+            <div className="detail-header"
+                 style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
                 <div className="header-left">
                     <button className="back-button" onClick={handleBackClick} aria-label="Back to tractors">
                         <i className="fas fa-arrow-left"></i>
@@ -527,9 +541,10 @@ ${openIssues.length > 0
                         {message}
                     </div>
                 )}
-                <div className="tractor-card-preview" style={{ position: 'relative', zIndex: 0 }}>
+                <div className="tractor-card-preview" style={{position: 'relative', zIndex: 0}}>
                     <div ref={tractorCardRef}>
-                        <TractorCard tractor={tractor} operatorName={getOperatorName(tractor.assignedOperator)} plantName={getPlantName(tractor.assignedPlant)} showOperatorWarning={false} />
+                        <TractorCard tractor={tractor} operatorName={getOperatorName(tractor.assignedOperator)}
+                                     plantName={getPlantName(tractor.assignedPlant)} showOperatorWarning={false}/>
                     </div>
                 </div>
                 <div className="detail-card">
@@ -558,27 +573,33 @@ ${openIssues.length > 0
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Created</span>
-                                    <span className="verification-value">{tractor.createdAt ? new Date(tractor.createdAt).toLocaleString() : 'Not Assigned'}</span>
+                                    <span
+                                        className="verification-value">{tractor.createdAt ? new Date(tractor.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
                             <div className="verification-item">
-                                <div className="verification-icon" style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? '#10b981' : new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                <div className="verification-icon"
+                                     style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? '#10b981' : new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
-                                    <span className="verification-value" style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? 'inherit' : new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                    <span className="verification-value"
+                                          style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? 'inherit' : new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
                                         {tractor.updatedLast ? `${new Date(tractor.updatedLast).toLocaleString()}${!Tractor.ensureInstance(tractor).isVerified() ? (new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? ' (Changes have been made)' : ' (It is a new week)') : ''}` : 'Never verified'}
                                     </span>
                                 </div>
                             </div>
-                            <div className="verification-item" title={`Last Updated: ${new Date(tractor.updatedAt).toLocaleString()}`}>
-                                <div className="verification-icon" style={{color: tractor.updatedBy ? '#10b981' : '#ef4444'}}>
+                            <div className="verification-item"
+                                 title={`Last Updated: ${new Date(tractor.updatedAt).toLocaleString()}`}>
+                                <div className="verification-icon"
+                                     style={{color: tractor.updatedBy ? '#10b981' : '#ef4444'}}>
                                     <i className="fas fa-user-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Verified By</span>
-                                    <span className="verification-value" style={{color: tractor.updatedBy ? 'inherit' : '#ef4444'}}>{tractor.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
+                                    <span className="verification-value"
+                                          style={{color: tractor.updatedBy ? 'inherit' : '#ef4444'}}>{tractor.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
                                 </div>
                             </div>
                         </div>
@@ -587,7 +608,8 @@ ${openIssues.length > 0
                         </button>
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
-                            <p>Assets require verification after any changes are made and are reset weekly. <strong>Due: Every Friday at 10:00 AM.</strong> Resets on Mondays at 5pm.</p>
+                            <p>Assets require verification after any changes are made and are reset weekly. <strong>Due:
+                                Every Friday at 10:00 AM.</strong> Resets on Mondays at 5pm.</p>
                         </div>
                     </div>
                 </div>
@@ -601,7 +623,8 @@ ${openIssues.length > 0
                             <h3>Basic Information</h3>
                             <div className="form-group">
                                 <label>Truck Number</label>
-                                <input type="text" value={truckNumber} onChange={e => setTruckNumber(e.target.value)} className="form-control" readOnly={!canEditTractor} />
+                                <input type="text" value={truckNumber} onChange={e => setTruckNumber(e.target.value)}
+                                       className="form-control" readOnly={!canEditTractor}/>
                             </div>
                             <div className="form-group">
                                 <label>Status</label>
@@ -635,7 +658,10 @@ ${openIssues.length > 0
                                     <option
                                         value="Active"
                                         disabled={!assignedOperator}
-                                        style={!assignedOperator ? {color: 'var(--text-disabled)', backgroundColor: 'var(--background-disabled)'} : {}}
+                                        style={!assignedOperator ? {
+                                            color: 'var(--text-disabled)',
+                                            backgroundColor: 'var(--background-disabled)'
+                                        } : {}}
                                     >
                                         Active{!assignedOperator ? ' (Cannot set without an operator assigned)' : ''}
                                     </option>
@@ -646,7 +672,8 @@ ${openIssues.length > 0
                             </div>
                             <div className="form-group">
                                 <label>Assigned Plant</label>
-                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)} disabled={!canEditTractor} className="form-control">
+                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
+                                        disabled={!canEditTractor} className="form-control">
                                     <option value="">Select Plant</option>
                                     {plants.map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
@@ -666,9 +693,13 @@ ${openIssues.length > 0
                                         }}
                                         type="button"
                                         disabled={!canEditTractor}
-                                        style={!canEditTractor ? { cursor: 'not-allowed', opacity: 0.8, backgroundColor: '#f8f9fa' } : {}}
+                                        style={!canEditTractor ? {
+                                            cursor: 'not-allowed',
+                                            opacity: 0.8,
+                                            backgroundColor: '#f8f9fa'
+                                        } : {}}
                                     >
-                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>
                                             {assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}
                                         </span>
                                     </button>
@@ -713,7 +744,7 @@ ${openIssues.length > 0
                                         ) : (
                                             lastUnassignedOperatorId && (
                                                 <button
-                                                    className="undo-operator-button"
+                                                    className="undo-operator-button unassign-operator-button"
                                                     title="Undo Unassign"
                                                     onClick={async () => {
                                                         try {
@@ -750,7 +781,6 @@ ${openIssues.length > 0
                                                         cursor: 'pointer',
                                                         boxSizing: 'border-box'
                                                     }}
-                                                    className="unassign-operator-button"
                                                 >
                                                     Undo
                                                 </button>
@@ -803,12 +833,17 @@ ${openIssues.length > 0
                             <h3>Maintenance Information</h3>
                             <div className="form-group">
                                 <label>Last Service Date</label>
-                                <input type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''} onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)} className="form-control" readOnly={!canEditTractor} />
-                                {lastServiceDate && TractorUtility.isServiceOverdue(lastServiceDate) && <div className="warning-text">Service overdue</div>}
+                                <input type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''}
+                                       onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}
+                                       className="form-control" readOnly={!canEditTractor}/>
+                                {lastServiceDate && TractorUtility.isServiceOverdue(lastServiceDate) &&
+                                    <div className="warning-text">Service overdue</div>}
                             </div>
                             <div className="form-group">
                                 <label>Has Blower</label>
-                                <select value={hasBlower ? 'Yes' : 'No'} onChange={e => setHasBlower(e.target.value === 'Yes')} disabled={!canEditTractor} className="form-control">
+                                <select value={hasBlower ? 'Yes' : 'No'}
+                                        onChange={e => setHasBlower(e.target.value === 'Yes')}
+                                        disabled={!canEditTractor} className="form-control">
                                     <option value="No">No</option>
                                     <option value="Yes">Yes</option>
                                 </select>
@@ -818,14 +853,19 @@ ${openIssues.length > 0
                                 <div className="cleanliness-rating-editor">
                                     <div className="star-input">
                                         {[1, 2, 3, 4, 5].map(star => (
-                                            <button key={star} type="button" className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditTractor ? 'disabled' : ''}`} onClick={() => canEditTractor && setCleanlinessRating(star === cleanlinessRating ? 0 : star)} aria-label={`Rate ${star} of 5 stars`} disabled={!canEditTractor}>
-                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
+                                            <button key={star} type="button"
+                                                    className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditTractor ? 'disabled' : ''}`}
+                                                    onClick={() => canEditTractor && setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
+                                                    aria-label={`Rate ${star} of 5 stars`} disabled={!canEditTractor}>
+                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
+                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>
                                     {cleanlinessRating > 0 && (
                                         <div className="rating-value-display">
-                                            <span className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
+                                            <span
+                                                className="rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
                                         </div>
                                     )}
                                 </div>
@@ -837,19 +877,23 @@ ${openIssues.length > 0
                             <h3>Asset Details</h3>
                             <div className="form-group">
                                 <label>VIN</label>
-                                <input type="text" value={vin} onChange={e => setVin(e.target.value)} className="form-control" readOnly={!canEditTractor} />
+                                <input type="text" value={vin} onChange={e => setVin(e.target.value)}
+                                       className="form-control" readOnly={!canEditTractor}/>
                             </div>
                             <div className="form-group">
                                 <label>Make</label>
-                                <input type="text" value={make} onChange={e => setMake(e.target.value)} className="form-control" readOnly={!canEditTractor} />
+                                <input type="text" value={make} onChange={e => setMake(e.target.value)}
+                                       className="form-control" readOnly={!canEditTractor}/>
                             </div>
                             <div className="form-group">
                                 <label>Model</label>
-                                <input type="text" value={model} onChange={e => setModel(e.target.value)} className="form-control" readOnly={!canEditTractor} />
+                                <input type="text" value={model} onChange={e => setModel(e.target.value)}
+                                       className="form-control" readOnly={!canEditTractor}/>
                             </div>
                             <div className="form-group">
                                 <label>Year</label>
-                                <input type="text" value={year} onChange={e => setYear(e.target.value)} className="form-control" readOnly={!canEditTractor} />
+                                <input type="text" value={year} onChange={e => setYear(e.target.value)}
+                                       className="form-control" readOnly={!canEditTractor}/>
                             </div>
                         </div>
                     </div>
@@ -857,20 +901,36 @@ ${openIssues.length > 0
                 <div className="form-actions">
                     {canEditTractor && (
                         <>
-                            <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
-                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)} disabled={isSaving}>Delete Tractor</button>
+                            <button className="primary-button save-button" onClick={handleSave}
+                                    disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
+                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)}
+                                    disabled={isSaving}>Delete Tractor
+                            </button>
                         </>
                     )}
                 </div>
             </div>
-            {showHistory && <TractorHistoryView tractor={tractor} onClose={() => setShowHistory(false)} />}
+            {showHistory && <TractorHistoryView tractor={tractor} onClose={() => setShowHistory(false)}/>}
             {showDeleteConfirmation && (
-                <div className="confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
+                <div className="confirmation-modal" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999
+                }}>
                     <div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
-                        <p>Are you sure you want to delete Truck #{tractor.truckNumber}? This action cannot be undone.</p>
-                        <div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                        <p>Are you sure you want to delete Truck #{tractor.truckNumber}? This action cannot be
+                            undone.</p>
+                        <div className="confirmation-actions"
+                             style={{display: 'flex', justifyContent: 'center', gap: '12px'}}>
+                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel
+                            </button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>
@@ -879,4 +939,5 @@ ${openIssues.length > 0
         </div>
     );
 }
+
 export default TractorDetailView;

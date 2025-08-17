@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { RegionService } from '../../../services/RegionService';
+import React, {useState} from 'react';
+import {RegionService} from '../../../services/RegionService';
 import './styles/RegionsAddView.css';
 
-function RegionsAddView({ onClose, onRegionAdded }) {
+function RegionsAddView({onClose, onRegionAdded}) {
     const [regionCode, setRegionCode] = useState('');
     const [regionName, setRegionName] = useState('');
     const [isSaving, setIsSaving] = useState(false);

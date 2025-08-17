@@ -47,4 +47,4 @@ const NetworkUtility = {
 }
 
 export default NetworkUtility
-export { NetworkUtility }
+export {NetworkUtility}

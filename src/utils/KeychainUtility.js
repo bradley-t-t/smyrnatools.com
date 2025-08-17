@@ -30,9 +30,10 @@ const KeychainUtility = {
     clearCredentials() {
         try {
             localStorage.removeItem(STORAGE_KEY)
-        } catch (error) {}
+        } catch (error) {
+        }
     }
 }
 
 export default KeychainUtility
-export { KeychainUtility }
+export {KeychainUtility}

@@ -1,437 +1,437 @@
 .manager-detail-view {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-secondary);
-  overflow-y: auto;
-  color: var(--text-primary);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-secondary);
+    overflow-y: auto;
+    color: var(--text-primary);
 }
 
 .detail-header {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-light);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: var(--shadow-sm);
-  justify-content: space-between;
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: var(--shadow-sm);
+    justify-content: space-between;
 }
 
 .header-left {
-  display: flex;
-  align-items: center;
-  min-width: 140px;
-  justify-content: flex-start;
-  flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 140px;
+    justify-content: flex-start;
+    flex: 1;
 }
 
 .back-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  margin-right: 16px;
-  border-radius: 6px;
-  background-color: var(--accent);
-  color: var(--text-light);
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    margin-right: 16px;
+    border-radius: 6px;
+    background-color: var(--accent);
+    color: var(--text-light);
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .back-button:hover {
-  background-color: var(--accent-dark);
-  transform: translateX(-2px);
+    background-color: var(--accent-dark);
+    transform: translateX(-2px);
 }
 
 .back-button i {
-  font-size: 16px;
+    font-size: 16px;
 }
 
 .header-center {
-  flex: 2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .header-center h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  text-align: center;
-  color: var(--text-primary);
-  width: 100%;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-primary);
+    width: 100%;
 }
 
 .header-right {
-  min-width: 140px;
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
+    min-width: 140px;
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .detail-content {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  max-width: 1000px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .manager-card-preview {
-  max-width: 100%;
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-light);
+    max-width: 100%;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .manager-card-preview .manager-card {
-  cursor: default;
+    cursor: default;
 }
 
 .manager-card-preview .manager-card:hover {
-  transform: none;
-  box-shadow: var(--shadow-sm);
+    transform: none;
+    box-shadow: var(--shadow-sm);
 }
 
 .detail-card {
-  background-color: var(--bg-primary);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  padding: 24px;
-  border: 1px solid var(--border-light);
-  color: var(--text-primary);
-  width: 100%;
-  box-sizing: border-box;
-  overflow: visible;
+    background-color: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    padding: 24px;
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
 }
 
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
 }
 
 .detail-card h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .form-group {
-  margin-bottom: 16px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
 }
 
 .form-control {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--border-light);
-  background-color: var(--bg-secondary);
-  font-size: 15px;
-  color: var(--text-primary);
-  box-sizing: border-box;
-  transition: all 0.2s;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+    background-color: var(--bg-secondary);
+    font-size: 15px;
+    color: var(--text-primary);
+    box-sizing: border-box;
+    transition: all 0.2s;
 }
 
 .form-control:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-light);
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .form-control[readonly] {
-  background-color: var(--bg-tertiary);
-  cursor: not-allowed;
+    background-color: var(--bg-tertiary);
+    cursor: not-allowed;
 }
 
 .password-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .text-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--accent);
-  text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--accent);
+    text-decoration: underline;
 }
 
 .text-button.small {
-  font-size: 12px;
+    font-size: 12px;
 }
 
 .password-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .form-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
-  gap: 16px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+    gap: 16px;
 }
 
 .primary-button, .save-button {
-  background-color: var(--accent);
-  color: var(--text-light);
-  border: none;
-  border-radius: 6px;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 120px;
-  text-align: center;
+    background-color: var(--accent);
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 120px;
+    text-align: center;
 }
 
 .primary-button:hover, .save-button:hover {
-  background-color: var(--accent-dark);
+    background-color: var(--accent-dark);
 }
 
 .danger-button {
-  background-color: var(--danger-bg);
-  color: var(--danger);
-  border: none;
-  border-radius: 6px;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 120px;
-  text-align: center;
+    background-color: var(--danger-bg);
+    color: var(--danger);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 120px;
+    text-align: center;
 }
 
 .danger-button:hover {
-  background-color: var(--danger-bg-hover);
+    background-color: var(--danger-bg-hover);
 }
 
 .cancel-button {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: none;
-  border-radius: 6px;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 120px;
-  text-align: center;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 120px;
+    text-align: center;
 }
 
 .cancel-button:hover {
-  background-color: var(--bg-hover);
+    background-color: var(--bg-hover);
 }
 
 .confirmation-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  max-width: none;
-  min-width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    max-width: none;
+    min-width: 100%;
 }
 
 .confirmation-content {
-  background-color: var(--bg-primary);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
-  padding: 24px;
-  width: 90%;
-  max-width: 500px;
-  color: var(--text-primary);
-  text-align: center;
-  margin: 0 auto;
-  position: relative;
-  box-sizing: border-box;
-  z-index: 1001;
+    background-color: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0 auto;
+    position: relative;
+    box-sizing: border-box;
+    z-index: 1001;
 }
 
 .confirmation-content h2 {
-  margin-top: 0;
-  color: var(--text-primary);
+    margin-top: 0;
+    color: var(--text-primary);
 }
 
 .confirmation-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
-  flex-wrap: wrap;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
 }
 
 .metadata-info {
-  background-color: var(--bg-tertiary);
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
+    background-color: var(--bg-tertiary);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
 }
 
 .metadata-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
 }
 
 .metadata-label {
-  color: var(--text-secondary);
-  font-weight: 500;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .metadata-value {
-  color: var(--text-primary);
-  font-weight: 400;
+    color: var(--text-primary);
+    font-weight: 400;
 }
 
 .edit-instructions {
-  color: var(--text-secondary);
-  font-size: 14px;
-  margin-bottom: 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 16px;
 }
 
 .saving-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
 }
 
 .saving-indicator {
-  width: 50px;
-  height: 50px;
-  border: 5px solid var(--bg-secondary);
-  border-radius: 50%;
-  border-top-color: var(--accent);
-  animation: spin 1s linear infinite;
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--bg-secondary);
+    border-radius: 50%;
+    border-top-color: var(--accent);
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .content-loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  color: var(--text-secondary);
-  text-align: center;
-  font-size: 16px;
-  gap: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: var(--text-secondary);
+    text-align: center;
+    font-size: 16px;
+    gap: 16px;
 }
 
 .ios-spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid var(--divider);
-  border-radius: 50%;
-  border-top-color: var(--accent);
-  animation: spin 1s linear infinite;
-  margin: 0 auto 15px auto;
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--divider);
+    border-radius: 50%;
+    border-top-color: var(--accent);
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px auto;
 }
 
 .error-message {
-  text-align: center;
-  padding: 32px;
-  color: var(--danger);
+    text-align: center;
+    padding: 32px;
+    color: var(--danger);
 }
 
 body.in-detail-view .managers-list-container {
-  display: none ;
+    display: none;
 }
 
 .message {
-  padding: 12px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 16px;
 }
 
 .message.success {
-  background-color: rgba(56, 161, 105, 0.2);
-  color: var(--success);
+    background-color: rgba(56, 161, 105, 0.2);
+    color: var(--success);
 }
 
 .message.error {
-  background-color: rgba(229, 62, 62, 0.2);
-  color: var(--danger);
+    background-color: rgba(229, 62, 62, 0.2);
+    color: var(--danger);
 }
 
 .message.warning {
-  background-color: rgba(236, 201, 75, 0.2);
-  color: var(--warning);
-  display: flex;
-  align-items: center;
+    background-color: rgba(236, 201, 75, 0.2);
+    color: var(--warning);
+    display: flex;
+    align-items: center;
 }
 
 .disabled-field {
-  background-color: var(--bg-tertiary) ;
-  cursor: not-allowed ;
-  opacity: 0.75;
+    background-color: var(--bg-tertiary);
+    cursor: not-allowed;
+    opacity: 0.75;
 }

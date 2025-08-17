@@ -195,6 +195,7 @@
     .add-operator-header {
         padding-top: 20px;
     }
+
     .form-row-horizontal {
         flex-direction: column;
         gap: 0;

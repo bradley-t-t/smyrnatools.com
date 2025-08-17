@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import React, {useEffect, useState} from 'react'
 import './styles/ReportsSubmitView.css'
 import './styles/ReportsReviewView.css'
-import { supabase } from '../../../services/DatabaseService'
-import { UserService } from '../../../services/UserService'
-import { ReportService } from '../../../services/ReportService'
-import { PlantManagerReviewPlugin } from './plugins/WeeklyPlantManagerReportPlugin'
-import { DistrictManagerReviewPlugin } from './plugins/WeeklyDistrictManagerReportPlugin'
-import { PlantProductionReviewPlugin } from './plugins/WeeklyPlantProductionReportPlugin'
+import {supabase} from '../../../services/DatabaseService'
+import {UserService} from '../../../services/UserService'
+import {ReportService} from '../../../services/ReportService'
+import {PlantManagerReviewPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
+import {DistrictManagerReviewPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
+import {PlantProductionReviewPlugin} from './plugins/WeeklyPlantProductionReportPlugin'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,
@@ -19,13 +19,7 @@ function formatDateTime(dt) {
     const date = new Date(dt)
     return date.toLocaleString()
 }
-
-function truncateText(text, maxLength) {
-    if (!text) return ''
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
-}
-
-function ReportsReviewView({ report, initialData, onBack, user, completedByUser, allReports, onManagerEdit }) {
+function ReportsReviewView({report, initialData, onBack, user, completedByUser, onManagerEdit}) {
     const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
     const [ownerName, setOwnerName] = useState('')
@@ -36,7 +30,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     const [assignedPlant, setAssignedPlant] = useState('')
     const [hasManagerEditPermission, setHasManagerEditPermission] = useState(false)
     const [showManagerEditButton, setShowManagerEditButton] = useState(false)
-    const [plants, setPlants] = useState([])
+    const [, setPlants] = useState([])
 
     useEffect(() => {
         async function fetchOwnerName() {
@@ -50,6 +44,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 : await UserService.getUserDisplayName(ownerId) || ownerId.slice(0, 8)
             setOwnerName(name)
         }
+
         fetchOwnerName()
     }, [report, user, initialData, completedByUser])
 
@@ -71,7 +66,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
             monday.setHours(0, 0, 0, 0)
             const saturday = new Date(monday)
             saturday.setDate(monday.getDate() + 5)
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('list_items')
                 .select('*')
                 .eq('completed', true)
@@ -79,6 +74,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 .lte('completed_at', saturday.toISOString())
             setMaintenanceItems(!error && Array.isArray(data) ? data : [])
         }
+
         fetchMaintenanceItems()
     }, [report.weekIso, initialData?.week])
 
@@ -108,7 +104,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 setOperatorOptions([])
                 return
             }
-            const { data: operatorsData, error: opError } = await supabase
+            const {data: operatorsData, error: opError} = await supabase
                 .from('operators')
                 .select('employee_id, name')
                 .eq('plant_code', plantCode)
@@ -120,6 +116,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 : []
             )
         }
+
         fetchOperatorOptions()
     }, [report.name, form.plant, form.rows])
 
@@ -130,6 +127,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 setAssignedPlant(plant || '')
             }
         }
+
         fetchAssignedPlant()
     }, [report.name, completedByUser])
 
@@ -155,15 +153,16 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 setShowManagerEditButton(false)
             }
         }
+
         checkPermissionAndRoleWeight()
     }, [user, completedByUser, initialData, report])
 
     useEffect(() => {
         async function fetchPlants() {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('plants')
                 .select('plant_code,plant_name')
-                .order('plant_code', { ascending: true })
+                .order('plant_code', {ascending: true})
             setPlants(!error && Array.isArray(data)
                 ? data.filter(p => p.plant_code && p.plant_name)
                     .sort((a, b) => {
@@ -175,16 +174,16 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 : []
             )
         }
+
         fetchPlants()
     }, [])
 
     let weekRangeHeader = weekRange
     let reportTitle = report.title || 'Report Review'
 
-    let { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel } = ReportService.getYardageMetrics(form)
-    let yphColor = ReportService.getYphColor(yphGrade)
-    let lostColor = ReportService.getYphColor(lostGrade)
-
+    let {yph, yphGrade, yphLabel, lost, lostGrade, lostLabel} = ReportService.getYardageMetrics(form)
+    ReportService.getYphColor(yphGrade);
+    ReportService.getYphColor(lostGrade);
     const PluginComponent = plugins[report.name]
     const isSubmitted = !!initialData?.completed
 
@@ -192,23 +191,23 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     let statusColor = isSubmitted ? 'var(--success)' : 'var(--warning)'
 
     const tabOptions = [
-        { key: 'review', label: 'Review' },
-        { key: 'overview', label: 'Overview' }
+        {key: 'review', label: 'Review'},
+        {key: 'overview', label: 'Overview'}
     ]
-    const [activeTab, setActiveTab] = useState(tabOptions[0].key)
+    const [, setActiveTab] = useState(tabOptions[0].key)
 
     useEffect(() => {
         setActiveTab(tabOptions[0].key)
     }, [report.name])
 
     return (
-        <div style={{ width: '100%', minHeight: '100vh', background: 'var(--background)' }}>
-            <div style={{ maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{width: '100%', minHeight: '100vh', background: 'var(--background)'}}>
+            <div style={{maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
                     <button className="report-form-back" onClick={onBack} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                         {hasManagerEditPermission && showManagerEditButton && (
                             <button
                                 type="button"
@@ -224,7 +223,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 }}
                                 onClick={() => {
                                     if (onManagerEdit) onManagerEdit(report, initialData)
-                            }}
+                                }}
                             >
                                 Manager Edit
                             </button>
@@ -242,14 +241,14 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                     fontSize: 15,
                                     cursor: isSubmitted ? 'pointer' : 'not-allowed',
                                     opacity: isSubmitted ? 1 : 0.6
-                            }}
-                            onClick={() => {
-                                if (isSubmitted) ReportService.exportRowsToCSV(form.rows, operatorOptions, form.report_date)
-                            }}
-                            disabled={!isSubmitted}
-                        >
-                            Export to Spreadsheet
-                        </button>
+                                }}
+                                onClick={() => {
+                                    if (isSubmitted) ReportService.exportRowsToCSV(form.rows, operatorOptions, form.report_date)
+                                }}
+                                disabled={!isSubmitted}
+                            >
+                                Export to Spreadsheet
+                            </button>
                         )}
                         {report.name !== 'plant_production' && (
                             <button
@@ -264,18 +263,18 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                     fontSize: 15,
                                     cursor: isSubmitted ? 'pointer' : 'not-allowed',
                                     opacity: isSubmitted ? 1 : 0.6
-                            }}
-                            onClick={() => {
-                                if (isSubmitted) ReportService.exportReportFieldsToCSV(report, form)
-                            }}
-                            disabled={!isSubmitted}
-                        >
-                            Export to Spreadsheet
-                        </button>
+                                }}
+                                onClick={() => {
+                                    if (isSubmitted) ReportService.exportReportFieldsToCSV(report, form)
+                                }}
+                                disabled={!isSubmitted}
+                            >
+                                Export to Spreadsheet
+                            </button>
                         )}
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{display: 'flex', alignItems: 'center', marginBottom: 12}}>
                     <div style={{
                         fontWeight: 700,
                         fontSize: 17,
@@ -285,27 +284,27 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                         {statusText}
                     </div>
                     {(report.name === 'plant_manager' || report.name === 'district_manager' || report.name === 'plant_production') && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--accent)' }}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: 18}}>
+                            <div style={{fontWeight: 700, fontSize: 18, color: 'var(--accent)'}}>
                                 {ownerName}
                             </div>
-                            <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-secondary)' }}>
+                            <div style={{fontWeight: 600, fontSize: 16, color: 'var(--text-secondary)'}}>
                                 Assigned Plant: {assignedPlant}
                             </div>
                         </div>
                     )}
                     {submittedAt && (
-                        <div style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+                        <div style={{color: 'var(--text-secondary)', fontWeight: 500}}>
                             {isSubmitted ? 'Submitted at' : 'Last saved'}: {submittedAt}
                         </div>
                     )}
                 </div>
-                <div className="report-form-header-row" style={{ marginTop: 0 }}>
+                <div className="report-form-header-row" style={{marginTop: 0}}>
                     <div className="report-form-title">
                         {reportTitle}
                     </div>
                     {weekRangeHeader && (
-                        <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--accent)' }}>
+                        <div style={{fontWeight: 700, fontSize: 17, color: 'var(--accent)'}}>
                             {report.name === 'plant_production'
                                 ? (() => {
                                     const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
@@ -354,7 +353,8 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                                     ))}
                                                 </select>
                                             ) : (
-                                                <input type={field.type} value={form[field.name] || ''} readOnly disabled />
+                                                <input type={field.type} value={form[field.name] || ''} readOnly
+                                                       disabled/>
                                             )}
                                         </div>
                                     ))}

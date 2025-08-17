@@ -1,5 +1,5 @@
-import { supabase } from './DatabaseService';
-import { UserService } from './UserService';
+import {supabase} from './DatabaseService';
+import {UserService} from './UserService';
 
 class UserPresenceService {
     constructor() {
@@ -42,14 +42,14 @@ class UserPresenceService {
     async setUserOnline(userId) {
         if (!userId) return false;
         const now = new Date().toISOString();
-        const { error } = await supabase
+        const {error} = await supabase
             .from('users_presence')
             .upsert({
                 user_id: userId,
                 is_online: true,
                 last_seen: now,
                 updated_at: now
-            }, { onConflict: 'user_id' });
+            }, {onConflict: 'user_id'});
         if (error) return false;
         return true;
     }
@@ -57,7 +57,7 @@ class UserPresenceService {
     async setUserOffline(userId) {
         if (!userId) return false;
         const now = new Date().toISOString();
-        const { error } = await supabase
+        const {error} = await supabase
             .from('users_presence')
             .update({
                 is_online: false,
@@ -72,7 +72,7 @@ class UserPresenceService {
     async updateHeartbeat() {
         if (!this.currentUserId) return false;
         const now = new Date().toISOString();
-        const { error } = await supabase
+        const {error} = await supabase
             .from('users_presence')
             .update({
                 last_seen: now,
@@ -92,7 +92,7 @@ class UserPresenceService {
         if (this.cleanupInterval) clearInterval(this.cleanupInterval);
         this.cleanupInterval = setInterval(async () => {
             const staleTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('users_presence')
                 .update({
                     is_online: false,
@@ -133,11 +133,11 @@ class UserPresenceService {
 
     async getOnlineUsers() {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('users_presence')
                 .select('user_id, last_seen')
                 .eq('is_online', true)
-                .order('last_seen', { ascending: false });
+                .order('last_seen', {ascending: false});
             if (error) return [];
             const users = [];
             for (const presence of data) {
@@ -148,7 +148,8 @@ class UserPresenceService {
                         name,
                         lastSeen: presence.last_seen
                     });
-                } catch {}
+                } catch {
+                }
             }
             return users;
         } catch {
@@ -169,7 +170,8 @@ class UserPresenceService {
             this.listeners.forEach(listener => {
                 try {
                     listener(users);
-                } catch {}
+                } catch {
+                }
             });
         });
     }
@@ -200,4 +202,4 @@ class UserPresenceService {
 }
 
 const instance = new UserPresenceService();
-export { instance as UserPresenceService };
+export {instance as UserPresenceService};

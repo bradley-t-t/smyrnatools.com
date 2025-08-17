@@ -87,7 +87,8 @@ function PlantsDetailView({plant, onClose, onDelete}) {
                         />
                     </div>
                     <div className="form-actions" style={{marginTop: 24, gap: 12}}>
-                        <button className="primary-button save-button" onClick={handleSave} disabled={isSaving || isDeleting}>
+                        <button className="primary-button save-button" onClick={handleSave}
+                                disabled={isSaving || isDeleting}>
                             {isSaving ? 'Saving...' : 'Save Changes'}
                         </button>
                         <button className="cancel-button" onClick={onClose} disabled={isSaving || isDeleting}>
@@ -107,4 +108,5 @@ function PlantsDetailView({plant, onClose, onDelete}) {
         </div>
     )
 }
+
 export default PlantsDetailView

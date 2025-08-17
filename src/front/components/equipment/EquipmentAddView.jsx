@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { EquipmentService } from '../../../services/EquipmentService';
-import { AuthService } from '../../../services/AuthService';
+import React, {useState} from 'react';
+import {EquipmentService} from '../../../services/EquipmentService';
+import {AuthService} from '../../../services/AuthService';
 import './styles/EquipmentAddView.css';
 
-function EquipmentAddView({ plants, onClose, onEquipmentAdded }) {
+function EquipmentAddView({plants, onClose, onEquipmentAdded}) {
     const [identifyingNumber, setIdentifyingNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [equipmentType, setEquipmentType] = useState('');

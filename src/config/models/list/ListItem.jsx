@@ -1,4 +1,3 @@
-
 export class ListItem {
     constructor(data = {}) {
         this.id = data.id ?? '';

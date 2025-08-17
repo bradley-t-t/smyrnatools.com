@@ -21,7 +21,8 @@ const persistLogsInternal = logs => {
     if (!storageAvailable()) return
     try {
         localStorage.setItem('app_error_logs', JSON.stringify(logs.slice(-ERROR_LOG_LIMIT)))
-    } catch (e) {}
+    } catch (e) {
+    }
 }
 
 const ErrorUtility = {
@@ -45,7 +46,7 @@ const ErrorUtility = {
         return errorId
     },
     parseSupabaseError(error) {
-        if (!error) return { message: 'Unknown error' }
+        if (!error) return {message: 'Unknown error'}
         const message = error.message || error.error_description || 'Unknown error'
         const hint = error.hint || error.details || error.detail
         return {
@@ -65,7 +66,10 @@ const ErrorUtility = {
     },
     clearLogs() {
         if (!storageAvailable()) return
-        try { localStorage.removeItem('app_error_logs') } catch (e) {}
+        try {
+            localStorage.removeItem('app_error_logs')
+        } catch (e) {
+        }
     },
     prune(predicate) {
         const logs = getLogsInternal()
@@ -80,4 +84,4 @@ const ErrorUtility = {
 }
 
 export default ErrorUtility
-export { ErrorUtility }
+export {ErrorUtility}

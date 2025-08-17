@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { TrailerUtility } from '../../../utils/TrailerUtility';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import { TrailerService } from '../../../services/TrailerService';
+import React, {useEffect, useState} from 'react';
+import {TrailerUtility} from '../../../utils/TrailerUtility';
+import {TrailerService} from '../../../services/TrailerService';
 import './styles/TrailerCard.css';
 
-function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSelect }) {
+function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSelect}) {
     const isServiceOverdue = TrailerUtility.isServiceOverdue(trailer.lastServiceDate);
-    const { preferences } = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
     const [commentsCount, setCommentsCount] = useState(0);
 
@@ -42,7 +40,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
         }
     };
 
-    const cardProps = onSelect ? { onClick: handleCardClick } : {};
+    const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
     const getDaysSince = (dateStr) => {
         if (!dateStr) return null;
@@ -51,9 +49,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
         const diffTime = Math.abs(today - date);
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
-
-    const daysSinceService = getDaysSince(trailer.lastServiceDate);
-
+    getDaysSince(trailer.lastServiceDate);
     const accentColor = 'var(--accent)';
 
     let statusColor = 'var(--accent)';
@@ -74,7 +70,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                 left: 0,
                 right: 0,
                 zIndex: 10
-            }} />
+            }}/>
             {openIssuesCount > 0 && (
                 <div
                     className="trailer-issues-badge"
@@ -84,7 +80,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                         zIndex: 4,
                     }}
                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
-                    <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>
+                    <i className="fas fa-tools" style={{marginRight: '4px', fontSize: '0.9rem'}}></i>
                     <span>{openIssuesCount}</span>
                 </div>
             )}
@@ -105,7 +101,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
             )}
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="tractor-name" style={{ color: accentColor }}>
+                    <h3 className="tractor-name" style={{color: accentColor}}>
                         Trailer #{trailer.trailerNumber || 'Not Assigned'}
                     </h3>
                 </div>
@@ -154,7 +150,7 @@ function TrailerCard({ trailer, tractorName, plantName, showTractorWarning, onSe
                                         <i
                                             key={i}
                                             className={`fas fa-star ${i < trailer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
-                                            style={i < trailer.cleanlinessRating ? { color: accentColor } : {}}
+                                            style={i < trailer.cleanlinessRating ? {color: accentColor} : {}}
                                             aria-hidden="true"
                                         ></i>
                                     ))}

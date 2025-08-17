@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { OperatorService } from '../../../services/OperatorService';
-import { UserService } from '../../../services/UserService';
+import React, {useEffect, useState} from 'react';
+import {OperatorService} from '../../../services/OperatorService';
+import {UserService} from '../../../services/UserService';
 import UserUtility from '../../../utils/UserUtility';
 import './styles/OperatorAddView.css';
 
-function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
+function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
     const [name, setName] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('Active');
@@ -24,6 +24,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded }) {
                 setHasTrainingPermission(hasPermission);
             }
         }
+
         checkPermission();
     }, []);
 

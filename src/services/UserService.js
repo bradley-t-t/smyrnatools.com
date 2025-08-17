@@ -1,4 +1,4 @@
-import { supabase } from './DatabaseService';
+import {supabase} from './DatabaseService';
 
 const USERS_TABLE = 'users';
 const PROFILES_TABLE = 'users_profiles';
@@ -14,17 +14,18 @@ class UserServiceImpl {
         const userId = sessionStorage.getItem('userId');
         if (userId) {
             try {
-                const { data } = await supabase
+                const {data} = await supabase
                     .from(USERS_TABLE)
                     .select('id')
                     .eq('id', userId)
                     .single();
-                if (data && data.id) return { id: userId };
+                if (data && data.id) return {id: userId};
                 sessionStorage.removeItem('userId');
-            } catch {}
+            } catch {
+            }
         }
         try {
-            const { data } = await supabase.auth.getUser();
+            const {data} = await supabase.auth.getUser();
             if (!data?.user) return null;
             if (data.user.id) sessionStorage.setItem('userId', data.user.id);
             return data.user;
@@ -34,7 +35,7 @@ class UserServiceImpl {
     }
 
     async getUserById(userId) {
-        if (!userId) return { id: 'unknown', name: 'Unknown User' };
+        if (!userId) return {id: 'unknown', name: 'Unknown User'};
         if (this.userProfileCache.has(userId)) {
             const cachedUser = this.userProfileCache.get(userId);
             return {
@@ -43,13 +44,13 @@ class UserServiceImpl {
                 email: cachedUser.email
             };
         }
-        const { data } = await supabase
+        const {data} = await supabase
             .from(USERS_TABLE)
             .select('id, name, email')
             .eq('id', userId)
             .single();
         if (!data) {
-            const basicUser = { id: userId, name: `User ${userId.slice(0, 8)}` };
+            const basicUser = {id: userId, name: `User ${userId.slice(0, 8)}`};
             this.userProfileCache.set(userId, basicUser);
             return basicUser;
         }
@@ -64,7 +65,7 @@ class UserServiceImpl {
     async getUserDisplayName(userId) {
         if (!userId) return 'System';
         if (userId === 'anonymous') return 'Anonymous';
-        const { data: profileData } = await supabase
+        const {data: profileData} = await supabase
             .from(PROFILES_TABLE)
             .select('first_name, last_name')
             .eq('id', userId)
@@ -98,16 +99,16 @@ UserService.clearCache = function () {
 };
 
 UserService.getAllRoles = async function () {
-    const { data } = await supabase
+    const {data} = await supabase
         .from(ROLES_TABLE)
         .select('*')
-        .order('weight', { ascending: false });
+        .order('weight', {ascending: false});
     return data ?? [];
 };
 
 UserService.getRoleById = async function (roleId) {
     if (!roleId) throw new Error('Role ID is required');
-    const { data } = await supabase
+    const {data} = await supabase
         .from(ROLES_TABLE)
         .select('*')
         .eq('id', roleId)
@@ -117,7 +118,7 @@ UserService.getRoleById = async function (roleId) {
 
 UserService.getRoleByName = async function (roleName) {
     if (!roleName) throw new Error('Role name is required');
-    const { data } = await supabase
+    const {data} = await supabase
         .from(ROLES_TABLE)
         .select('*')
         .eq('name', roleName)
@@ -129,7 +130,7 @@ UserService.getUserRoles = async function (userId) {
     if (!userId) throw new Error('User ID is required');
     const id = typeof userId === 'object' && userId.id ? userId.id : userId;
     if (this.userRolesCache.has(id)) return this.userRolesCache.get(id);
-    const { data } = await supabase
+    const {data} = await supabase
         .from(PERMISSIONS_TABLE)
         .select('role_id, users_roles(id, name, permissions, weight)')
         .eq('user_id', id);
@@ -191,7 +192,7 @@ UserService.getHighestRole = async function (userId) {
 UserService.assignRole = async function (userId, roleId) {
     if (!userId || !roleId) throw new Error('User ID and role ID are required');
     const id = typeof userId === 'object' && userId.id ? userId.id : userId;
-    const { data: existing } = await supabase
+    const {data: existing} = await supabase
         .from(PERMISSIONS_TABLE)
         .select('id')
         .eq('user_id', id)
@@ -199,7 +200,12 @@ UserService.assignRole = async function (userId, roleId) {
     if (existing?.length) return true;
     await supabase
         .from(PERMISSIONS_TABLE)
-        .insert({ user_id: id, role_id: roleId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+        .insert({
+            user_id: id,
+            role_id: roleId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
     this.userRolesCache.delete(id);
     return true;
 };
@@ -218,9 +224,9 @@ UserService.removeRole = async function (userId, roleId) {
 
 UserService.createRole = async function (name, permissions = [], weight = 0) {
     if (!name) throw new Error('Role name is required');
-    const { data } = await supabase
+    const {data} = await supabase
         .from(ROLES_TABLE)
-        .insert({ name, permissions, weight, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .insert({name, permissions, weight, created_at: new Date().toISOString(), updated_at: new Date().toISOString()})
         .select()
         .single();
     this.clearCache();
@@ -231,7 +237,7 @@ UserService.updateRole = async function (roleId, updates) {
     if (!roleId || !updates) throw new Error('Role ID and updates are required');
     await supabase
         .from(ROLES_TABLE)
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({...updates, updated_at: new Date().toISOString()})
         .eq('id', roleId);
     this.clearCache();
     return true;
@@ -250,7 +256,7 @@ UserService.deleteRole = async function (roleId) {
 UserService.getUserPlant = async function (userId) {
     if (!userId) return null;
     const id = typeof userId === 'object' && userId.id ? userId.id : userId;
-    const { data } = await supabase
+    const {data} = await supabase
         .from(PROFILES_TABLE)
         .select('plant_code')
         .eq('id', id)

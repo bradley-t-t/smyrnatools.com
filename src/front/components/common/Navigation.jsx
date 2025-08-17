@@ -76,21 +76,17 @@ export default function Navigation({
                                        onSelectView,
                                        children,
                                        userName = '',
-                                       showLogout = false,
-                                       unreadMessageCount = 0,
-                                       onExternalLink,
                                        userId = null,
                                        listStatusFilter = ''
                                    }) {
     const {preferences, toggleNavbarMinimized} = usePreferences()
     const [collapsed, setCollapsed] = useState(preferences.navbarMinimized)
-    const [userPermissions, setUserPermissions] = useState([])
     const [visibleMenuItems, setVisibleMenuItems] = useState([])
 
     useEffect(() => {
         ensureFontAwesome()
         const handleStatusFilterChange = (event) => {
-            const { statusFilter } = event.detail
+            const {statusFilter} = event.detail
             if (statusFilter === 'completed' || listStatusFilter === 'completed') {
                 setVisibleMenuItems([...visibleMenuItems])
             }
@@ -101,21 +97,6 @@ export default function Navigation({
         }
     }, [listStatusFilter, visibleMenuItems])
 
-    useEffect(() => {
-        async function fetchUserPermissions() {
-            if (userId) {
-                try {
-                    const permissions = await UserService.getUserPermissions(userId)
-                    setUserPermissions(permissions)
-                } catch (error) {
-                    setUserPermissions([])
-                }
-            } else {
-                setUserPermissions([])
-            }
-        }
-        fetchUserPermissions()
-    }, [userId])
 
     useEffect(() => {
         async function filterMenuItems() {
@@ -136,6 +117,7 @@ export default function Navigation({
                 setVisibleMenuItems([])
             }
         }
+
         filterMenuItems()
     }, [userId])
 
@@ -205,7 +187,12 @@ export default function Navigation({
                                             onSelectView(item.id)
                                         }
                                     }}
-                                    style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
+                                    style={collapsed ? {} : {
+                                        padding: '13px 18px',
+                                        minHeight: 0,
+                                        lineHeight: 1.35,
+                                        fontSize: 17
+                                    }}
                                 >
                                     <span
                                         className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
@@ -214,14 +201,23 @@ export default function Navigation({
                                     >
                                         {getIconForMenuItem(item.id)}
                                     </span>
-                                    {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>{item.text}</span>}
+                                    {!collapsed && <span className="menu-text" style={{
+                                        fontSize: 17,
+                                        padding: 0,
+                                        margin: 0
+                                    }}>{item.text}</span>}
                                 </li>
                             )
                         })}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                             onClick={() => onSelectView('Settings')}
-                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
+                            style={collapsed ? {} : {
+                                padding: '13px 18px',
+                                minHeight: 0,
+                                lineHeight: 1.35,
+                                fontSize: 17
+                            }}
                         >
                             <span
                                 className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
@@ -230,12 +226,18 @@ export default function Navigation({
                             >
                                 {getIconForMenuItem('Settings')}
                             </span>
-                            {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
+                            {!collapsed && <span className="menu-text"
+                                                 style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
                         </li>
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                             onClick={() => onSelectView('MyAccount')}
-                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
+                            style={collapsed ? {} : {
+                                padding: '13px 18px',
+                                minHeight: 0,
+                                lineHeight: 1.35,
+                                fontSize: 17
+                            }}
                         >
                             <span
                                 className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
@@ -246,8 +248,9 @@ export default function Navigation({
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
-                                    {userName && <span className="user-name" style={{ paddingLeft: 0 }}>{userName}</span>}
+                                    <span className="menu-text"
+                                          style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
+                                    {userName && <span className="user-name" style={{paddingLeft: 0}}>{userName}</span>}
                                 </div>
                             )}
                         </li>

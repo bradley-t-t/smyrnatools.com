@@ -1,6 +1,6 @@
-import { supabase } from './DatabaseService';
+import {supabase} from './DatabaseService';
 import Trailer from '../config/models/trailers/Trailer';
-import { isValidUUID } from '../utils/UserUtility';
+import {isValidUUID} from '../utils/UserUtility';
 
 const TRAILERS = 'trailers';
 const HISTORY = 'trailers_history';
@@ -9,21 +9,21 @@ const MAINTENANCE = 'trailers_maintenance';
 
 export const TrailerService = {
     async fetchTrailers() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(TRAILERS)
             .select('*')
-            .order('trailer_number', { ascending: true });
+            .order('trailer_number', {ascending: true});
         if (error) throw new Error(error.message);
         return data ? data.map(Trailer.fromApiFormat) : [];
     },
 
     async fetchTrailerById(trailerId) {
         if (!trailerId) throw new Error('Trailer ID is required');
-        if (typeof trailerId === 'object' && trailerId !== null) {
+        if (typeof trailerId === 'object') {
             trailerId = trailerId.id || trailerId.trailerId || '';
         }
         if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(TRAILERS)
             .select('*')
             .eq('id', trailerId)
@@ -39,7 +39,7 @@ export const TrailerService = {
             updated_last: trailer.updatedLast || null,
             status: trailer.status
         };
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(TRAILERS)
             .insert([trailerData])
             .select();
@@ -59,7 +59,7 @@ export const TrailerService = {
             trailer_number: trailerInstance.trailerNumber,
             status: trailerInstance.status
         };
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(TRAILERS)
             .update(trailerData)
             .eq('id', trailerId)
@@ -99,25 +99,25 @@ export const TrailerService = {
             .from(HISTORY)
             .select('*')
             .eq('trailer_id', trailerId)
-            .order('changed_at', { ascending: false });
+            .order('changed_at', {ascending: false});
         if (limit) query = query.limit(limit);
-        const { data, error } = await query;
+        const {data, error} = await query;
         if (error) throw new Error(error.message);
         return data || [];
     },
 
     async fetchComments(trailerId) {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(COMMENTS)
             .select('*')
             .eq('trailer_id', trailerId)
-            .order('created_at', { ascending: false });
+            .order('created_at', {ascending: false});
         if (error) throw new Error(error.message);
         return data || [];
     },
 
     async addComment(trailerId, commentText, userId) {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(COMMENTS)
             .insert([{
                 trailer_id: trailerId,
@@ -131,7 +131,7 @@ export const TrailerService = {
     },
 
     async deleteComment(commentId) {
-        const { error } = await supabase
+        const {error} = await supabase
             .from(COMMENTS)
             .delete()
             .eq('id', commentId);
@@ -139,17 +139,17 @@ export const TrailerService = {
     },
 
     async fetchIssues(trailerId) {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(MAINTENANCE)
             .select('*')
             .eq('trailer_id', trailerId)
-            .order('time_created', { ascending: false });
+            .order('time_created', {ascending: false});
         if (error) throw new Error(error.message);
         return data || [];
     },
 
-    async addIssue(trailerId, issueText, severity, userId) {
-        const { data, error } = await supabase
+    async addIssue(trailerId, issueText, severity) {
+        const {data, error} = await supabase
             .from(MAINTENANCE)
             .insert([{
                 id: crypto.randomUUID(),
@@ -165,9 +165,9 @@ export const TrailerService = {
     },
 
     async completeIssue(issueId) {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(MAINTENANCE)
-            .update({ time_completed: new Date().toISOString() })
+            .update({time_completed: new Date().toISOString()})
             .eq('id', issueId)
             .select();
         if (error) throw new Error(error.message);
@@ -175,7 +175,7 @@ export const TrailerService = {
     },
 
     async deleteIssue(issueId) {
-        const { error } = await supabase
+        const {error} = await supabase
             .from(MAINTENANCE)
             .delete()
             .eq('id', issueId);

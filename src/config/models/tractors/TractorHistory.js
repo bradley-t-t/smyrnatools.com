@@ -65,7 +65,8 @@ export class TractorHistoryUtils {
             try {
                 const date = new Date(value);
                 if (!isNaN(date.getTime())) return date.toLocaleDateString();
-            } catch (error) {}
+            } catch (error) {
+            }
         }
 
         if (fieldName === 'cleanliness_rating') {

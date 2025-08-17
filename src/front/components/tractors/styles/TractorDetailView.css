@@ -50,7 +50,7 @@
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-lg);
     margin-right: var(--spacing-md);
-    border-radius: var(--border-radius-sm) ;
+    border-radius: var(--border-radius-sm);
     background-color: var(--accent);
     color: var(--text-light);
     border: none;
@@ -342,11 +342,11 @@
     margin: 0;
     font-size: 13px;
     line-height: 1.5;
-    color: var(--text-light) ;
+    color: var(--text-light);
 }
 
 .verification-notice strong {
-    color: var(--text-light) ;
+    color: var(--text-light);
     font-weight: 600;
 }
 
@@ -462,7 +462,7 @@
 
 .edit-instructions {
     font-size: 14px;
-    color: var(--text-light) ;
+    color: var(--text-light);
     margin: 10px 0 20px;
     padding: 10px 15px;
     background-color: var(--accent);
@@ -632,14 +632,14 @@ input[type="date"].form-control {
     width: 100%;
     text-align: center;
     font-size: 16px;
-    color: #000 ;
+    color: #000;
     box-sizing: border-box;
 }
 
 .rating-label {
     font-weight: 600;
     font-size: 16px;
-    color: var(--text-light) ;
+    color: var(--text-light);
 }
 
 .star-button {

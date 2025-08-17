@@ -34,4 +34,4 @@ const CryptoUtility = Object.freeze({
 })
 
 export default CryptoUtility
-export { CryptoUtility }
+export {CryptoUtility}

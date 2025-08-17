@@ -19,7 +19,8 @@ export class MixerHistory {
             try {
                 if (oldValue?.includes('T')) oldValue = oldValue.split('T')[0];
                 if (newValue?.includes('T')) newValue = newValue.split('T')[0];
-            } catch (error) {}
+            } catch (error) {
+            }
         }
 
         return new MixerHistory({
@@ -67,7 +68,8 @@ export class MixerHistoryUtils {
                 }
                 const date = new Date(value)
                 if (!isNaN(date.getTime())) return date.toLocaleDateString()
-            } catch {}
+            } catch {
+            }
         }
 
         if (fieldName === 'cleanliness_rating') {

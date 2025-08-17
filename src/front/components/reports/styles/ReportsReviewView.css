@@ -5,7 +5,7 @@
     background: linear-gradient(90deg, var(--card-bg, #f7fafc) 60%, var(--accent-light-theme, #e9f5ff) 100%);
     border-radius: 16px;
     padding: 22px 32px 22px 22px;
-    box-shadow: 0 4px 18px var(--shadow, rgba(49,130,206,0.09));
+    box-shadow: 0 4px 18px var(--shadow, rgba(49, 130, 206, 0.09));
     margin-bottom: 32px;
     border: 1.5px solid var(--divider);
 }
@@ -21,7 +21,7 @@
     font-size: 2.1rem;
     font-weight: 700;
     color: var(--text-light);
-    box-shadow: 0 2px 8px var(--shadow-sm, rgba(49,130,206,0.13));
+    box-shadow: 0 2px 8px var(--shadow-sm, rgba(49, 130, 206, 0.13));
     flex-shrink: 0;
 }
 
@@ -48,7 +48,7 @@
     padding: 4px 14px;
     letter-spacing: 0.01em;
     margin-top: 2px;
-    box-shadow: 0 1px 4px var(--shadow-sm, rgba(49,130,206,0.06));
+    box-shadow: 0 1px 4px var(--shadow-sm, rgba(49, 130, 206, 0.06));
 }
 
 .review-user-submitted {

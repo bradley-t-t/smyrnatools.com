@@ -261,7 +261,7 @@
 .team-card {
     background: var(--card-bg);
     border-radius: var(--border-radius-lg);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     border: 1px solid var(--divider);
     flex: 1 1 0;
     min-width: 320px;
@@ -279,7 +279,7 @@
     font-weight: 700;
     padding: 20px 24px 12px 24px;
     border-bottom: 1px solid var(--divider);
-    background: rgba(244,246,248,0.7);
+    background: rgba(244, 246, 248, 0.7);
     color: var(--text-primary);
     text-align: left;
 }
@@ -349,7 +349,7 @@
     font-weight: 600;
     padding: 8px 16px;
     border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     position: sticky;
     top: 24px;
     z-index: 2;
@@ -359,7 +359,7 @@
 }
 
 .team-card.drag-over {
-    box-shadow: 0 4px 24px rgba(49,130,206,0.15);
+    box-shadow: 0 4px 24px rgba(49, 130, 206, 0.15);
     border-color: var(--accent);
 }
 
@@ -529,20 +529,24 @@
         border-radius: 8px;
         padding: 0;
     }
+
     .teams-list-table {
         font-size: 13px;
         border-radius: 8px;
         min-width: 400px;
         table-layout: fixed;
     }
+
     .teams-list-table th {
         padding: 10px 4px;
     }
+
     .teams-list-table td {
         padding: 8px 4px;
         max-width: 80px;
         min-width: 80px;
     }
+
     .teams-list-table td:last-child {
         max-width: 120px;
     }
@@ -553,12 +557,14 @@
         font-size: 12px;
         padding: 6px 2px;
     }
+
     .teams-list-table td {
         font-size: 12px;
         padding: 5px 2px;
         max-width: 60px;
         min-width: 60px;
     }
+
     .teams-list-table td:last-child {
         max-width: 80px;
     }
@@ -570,6 +576,7 @@
         gap: var(--spacing-lg);
         align-items: stretch;
     }
+
     .teams-divider {
         width: 100%;
         min-width: unset;
@@ -578,10 +585,12 @@
         align-items: center;
         justify-content: center;
     }
+
     .teams-divider-label {
         position: static;
         margin: 0 auto;
     }
+
     .team-card {
         max-width: 100%;
         min-width: 0;

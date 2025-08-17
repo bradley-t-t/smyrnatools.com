@@ -1,9 +1,8 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import './styles/ListAddView.css';
 import {ListService} from '../../../services/ListService';
 import {UserService} from '../../../services/UserService';
 import {usePreferences} from '../../../app/context/PreferencesContext';
-import {generateUUID} from '../../../utils/UserUtility';
 
 function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
     const {preferences} = usePreferences();
@@ -42,6 +41,7 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                 }
             }
         }
+
         fetchCurrentUser();
         if (item) {
             setDescription(item.description || '');

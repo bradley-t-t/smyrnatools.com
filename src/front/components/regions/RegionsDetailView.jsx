@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
-import { RegionService } from '../../../services/RegionService'
-import { PlantService } from '../../../services/PlantService'
+import React, {useEffect, useState} from 'react'
+import {RegionService} from '../../../services/RegionService'
+import {PlantService} from '../../../services/PlantService'
 import './styles/RegionsDetailView.css'
 import '../mixers/styles/MixerDetailView.css'
 
-function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
+function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
     const [regionName, setRegionName] = useState(region.region_name || region.regionName || '')
     const [plantCodes, setPlantCodes] = useState([])
     const [allPlants, setAllPlants] = useState([])
@@ -16,6 +16,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
 
     useEffect(() => {
         setLoading(true)
+
         async function fetchPlants() {
             let all = []
             let regionPlants = []
@@ -47,6 +48,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
             )
             setLoading(false)
         }
+
         fetchPlants()
     }, [region])
 
@@ -192,7 +194,8 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         </div>
                     </div>
                     <div className="form-actions">
-                        <button className="primary-button save-button" onClick={handleSave} disabled={saving || loading || isDeleting}>
+                        <button className="primary-button save-button" onClick={handleSave}
+                                disabled={saving || loading || isDeleting}>
                             {saving ? 'Saving...' : 'Save Changes'}
                         </button>
                         <button className="cancel-button" onClick={onClose} disabled={saving || loading || isDeleting}>

@@ -133,17 +133,21 @@
     .trailer-overview-grid {
         gap: 18px;
     }
+
     .trailer-status-card,
     .trailer-maintenance-card,
     .trailer-plant-card {
         padding: 14px 6px 18px 6px;
     }
+
     .trailer-maintenance-stats {
         gap: 12px;
     }
+
     .trailer-maintenance-stat {
         padding: 14px 6px 12px 6px;
     }
+
     .trailer-stat-icon {
         font-size: 1.5rem;
         width: 36px;
@@ -291,14 +295,17 @@
         max-width: 98vw;
         padding: 18px 8px 16px 8px;
     }
+
     .trailer-overview-grid {
         gap: 18px;
     }
+
     .trailer-status-card,
     .trailer-maintenance-card,
     .trailer-plant-card {
         padding: 18px 8px 24px 8px;
     }
+
     .trailer-distribution-table {
         min-width: 600px;
     }

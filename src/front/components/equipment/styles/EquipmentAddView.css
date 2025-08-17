@@ -22,7 +22,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: slide-up 0.25s cubic-bezier(.4,1.4,.6,1) 1;
+    animation: slide-up 0.25s cubic-bezier(.4, 1.4, .6, 1) 1;
     border: 1px solid var(--border-light);
 }
 
@@ -189,14 +189,17 @@
         max-width: 100vw;
         border-radius: 0;
     }
+
     .add-equipment-content, .add-equipment-header {
         padding-left: 12px;
         padding-right: 12px;
     }
+
     .equipment-form-section {
         padding-left: 8px;
         padding-right: 8px;
     }
+
     .equipment-form-row {
         flex-direction: column;
         gap: 0;
@@ -210,12 +213,15 @@
         max-height: 100%;
         border-radius: 0;
     }
+
     .add-equipment-header {
         padding-top: 20px;
     }
+
     .add-equipment-content {
         padding: 12px 4px 8px 4px;
     }
+
     .equipment-form-section {
         padding: 8px 4px 6px 4px;
     }

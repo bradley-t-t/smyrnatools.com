@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {TractorUtility} from '../../../utils/TractorUtility';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import {TractorService} from '../../../services/TractorService';
 import './styles/TractorCard.css';
 
-function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
+function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onSelect}) {
     const isServiceOverdue = TractorUtility.isServiceOverdue(tractor.lastServiceDate);
     const isVerified = typeof tractor.isVerified === 'function'
         ? tractor.isVerified(tractor.latestHistoryDate)
@@ -47,23 +47,6 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
 
     const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
-    const getDaysSince = (dateStr) => {
-        if (!dateStr) return null;
-        const date = new Date(dateStr);
-        const today = new Date();
-        const diffTime = Math.abs(today - date);
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-
-    const daysSinceService = getDaysSince(tractor.lastServiceDate);
-
-    const getIconMargin = () => {
-        let margin = 0;
-        if (openIssuesCount > 0) margin += 30;
-        if (commentsCount > 0) margin += 30;
-        return margin > 0 ? `${margin}px` : undefined;
-    };
-
     const accentColor = preferences.accentColor === 'red'
         ? 'var(--accent)'
         : preferences.accentColor === 'darkgrey'
@@ -88,7 +71,7 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
                 left: 0,
                 right: 0,
                 zIndex: 10
-            }} />
+            }}/>
             {commentsCount > 0 && (
                 <div
                     className="comments-badge"

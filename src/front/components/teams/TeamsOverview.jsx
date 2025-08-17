@@ -1,7 +1,7 @@
 import React from 'react';
 import './styles/TeamsOverview.css';
 
-function TeamsOverview({ onClose, teams }) {
+function TeamsOverview({onClose, teams}) {
     let countA = 0
     let countB = 0
     if (teams && typeof teams === 'object') {
@@ -21,20 +21,20 @@ function TeamsOverview({ onClose, teams }) {
                     <div className="overview-metrics">
                         <table className="teams-overview-table">
                             <thead>
-                                <tr>
-                                    <th>Team</th>
-                                    <th>Operator Count</th>
-                                </tr>
+                            <tr>
+                                <th>Team</th>
+                                <th>Operator Count</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>A Team</td>
-                                    <td>{countA}</td>
-                                </tr>
-                                <tr>
-                                    <td>B Team</td>
-                                    <td>{countB}</td>
-                                </tr>
+                            <tr>
+                                <td>A Team</td>
+                                <td>{countA}</td>
+                            </tr>
+                            <tr>
+                                <td>B Team</td>
+                                <td>{countB}</td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>

@@ -1,15 +1,15 @@
-import { createClient } from '@supabase/supabase-js'
+import {createClient} from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default supabase
-export { supabase }
+export {supabase}
 
 export class DatabaseService {
     static async executeRawQuery(sql, params = []) {
-        const { data, error } = await supabase.rpc('execute_sql', { query: sql, params })
+        const {data, error} = await supabase.rpc('execute_sql', {query: sql, params})
         if (error) throw error
         return data
     }
@@ -76,21 +76,21 @@ export const formatDateForSupabase = date => {
 
 export const refreshAuth = async () => {
     try {
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+        const {data: refreshData, error: refreshError} = await supabase.auth.refreshSession()
         if (!refreshError && refreshData?.session?.user?.id) {
-            return { userId: refreshData.session.user.id, source: 'refreshSession' }
+            return {userId: refreshData.session.user.id, source: 'refreshSession'}
         }
-        const { data: sessionData } = await supabase.auth.getSession()
+        const {data: sessionData} = await supabase.auth.getSession()
         if (sessionData?.session?.user?.id) {
-            return { userId: sessionData.session.user.id, source: 'getSession' }
+            return {userId: sessionData.session.user.id, source: 'getSession'}
         }
-        const { data: userData } = await supabase.auth.getUser()
+        const {data: userData} = await supabase.auth.getUser()
         if (userData?.user?.id) {
-            return { userId: userData.user.id, source: 'getUser' }
+            return {userId: userData.user.id, source: 'getUser'}
         }
-        return { userId: null, source: 'none' }
+        return {userId: null, source: 'none'}
     } catch (error) {
-        return { userId: null, source: 'error', error }
+        return {userId: null, source: 'error', error}
     }
 }
 
@@ -109,13 +109,13 @@ export const extractSupabaseErrorMessage = response => {
 
 export const createPartialTextFilter = (column, searchTerm) => {
     if (!searchTerm?.trim() || !column) return {}
-    return { [column]: { ilike: `%${searchTerm.trim()}%` } }
+    return {[column]: {ilike: `%${searchTerm.trim()}%`}}
 }
 
 export const SupabaseUtils = {
     async fetchAll(table, columns = '*') {
         if (!table) throw new Error('Table name is required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(table)
             .select(columns)
             .order('id')
@@ -125,7 +125,7 @@ export const SupabaseUtils = {
 
     async fetch(table, columns = '*', filterColumn, value) {
         if (!table || !filterColumn || value === undefined) throw new Error('Table, filter column, and value are required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(table)
             .select(columns)
             .eq(filterColumn, value)
@@ -135,7 +135,7 @@ export const SupabaseUtils = {
 
     async insert(table, item) {
         if (!table || !item) throw new Error('Table and item are required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(table)
             .insert(item)
             .select()
@@ -145,7 +145,7 @@ export const SupabaseUtils = {
 
     async update(table, filterColumn, value, data) {
         if (!table || !filterColumn || value === undefined || !data) throw new Error('Table, filter column, value, and data are required')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(table)
             .update(data)
             .eq(filterColumn, value)
@@ -155,7 +155,7 @@ export const SupabaseUtils = {
 
     async delete(table, filterColumn, value) {
         if (!table || !filterColumn || value === undefined) throw new Error('Table, filter column, and value are required')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(table)
             .delete()
             .eq(filterColumn, value)

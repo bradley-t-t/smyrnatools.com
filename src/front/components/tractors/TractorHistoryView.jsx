@@ -1,4 +1,3 @@
-// TractorHistoryView.jsx
 import React, {useEffect, useState} from 'react';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import {TractorService} from '../../../services/TractorService';
@@ -13,7 +12,7 @@ function TractorHistoryView({tractor, onClose}) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [operators, setOperators] = useState([]);
-    const [sortConfig, setSortConfig] = useState({
+    const [sortConfig] = useState({
         key: 'changedAt',
         direction: 'descending'
     });
@@ -146,15 +145,6 @@ function TractorHistoryView({tractor, onClose}) {
         }
         return sortableItems;
     }, [history, sortConfig]);
-
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({key, direction});
-    };
-
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
@@ -167,7 +157,7 @@ function TractorHistoryView({tractor, onClose}) {
                 <div className="history-modal-content">
                     {isLoading ? (
                         <div className="loading-spinner-container">
-                            <LoadingScreen message="Loading history..." inline={true} />
+                            <LoadingScreen message="Loading history..." inline={true}/>
                         </div>
                     ) : error ? (
                         <div className="error-message">

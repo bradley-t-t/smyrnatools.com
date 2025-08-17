@@ -6,7 +6,7 @@ import './styles/PlantsView.css'
 import PlantsDetailView from './PlantsDetailView'
 import PlantsAddView from './PlantsAddView'
 
-function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
+function PlantsView({title = 'Plants'}) {
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchText, setSearchText] = useState('')
@@ -23,6 +23,7 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
                 setIsLoading(false)
             }
         }
+
         fetchPlants()
     }, [])
 
@@ -40,7 +41,7 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
         setSelectedPlant(null)
     }
 
-    async function handlePlantUpdated(plantCode, plantName) {
+    async function handlePlantUpdated(plantCode) {
         const updatedPlants = await PlantService.fetchPlants()
         setPlants(updatedPlants)
         setSelectedPlant(updatedPlants.find(p => (p.plant_code || p.plantCode) === plantCode) || null)
@@ -70,9 +71,9 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
                             <button
                                 className="action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}
-                                style={{ height: '44px', lineHeight: '1' }}
+                                style={{height: '44px', lineHeight: '1'}}
                             >
-                                <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Plant
+                                <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Plant
                             </button>
                         </div>
                     </div>
@@ -95,7 +96,7 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading plants..." inline={true} />
+                                <LoadingScreen message="Loading plants..." inline={true}/>
                             </div>
                         ) : filteredPlants.length === 0 ? (
                             <div className="no-results-container">
@@ -104,24 +105,26 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
                                 </div>
                                 <h3>No Plants Found</h3>
                                 <p>{searchText ? "No plants match your search criteria." : "There are no plants in the system yet."}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Plant</button>
+                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Plant
+                                </button>
                             </div>
                         ) : (
                             <div className="mixers-list-table-container">
                                 <table className="mixers-list-table">
                                     <thead>
-                                        <tr>
-                                            <th>Plant Code</th>
-                                            <th>Name</th>
-                                            <th>Status</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Plant Code</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredPlants.map(plant => (
-                                            <tr key={plant.plant_code || plant.plantCode} style={{cursor: 'pointer'}} onClick={() => handleSelectPlant(plant.plant_code || plant.plantCode)}>
-                                                <td>{plant.plant_code || plant.plantCode}</td>
-                                                <td>{plant.plant_name || plant.plantName}</td>
-                                                <td>
+                                    {filteredPlants.map(plant => (
+                                        <tr key={plant.plant_code || plant.plantCode} style={{cursor: 'pointer'}}
+                                            onClick={() => handleSelectPlant(plant.plant_code || plant.plantCode)}>
+                                            <td>{plant.plant_code || plant.plantCode}</td>
+                                            <td>{plant.plant_name || plant.plantName}</td>
+                                            <td>
                                                     <span
                                                         className="item-status-dot"
                                                         style={{
@@ -133,16 +136,16 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
                                                             borderRadius: '50%',
                                                             backgroundColor:
                                                                 plant.status === 'Active' ? 'var(--status-active)' :
-                                                                plant.status === 'Spare' ? 'var(--status-spare)' :
-                                                                plant.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                plant.status === 'Retired' ? 'var(--status-retired)' :
-                                                                'var(--accent)'
+                                                                    plant.status === 'Spare' ? 'var(--status-spare)' :
+                                                                        plant.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                            plant.status === 'Retired' ? 'var(--status-retired)' :
+                                                                                'var(--accent)'
                                                         }}
                                                     ></span>
-                                                    {plant.status || 'Active'}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                {plant.status || 'Active'}
+                                            </td>
+                                        </tr>
+                                    ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -159,4 +162,5 @@ function PlantsView({title = 'Plants', showSidebar, setShowSidebar}) {
         </div>
     )
 }
+
 export default PlantsView

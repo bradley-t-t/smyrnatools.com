@@ -1,18 +1,22 @@
-import React, { useEffect, useState } from 'react'
+import React, {useEffect, useState} from 'react'
 import './styles/OperatorsView.css'
 import '../../styles/FilterStyles.css'
-import { supabase } from '../../../services/DatabaseService'
-import { UserService } from '../../../services/UserService'
+import {supabase} from '../../../services/DatabaseService'
+import {UserService} from '../../../services/UserService'
 import LoadingScreen from '../common/LoadingScreen'
 import OperatorDetailView from './OperatorDetailView'
 import OperatorCard from './OperatorCard'
 import OperatorsOverview from './OperatorsOverview'
 import OperatorAddView from './OperatorAddView'
-import { usePreferences } from '../../../app/context/PreferencesContext'
+import {usePreferences} from '../../../app/context/PreferencesContext'
 import FormatUtility from '../../../utils/FormatUtility'
 
-function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar, onSelectOperator, initialStatusFilter }) {
-    const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences()
+function OperatorsView({
+                           title = 'Operator Roster',
+                           onSelectOperator,
+                           initialStatusFilter
+                       }) {
+    const {preferences, updateOperatorFilter, resetOperatorFilters} = usePreferences()
     const [operators, setOperators] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -23,10 +27,10 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const [showOverview, setShowOverview] = useState(false)
     const [showDetailView, setShowDetailView] = useState(false)
     const [selectedOperator, setSelectedOperator] = useState(null)
-    const [currentUserId, setCurrentUserId] = useState(null)
+    const [, setCurrentUserId] = useState(null)
     const [trainers, setTrainers] = useState([])
     const [scheduledOffMap, setScheduledOffMap] = useState([])
-    const [reloadFlag, setReloadFlag] = useState(false)
+    const [reloadFlag] = useState(false)
     const [viewMode, setViewMode] = useState(() => {
         if (preferences.operatorFilters?.viewMode !== undefined && preferences.operatorFilters?.viewMode !== null) return preferences.operatorFilters.viewMode
         if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
@@ -85,7 +89,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
 
     const fetchOperators = async () => {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('operators')
                 .select('*')
             if (error) throw error
@@ -119,7 +123,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
 
     const fetchPlants = async () => {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('plants')
                 .select('*')
             if (error) throw error
@@ -130,7 +134,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
 
     const fetchTrainers = async () => {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('operators')
                 .select('employee_id, name')
                 .eq('is_trainer', true)
@@ -146,11 +150,11 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
 
     const fetchScheduledOff = async () => {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('operators_scheduled_off')
                 .select('id, days_off')
             if (error) throw error
-            const map = {}
+            const map = {};
             (data || []).forEach(item => {
                 map[item.id] = Array.isArray(item.days_off) ? item.days_off : []
             })
@@ -163,21 +167,6 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     const reloadAll = async () => {
         await fetchAllData()
     }
-
-    const deleteOperator = async (operatorId) => {
-        try {
-            const { error } = await supabase
-                .from('operators')
-                .delete()
-                .eq('employee_id', operatorId)
-            if (error) throw error
-            fetchOperators()
-            setSelectedOperator(null)
-        } catch (error) {
-            alert('Failed to delete operator. Please try again.')
-        }
-    }
-
     const filteredOperators = operators
         .filter(operator => {
             const matchesSearch = searchText.trim() === '' ||
@@ -237,13 +226,11 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
     }
 
     const statusesForCounts = ['Active', 'Light Duty', 'Pending Start', 'Terminated', 'Training']
-    const statusCounts = statusesForCounts.map(status => ({
+    statusesForCounts.map(status => ({
         status,
         count: operators.filter(op => op.status === status).length
-    }))
-
-    const trainerCount = operators.filter(op => op.isTrainer).length
-
+    }));
+    operators.filter(op => op.isTrainer).length;
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -322,7 +309,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n')
-        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const blob = new Blob([csvContent], {type: 'text/csv'})
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -350,7 +337,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
         setSearchText('')
         setSelectedPlant('')
         setStatusFilter('')
-        resetOperatorFilters({ keepViewMode: true, currentViewMode })
+        resetOperatorFilters({keepViewMode: true, currentViewMode})
     }
 
     return (
@@ -382,9 +369,9 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                             <button
                                 className="action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}
-                                style={{ height: '44px', lineHeight: '1' }}
+                                style={{height: '44px', lineHeight: '1'}}
                             >
-                                <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Operator
+                                <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Operator
                             </button>
                         </div>
                     </div>
@@ -489,7 +476,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading operators..." inline={true} />
+                                <LoadingScreen message="Loading operators..." inline={true}/>
                             </div>
                         ) : filteredOperators.length === 0 ? (
                             <div className="no-results-container">
@@ -526,21 +513,22 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                             <div className="operators-list-table-container">
                                 <table className="operators-list-table">
                                     <thead>
-                                        <tr>
-                                            <th>Plant</th>
-                                            <th>Name</th>
-                                            <th>Status</th>
-                                            <th>Position</th>
-                                            <th>Trainer</th>
-                                            <th>Rating</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Position</th>
+                                        <th>Trainer</th>
+                                        <th>Rating</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredOperators.map(operator => (
-                                            <tr key={operator.employeeId} style={{cursor: 'pointer'}} onClick={() => handleSelectOperator(operator)}>
-                                                <td>{operator.plantCode ? operator.plantCode : "---"}</td>
-                                                <td>{operator.name ? operator.name : "---"}</td>
-                                                <td>
+                                    {filteredOperators.map(operator => (
+                                        <tr key={operator.employeeId} style={{cursor: 'pointer'}}
+                                            onClick={() => handleSelectOperator(operator)}>
+                                            <td>{operator.plantCode ? operator.plantCode : "---"}</td>
+                                            <td>{operator.name ? operator.name : "---"}</td>
+                                            <td>
                                                     <span
                                                         className="item-status-dot"
                                                         style={{
@@ -549,28 +537,29 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                                                             marginRight: '8px',
                                                             backgroundColor:
                                                                 operator.status === 'Active' ? 'var(--status-active)' :
-                                                                operator.status === 'Light Duty' ? 'var(--status-spare)' :
-                                                                operator.status === 'Training' ? 'var(--status-inshop)' :
-                                                                operator.status === 'Terminated' ? 'var(--status-retired)' :
-                                                                operator.status === 'Pending Start' ? 'var(--status-inshop)' :
-                                                                'var(--accent)',
+                                                                    operator.status === 'Light Duty' ? 'var(--status-spare)' :
+                                                                        operator.status === 'Training' ? 'var(--status-inshop)' :
+                                                                            operator.status === 'Terminated' ? 'var(--status-retired)' :
+                                                                                operator.status === 'Pending Start' ? 'var(--status-inshop)' :
+                                                                                    'var(--accent)',
                                                         }}
                                                     ></span>
-                                                    {operator.status ? operator.status : "---"}
-                                                </td>
-                                                <td>{operator.position ? operator.position : "---"}</td>
-                                                <td>{operator.isTrainer ? "Yes" : "No"}</td>
-                                                <td>
-                                                    {(() => {
-                                                        const rating = Math.round(operator.rating || 0)
-                                                        const stars = rating > 0 ? rating : 1
-                                                        return Array.from({length: stars}).map((_, i) => (
-                                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                        ))
-                                                    })()}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                {operator.status ? operator.status : "---"}
+                                            </td>
+                                            <td>{operator.position ? operator.position : "---"}</td>
+                                            <td>{operator.isTrainer ? "Yes" : "No"}</td>
+                                            <td>
+                                                {(() => {
+                                                    const rating = Math.round(operator.rating || 0)
+                                                    const stars = rating > 0 ? rating : 1
+                                                    return Array.from({length: stars}).map((_, i) => (
+                                                        <i key={i} className="fas fa-star"
+                                                           style={{color: 'var(--accent)'}}></i>
+                                                    ))
+                                                })()}
+                                            </td>
+                                        </tr>
+                                    ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -588,7 +577,7 @@ function OperatorsView({ title = 'Operator Roster', showSidebar, setShowSidebar,
                         />
                     )}
 
-                    {showOverview && <OverviewPopup />}
+                    {showOverview && <OverviewPopup/>}
                 </>
             )}
         </div>

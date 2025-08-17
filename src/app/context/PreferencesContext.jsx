@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, {createContext, useContext, useEffect, useState} from "react"
 
 const PreferencesContext = createContext()
 
@@ -8,7 +8,7 @@ export function usePreferences() {
     return context
 }
 
-export function PreferencesProvider({ children }) {
+export function PreferencesProvider({children}) {
     const [preferences, setPreferences] = useState(() => {
         const savedPrefs = localStorage.getItem('userPreferences')
         return savedPrefs ? JSON.parse(savedPrefs) : {

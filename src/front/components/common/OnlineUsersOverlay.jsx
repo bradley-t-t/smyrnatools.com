@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import { usePresence } from '../../../app/hooks/usePresence';
+import React, {useEffect, useRef, useState} from 'react';
+import {usePreferences} from '../../../app/context/PreferencesContext';
+import {usePresence} from '../../../app/hooks/usePresence';
 import './styles/OnlineUsersOverlay.css';
 
 function OnlineUsersOverlay() {
-    const { onlineUsers, loading, error } = usePresence();
-    const { preferences } = usePreferences();
+    const {onlineUsers, loading, error} = usePresence();
+    const {preferences} = usePreferences();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isMinimized, setIsMinimized] = useState(true);
     const [animateCount, setAnimateCount] = useState(false);
@@ -50,7 +50,8 @@ function OnlineUsersOverlay() {
                             </div>
                         </div>
                         <div className="header-actions">
-                            <button className="action-button circle" onClick={toggleExpand} title={isExpanded ? 'Show less' : 'Show more'}>
+                            <button className="action-button circle" onClick={toggleExpand}
+                                    title={isExpanded ? 'Show less' : 'Show more'}>
                                 <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                             </button>
                             <button className="action-button circle" onClick={toggleMinimize} title="Minimize">
@@ -76,7 +77,8 @@ function OnlineUsersOverlay() {
                         {!isExpanded && onlineUsers.length > 3 && (
                             <div className="more-users">
                                 <span>+{onlineUsers.length - 3} more</span>
-                                <button className="action-button circle icon-only" title="Show more" onClick={toggleExpand}>
+                                <button className="action-button circle icon-only" title="Show more"
+                                        onClick={toggleExpand}>
                                     <i className="fas fa-chevron-down"></i>
                                 </button>
                             </div>

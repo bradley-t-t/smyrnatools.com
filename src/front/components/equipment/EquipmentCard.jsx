@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import EquipmentUtility from '../../../utils/EquipmentUtility';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import { EquipmentService } from '../../../services/EquipmentService';
+import {EquipmentService} from '../../../services/EquipmentService';
 import './styles/EquipmentCard.css';
 
-function EquipmentCard({ equipment, plantName, onSelect }) {
+function EquipmentCard({equipment, plantName, onSelect}) {
     const isServiceOverdue = EquipmentUtility.isServiceOverdue(equipment.lastServiceDate);
-    const { preferences } = usePreferences();
     const [openIssuesCount, setOpenIssuesCount] = useState(0);
     const [commentsCount, setCommentsCount] = useState(0);
 
@@ -42,7 +40,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
         }
     };
 
-    const cardProps = onSelect ? { onClick: handleCardClick } : {};
+    const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
     const accentColor = 'var(--accent)';
 
@@ -64,7 +62,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                 left: 0,
                 right: 0,
                 zIndex: 10
-            }} />
+            }}/>
             {openIssuesCount > 0 && (
                 <div
                     className="equipment-issues-badge"
@@ -75,7 +73,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                         right: '20px'
                     }}
                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
-                    <i className="fas fa-tools" style={{ marginRight: '4px', fontSize: '0.9rem' }}></i>
+                    <i className="fas fa-tools" style={{marginRight: '4px', fontSize: '0.9rem'}}></i>
                     <span>{openIssuesCount}</span>
                 </div>
             )}
@@ -96,7 +94,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
             )}
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="equipment-name" style={{ color: accentColor }}>
+                    <h3 className="equipment-name" style={{color: accentColor}}>
                         {equipment.equipmentType} #{equipment.identifyingNumber || 'Not Assigned'}
                     </h3>
                 </div>
@@ -115,7 +113,8 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Last Service</div>
-                        <div className={`detail-value ${equipment.lastServiceDate && isServiceOverdue ? 'overdue' : ''}`}>
+                        <div
+                            className={`detail-value ${equipment.lastServiceDate && isServiceOverdue ? 'overdue' : ''}`}>
                             {equipment.lastServiceDate ? (
                                 <>
                                     {new Date(equipment.lastServiceDate).toLocaleDateString()}
@@ -127,7 +126,8 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Hours/Mileage</div>
-                        <div className="detail-value">{equipment.hoursMileage ? equipment.hoursMileage : 'Not Recorded'}</div>
+                        <div
+                            className="detail-value">{equipment.hoursMileage ? equipment.hoursMileage : 'Not Recorded'}</div>
                     </div>
                     <div className="detail-row">
                         <div className="detail-label">Cleanliness</div>
@@ -138,7 +138,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                                         <i
                                             key={i}
                                             className={`fas fa-star ${i < equipment.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
-                                            style={i < equipment.cleanlinessRating ? { color: accentColor } : {}}
+                                            style={i < equipment.cleanlinessRating ? {color: accentColor} : {}}
                                             aria-hidden="true"
                                         ></i>
                                     ))}
@@ -155,7 +155,7 @@ function EquipmentCard({ equipment, plantName, onSelect }) {
                                         <i
                                             key={i}
                                             className={`fas fa-star ${i < equipment.conditionRating ? 'filled-star' : 'empty-star'}`}
-                                            style={i < equipment.conditionRating ? { color: accentColor } : {}}
+                                            style={i < equipment.conditionRating ? {color: accentColor} : {}}
                                             aria-hidden="true"
                                         ></i>
                                     ))}

@@ -2,40 +2,40 @@
 .detail-content,
 .delete-modal-body,
 .modal-detail-content {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .detail-content::-webkit-scrollbar,
 .delete-modal-body::-webkit-scrollbar,
 .modal-detail-content::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
 
 .detail-content::-webkit-scrollbar-track,
 .delete-modal-body::-webkit-scrollbar-track,
 .modal-detail-content::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 .detail-content::-webkit-scrollbar-thumb,
 .delete-modal-body::-webkit-scrollbar-thumb,
 .modal-detail-content::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
 }
 
 /* Dark mode scrollbar adjustments */
 @media (prefers-color-scheme: dark) {
-  .detail-content,
-  .delete-modal-body,
-  .modal-detail-content {
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-  }
+    .detail-content,
+    .delete-modal-body,
+    .modal-detail-content {
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
 
-  .detail-content::-webkit-scrollbar-thumb,
-  .delete-modal-body::-webkit-scrollbar-thumb,
-  .modal-detail-content::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
+    .detail-content::-webkit-scrollbar-thumb,
+    .delete-modal-body::-webkit-scrollbar-thumb,
+    .modal-detail-content::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
 }

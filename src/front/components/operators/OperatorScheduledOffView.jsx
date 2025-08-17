@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { supabase } from '../../../services/DatabaseService';
+import React, {useState} from 'react';
+import {supabase} from '../../../services/DatabaseService';
 import './styles/OperatorScheduledOffView.css';
 
 const SCHEDULED_OFF_TABLE = 'operators_scheduled_off';
 
-function RequestOffModal({ operator, daysOff, onClose, onSave }) {
+function RequestOffModal({operator, daysOff, onClose, onSave}) {
     const [dates, setDates] = useState(daysOff || []);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -27,10 +27,8 @@ function RequestOffModal({ operator, daysOff, onClose, onSave }) {
         setSuccess(false);
 
         const filteredDates = Array.from(new Set(dates.filter(d => d)));
-
-        let result;
         try {
-            const { data: existing, error: selectError } = await supabase
+            const {data: existing, error: selectError} = await supabase
                 .from(SCHEDULED_OFF_TABLE)
                 .select('uuid')
                 .eq('id', operator.employeeId || operator.employee_id)
@@ -43,9 +41,9 @@ function RequestOffModal({ operator, daysOff, onClose, onSave }) {
             }
 
             if (existing && existing.uuid) {
-                const { error: updateError } = await supabase
+                const {error: updateError} = await supabase
                     .from(SCHEDULED_OFF_TABLE)
-                    .update({ days_off: filteredDates, updated_at: new Date().toISOString() })
+                    .update({days_off: filteredDates, updated_at: new Date().toISOString()})
                     .eq('uuid', existing.uuid);
                 if (updateError) {
                     setError('Failed to save days off.');
@@ -53,9 +51,9 @@ function RequestOffModal({ operator, daysOff, onClose, onSave }) {
                     return;
                 }
             } else {
-                const { error: insertError } = await supabase
+                const {error: insertError} = await supabase
                     .from(SCHEDULED_OFF_TABLE)
-                    .insert([{ id: operator.employeeId || operator.employee_id, days_off: filteredDates }]);
+                    .insert([{id: operator.employeeId || operator.employee_id, days_off: filteredDates}]);
                 if (insertError) {
                     setError('Failed to save days off.');
                     setSubmitting(false);
@@ -159,7 +157,7 @@ function RequestOffModal({ operator, daysOff, onClose, onSave }) {
     );
 }
 
-export default function OperatorScheduledOffButton({ operator, daysOff, onSave, refreshScheduledOff }) {
+export default function OperatorScheduledOffButton({operator, daysOff, onSave, refreshScheduledOff}) {
     const [showModal, setShowModal] = useState(false);
     return (
         <>

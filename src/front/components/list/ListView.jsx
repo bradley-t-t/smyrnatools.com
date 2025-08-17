@@ -4,15 +4,14 @@ import '../../styles/FilterStyles.css'
 import {ListService} from '../../../services/ListService'
 import LoadingScreen from '../common/LoadingScreen'
 import {UserService} from '../../../services/UserService'
-import ListItemCard from './ListItemCard'
 import ListOverview from './ListOverview'
 import {usePreferences} from '../../../app/context/PreferencesContext'
 import ListAddView from './ListAddView'
 import ListDetailView from './ListDetailView'
 
-function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectItem, onStatusFilterChange}) {
+function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const {preferences, updateListFilter, resetListFilters} = usePreferences()
-    const [listItems, setListItems] = useState([])
+    const [, setListItems] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchText, setSearchText] = useState('')
@@ -41,6 +40,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                 }
             }
         }
+
         fetchCurrentUser()
     }, [])
 
@@ -141,7 +141,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n')
-        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const blob = new Blob([csvContent], {type: 'text/csv'})
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -192,11 +192,11 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                         <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
                     </button>
                     <button
-                        className="action-button primary rectangular-button" 
+                        className="action-button primary rectangular-button"
                         onClick={() => setShowAddSheet(true)}
-                        style={{ height: '44px', lineHeight: '1' }}
+                        style={{height: '44px', lineHeight: '1'}}
                     >
-                        <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Item
+                        <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Item
                     </button>
                 </div>
             </div>
@@ -232,7 +232,10 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                             }}
                             disabled={!canBypassPlantRestriction && userPlantCode}
                             aria-label="Filter by plant"
-                            style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
+                            style={{
+                                '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                            }}
                         >
                             <option value="">All Plants</option>
                             {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
@@ -251,7 +254,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 setStatusFilter(newValue)
                                 updateListFilter?.('statusFilter', newValue)
                                 window.dispatchEvent(new CustomEvent('list-status-filter-change', {
-                                    detail: { statusFilter: newValue }
+                                    detail: {statusFilter: newValue}
                                 }))
                                 if (newValue === 'completed' && window.updateActiveMenuHighlight) {
                                     window.updateActiveMenuHighlight('Archive')
@@ -263,7 +266,10 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                 }
                             }}
                             aria-label="Filter by status"
-                            style={{'--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896', '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
+                            style={{
+                                '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
+                                '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                            }}
                         >
                             <option value="">All Status</option>
                             <option value="overdue">Overdue</option>
@@ -300,7 +306,7 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             <div className="content-container">
                 {isLoading ? (
                     <div className="loading-container">
-                        <LoadingScreen message="Loading list items..." inline={true} />
+                        <LoadingScreen message="Loading list items..." inline={true}/>
                     </div>
                 ) : filteredItems.length === 0 ? (
                     <div className="no-results-container">
@@ -321,26 +327,26 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                     <div className="mixers-list-table-container">
                         <table className="mixers-list-table">
                             <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Plant</th>
-                                    <th>Deadline</th>
-                                    {statusFilter === 'completed' && (
-                                        <th>Completed</th>
-                                    )}
-                                    <th>Created By</th>
-                                    <th>Status</th>
-                                </tr>
+                            <tr>
+                                <th>Description</th>
+                                <th>Plant</th>
+                                <th>Deadline</th>
+                                {statusFilter === 'completed' && (
+                                    <th>Completed</th>
+                                )}
+                                <th>Created By</th>
+                                <th>Status</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {filteredItems.map(item => (
-                                    <tr
-                                        key={item.id}
-                                        className={item.completed ? 'completed' : ''}
-                                        onClick={() => handleSelectItem(item)}
-                                        style={{cursor: 'pointer'}}
-                                    >
-                                        <td title={item.description}>
+                            {filteredItems.map(item => (
+                                <tr
+                                    key={item.id}
+                                    className={item.completed ? 'completed' : ''}
+                                    onClick={() => handleSelectItem(item)}
+                                    style={{cursor: 'pointer'}}
+                                >
+                                    <td title={item.description}>
                                             <span
                                                 className="item-status-dot"
                                                 style={{
@@ -357,35 +363,36 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
                                                             : 'var(--info)'
                                                 }}
                                             ></span>
-                                            {truncateText(item.description, 60)}
-                                        </td>
-                                        <td title={getPlantName(item.plant_code)}>
-                                            {truncateText(getPlantName(item.plant_code), 20)}
-                                        </td>
-                                        <td>
-                                            <span className={ListService.isOverdue(item) && !item.completed ? 'deadline-overdue' : ''}>
+                                        {truncateText(item.description, 60)}
+                                    </td>
+                                    <td title={getPlantName(item.plant_code)}>
+                                        {truncateText(getPlantName(item.plant_code), 20)}
+                                    </td>
+                                    <td>
+                                            <span
+                                                className={ListService.isOverdue(item) && !item.completed ? 'deadline-overdue' : ''}>
                                                 {new Date(item.deadline).toLocaleDateString()}
                                             </span>
-                                        </td>
-                                        {statusFilter === 'completed' && (
-                                            <td>
-                                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'N/A'}
-                                            </td>
-                                        )}
-                                        <td title={ListService.getCreatorName(item.user_id)}>
-                                            {truncateText(ListService.getCreatorName(item.user_id), 20)}
-                                        </td>
+                                    </td>
+                                    {statusFilter === 'completed' && (
                                         <td>
-                                            {item.completed ? (
-                                                <span className="status-badge completed">Completed</span>
-                                            ) : ListService.isOverdue(item) ? (
-                                                <span className="status-badge overdue">Overdue</span>
-                                            ) : (
-                                                <span className="status-badge pending">Pending</span>
-                                            )}
+                                            {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'N/A'}
                                         </td>
-                                    </tr>
-                                ))}
+                                    )}
+                                    <td title={ListService.getCreatorName(item.user_id)}>
+                                        {truncateText(ListService.getCreatorName(item.user_id), 20)}
+                                    </td>
+                                    <td>
+                                        {item.completed ? (
+                                            <span className="status-badge completed">Completed</span>
+                                        ) : ListService.isOverdue(item) ? (
+                                            <span className="status-badge overdue">Overdue</span>
+                                        ) : (
+                                            <span className="status-badge pending">Pending</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
                             </tbody>
                         </table>
                     </div>
@@ -405,7 +412,13 @@ function ListView({title = 'Tasks List', showSidebar, setShowSidebar, onSelectIt
             {showOverview && <OverviewPopup/>}
             {showDetailView && selectedItem && (
                 <div className="modal-backdrop">
-                    <div className="modal-detail-content" style={{background: 'none', boxShadow: 'none', padding: 0, maxHeight: 'unset', overflow: 'visible'}}>
+                    <div className="modal-detail-content" style={{
+                        background: 'none',
+                        boxShadow: 'none',
+                        padding: 0,
+                        maxHeight: 'unset',
+                        overflow: 'visible'
+                    }}>
                         <ListDetailView
                             itemId={selectedItem.id}
                             onClose={() => {

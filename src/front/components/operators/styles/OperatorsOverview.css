@@ -186,10 +186,12 @@
     .overview-grid {
         grid-template-columns: 1fr;
     }
+
     .plant-card,
     .position-distribution-card {
         grid-column: 1 / -1;
     }
+
     .plant-distribution-table,
     .position-distribution-card .plant-distribution-table,
     .position-distribution-card .distribution-table,
@@ -256,6 +258,6 @@
 
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
-    background: var(--bg-primary) ;
-    color: var(--text-primary) ;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }

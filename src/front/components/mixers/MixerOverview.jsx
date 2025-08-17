@@ -3,17 +3,17 @@ import {MixerService} from '../../../services/MixerService'
 import MixerUtility from '../../../utils/MixerUtility'
 import {PlantService} from '../../../services/PlantService'
 import {supabase} from '../../../services/DatabaseService'
-import { ReportService } from '../../../services/ReportService'
+import {ReportService} from '../../../services/ReportService'
 import LoadingScreen from '../common/LoadingScreen'
 import './styles/MixerOverview.css'
-import { UserService } from '../../../services/UserService'
+import {UserService} from '../../../services/UserService'
 
 const MixerOverview = ({
-    filteredMixers = null,
-    selectedPlant = '',
-    onStatusClick,
-    onOperatorStatusClick
-}) => {
+                           filteredMixers = null,
+                           selectedPlant = '',
+                           onStatusClick,
+                           onOperatorStatusClick
+                       }) => {
     const [mixers, setMixers] = useState([])
     const [plants, setPlants] = useState([])
     const [operators, setOperators] = useState([])
@@ -21,8 +21,8 @@ const MixerOverview = ({
     const [statusCounts, setStatusCounts] = useState({})
     const [plantCounts, setPlantCounts] = useState({})
     const [plantDistributionByStatus, setPlantDistributionByStatus] = useState({})
-    const [trainingCount, setTrainingCount] = useState(0)
-    const [trainersCount, setTrainersCount] = useState(0)
+    const [, setTrainingCount] = useState(0)
+    const [, setTrainersCount] = useState(0)
     const [cleanlinessAvg, setCleanlinessAvg] = useState(0)
     const [needServiceCount, setNeedServiceCount] = useState(0)
     const [openMaintenanceIssues, setOpenMaintenanceIssues] = useState(0)
@@ -83,7 +83,7 @@ const MixerOverview = ({
             setGoalCount(null)
             return
         }
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('plants_goals_operators')
             .select('goal_count')
             .eq('plant_code', plantCode)
@@ -118,9 +118,9 @@ const MixerOverview = ({
             setGoalSaveLoading(false)
             return
         }
-        const { error } = await supabase
+        const {error} = await supabase
             .from('plants_goals_operators')
-            .upsert({ plant_code: selectedPlant, goal_count: value }, { onConflict: ['plant_code'] })
+            .upsert({plant_code: selectedPlant, goal_count: value}, {onConflict: ['plant_code']})
         if (error) {
             setGoalSaveError('Error saving goal')
             setGoalSaveLoading(false)
@@ -147,15 +147,14 @@ const MixerOverview = ({
         prevMonday.setHours(0, 0, 0, 0)
         const prevMondayIso = prevMonday.toISOString().slice(0, 10)
         setPlantReportRange(ReportService.getWeekRangeFromIso(prevMondayIso))
-        const { data: usersData } = await supabase
+        const {data: usersData} = await supabase
             .from('users_profiles')
             .select('id')
         let userIdsForPlant = []
         if (Array.isArray(usersData)) {
             const plantMap = {}
             await Promise.all(usersData.map(async u => {
-                const userPlant = await UserService.getUserPlant(u.id)
-                plantMap[u.id] = userPlant
+                plantMap[u.id] = await UserService.getUserPlant(u.id)
             }))
             userIdsForPlant = usersData.filter(u => plantMap[u.id] === plantCode).map(u => u.id)
         }
@@ -169,7 +168,7 @@ const MixerOverview = ({
             setNotation('This information has not been reported and has no history.')
             return
         }
-        const { data: reportsData, error } = await supabase
+        const {data: reportsData, error} = await supabase
             .from('reports')
             .select('data,week,user_id')
             .eq('report_name', 'plant_manager')
@@ -272,7 +271,7 @@ const MixerOverview = ({
                             weekIso = d.toISOString().slice(0, 10)
                         }
                     }
-                    return { ...r, weekIso }
+                    return {...r, weekIso}
                 })
                 .filter(r => r.weekIso)
                 .sort((a, b) => new Date(b.weekIso) - new Date(a.weekIso))
@@ -388,7 +387,7 @@ const MixerOverview = ({
         setTrainingCount(trainingCount)
         setTrainersCount(trainersCount)
         calculatePlantDistributionByStatus(statsMixers)
-        setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }))
+        setStatusCounts(prev => ({...prev, Total: totalNonRetired}))
         let filteredForIssues = statsMixers
         if (selectedPlant) {
             filteredForIssues = statsMixers.filter(mixer => mixer.assignedPlant === selectedPlant)
@@ -430,13 +429,14 @@ const MixerOverview = ({
             const mixersData = await MixerService.getAllMixers()
             let maintenanceIssues = []
             try {
-                const { data, error } = await supabase
+                const {data, error} = await supabase
                     .from('mixers_maintenance')
                     .select('id, mixer_id, time_completed')
                 if (!error) {
                     maintenanceIssues = data || []
                 }
-            } catch (maintenanceError) {}
+            } catch (maintenanceError) {
+            }
             const mixersWithMaintenance = mixersData.map(mixer => ({
                 ...mixer,
                 issues: maintenanceIssues.filter(issue => issue.mixer_id === mixer.id)
@@ -445,7 +445,7 @@ const MixerOverview = ({
             const plantsData = await PlantService.fetchPlants()
             setPlants(plantsData)
             try {
-                const { data: operatorsRawData, error: operatorsError } = await supabase
+                const {data: operatorsRawData, error: operatorsError} = await supabase
                     .from('operators')
                     .select('*')
                 if (operatorsError) throw operatorsError
@@ -461,7 +461,8 @@ const MixerOverview = ({
                         position: op.position
                     }))
                 setOperators(operatorsData || [])
-            } catch (operatorsError) {}
+            } catch (operatorsError) {
+            }
             if (!filteredMixers) {
                 updateStatistics(mixersWithMaintenance)
             }
@@ -556,7 +557,7 @@ const MixerOverview = ({
     if (isLoading) {
         return (
             <div className="mixer-overview">
-                <LoadingScreen message="Loading mixer data..." inline={true} />
+                <LoadingScreen message="Loading mixer data..." inline={true}/>
             </div>
         )
     }
@@ -587,7 +588,16 @@ const MixerOverview = ({
                 </div>
             )}
             {selectedPlant && (
-                <div style={{marginTop: 6, fontWeight: 500, fontSize: '1.05rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12}}>
+                <div style={{
+                    marginTop: 6,
+                    fontWeight: 500,
+                    fontSize: '1.05rem',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 12
+                }}>
                     <span>
                         Active Mixers Goal: ({activeCount} / {goalCount !== null ? goalCount : '—'})
                     </span>
@@ -706,7 +716,12 @@ const MixerOverview = ({
                         {plantReportRange && `Metrics for ${plantReportRange}`}
                     </div>
                     <div style={{display: 'flex', gap: 18, width: '100%', maxWidth: 700, justifyContent: 'center'}}>
-                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginRight: 0, background: 'var(--background)' }}>
+                        <div className="summary-metric-card" style={{
+                            borderColor: 'var(--divider)',
+                            flex: 1,
+                            marginRight: 0,
+                            background: 'var(--background)'
+                        }}>
                             <div className="summary-metric-title">Yards per Man-Hour</div>
                             <div className="summary-metric-value">
                                 {plantReportMetrics && plantReportMetrics.yph !== null ? plantReportMetrics.yph.toFixed(2) : '--'}
@@ -715,7 +730,12 @@ const MixerOverview = ({
                                 {plantReportMetrics && plantReportMetrics.yphLabel}
                             </div>
                         </div>
-                        <div className="summary-metric-card" style={{ borderColor: 'var(--divider)', flex: 1, marginLeft: 0, background: 'var(--background)' }}>
+                        <div className="summary-metric-card" style={{
+                            borderColor: 'var(--divider)',
+                            flex: 1,
+                            marginLeft: 0,
+                            background: 'var(--background)'
+                        }}>
                             <div className="summary-metric-title">Yardage Lost</div>
                             <div className="summary-metric-value">
                                 {plantReportMetrics && plantReportMetrics.lost !== null ? plantReportMetrics.lost : '--'}
@@ -812,7 +832,8 @@ const MixerOverview = ({
                             role="button"
                             style={{cursor: 'pointer'}}
                         >
-                            <div className="status-count">{operators.filter(op => op.status === 'Pending Start').length}</div>
+                            <div
+                                className="status-count">{operators.filter(op => op.status === 'Pending Start').length}</div>
                             <div className="status-label">Pending Start Operators</div>
                         </div>
                         <div
@@ -822,7 +843,8 @@ const MixerOverview = ({
                             role="button"
                             style={{cursor: 'pointer'}}
                         >
-                            <div className="status-count">{operators.filter(op => op.status === 'Terminated').length}</div>
+                            <div
+                                className="status-count">{operators.filter(op => op.status === 'Terminated').length}</div>
                             <div className="status-label">Terminated Operators</div>
                         </div>
                     </div>
@@ -923,10 +945,21 @@ const MixerOverview = ({
                                     return (
                                         <tr key={op.employeeId}>
                                             <td className="plant-name">
-                                                <span style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                                <span style={{
+                                                    position: 'relative',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}>
                                                     {op.name}
                                                     {isTractorOperator && assignedMixer && (
-                                                        <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '6px'}}>
+                                                        <span tabIndex="0" style={{
+                                                            position: 'relative',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            marginLeft: '6px'
+                                                        }}>
                                                             <i className="fas fa-exclamation-triangle tractor-warning-icon"></i>
                                                             <span className="trainer-warning-tooltip right-tooltip">
                                                                 Tractor Operator assigned to a mixer
@@ -934,7 +967,13 @@ const MixerOverview = ({
                                                         </span>
                                                     )}
                                                     {isDuplicateName && (
-                                                        <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '6px'}}>
+                                                        <span tabIndex="0" style={{
+                                                            position: 'relative',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            marginLeft: '6px'
+                                                        }}>
                                                             <i className="fas fa-exclamation-triangle duplicate-warning-icon"></i>
                                                             <span className="trainer-warning-tooltip right-tooltip">
                                                                 Duplicate operator name
@@ -945,14 +984,18 @@ const MixerOverview = ({
                                             </td>
                                             <td>{op.position || ''}</td>
                                             <td>
-                                                {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id : <span className="inactive-dash">—</span>}
+                                                {assignedMixer ? assignedMixer.truckNumber || assignedMixer.unitNumber || assignedMixer.id :
+                                                    <span className="inactive-dash">—</span>}
                                             </td>
                                         </tr>
                                     );
                                 })}
                             {operators.filter(op => op.plantCode === selectedPlant && op.status === 'Active').length === 0 && (
                                 <tr>
-                                    <td colSpan={3} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for this plant.</td>
+                                    <td colSpan={3} className="inactive-dash"
+                                        style={{fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for
+                                        this plant.
+                                    </td>
                                 </tr>
                             )}
                             </tbody>
@@ -972,13 +1015,15 @@ const MixerOverview = ({
                             <th>Trainer</th>
                             <th>Trainee</th>
                             <th>Trainee Position</th>
-                            <th>-> Plant</th>
+                            <th>&rarr; Plant</th>
                         </tr>
                         </thead>
                         <tbody>
                         {getTrainerTraineeRows().length === 0 && (
                             <tr>
-                                <td colSpan={7} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No trainers or trainees found.</td>
+                                <td colSpan={7} className="inactive-dash"
+                                    style={{fontStyle: 'italic', padding: '8px 12px'}}>No trainers or trainees found.
+                                </td>
                             </tr>
                         )}
                         {getTrainerTraineeRows().map((row, idx) => (
@@ -988,7 +1033,12 @@ const MixerOverview = ({
                                 <td>{row.trainerPosition || <span className="inactive-dash">—</span>}</td>
                                 <td>
                                     {row.hasMultipleTrainees ? (
-                                        <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                        <span tabIndex="0" style={{
+                                            position: 'relative',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}>
                                             {row.trainer}
                                             <i className="fas fa-exclamation-triangle"></i>
                                             <span className="trainer-warning-tooltip right-tooltip">
@@ -1001,7 +1051,8 @@ const MixerOverview = ({
                                 </td>
                                 <td>{row.trainee || <span className="inactive-dash">—</span>}</td>
                                 <td>{row.traineePosition || <span className="inactive-dash">—</span>}</td>
-                                <td>{row.traineePlant ? getPlantName(row.traineePlant) : <span className="inactive-dash">—</span>}</td>
+                                <td>{row.traineePlant ? getPlantName(row.traineePlant) :
+                                    <span className="inactive-dash">—</span>}</td>
                             </tr>
                         ))}
                         </tbody>

@@ -1,6 +1,6 @@
 import supabase from './DatabaseService'
-import { AuthUtility } from '../utils/AuthUtility'
-import { UserService } from './UserService'
+import {AuthUtility} from '../utils/AuthUtility'
+import {UserService} from './UserService'
 
 const USERS_TABLE = 'users'
 const PROFILES_TABLE = 'users_profiles'
@@ -15,7 +15,7 @@ class AuthServiceImpl {
     async getOperatorInfo(employeeId) {
         if (!employeeId) return null
         if (this.operatorCache[employeeId]) return this.operatorCache[employeeId]
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(OPERATORS_TABLE)
             .select('*')
             .eq('employee_id', employeeId)
@@ -28,15 +28,16 @@ class AuthServiceImpl {
     async signIn(email, password) {
         const trimmedEmail = email?.trim().toLowerCase()
         if (!trimmedEmail || !password) throw new Error('Email and password are required')
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(USERS_TABLE)
             .select('id, email, password_hash, salt')
             .eq('email', trimmedEmail)
             .single()
         if (error || !data) throw new Error('Invalid credentials')
         if (AuthUtility.hashPassword(password, data.salt) !== data.password_hash) throw new Error('Invalid credentials')
-        await supabase.auth.signInWithPassword({ email: trimmedEmail, password }).catch(() => {})
-        this.currentUser = { ...data, userId: data.id }
+        await supabase.auth.signInWithPassword({email: trimmedEmail, password}).catch(() => {
+        })
+        this.currentUser = {...data, userId: data.id}
         this.isAuthenticated = true
         sessionStorage.setItem('userId', data.id)
         this._notifyObservers()
@@ -48,7 +49,7 @@ class AuthServiceImpl {
         if (AuthUtility.passwordStrength(password).value === 'weak') throw new Error('Weak password')
         if (!firstName?.trim() || !lastName?.trim()) throw new Error('First and last name are required')
         const trimmedEmail = email.trim().toLowerCase()
-        const { data: existingUser } = await supabase
+        const {data: existingUser} = await supabase
             .from(USERS_TABLE)
             .select('id')
             .eq('email', trimmedEmail)
@@ -66,9 +67,9 @@ class AuthServiceImpl {
             created_at: now,
             updated_at: now
         }
-        const { error: userError } = await supabase.from(USERS_TABLE).insert(user)
+        const {error: userError} = await supabase.from(USERS_TABLE).insert(user)
         if (userError) throw userError
-        const { data: createdUser, error: verifyError } = await supabase
+        const {data: createdUser, error: verifyError} = await supabase
             .from(USERS_TABLE)
             .select('id')
             .eq('id', userId)
@@ -82,7 +83,7 @@ class AuthServiceImpl {
             created_at: now,
             updated_at: now
         }
-        const { error: profileError } = await supabase.from(PROFILES_TABLE).insert(profile)
+        const {error: profileError} = await supabase.from(PROFILES_TABLE).insert(profile)
         if (profileError) {
             await supabase.from(USERS_TABLE).delete().eq('id', userId)
             throw profileError
@@ -91,7 +92,7 @@ class AuthServiceImpl {
         if (!guestRole) throw new Error('Guest role not found')
         const roleAssigned = await UserService.assignRole(userId, guestRole.id)
         if (!roleAssigned) throw new Error('Role assignment failed')
-        this.currentUser = { ...user, userId }
+        this.currentUser = {...user, userId}
         this.isAuthenticated = true
         sessionStorage.setItem('userId', userId)
         this._notifyObservers()
@@ -111,16 +112,16 @@ class AuthServiceImpl {
         if (!this.currentUser) throw new Error('No authenticated user')
         if (!AuthUtility.emailIsValid(newEmail)) throw new Error('Invalid email')
         const trimmedEmail = newEmail.trim().toLowerCase()
-        const { data: existingUser } = await supabase
+        const {data: existingUser} = await supabase
             .from(USERS_TABLE)
             .select('id')
             .eq('email', trimmedEmail)
             .neq('id', this.currentUser.id)
             .single()
         if (existingUser) throw new Error('Email already registered')
-        const { error } = await supabase
+        const {error} = await supabase
             .from(USERS_TABLE)
-            .update({ email: trimmedEmail, updated_at: new Date().toISOString() })
+            .update({email: trimmedEmail, updated_at: new Date().toISOString()})
             .eq('id', this.currentUser.id)
         if (error) throw error
         this.currentUser.email = trimmedEmail
@@ -133,7 +134,7 @@ class AuthServiceImpl {
         if (AuthUtility.passwordStrength(newPassword).value === 'weak') throw new Error('Weak password')
         const salt = AuthUtility.generateSalt()
         const passwordHash = AuthUtility.hashPassword(newPassword, salt)
-        const { error } = await supabase
+        const {error} = await supabase
             .from(USERS_TABLE)
             .update({
                 password_hash: passwordHash,
@@ -148,7 +149,7 @@ class AuthServiceImpl {
     async restoreSession() {
         const userId = sessionStorage.getItem('userId')
         if (!userId) return false
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(USERS_TABLE)
             .select('id, email')
             .eq('id', userId)
@@ -159,7 +160,7 @@ class AuthServiceImpl {
             this.isAuthenticated = false
             return false
         }
-        this.currentUser = { ...data, userId: data.id }
+        this.currentUser = {...data, userId: data.id}
         this.isAuthenticated = true
         this._notifyObservers()
         return true

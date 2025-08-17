@@ -379,9 +379,9 @@
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
-    margin-bottom: 1rem ;
-    width: 100% ;
-    display: block ;
+    margin-bottom: 1rem;
+    width: 100%;
+    display: block;
 }
 
 .form-group {

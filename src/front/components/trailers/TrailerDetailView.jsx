@@ -1,11 +1,11 @@
 import Trailer from '../../../config/models/trailers/Trailer';
-import React, { useState, useEffect, useRef } from 'react';
-import { TrailerService } from '../../../services/TrailerService';
-import { PlantService } from '../../../services/PlantService';
-import { TractorService } from '../../../services/TractorService';
-import { UserService } from '../../../services/UserService';
-import { supabase } from '../../../services/DatabaseService';
-import { usePreferences } from '../../../app/context/PreferencesContext';
+import React, {useEffect, useRef, useState} from 'react';
+import {TrailerService} from '../../../services/TrailerService';
+import {PlantService} from '../../../services/PlantService';
+import {TractorService} from '../../../services/TractorService';
+import {UserService} from '../../../services/UserService';
+import {supabase} from '../../../services/DatabaseService';
+import {usePreferences} from '../../../app/context/PreferencesContext';
 import TrailerHistoryView from './TrailerHistoryView';
 import TrailerCommentModal from './TrailerCommentModal';
 import TrailerIssueModal from './TrailerIssueModal';
@@ -14,8 +14,8 @@ import './styles/TrailerDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';
 import TractorSelectModal from "./TractorSelectModal";
 
-function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
-    const { preferences } = usePreferences();
+function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
+    const {preferences} = usePreferences();
     const [trailer, setTrailer] = useState(initialTrailer || null);
     const [tractors, setTractors] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -27,10 +27,10 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
     const [showIssues, setShowIssues] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [updatedByEmail, setUpdatedByEmail] = useState(null);
+    const [, setUpdatedByEmail] = useState(null);
     const [message, setMessage] = useState('');
     const [showTractorModal, setShowTractorModal] = useState(false);
-    const [userProfile, setUserProfile] = useState(null);
+    const [, setUserProfile] = useState(null);
     const [canEditTrailer, setCanEditTrailer] = useState(true);
     const [plantRestrictionReason, setPlantRestrictionReason] = useState('');
     const [originalValues, setOriginalValues] = useState({});
@@ -95,6 +95,7 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                 setHasUnsavedChanges(false);
             }
         }
+
         fetchData();
     }, [initialTrailer, trailerId]);
 
@@ -106,7 +107,7 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                 if (!userId) return;
                 const hasPermission = await UserService.hasPermission(userId, 'trailers.bypass.plantrestriction');
                 if (hasPermission) return setCanEditTrailer(true);
-                const { data: profileData } = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
+                const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
                 setUserProfile(profileData);
                 if (profileData && trailer) {
                     const isSamePlant = profileData.plant_code === trailer.assignedPlant;
@@ -117,8 +118,10 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                         );
                     }
                 }
-            } catch (error) {}
+            } catch (error) {
+            }
         }
+
         checkPlantRestriction();
     }, [trailer, isLoading]);
 
@@ -154,13 +157,13 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
         try {
             let userObj = await UserService.getCurrentUser();
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
-            let assignedTractorValue = overrideValues.hasOwnProperty('assignedTractor')
+            let assignedTractorValue = Object.prototype.hasOwnProperty.call(overrideValues,'assignedTractor')
                 ? overrideValues.assignedTractor
                 : assignedTractor;
-            let trailerTypeValue = overrideValues.hasOwnProperty('trailerType')
+            let trailerTypeValue = Object.prototype.hasOwnProperty.call(overrideValues,'trailerType')
                 ? overrideValues.trailerType
                 : trailerType;
-            let statusValue = overrideValues.hasOwnProperty('status')
+            let statusValue = Object.prototype.hasOwnProperty.call(overrideValues,'status')
                 ? overrideValues.status
                 : status;
             if (!['Cement', 'End Dump'].includes(trailerTypeValue)) {
@@ -172,12 +175,12 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
             if (assignedTractorValue && statusValue !== 'Active') {
                 statusValue = 'Active';
             }
-            if (overrideValues.hasOwnProperty('status')) {
+            if (Object.prototype.hasOwnProperty.call(overrideValues,'status')) {
                 statusValue = overrideValues.status;
             }
             let trailerForHistory = {
                 ...trailer,
-                assignedTractor: overrideValues.hasOwnProperty('prevAssignedTractor')
+                assignedTractor: Object.prototype.hasOwnProperty.call(overrideValues,'prevAssignedTractor')
                     ? overrideValues.prevAssignedTractor
                     : trailer.assignedTractor
             };
@@ -238,39 +241,6 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
             setShowDeleteConfirmation(false);
         }
     }
-
-    async function handleVerifyTrailer() {
-        if (!trailer) return;
-        setIsSaving(true);
-        try {
-            if (hasUnsavedChanges) {
-                await handleSave().catch(error => {
-                    alert('Failed to save your changes before verification. Please try saving manually first.');
-                    throw new Error('Failed to save changes before verification');
-                });
-            }
-            let userObj = await UserService.getCurrentUser();
-            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
-            const now = new Date().toISOString();
-            const { data, error } = await supabase
-                .from('trailers')
-                .update({ updated_last: now, updated_by: userId })
-                .eq('id', trailer.id)
-                .select();
-            if (error) throw new Error(`Failed to verify trailer: ${error.message}`);
-            if (data?.length) {
-                setTrailer(Trailer.fromApiFormat(data[0]));
-                setMessage('Trailer verified successfully!');
-                setTimeout(() => setMessage(''), 3000);
-            }
-            setHasUnsavedChanges(false);
-        } catch (error) {
-            alert(`Error verifying trailer: ${error.message}`);
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
     async function handleBackClick() {
         if (hasUnsavedChanges) {
             await handleSave();
@@ -310,19 +280,20 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
         async function fetchCommentsAndIssues() {
             const id = trailer?.id || trailerId;
             if (!id) return;
-            const { data: commentData } = await supabase
+            const {data: commentData} = await supabase
                 .from('trailers_comments')
                 .select('*')
                 .eq('trailer_id', id)
-                .order('created_at', { ascending: false });
+                .order('created_at', {ascending: false});
             setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
-            const { data: issueData } = await supabase
+            const {data: issueData} = await supabase
                 .from('trailers_maintenance')
                 .select('*')
                 .eq('trailer_id', id)
-                .order('created_at', { ascending: false });
+                .order('created_at', {ascending: false});
             setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
         }
+
         fetchCommentsAndIssues();
     }, [trailer, trailerId]);
 
@@ -366,10 +337,10 @@ ${openIssues.length > 0
                         <i className="fas fa-arrow-left"></i>
                     </button>
                     <h1>Trailer Details</h1>
-                    <div style={{ width: '36px' }}></div>
+                    <div style={{width: '36px'}}></div>
                 </div>
                 <div className="trailer-detail-content">
-                    <LoadingScreen message="Loading trailer details..." inline={true} />
+                    <LoadingScreen message="Loading trailer details..." inline={true}/>
                 </div>
             </div>
         );
@@ -394,8 +365,10 @@ ${openIssues.length > 0
 
     return (
         <div className="trailer-detail-view">
-            {showComments && <TrailerCommentModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber} onClose={() => setShowComments(false)} />}
-            {showIssues && <TrailerIssueModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber} onClose={() => setShowIssues(false)} />}
+            {showComments && <TrailerCommentModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber}
+                                                  onClose={() => setShowComments(false)}/>}
+            {showIssues && <TrailerIssueModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber}
+                                              onClose={() => setShowIssues(false)}/>}
             {isSaving && (
                 <div className="trailer-saving-overlay">
                     <div className="trailer-saving-indicator"></div>
@@ -443,7 +416,8 @@ ${openIssues.length > 0
                 )}
                 <div className="trailer-card-preview">
                     <div ref={trailerCardRef}>
-                        <TrailerCard trailer={trailer} tractorName={getTractorName(trailer.assignedTractor)} plantName={getPlantName(trailer.assignedPlant)} showTractorWarning={false} />
+                        <TrailerCard trailer={trailer} tractorName={getTractorName(trailer.assignedTractor)}
+                                     plantName={getPlantName(trailer.assignedPlant)} showTractorWarning={false}/>
                     </div>
                 </div>
                 <div className="trailer-detail-card">
@@ -456,11 +430,14 @@ ${openIssues.length > 0
                             <h3>Basic Information</h3>
                             <div className="trailer-form-group">
                                 <label>Trailer Number</label>
-                                <input type="text" value={trailerNumber} onChange={e => setTrailerNumber(e.target.value)} className="trailer-form-control" readOnly={!canEditTrailer} />
+                                <input type="text" value={trailerNumber}
+                                       onChange={e => setTrailerNumber(e.target.value)} className="trailer-form-control"
+                                       readOnly={!canEditTrailer}/>
                             </div>
                             <div className="trailer-form-group">
                                 <label>Trailer Type</label>
-                                <select value={trailerType} onChange={e => setTrailerType(e.target.value)} disabled={!canEditTrailer} className="trailer-form-control">
+                                <select value={trailerType} onChange={e => setTrailerType(e.target.value)}
+                                        disabled={!canEditTrailer} className="trailer-form-control">
                                     <option value="">Select Trailer Type</option>
                                     <option value="Cement">Cement</option>
                                     <option value="End Dump">End Dump</option>
@@ -468,7 +445,8 @@ ${openIssues.length > 0
                             </div>
                             <div className="trailer-form-group">
                                 <label>Assigned Plant</label>
-                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)} disabled={!canEditTrailer} className="trailer-form-control">
+                                <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
+                                        disabled={!canEditTrailer} className="trailer-form-control">
                                     <option value="">Select Plant</option>
                                     {plants.map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
@@ -477,9 +455,11 @@ ${openIssues.length > 0
                             </div>
                             <div className="trailer-form-group">
                                 <label>Active Status</label>
-                                <select value={status} onChange={e => setStatus(e.target.value)} disabled={!canEditTrailer} className="trailer-form-control">
+                                <select value={status} onChange={e => setStatus(e.target.value)}
+                                        disabled={!canEditTrailer} className="trailer-form-control">
                                     <option value="">Select Status</option>
-                                    <option value="Active" disabled={!assignedTractor}>Active{!assignedTractor ? ' (Cannot set without a tractor assigned)' : ''}</option>
+                                    <option value="Active"
+                                            disabled={!assignedTractor}>Active{!assignedTractor ? ' (Cannot set without a tractor assigned)' : ''}</option>
                                     <option value="Spare">Spare</option>
                                     <option value="In Shop">In Shop</option>
                                     <option value="Retired">Retired</option>
@@ -498,9 +478,9 @@ ${openIssues.length > 0
                                         }}
                                         type="button"
                                         disabled={!canEditTrailer}
-                                        style={!canEditTrailer ? { cursor: 'not-allowed', opacity: 0.8 } : {}}
+                                        style={!canEditTrailer ? {cursor: 'not-allowed', opacity: 0.8} : {}}
                                     >
-                                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>
                                             {assignedTractor ? getTractorName(assignedTractor) : 'None (Click to select)'}
                                         </span>
                                     </button>
@@ -559,7 +539,7 @@ ${openIssues.length > 0
                                         ) : (
                                             lastUnassignedTractorId && (
                                                 <button
-                                                    className="trailer-undo-operator-button"
+                                                    className="trailer-undo-operator-button trailer-unassign-operator-button"
                                                     title="Undo Unassign"
                                                     onClick={async () => {
                                                         try {
@@ -607,7 +587,6 @@ ${openIssues.length > 0
                                                         cursor: 'pointer',
                                                         boxSizing: 'border-box'
                                                     }}
-                                                    className="trailer-unassign-operator-button"
                                                 >
                                                     Undo
                                                 </button>
@@ -681,13 +660,15 @@ ${openIssues.length > 0
                                                 aria-label={`Rate ${star} of 5 stars`}
                                                 disabled={!canEditTrailer}
                                             >
-                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`} style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
+                                                <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
+                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>
                                     {cleanlinessRating > 0 && (
                                         <div className="trailer-rating-value-display">
-                                            <span className="trailer-rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
+                                            <span
+                                                className="trailer-rating-label">{[null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][cleanlinessRating]}</span>
                                         </div>
                                     )}
                                 </div>
@@ -703,24 +684,42 @@ ${openIssues.length > 0
                                 onClick={async () => {
                                     await handleSave();
                                     setHasUnsavedChanges(false);
-                            }}
-                            disabled={isSaving}
-                        >
-                            {isSaving ? 'Saving...' : 'Save Changes'}
-                        </button>
-                            <button className="trailer-danger-button" onClick={() => setShowDeleteConfirmation(true)} disabled={isSaving}>Delete Trailer</button>
+                                }}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button className="trailer-danger-button" onClick={() => setShowDeleteConfirmation(true)}
+                                    disabled={isSaving}>Delete Trailer
+                            </button>
                         </>
                     )}
                 </div>
             </div>
-            {showHistory && <TrailerHistoryView trailer={trailer} onClose={() => setShowHistory(false)} />}
+            {showHistory && <TrailerHistoryView trailer={trailer} onClose={() => setShowHistory(false)}/>}
             {showDeleteConfirmation && (
-                <div className="trailer-confirmation-modal" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.5)'}}>
-                    <div className="trailer-confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
+                <div className="trailer-confirmation-modal" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999,
+                    backgroundColor: 'rgba(0,0,0,0.5)'
+                }}>
+                    <div className="trailer-confirmation-content"
+                         style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
                         <h2>Confirm Delete</h2>
-                        <p>Are you sure you want to delete Trailer #{trailer.trailerNumber}? This action cannot be undone.</p>
-                        <div className="trailer-confirmation-actions" style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="trailer-cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                        <p>Are you sure you want to delete Trailer #{trailer.trailerNumber}? This action cannot be
+                            undone.</p>
+                        <div className="trailer-confirmation-actions"
+                             style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
+                            <button className="trailer-cancel-button"
+                                    onClick={() => setShowDeleteConfirmation(false)}>Cancel
+                            </button>
                             <button className="trailer-danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>
@@ -731,4 +730,3 @@ ${openIssues.length > 0
 }
 
 export default TrailerDetailView;
-

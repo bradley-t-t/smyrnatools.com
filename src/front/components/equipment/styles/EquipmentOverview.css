@@ -125,17 +125,21 @@
     .equipment-overview-grid {
         gap: 18px;
     }
+
     .equipment-status-card,
     .equipment-maintenance-card,
     .equipment-plant-card {
         padding: 14px 6px 18px 6px;
     }
+
     .equipment-maintenance-stats {
         gap: 12px;
     }
+
     .equipment-maintenance-stat {
         padding: 14px 6px 12px 6px;
     }
+
     .equipment-stat-icon {
         font-size: 1.5rem;
         width: 36px;
@@ -283,14 +287,17 @@
         max-width: 98vw;
         padding: 18px 8px 16px 8px;
     }
+
     .equipment-overview-grid {
         gap: 18px;
     }
+
     .equipment-status-card,
     .equipment-maintenance-card,
     .equipment-plant-card {
         padding: 18px 8px 24px 8px;
     }
+
     .equipment-distribution-table {
         min-width: 600px;
     }

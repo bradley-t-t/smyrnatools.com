@@ -211,21 +211,26 @@
     .list-column.plant {
         flex: 0.8;
     }
+
     .list-view-header {
         display: none;
     }
+
     .list-view-row {
         flex-direction: column;
         gap: 8px;
         padding: 12px;
     }
+
     .list-column {
         padding: 2px 0;
     }
+
     .list-column.description {
         font-size: 1rem;
         font-weight: 600;
     }
+
     .list-column.deadline,
     .list-column.plant,
     .list-column.completed-date,
@@ -234,16 +239,19 @@
         justify-content: space-between;
         font-size: 0.85rem;
     }
+
     .list-column.deadline::before {
         content: 'Deadline:';
         font-weight: 500;
         color: var(--text-secondary);
     }
+
     .list-column.plant::before {
         content: 'Plant:';
         font-weight: 500;
         color: var(--text-secondary);
     }
+
     .list-column.completed-date::before {
         content: 'Completed:';
         font-weight: 500;

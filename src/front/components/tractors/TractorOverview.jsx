@@ -7,19 +7,17 @@ import LoadingScreen from '../common/LoadingScreen'
 import './styles/TractorOverview.css'
 
 const TractorOverview = ({
-    filteredTractors = null,
-    selectedPlant = '',
-    onStatusClick
-}) => {
+                             filteredTractors = null,
+                             selectedPlant = '',
+                             onStatusClick
+                         }) => {
     const [tractors, setTractors] = useState([])
-    const [plants, setPlants] = useState([])
+    const [, setPlants] = useState([])
     const [operators, setOperators] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [statusCounts, setStatusCounts] = useState({})
     const [plantCounts, setPlantCounts] = useState({})
     const [plantDistributionByStatus, setPlantDistributionByStatus] = useState({})
-    const [trainingCount, setTrainingCount] = useState(0)
-    const [trainersCount, setTrainersCount] = useState(0)
     const [cleanlinessAvg, setCleanlinessAvg] = useState(0)
     const [needServiceCount, setNeedServiceCount] = useState(0)
     const [openMaintenanceIssues, setOpenMaintenanceIssues] = useState(0)
@@ -63,7 +61,7 @@ const TractorOverview = ({
         setVerifiedCount(verified)
         setNotVerifiedCount(notVerified)
         calculatePlantDistributionByStatus(statsTractors)
-        setStatusCounts(prev => ({ ...prev, Total: totalNonRetired }))
+        setStatusCounts(prev => ({...prev, Total: totalNonRetired}))
         let filteredForIssues = statsTractors
         if (selectedPlant) {
             filteredForIssues = statsTractors.filter(tractor => tractor.assignedPlant === selectedPlant)
@@ -105,13 +103,14 @@ const TractorOverview = ({
             const tractorsData = await TractorService.getAllTractors()
             let maintenanceIssues = []
             try {
-                const { data, error } = await supabase
+                const {data, error} = await supabase
                     .from('tractors_maintenance')
                     .select('id, tractor_id, time_completed')
                 if (!error) {
                     maintenanceIssues = data || []
                 }
-            } catch (maintenanceError) {}
+            } catch (maintenanceError) {
+            }
             const tractorsWithMaintenance = tractorsData.map(tractor => ({
                 ...tractor,
                 issues: maintenanceIssues.filter(issue => issue.tractor_id === tractor.id)
@@ -120,7 +119,7 @@ const TractorOverview = ({
             const plantsData = await PlantService.fetchPlants()
             setPlants(plantsData)
             try {
-                const { data: operatorsRawData, error: operatorsError } = await supabase
+                const {data: operatorsRawData, error: operatorsError} = await supabase
                     .from('operators')
                     .select('*')
                 if (operatorsError) throw operatorsError
@@ -136,7 +135,8 @@ const TractorOverview = ({
                         position: op.position
                     }))
                 setOperators(operatorsData || [])
-            } catch (operatorsError) {}
+            } catch (operatorsError) {
+            }
             if (!filteredTractors) {
                 updateStatistics(tractorsWithMaintenance)
             }
@@ -235,7 +235,7 @@ const TractorOverview = ({
     if (isLoading) {
         return (
             <div className="tractor-overview">
-                <LoadingScreen message="Loading tractor data..." inline={true} />
+                <LoadingScreen message="Loading tractor data..." inline={true}/>
             </div>
         )
     }
@@ -250,7 +250,8 @@ const TractorOverview = ({
             {filteredTractors && (
                 <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
-                        Showing statistics for {filteredTractors.length} tractor{filteredTractors.length !== 1 ? 's' : ''}
+                        Showing statistics
+                        for {filteredTractors.length} tractor{filteredTractors.length !== 1 ? 's' : ''}
                     </div>
                 </div>
             )}
@@ -416,10 +417,21 @@ const TractorOverview = ({
                                     return (
                                         <tr key={op.employeeId}>
                                             <td className="plant-name">
-                                                <span style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                                <span style={{
+                                                    position: 'relative',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}>
                                                     {op.name}
                                                     {isTractorOperator && assignedTractor && (
-                                                        <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '6px'}}>
+                                                        <span tabIndex="0" style={{
+                                                            position: 'relative',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            marginLeft: '6px'
+                                                        }}>
                                                             <i className="fas fa-exclamation-triangle tractor-warning-icon"></i>
                                                             <span className="trainer-warning-tooltip right-tooltip">
                                                                 Tractor Operator assigned to a tractor
@@ -427,7 +439,13 @@ const TractorOverview = ({
                                                         </span>
                                                     )}
                                                     {isDuplicateName && (
-                                                        <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '6px'}}>
+                                                        <span tabIndex="0" style={{
+                                                            position: 'relative',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            marginLeft: '6px'
+                                                        }}>
                                                             <i className="fas fa-exclamation-triangle duplicate-warning-icon"></i>
                                                             <span className="trainer-warning-tooltip right-tooltip">
                                                                 Duplicate operator name
@@ -438,14 +456,18 @@ const TractorOverview = ({
                                             </td>
                                             <td>{op.position || ''}</td>
                                             <td>
-                                                {assignedTractor ? assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id : <span className="inactive-dash">—</span>}
+                                                {assignedTractor ? assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id :
+                                                    <span className="inactive-dash">—</span>}
                                             </td>
                                         </tr>
                                     );
                                 })}
                             {operators.filter(op => op.plantCode === selectedPlant && op.status === 'Active').length === 0 && (
                                 <tr>
-                                    <td colSpan={3} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for this plant.</td>
+                                    <td colSpan={3} className="inactive-dash"
+                                        style={{fontStyle: 'italic', padding: '8px 12px'}}>No active operators found for
+                                        this plant.
+                                    </td>
                                 </tr>
                             )}
                             </tbody>
@@ -465,13 +487,15 @@ const TractorOverview = ({
                             <th>Trainer</th>
                             <th>Trainee</th>
                             <th>Trainee Position</th>
-                            <th>-> Plant</th>
+                            <th>&rarr; Plant</th>
                         </tr>
                         </thead>
                         <tbody>
                         {getTrainerTraineeRows().length === 0 && (
                             <tr>
-                                <td colSpan={7} className="inactive-dash" style={{fontStyle: 'italic', padding: '8px 12px'}}>No trainers or trainees found.</td>
+                                <td colSpan={7} className="inactive-dash"
+                                    style={{fontStyle: 'italic', padding: '8px 12px'}}>No trainers or trainees found.
+                                </td>
                             </tr>
                         )}
                         {getTrainerTraineeRows().map((row, idx) => (
@@ -481,7 +505,12 @@ const TractorOverview = ({
                                 <td>{row.trainerPosition || <span className="inactive-dash">—</span>}</td>
                                 <td>
                                     {row.hasMultipleTrainees ? (
-                                        <span tabIndex="0" style={{position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                        <span tabIndex="0" style={{
+                                            position: 'relative',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}>
                                             {row.trainer}
                                             <i className="fas fa-exclamation-triangle"></i>
                                             <span className="trainer-warning-tooltip right-tooltip">
@@ -494,7 +523,8 @@ const TractorOverview = ({
                                 </td>
                                 <td>{row.trainee || <span className="inactive-dash">—</span>}</td>
                                 <td>{row.traineePosition || <span className="inactive-dash">—</span>}</td>
-                                <td>{row.traineePlant ? getPlantName(row.traineePlant) : <span className="inactive-dash">—</span>}</td>
+                                <td>{row.traineePlant ? getPlantName(row.traineePlant) :
+                                    <span className="inactive-dash">—</span>}</td>
                             </tr>
                         ))}
                         </tbody>

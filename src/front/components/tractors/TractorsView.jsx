@@ -1,19 +1,20 @@
 import React, {useEffect, useState} from 'react';
+import PropTypes from 'prop-types';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TractorCard from './TractorCard';
 import TractorOverview from './TractorOverview';
 import '../../styles/FilterStyles.css';
 import './styles/TractorsView.css';
-import { TractorService } from '../../../services/TractorService';
+import {TractorService} from '../../../services/TractorService';
 import {TractorUtility} from "../../../utils/TractorUtility";
 import {OperatorService} from "../../../services/OperatorService";
 import {PlantService} from "../../../services/PlantService";
 import TractorAddView from "./TractorAddView";
 import TractorDetailView from "./TractorDetailView";
 
-function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onSelectTractor}) {
-    const {preferences, resetTractorFilters, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
+function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
+    const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
     const [tractors, setTractors] = useState([])
     const [operators, setOperators] = useState([])
     const [plants, setPlants] = useState([])
@@ -44,6 +45,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                 setIsLoading(false)
             }
         }
+
         fetchAllData()
         if (preferences?.tractorFilters) {
             setSearchText(preferences.tractorFilters.searchText || '')
@@ -87,7 +89,8 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                 try {
                     const history = await TractorService.getTractorHistory(tractor.id, 1);
                     latestHistoryDate = history[0]?.changedAt || null;
-                } catch {}
+                } catch {
+                }
                 try {
                     const issues = await TractorService.fetchIssues(tractor.id);
                     tractor.issues = issues || [];
@@ -108,15 +111,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             }));
 
             for (const tractor of processedData) {
-                if (
-                    tractor.status === 'Active' &&
-                    (
-                        !tractor.assignedOperator ||
-                        tractor.assignedOperator === '0' ||
-                        tractor.assignedOperator === '' ||
-                        tractor.assignedOperator === null
-                    )
-                ) {
+                if (tractor.status === 'Active' && (!tractor.assignedOperator || tractor.assignedOperator === '0' || tractor.assignedOperator === '' || tractor.assignedOperator === null)) {
                     let cleanlinessRating = tractor.cleanlinessRating;
                     if (!cleanlinessRating || isNaN(cleanlinessRating) || cleanlinessRating < 1) {
                         cleanlinessRating = 1;
@@ -124,39 +119,24 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                     let updatedTractor = {...tractor, status: 'Spare', cleanlinessRating};
                     if (!updatedTractor.truckNumber) updatedTractor.truckNumber = tractor.truckNumber || '';
                     if (!updatedTractor.assignedPlant) updatedTractor.assignedPlant = tractor.assignedPlant || '';
-                    if (!updatedTractor.hasOwnProperty('hasBlower')) updatedTractor.hasBlower = !!tractor.hasBlower;
-                    if (!updatedTractor.hasOwnProperty('vin')) updatedTractor.vin = tractor.vin || '';
-                    if (!updatedTractor.hasOwnProperty('make')) updatedTractor.make = tractor.make || '';
-                    if (!updatedTractor.hasOwnProperty('model')) updatedTractor.model = tractor.model || '';
-                    if (!updatedTractor.hasOwnProperty('year')) updatedTractor.year = tractor.year || '';
-                    if (!updatedTractor.hasOwnProperty('lastServiceDate')) updatedTractor.lastServiceDate = tractor.lastServiceDate || null;
+                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'hasBlower')) updatedTractor.hasBlower = !!tractor.hasBlower;
+                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'vin')) updatedTractor.vin = tractor.vin || '';
+                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'make')) updatedTractor.make = tractor.make || '';
+                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'model')) updatedTractor.model = tractor.model || '';
+                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'year')) updatedTractor.year = tractor.year || '';
+                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'lastServiceDate')) updatedTractor.lastServiceDate = tractor.lastServiceDate || null;
                     try {
-                        await TractorService.updateTractor(
-                            tractor.id,
-                            updatedTractor,
-                            undefined,
-                            tractor
-                        );
+                        await TractorService.updateTractor(tractor.id, updatedTractor, undefined, tractor);
                         tractor.status = 'Spare';
                         tractor.cleanlinessRating = cleanlinessRating;
-                    } catch (e) {}
+                    } catch (e) {
+                    }
                 }
             }
 
             setTractors(processedData);
         } catch (error) {
             console.error('Error fetching tractors:', error);
-        }
-    }
-
-    async function fixActiveTractorsWithoutOperator(tractorsList) {
-        const updates = tractorsList
-            .filter(m => m.status === 'Active' && (!m.assignedOperator || m.assignedOperator === '0'));
-        for (const tractor of updates) {
-            try {
-                await TractorService.updateTractor(tractor.id, {...tractor, status: 'Spare'}, undefined, tractor);
-                tractor.status = 'Spare';
-            } catch (e) {}
         }
     }
 
@@ -293,7 +273,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const blob = new Blob([csvContent], {type: 'text/csv'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -335,20 +315,9 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '');
         });
 
-    const statusCounts = ['Active', 'Spare', 'In Shop', 'Retired'].map(status => ({
-        status,
-        count: tractors.filter(m => m.status === status).length
-    }));
-    const pastDueServiceCount = tractors.filter(m => TractorUtility.isServiceOverdue(m.lastServiceDate)).length;
     const verifiedCount = tractors.filter(m => m.isVerified()).length;
     const unverifiedCount = tractors.length - verifiedCount;
     const neverVerifiedCount = tractors.filter(m => !m.updatedLast || !m.updatedBy).length;
-    const openIssuesCount = tractors.filter(m => m.issues?.some(issue => !issue.time_completed)).length;
-
-    function averageCleanliness() {
-        const ratings = tractors.filter(m => m.cleanlinessRating).map(m => m.cleanlinessRating);
-        return ratings.length ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) : 'Not Assigned';
-    }
 
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
@@ -399,9 +368,9 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                     <button
                         className="action-button primary rectangular-button"
                         onClick={() => setShowAddSheet(true)}
-                        style={{ height: '44px', lineHeight: '1' }}
+                        style={{height: '44px', lineHeight: '1'}}
                     >
-                        <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Tractor
+                        <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Tractor
                     </button>
                 </div>
             </div>
@@ -513,7 +482,7 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
             <div className="content-container">
                 {isLoading ? (
                     <div className="loading-container">
-                        <LoadingScreen message="Loading tractors..." inline={true} />
+                        <LoadingScreen message="Loading tractors..." inline={true}/>
                     </div>
                 ) : filteredTractors.length === 0 ? (
                     <div className="no-results-container">
@@ -540,26 +509,27 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                 ) : viewMode === 'list' ? (
                     <table className="tractors-list-table">
                         <thead>
-                            <tr>
-                                <th>Plant</th>
-                                <th>Truck #</th>
-                                <th>Status</th>
-                                <th>Operator</th>
-                                <th>Cleanliness</th>
-                                <th>VIN</th>
-                                <th>Verified</th>
-                                <th>More</th>
-                            </tr>
+                        <tr>
+                            <th>Plant</th>
+                            <th>Truck #</th>
+                            <th>Status</th>
+                            <th>Operator</th>
+                            <th>Cleanliness</th>
+                            <th>VIN</th>
+                            <th>Verified</th>
+                            <th>More</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {filteredTractors.map(tractor => {
-                                const commentsCount = Array.isArray(tractor.comments) ? tractor.comments.length : 0
-                                const issuesCount = Array.isArray(tractor.issues) ? tractor.issues.filter(issue => !issue.time_completed).length : 0
-                                return (
-                                    <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}>
-                                        <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
-                                        <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
-                                        <td>
+                        {filteredTractors.map(tractor => {
+                            const commentsCount = Array.isArray(tractor.comments) ? tractor.comments.length : 0
+                            const issuesCount = Array.isArray(tractor.issues) ? tractor.issues.filter(issue => !issue.time_completed).length : 0
+                            return (
+                                <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)}
+                                    style={{cursor: 'pointer'}}>
+                                    <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
+                                    <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
+                                    <td>
                                             <span
                                                 className="item-status-dot"
                                                 style={{
@@ -568,60 +538,64 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                                                     marginRight: '8px',
                                                     backgroundColor:
                                                         tractor.status === 'Active' ? 'var(--status-active)' :
-                                                        tractor.status === 'Spare' ? 'var(--status-spare)' :
-                                                        tractor.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                        tractor.status === 'Retired' ? 'var(--status-retired)' :
-                                                        'var(--accent)',
+                                                            tractor.status === 'Spare' ? 'var(--status-spare)' :
+                                                                tractor.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                                    tractor.status === 'Retired' ? 'var(--status-retired)' :
+                                                                        'var(--accent)',
                                                 }}
                                             ></span>
-                                            {tractor.status ? tractor.status : "---"}
-                                        </td>
-                                        <td>
-                                            {getOperatorName(tractor.assignedOperator) ? getOperatorName(tractor.assignedOperator) : "---"}
-                                            {isOperatorAssignedToMultipleTractors(tractor.assignedOperator) && (
-                                                <span className="warning-badge">
+                                        {tractor.status ? tractor.status : "---"}
+                                    </td>
+                                    <td>
+                                        {getOperatorName(tractor.assignedOperator) ? getOperatorName(tractor.assignedOperator) : "---"}
+                                        {isOperatorAssignedToMultipleTractors(tractor.assignedOperator) && (
+                                            <span className="warning-badge">
                                                     <i className="fas fa-exclamation-triangle"></i>
                                                 </span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            {(() => {
-                                                const rating = Math.round(tractor.cleanlinessRating || 0)
-                                                const stars = rating > 0 ? rating : 1
-                                                return Array.from({length: stars}).map((_, i) => (
-                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                ))
-                                            })()}
-                                        </td>
-                                        <td>{tractor.vin ? tractor.vin : "---"}</td>
-                                        <td>
-                                            {tractor.isVerified() ? (
-                                                <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                    <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                        )}
+                                    </td>
+                                    <td>
+                                        {(() => {
+                                            const rating = Math.round(tractor.cleanlinessRating || 0)
+                                            const stars = rating > 0 ? rating : 1
+                                            return Array.from({length: stars}).map((_, i) => (
+                                                <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                            ))
+                                        })()}
+                                    </td>
+                                    <td>{tractor.vin ? tractor.vin : "---"}</td>
+                                    <td>
+                                        {tractor.isVerified() ? (
+                                            <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                    <i className="fas fa-check-circle"
+                                                       style={{color: 'var(--success)', marginRight: 6}}></i>
                                                     Verified
                                                 </span>
-                                            ) : (
-                                                <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                    <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                        ) : (
+                                            <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                                    <i className="fas fa-flag"
+                                                       style={{color: 'var(--error)', marginRight: 6}}></i>
                                                     Not Verified
                                                 </span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                <div style={{display: 'flex', alignItems: 'center'}}>
-                                                    <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                    <span>{commentsCount}</span>
-                                                </div>
-                                                <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
-                                                    <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                    <span>{issuesCount}</span>
-                                                </div>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                                <i className="fas fa-comments"
+                                                   style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                <span>{commentsCount}</span>
                                             </div>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
+                                            <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                <i className="fas fa-tools"
+                                                   style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                                <span>{issuesCount}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )
+                        })}
                         </tbody>
                     </table>
                 ) : (
@@ -643,9 +617,11 @@ function TractorsView({title = 'Tractor Fleet', showSidebar, setShowSidebar, onS
                     onTractorAdded={newTractor => setTractors([...tractors, newTractor])}
                 />
             )}
-            {showOverview && <OverviewPopup />}
+            {showOverview && <OverviewPopup/>}
         </div>
     )
 }
 
-export default TractorsView;
+TractorsView.propTypes = {title: PropTypes.string, onSelectTractor: PropTypes.func}
+
+export default TractorsView

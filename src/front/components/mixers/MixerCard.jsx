@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import MixerUtility from '../../../utils/MixerUtility';
-import ThemeUtility from '../../../utils/ThemeUtility';
 import {usePreferences} from '../../../app/context/PreferencesContext';
 import {MixerService} from '../../../services/MixerService';
 import './styles/MixerCard.css';
 
-function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect, onDelete}) {
+function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect}) {
     const isServiceOverdue = MixerUtility.isServiceOverdue(mixer.lastServiceDate);
     const isChipOverdue = MixerUtility.isChipOverdue(mixer.lastChipDate);
     const isVerified = typeof mixer.isVerified === 'function'
@@ -56,17 +55,8 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
         const diffTime = Math.abs(today - date);
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
-
-    const daysSinceService = getDaysSince(mixer.lastServiceDate);
-    const daysSinceChip = getDaysSince(mixer.lastChipDate);
-
-    const getIconMargin = () => {
-        let margin = 0;
-        if (openIssuesCount > 0) margin += 30;
-        if (commentsCount > 0) margin += 30;
-        return margin > 0 ? `${margin}px` : undefined;
-    };
-
+    getDaysSince(mixer.lastServiceDate);
+    getDaysSince(mixer.lastChipDate);
     const accentColor = preferences.accentColor === 'red'
         ? 'var(--accent)'
         : preferences.accentColor === 'darkgrey'
@@ -91,7 +81,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                 left: 0,
                 right: 0,
                 zIndex: 10
-            }} />
+            }}/>
             {commentsCount > 0 && (
                 <div
                     className="comments-badge"

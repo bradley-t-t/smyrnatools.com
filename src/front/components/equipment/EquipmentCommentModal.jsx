@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import './styles/EquipmentCommentModal.css';
-import { EquipmentService } from '../../../services/EquipmentService';
+import {EquipmentService} from '../../../services/EquipmentService';
 import LoadingScreen from '../common/LoadingScreen';
-import { supabase } from '../../../services/DatabaseService';
-import { UserService } from '../../../services/UserService';
+import {supabase} from '../../../services/DatabaseService';
+import {UserService} from '../../../services/UserService';
 
-function EquipmentCommentModal({ equipmentId, equipmentNumber, onClose }) {
+function EquipmentCommentModal({equipmentId, equipmentNumber, onClose}) {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +66,7 @@ function EquipmentCommentModal({ equipmentId, equipmentNumber, onClose }) {
         }
         setIsSubmitting(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const {data: {user}} = await supabase.auth.getUser();
             const userId = user?.id || sessionStorage.getItem('userId');
             if (!userId) {
                 throw new Error('You must be logged in to add comments');
@@ -126,7 +126,7 @@ function EquipmentCommentModal({ equipmentId, equipmentNumber, onClose }) {
                         <h3>Comments History</h3>
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading comments..." inline={true} />
+                                <LoadingScreen message="Loading comments..." inline={true}/>
                             </div>
                         ) : comments.length === 0 ? (
                             <div className="empty-comments">
@@ -138,8 +138,10 @@ function EquipmentCommentModal({ equipmentId, equipmentNumber, onClose }) {
                             comments.map(comment => (
                                 <div key={comment.id} className="comment-item">
                                     <div className="comment-metadata">
-                                        <span className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
-                                        <span className="comment-date" style={{ marginLeft: '8px' }}>{formatDate(comment.createdAt)}</span>
+                                        <span
+                                            className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
+                                        <span className="comment-date"
+                                              style={{marginLeft: '8px'}}>{formatDate(comment.createdAt)}</span>
                                         <button
                                             className="delete-comment-button"
                                             onClick={() => handleDeleteComment(comment.id)}

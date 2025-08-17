@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import { supabase } from '../../../services/DatabaseService';
+import React, {useEffect, useState} from 'react';
+import {supabase} from '../../../services/DatabaseService';
 import UserLabel from '../common/UserLabel';
 import './styles/EquipmentHistoryView.css';
 
-function EquipmentHistoryView({ equipment, onClose }) {
-    const { preferences } = usePreferences();
+function EquipmentHistoryView({equipment, onClose}) {
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [sortConfig, setSortConfig] = useState({
+    const [sortConfig] = useState({
         key: 'changedAt',
         direction: 'descending'
     });
@@ -21,11 +19,11 @@ function EquipmentHistoryView({ equipment, onClose }) {
     const fetchHistory = async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('heavy_equipment_history')
                 .select('*')
                 .eq('equipment_id', equipment.id)
-                .order('changed_at', { ascending: false });
+                .order('changed_at', {ascending: false});
             if (error) setError('Failed to load history. Please try again.');
             else setHistory(data || []);
         } catch (err) {
@@ -69,7 +67,7 @@ function EquipmentHistoryView({ equipment, onClose }) {
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
     };
 
     const formatValue = (fieldName, value) => {
@@ -95,50 +93,27 @@ function EquipmentHistoryView({ equipment, onClose }) {
 
     const sortedHistory = React.useMemo(() => {
         let sortableItems = [...history];
-        if (sortConfig !== null) {
+        if (sortConfig) {
             sortableItems.sort((a, b) => {
                 let aValue, bValue;
-                if (sortConfig.key === 'changedAt') {
-                    aValue = a.changed_at;
-                    bValue = b.changed_at;
-                } else if (sortConfig.key === 'fieldName') {
-                    aValue = a.field_name;
-                    bValue = b.field_name;
-                } else if (sortConfig.key === 'oldValue') {
-                    aValue = a.old_value;
-                    bValue = b.old_value;
-                } else if (sortConfig.key === 'newValue') {
-                    aValue = a.new_value;
-                    bValue = b.new_value;
-                } else if (sortConfig.key === 'changedBy') {
-                    aValue = a.changed_by;
-                    bValue = b.changed_by;
-                }
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
+                if (sortConfig.key === 'changedAt') { aValue = a.changed_at; bValue = b.changed_at; }
+                else if (sortConfig.key === 'fieldName') { aValue = a.field_name; bValue = b.field_name; }
+                else if (sortConfig.key === 'oldValue') { aValue = a.old_value; bValue = b.old_value; }
+                else if (sortConfig.key === 'newValue') { aValue = a.new_value; bValue = b.new_value; }
+                else if (sortConfig.key === 'changedBy') { aValue = a.changed_by; bValue = b.changed_by; }
+                if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
                 return 0;
             });
         }
         return sortableItems;
     }, [history, sortConfig]);
 
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
                 <div className="history-modal-header"
-                     style={{ backgroundColor: 'var(--accent)' }}>
+                     style={{backgroundColor: 'var(--accent)'}}>
                     <h2>History for Equipment #{equipment.identifyingNumber}</h2>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>
@@ -155,7 +130,8 @@ function EquipmentHistoryView({ equipment, onClose }) {
                     ) : history.length === 0 ? (
                         <div className="empty-history">
                             <p>No history records found for this equipment.</p>
-                            <p className="empty-subtext">History entries will appear here when changes are made to this equipment.</p>
+                            <p className="empty-subtext">History entries will appear here when changes are made to this
+                                equipment.</p>
                         </div>
                     ) : (
                         <div className="history-timeline">
@@ -163,7 +139,7 @@ function EquipmentHistoryView({ equipment, onClose }) {
                                 <div
                                     key={entry.id || index}
                                     className="history-item"
-                                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                                    style={{backgroundColor: 'var(--bg-secondary)'}}
                                 >
                                     <div className="history-item-header">
                                         <div className="history-field-name">{formatFieldName(entry.field_name)}</div>
@@ -171,15 +147,17 @@ function EquipmentHistoryView({ equipment, onClose }) {
                                     </div>
                                     <div className="history-change">
                                         <div className="history-old-value">
-                                            <span className="value-label">From:</span> {formatValue(entry.field_name, entry.old_value)}
+                                            <span
+                                                className="value-label">From:</span> {formatValue(entry.field_name, entry.old_value)}
                                         </div>
                                         <div className="history-arrow">→</div>
                                         <div className="history-new-value">
-                                            <span className="value-label">To:</span> {formatValue(entry.field_name, entry.new_value)}
+                                            <span
+                                                className="value-label">To:</span> {formatValue(entry.field_name, entry.new_value)}
                                         </div>
                                     </div>
                                     <div className="history-user">
-                                        <UserLabel userId={entry.changed_by} showInitials={true} />
+                                        <UserLabel userId={entry.changed_by} showInitials={true}/>
                                     </div>
                                 </div>
                             ))}
@@ -195,4 +173,3 @@ function EquipmentHistoryView({ equipment, onClose }) {
 }
 
 export default EquipmentHistoryView;
-

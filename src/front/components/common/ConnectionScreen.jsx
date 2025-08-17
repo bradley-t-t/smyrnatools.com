@@ -1,10 +1,10 @@
 import React from 'react'
 import './styles/ConnectionScreen.css'
 import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png'
-import { usePreferences } from '../../../app/context/PreferencesContext'
+import {usePreferences} from '../../../app/context/PreferencesContext'
 
-function ConnectionScreen({ message = 'Connection lost. Trying to reconnect...', fullPage = true }) {
-    const { preferences } = usePreferences()
+function ConnectionScreen({message = 'Connection lost. Trying to reconnect...', fullPage = true}) {
+    const {preferences} = usePreferences()
     const isDarkMode = preferences?.themeMode === 'dark'
     const themeClass = isDarkMode ? 'dark-mode' : ''
 

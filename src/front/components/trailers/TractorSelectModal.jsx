@@ -1,8 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
 import './styles/TractorSelectModal.css';
 
-function TractorSelectModal({ isOpen, onClose, onSelect, currentValue, trailers, assignedPlant, readOnly, tractors, onRefresh, trailerId }) {
+function TractorSelectModal({
+                                isOpen,
+                                onClose,
+                                onSelect,
+                                currentValue,
+                                trailers,
+                                assignedPlant,
+                                readOnly,
+                                tractors,
+                                onRefresh,
+                                trailerId
+                            }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredTractors, setFilteredTractors] = useState(tractors || []);
     const [filter, setFilter] = useState('all');
@@ -27,7 +38,9 @@ function TractorSelectModal({ isOpen, onClose, onSelect, currentValue, trailers,
         } else {
             document.body.style.overflow = 'auto';
         }
-        return () => { document.body.style.overflow = 'auto'; };
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
     }, [isOpen]);
 
     useEffect(() => {

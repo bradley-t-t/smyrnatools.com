@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { TrailerService } from '../../../services/TrailerService';
-import { TrailerUtility } from '../../../utils/TrailerUtility';
-import { PlantService } from '../../../services/PlantService';
-import { supabase } from '../../../services/DatabaseService';
+import React, {useEffect, useState} from 'react';
+import {TrailerService} from '../../../services/TrailerService';
+import {TrailerUtility} from '../../../utils/TrailerUtility';
+import {PlantService} from '../../../services/PlantService';
+import {supabase} from '../../../services/DatabaseService';
 import LoadingScreen from '../common/LoadingScreen';
 import './styles/TrailerOverview.css';
 
@@ -48,7 +48,7 @@ const TrailerOverview = ({
         setVerifiedCount(verified);
         setNotVerifiedCount(notVerified);
         calculatePlantDistributionByType(statsTrailers);
-        setTypeCounts(prev => ({ ...prev, Total: statsTrailers.length }));
+        setTypeCounts(prev => ({...prev, Total: statsTrailers.length}));
         let filteredForIssues = statsTrailers;
         if (selectedPlant) {
             filteredForIssues = statsTrailers.filter(trailer => trailer.assignedPlant === selectedPlant);
@@ -90,13 +90,14 @@ const TrailerOverview = ({
             const trailersData = await TrailerService.fetchTrailers();
             let maintenanceIssues = [];
             try {
-                const { data, error } = await supabase
+                const {data, error} = await supabase
                     .from('trailers_maintenance')
                     .select('id, trailer_id, time_completed');
                 if (!error) {
                     maintenanceIssues = data || [];
                 }
-            } catch (maintenanceError) {}
+            } catch (maintenanceError) {
+            }
             const trailersWithMaintenance = trailersData.map(trailer => ({
                 ...trailer,
                 issues: maintenanceIssues.filter(issue => issue.trailer_id === trailer.id)
@@ -121,7 +122,7 @@ const TrailerOverview = ({
     if (isLoading) {
         return (
             <div className="tractor-overview">
-                <LoadingScreen message="Loading trailer data..." inline={true} />
+                <LoadingScreen message="Loading trailer data..." inline={true}/>
             </div>
         );
     }
@@ -129,14 +130,15 @@ const TrailerOverview = ({
     return (
         <div className="tractor-overview">
             {filteredTrailers && trailers.length !== filteredTrailers.length && (
-                <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                <div style={{textAlign: 'center', marginBottom: '10px'}}>
                     <span className="filtered-indicator">(Filtered: {filteredTrailers.length}/{trailers.length})</span>
                 </div>
             )}
             {filteredTrailers && (
-                <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                <div style={{textAlign: 'center', marginBottom: '15px'}}>
                     <div className="filter-indicator">
-                        Showing statistics for {filteredTrailers.length} trailer{filteredTrailers.length !== 1 ? 's' : ''}
+                        Showing statistics
+                        for {filteredTrailers.length} trailer{filteredTrailers.length !== 1 ? 's' : ''}
                     </div>
                 </div>
             )}
@@ -149,7 +151,7 @@ const TrailerOverview = ({
                             onClick={() => onTypeClick && onTypeClick('All Types')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{typeCounts.Total || 0}</div>
                             <div className="status-label">Total Trailers</div>
@@ -159,7 +161,7 @@ const TrailerOverview = ({
                             onClick={() => onTypeClick && onTypeClick('Cement')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{typeCounts.Cement || 0}</div>
                             <div className="status-label">Cement</div>
@@ -169,7 +171,7 @@ const TrailerOverview = ({
                             onClick={() => onTypeClick && onTypeClick('End Dump')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{typeCounts['End Dump'] || 0}</div>
                             <div className="status-label">End Dump</div>
@@ -179,7 +181,7 @@ const TrailerOverview = ({
                             onClick={() => onTypeClick && onTypeClick('Verified')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{verifiedCount}</div>
                             <div className="status-label">Verified</div>
@@ -189,13 +191,13 @@ const TrailerOverview = ({
                             onClick={() => onTypeClick && onTypeClick('Not Verified')}
                             tabIndex={0}
                             role="button"
-                            style={{ cursor: 'pointer' }}
+                            style={{cursor: 'pointer'}}
                         >
                             <div className="status-count">{notVerifiedCount}</div>
                             <div className="status-label">Not Verified</div>
                         </div>
                     </div>
-                    <div className="status-grid" style={{ marginTop: 16 }}>
+                    <div className="status-grid" style={{marginTop: 16}}>
                         <div className="status-item">
                             <div className="status-count">{statusCounts.Active || 0}</div>
                             <div className="status-label">Active</div>
@@ -248,7 +250,7 @@ const TrailerOverview = ({
                 </div>
                 {(!selectedPlant || Object.keys(plantCounts).length > 1) && (
                     <div className="overview-card plant-card">
-                        <h2 style={{ marginLeft: 10 }}>Plant Distribution</h2>
+                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>

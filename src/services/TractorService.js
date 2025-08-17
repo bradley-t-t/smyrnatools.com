@@ -1,13 +1,13 @@
 import supabase from './DatabaseService'
-import { Tractor } from '../config/models/tractors/Tractor'
-import { TractorUtility } from '../utils/TractorUtility'
-import { TractorHistory } from '../config/models/tractors/TractorHistory'
-import { UserService } from './UserService'
-import { TractorComment } from '../config/models/tractors/TractorComment'
-import { v4 as uuidv4 } from 'uuid'
-import { DateUtility } from '../utils/DateUtility'
-import { HistoryUtility } from '../utils/HistoryUtility'
-import { ValidationUtility } from '../utils/ValidationUtility'
+import {Tractor} from '../config/models/tractors/Tractor'
+import {TractorUtility} from '../utils/TractorUtility'
+import {TractorHistory} from '../config/models/tractors/TractorHistory'
+import {UserService} from './UserService'
+import {TractorComment} from '../config/models/tractors/TractorComment'
+import {v4 as uuidv4} from 'uuid'
+import {DateUtility} from '../utils/DateUtility'
+import {HistoryUtility} from '../utils/HistoryUtility'
+import {ValidationUtility} from '../utils/ValidationUtility'
 
 const TRACTORS_TABLE = 'tractors'
 const HISTORY_TABLE = 'tractors_history'
@@ -16,47 +16,64 @@ const TRACTORS_MAINTENANCE_TABLE = 'tractors_maintenance'
 
 export class TractorService {
     static async getAllTractors() {
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').order('truck_number', { ascending: true })
+        const {data, error} = await supabase.from(TRACTORS_TABLE).select('*').order('truck_number', {ascending: true})
         if (error) throw error
         const historyDates = await this._fetchHistoryDates()
         data.forEach(tractor => tractor.latestHistoryDate = historyDates[tractor.id] ?? null)
         return data.map(Tractor.fromApiFormat)
     }
-    static async fetchTractors() { return this.getAllTractors() }
+
+    static async fetchTractors() {
+        return this.getAllTractors()
+    }
+
     static async getTractorById(id) {
         ValidationUtility.requireUUID(id, 'Tractor ID is required')
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').eq('id', id).single()
+        const {data, error} = await supabase.from(TRACTORS_TABLE).select('*').eq('id', id).single()
         if (error) throw error
         if (!data) return null
         data.latestHistoryDate = await this.getLatestHistoryDate(id)
         return Tractor.fromApiFormat(data)
     }
+
     static async fetchTractorById(id) {
         ValidationUtility.requireUUID(id, 'Invalid tractor ID')
         const tractor = await this.getTractorById(id)
         if (!tractor) return null
-        tractor.isVerified = function(latestHistoryDate) { return TractorUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate) }
+        tractor.isVerified = function (latestHistoryDate) {
+            return TractorUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate)
+        }
         return tractor
     }
+
     static async getLatestHistoryDate(tractorId) {
         if (!tractorId) return null
-        const { data, error } = await supabase.from(HISTORY_TABLE).select('changed_at').eq('tractor_id', tractorId).order('changed_at', { ascending: false }).limit(1).single()
+        const {
+            data,
+            error
+        } = await supabase.from(HISTORY_TABLE).select('changed_at').eq('tractor_id', tractorId).order('changed_at', {ascending: false}).limit(1).single()
         if (error || !data) return null
         return data.changed_at
     }
+
     static async getActiveTractors() {
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').eq('status', 'Active').order('truck_number', { ascending: true })
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_TABLE).select('*').eq('status', 'Active').order('truck_number', {ascending: true})
         if (error) throw error
         return data.map(Tractor.fromApiFormat)
     }
+
     static async getTractorHistory(tractorId, limit = null) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
-        let query = supabase.from(HISTORY_TABLE).select('*').eq('tractor_id', tractorId).order('changed_at', { ascending: false })
+        let query = supabase.from(HISTORY_TABLE).select('*').eq('tractor_id', tractorId).order('changed_at', {ascending: false})
         if (limit && Number.isInteger(limit) && limit > 0) query = query.limit(limit)
-        const { data, error } = await query
+        const {data, error} = await query
         if (error) throw error
         return data.map(TractorHistory.fromApiFormat)
     }
+
     static async addTractor(tractor, userId) {
         const now = DateUtility.nowDb()
         const apiData = {
@@ -75,10 +92,11 @@ export class TractorService {
             updated_at: now,
             updated_by: userId
         }
-        const { data, error } = await supabase.from(TRACTORS_TABLE).insert([apiData]).select().single()
+        const {data, error} = await supabase.from(TRACTORS_TABLE).insert([apiData]).select().single()
         if (error) throw error
         return Tractor.fromApiFormat(data)
     }
+
     static async createTractor(tractor, userId) {
         if (!userId) {
             const user = await UserService.getCurrentUser()
@@ -88,6 +106,7 @@ export class TractorService {
         if (tractor.id) delete tractor.id
         return this.addTractor(tractor, userId)
     }
+
     static async updateTractor(tractorId, tractor, userId, prevTractorState = null) {
         const id = typeof tractorId === 'object' ? tractorId.id : tractorId
         ValidationUtility.requireUUID(id, 'Tractor ID is required')
@@ -119,36 +138,43 @@ export class TractorService {
             updated_by: userId,
             updated_last: tractor.updatedLast ?? currentTractor.updatedLast
         }
-        const { data, error } = await supabase.from(TRACTORS_TABLE).update(apiData).eq('id', id).select().single()
+        const {data, error} = await supabase.from(TRACTORS_TABLE).update(apiData).eq('id', id).select().single()
         if (error) throw error
         const historyEntries = HistoryUtility.buildChanges(id,
             [
-                { field: 'truckNumber', dbField: 'truck_number', entityIdColumn: 'tractor_id' },
-                { field: 'assignedPlant', dbField: 'assigned_plant', entityIdColumn: 'tractor_id' },
-                { field: 'assignedOperator', dbField: 'assigned_operator', entityIdColumn: 'tractor_id' },
-                { field: 'lastServiceDate', dbField: 'last_service_date', type: 'date', entityIdColumn: 'tractor_id' },
-                { field: 'cleanlinessRating', dbField: 'cleanliness_rating', type: 'number', entityIdColumn: 'tractor_id' },
-                { field: 'hasBlower', dbField: 'has_blower', entityIdColumn: 'tractor_id' },
-                { field: 'vin', dbField: 'vin', entityIdColumn: 'tractor_id' },
-                { field: 'make', dbField: 'make', entityIdColumn: 'tractor_id' },
-                { field: 'model', dbField: 'model', entityIdColumn: 'tractor_id' },
-                { field: 'year', dbField: 'year', type: 'number', entityIdColumn: 'tractor_id' },
-                { field: 'status', dbField: 'status', entityIdColumn: 'tractor_id' }
+                {field: 'truckNumber', dbField: 'truck_number', entityIdColumn: 'tractor_id'},
+                {field: 'assignedPlant', dbField: 'assigned_plant', entityIdColumn: 'tractor_id'},
+                {field: 'assignedOperator', dbField: 'assigned_operator', entityIdColumn: 'tractor_id'},
+                {field: 'lastServiceDate', dbField: 'last_service_date', type: 'date', entityIdColumn: 'tractor_id'},
+                {
+                    field: 'cleanlinessRating',
+                    dbField: 'cleanliness_rating',
+                    type: 'number',
+                    entityIdColumn: 'tractor_id'
+                },
+                {field: 'hasBlower', dbField: 'has_blower', entityIdColumn: 'tractor_id'},
+                {field: 'vin', dbField: 'vin', entityIdColumn: 'tractor_id'},
+                {field: 'make', dbField: 'make', entityIdColumn: 'tractor_id'},
+                {field: 'model', dbField: 'model', entityIdColumn: 'tractor_id'},
+                {field: 'year', dbField: 'year', type: 'number', entityIdColumn: 'tractor_id'},
+                {field: 'status', dbField: 'status', entityIdColumn: 'tractor_id'}
             ],
             currentTractor,
-            { ...tractor, assignedOperator, status },
+            {...tractor, assignedOperator, status},
             userId
         )
         if (historyEntries.length) await supabase.from(HISTORY_TABLE).insert(historyEntries)
         return Tractor.fromApiFormat(data)
     }
+
     static async deleteTractor(id) {
         ValidationUtility.requireUUID(id, 'Tractor ID is required')
         await supabase.from(HISTORY_TABLE).delete().eq('tractor_id', id)
-        const { error } = await supabase.from(TRACTORS_TABLE).delete().eq('id', id)
+        const {error} = await supabase.from(TRACTORS_TABLE).delete().eq('id', id)
         if (error) throw error
         return true
     }
+
     static async createHistoryEntry(tractorId, fieldName, oldValue, newValue, changedBy) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
         if (!fieldName) throw new Error('Field name required')
@@ -158,96 +184,152 @@ export class TractorService {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
-        const { data, error } = await supabase.from(HISTORY_TABLE).insert({ tractor_id: tractorId, field_name: fieldName, old_value: oldValue?.toString() ?? null, new_value: newValue?.toString() ?? null, changed_at: new Date().toISOString(), changed_by: userId }).select().single()
+        const {data, error} = await supabase.from(HISTORY_TABLE).insert({
+            tractor_id: tractorId,
+            field_name: fieldName,
+            old_value: oldValue?.toString() ?? null,
+            new_value: newValue?.toString() ?? null,
+            changed_at: new Date().toISOString(),
+            changed_by: userId
+        }).select().single()
         if (error) throw error
         return data
     }
+
     static async getCleanlinessHistory(tractorId = null, months = 6) {
-        const threshold = new Date(); threshold.setMonth(threshold.getMonth() - months)
-        let query = supabase.from(HISTORY_TABLE).select('*').eq('field_name', 'cleanliness_rating').gte('changed_at', threshold.toISOString()).order('changed_at', { ascending: true }).abortSignal(AbortSignal.timeout(5000)).limit(200)
+        const threshold = new Date();
+        threshold.setMonth(threshold.getMonth() - months)
+        let query = supabase.from(HISTORY_TABLE).select('*').eq('field_name', 'cleanliness_rating').gte('changed_at', threshold.toISOString()).order('changed_at', {ascending: true}).abortSignal(AbortSignal.timeout(5000)).limit(200)
         if (tractorId) query = query.eq('tractor_id', tractorId)
-        const { data, error } = await query
+        const {data, error} = await query
         if (error) throw error
         return data
     }
+
     static async getTractorsByOperator(operatorId) {
         ValidationUtility.requireUUID(operatorId, 'Operator ID is required')
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').eq('assigned_operator', operatorId).order('truck_number', { ascending: true })
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_TABLE).select('*').eq('assigned_operator', operatorId).order('truck_number', {ascending: true})
         if (error) throw error
         return data.map(Tractor.fromApiFormat)
     }
+
     static async getTractorsByStatus(status) {
         if (!status) throw new Error('Status is required')
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').eq('status', status).order('truck_number', { ascending: true })
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_TABLE).select('*').eq('status', status).order('truck_number', {ascending: true})
         if (error) throw error
         return data.map(Tractor.fromApiFormat)
     }
+
     static async searchTractorsByTruckNumber(query) {
         if (!query?.trim()) throw new Error('Search query is required')
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').ilike('truck_number', `%${query.trim()}%`).order('truck_number', { ascending: true })
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_TABLE).select('*').ilike('truck_number', `%${query.trim()}%`).order('truck_number', {ascending: true})
         if (error) throw error
         return data.map(Tractor.fromApiFormat)
     }
+
     static async getTractorsNeedingService(dayThreshold = 30) {
-        const { data, error } = await supabase.from(TRACTORS_TABLE).select('*').order('truck_number', { ascending: true })
+        const {data, error} = await supabase.from(TRACTORS_TABLE).select('*').order('truck_number', {ascending: true})
         if (error) throw error
-        const thresholdDate = new Date(); thresholdDate.setDate(thresholdDate.getDate() - dayThreshold)
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() - dayThreshold)
         return data.filter(tractor => !tractor.last_service_date || new Date(tractor.last_service_date) < thresholdDate).map(Tractor.fromApiFormat)
     }
+
     static async fetchComments(tractorId) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
-        const { data, error } = await supabase.from(TRACTORS_COMMENTS_TABLE).select('*').eq('tractor_id', tractorId).order('created_at', { ascending: false })
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_COMMENTS_TABLE).select('*').eq('tractor_id', tractorId).order('created_at', {ascending: false})
         if (error) throw error
         return data?.map(TractorComment.fromRow) ?? []
     }
+
     static async addComment(tractorId, text, author) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim()) throw new Error('Author is required')
-        const comment = { tractor_id: tractorId, text: text.trim(), author: author.trim(), created_at: new Date().toISOString() }
-        const { data, error } = await supabase.from(TRACTORS_COMMENTS_TABLE).insert([comment]).select().single()
+        const comment = {
+            tractor_id: tractorId,
+            text: text.trim(),
+            author: author.trim(),
+            created_at: new Date().toISOString()
+        }
+        const {data, error} = await supabase.from(TRACTORS_COMMENTS_TABLE).insert([comment]).select().single()
         if (error) throw error
         return data ? TractorComment.fromRow(data) : null
     }
+
     static async deleteComment(commentId) {
         ValidationUtility.requireUUID(commentId, 'Comment ID is required')
-        const { error } = await supabase.from(TRACTORS_COMMENTS_TABLE).delete().eq('id', commentId)
+        const {error} = await supabase.from(TRACTORS_COMMENTS_TABLE).delete().eq('id', commentId)
         if (error) throw error
         return true
     }
+
     static async _fetchHistoryDates() {
-        const { data, error } = await supabase.from(HISTORY_TABLE).select('tractor_id, changed_at').order('changed_at', { ascending: false })
+        const {
+            data,
+            error
+        } = await supabase.from(HISTORY_TABLE).select('tractor_id, changed_at').order('changed_at', {ascending: false})
         if (error) return {}
         const historyDates = {}
-        data.forEach(entry => { if (!historyDates[entry.tractor_id] || new Date(entry.changed_at) > new Date(historyDates[entry.tractor_id])) historyDates[entry.tractor_id] = entry.changed_at })
+        data.forEach(entry => {
+            if (!historyDates[entry.tractor_id] || new Date(entry.changed_at) > new Date(historyDates[entry.tractor_id])) historyDates[entry.tractor_id] = entry.changed_at
+        })
         return historyDates
     }
+
     static async fetchIssues(tractorId) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
-        const { data, error } = await supabase.from(TRACTORS_MAINTENANCE_TABLE).select('*').eq('tractor_id', tractorId).order('time_created', { ascending: false })
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_MAINTENANCE_TABLE).select('*').eq('tractor_id', tractorId).order('time_created', {ascending: false})
         if (error) throw error
         return data ?? []
     }
+
     static async addIssue(tractorId, issueText, severity) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
         if (!issueText?.trim()) throw new Error('Issue description is required')
         const validSeverities = ['Low', 'Medium', 'High']
         const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium'
-        const payload = { id: uuidv4(), tractor_id: tractorId, issue: issueText.trim(), severity: finalSeverity, time_completed: null }
-        const { data, error } = await supabase.from(TRACTORS_MAINTENANCE_TABLE).insert([payload]).select().single()
+        const payload = {
+            id: uuidv4(),
+            tractor_id: tractorId,
+            issue: issueText.trim(),
+            severity: finalSeverity,
+            time_completed: null
+        }
+        const {data, error} = await supabase.from(TRACTORS_MAINTENANCE_TABLE).insert([payload]).select().single()
         if (error) throw error
         if (!data) throw new Error('Database insert succeeded but no data was returned')
         return data
     }
+
     static async deleteIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
-        const { error } = await supabase.from(TRACTORS_MAINTENANCE_TABLE).delete().eq('id', issueId)
+        const {error} = await supabase.from(TRACTORS_MAINTENANCE_TABLE).delete().eq('id', issueId)
         if (error) throw error
         return true
     }
+
     static async completeIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
-        const { data, error } = await supabase.from(TRACTORS_MAINTENANCE_TABLE).update({ time_completed: new Date().toISOString() }).eq('id', issueId).select().single()
+        const {
+            data,
+            error
+        } = await supabase.from(TRACTORS_MAINTENANCE_TABLE).update({time_completed: new Date().toISOString()}).eq('id', issueId).select().single()
         if (error) throw error
         return data
     }

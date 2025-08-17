@@ -3,8 +3,8 @@ import './styles/ManagerCard.css';
 import ThemeUtility from '../../../utils/ThemeUtility';
 import {usePreferences} from "../../../app/context/PreferencesContext";
 
-function ManagerCard({ manager, plantName, onSelect }) {
-    const { preferences } = usePreferences();
+function ManagerCard({manager, plantName, onSelect}) {
+    const {preferences} = usePreferences();
 
     const roleColor = ThemeUtility.getRoleColor(manager.roleName, manager.roleWeight);
 
@@ -14,7 +14,7 @@ function ManagerCard({ manager, plantName, onSelect }) {
         }
     };
 
-    const cardProps = onSelect ? { onClick: handleCardClick } : {};
+    const cardProps = onSelect ? {onClick: handleCardClick} : {};
 
     return (
         <div className="manager-card" {...cardProps}>

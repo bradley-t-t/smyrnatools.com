@@ -21,6 +21,6 @@
 }
 
 .simple-loading *, .simple-loading *::before, .simple-loading *::after {
-    animation: none ;
-    transition: none ;
+    animation: none;
+    transition: none;
 }

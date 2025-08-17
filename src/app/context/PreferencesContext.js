@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { logSupabaseError, supabase } from '../../services/DatabaseService'
-import { UserPreferencesService } from '../../services/UserPreferencesService'
+import React, {createContext, useContext, useEffect, useState} from 'react'
+import {logSupabaseError, supabase} from '../../services/DatabaseService'
+import {UserPreferencesService} from '../../services/UserPreferencesService'
 
 const PreferencesContext = createContext()
 
@@ -57,7 +57,7 @@ const defaultPreferences = {
     lastViewedFilters: null
 }
 
-export const PreferencesProvider = ({ children }) => {
+export const PreferencesProvider = ({children}) => {
     const [preferences, setPreferences] = useState(defaultPreferences)
     const [loading, setLoading] = useState(true)
     const [userId, setUserId] = useState(null)
@@ -73,7 +73,8 @@ export const PreferencesProvider = ({ children }) => {
                     document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
                     document.documentElement.classList.add(`accent-${parsedPrefs.accentColor}`)
                 }
-            } catch {}
+            } catch {
+            }
         }
         applyThemeFromStorage()
         const handleStorageChange = e => {
@@ -86,7 +87,7 @@ export const PreferencesProvider = ({ children }) => {
     useEffect(() => {
         const initializeUser = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession()
+                const {data: {session}} = await supabase.auth.getSession()
                 const sessionUserId = session?.user?.id || sessionStorage.getItem('userId')
                 if (sessionUserId) {
                     setUserId(sessionUserId)
@@ -99,7 +100,7 @@ export const PreferencesProvider = ({ children }) => {
             }
         }
         initializeUser()
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        const {data: authListener} = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN' && session?.user?.id) {
                 setUserId(session.user.id)
                 setTimeout(() => fetchUserPreferences(session.user.id), 500)
@@ -119,13 +120,14 @@ export const PreferencesProvider = ({ children }) => {
         document.documentElement.classList.add(`accent-${preferences.accentColor}`)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(preferences))
-        } catch {}
+        } catch {
+        }
     }, [preferences])
 
     const fetchUserPreferences = async uid => {
         try {
             setLoading(true)
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('users_preferences')
                 .select('*')
                 .eq('user_id', uid)
@@ -153,26 +155,45 @@ export const PreferencesProvider = ({ children }) => {
             showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
             autoOverview: data.auto_overview === undefined ? false : data.auto_overview,
             defaultViewMode: data.default_view_mode === undefined ? null : data.default_view_mode,
-            mixerFilters: data.mixer_filters ? { ...data.mixer_filters, viewMode: data.mixer_filters.viewMode || 'grid' } : { ...defaultPreferences.mixerFilters },
-            operatorFilters: data.operator_filters ? { ...data.operator_filters, viewMode: data.operator_filters.viewMode || 'grid' } : { ...defaultPreferences.operatorFilters },
-            managerFilters: data.manager_filters ? { ...data.manager_filters, viewMode: data.manager_filters.viewMode || 'grid' } : { ...defaultPreferences.managerFilters },
-            tractorFilters: data.tractor_filters ? { ...data.tractor_filters, viewMode: data.tractor_filters.viewMode || 'grid' } : { ...defaultPreferences.tractorFilters },
-            trailerFilters: data.trailer_filters ? { ...data.trailer_filters, viewMode: data.trailer_filters.viewMode || 'grid' } : { ...defaultPreferences.trailerFilters },
-            equipmentFilters: data.equipment_filters ? { ...data.equipment_filters, viewMode: data.equipment_filters.viewMode || 'grid' } : { ...defaultPreferences.equipmentFilters },
+            mixerFilters: data.mixer_filters ? {
+                ...data.mixer_filters,
+                viewMode: data.mixer_filters.viewMode || 'grid'
+            } : {...defaultPreferences.mixerFilters},
+            operatorFilters: data.operator_filters ? {
+                ...data.operator_filters,
+                viewMode: data.operator_filters.viewMode || 'grid'
+            } : {...defaultPreferences.operatorFilters},
+            managerFilters: data.manager_filters ? {
+                ...data.manager_filters,
+                viewMode: data.manager_filters.viewMode || 'grid'
+            } : {...defaultPreferences.managerFilters},
+            tractorFilters: data.tractor_filters ? {
+                ...data.tractor_filters,
+                viewMode: data.tractor_filters.viewMode || 'grid'
+            } : {...defaultPreferences.tractorFilters},
+            trailerFilters: data.trailer_filters ? {
+                ...data.trailer_filters,
+                viewMode: data.trailer_filters.viewMode || 'grid'
+            } : {...defaultPreferences.trailerFilters},
+            equipmentFilters: data.equipment_filters ? {
+                ...data.equipment_filters,
+                viewMode: data.equipment_filters.viewMode || 'grid'
+            } : {...defaultPreferences.equipmentFilters},
             lastViewedFilters: data.last_viewed_filters
         }
         setPreferences(newPreferences)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(newPreferences))
-        } catch {}
+        } catch {
+        }
     }
 
     const updatePreferences = async (keyOrObject, value) => {
         let updatedPreferences
         if (typeof keyOrObject === 'string') {
-            updatedPreferences = { ...preferences, [keyOrObject]: value }
+            updatedPreferences = {...preferences, [keyOrObject]: value}
         } else {
-            updatedPreferences = { ...preferences, ...keyOrObject }
+            updatedPreferences = {...preferences, ...keyOrObject}
         }
         setPreferences(updatedPreferences)
         localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences))
@@ -202,12 +223,12 @@ export const PreferencesProvider = ({ children }) => {
     }
 
     const updateManagerFilter = (key, value) => {
-        const newFilters = { ...preferences.managerFilters, [key]: value }
+        const newFilters = {...preferences.managerFilters, [key]: value}
         updatePreferences('managerFilters', newFilters)
     }
 
     const resetManagerFilters = (options = {}) => {
-        let newFilters = { ...defaultPreferences.managerFilters }
+        let newFilters = {...defaultPreferences.managerFilters}
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
@@ -215,30 +236,30 @@ export const PreferencesProvider = ({ children }) => {
     }
 
     const updateTractorFilter = (key, value) => {
-        const newFilters = { ...preferences.tractorFilters, [key]: value }
+        const newFilters = {...preferences.tractorFilters, [key]: value}
         updatePreferences('tractorFilters', newFilters)
     }
 
     const resetTractorFilters = () => {
-        updatePreferences('tractorFilters', { ...defaultPreferences.tractorFilters })
+        updatePreferences('tractorFilters', {...defaultPreferences.tractorFilters})
     }
 
     const updateTrailerFilter = (key, value) => {
-        const newFilters = { ...preferences.trailerFilters, [key]: value }
+        const newFilters = {...preferences.trailerFilters, [key]: value}
         updatePreferences('trailerFilters', newFilters)
     }
 
     const resetTrailerFilters = () => {
-        updatePreferences('trailerFilters', { ...defaultPreferences.trailerFilters })
+        updatePreferences('trailerFilters', {...defaultPreferences.trailerFilters})
     }
 
     const updateEquipmentFilter = (key, value) => {
-        const newFilters = { ...preferences.equipmentFilters, [key]: value }
+        const newFilters = {...preferences.equipmentFilters, [key]: value}
         updatePreferences('equipmentFilters', newFilters)
     }
 
     const resetEquipmentFilters = (options = {}) => {
-        let newFilters = { ...defaultPreferences.equipmentFilters }
+        let newFilters = {...defaultPreferences.equipmentFilters}
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
@@ -246,12 +267,12 @@ export const PreferencesProvider = ({ children }) => {
     }
 
     const updateMixerFilter = (key, value) => {
-        const newFilters = { ...preferences.mixerFilters, [key]: value }
+        const newFilters = {...preferences.mixerFilters, [key]: value}
         updatePreferences('mixerFilters', newFilters)
     }
 
     const resetMixerFilters = (options = {}) => {
-        let newFilters = { ...defaultPreferences.mixerFilters }
+        let newFilters = {...defaultPreferences.mixerFilters}
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
@@ -259,12 +280,12 @@ export const PreferencesProvider = ({ children }) => {
     }
 
     const updateOperatorFilter = (key, value) => {
-        const newFilters = { ...preferences.operatorFilters, [key]: value }
+        const newFilters = {...preferences.operatorFilters, [key]: value}
         updatePreferences('operatorFilters', newFilters)
     }
 
     const resetOperatorFilters = (options = {}) => {
-        let newFilters = { ...defaultPreferences.operatorFilters }
+        let newFilters = {...defaultPreferences.operatorFilters}
         if (options.keepViewMode && options.currentViewMode !== undefined) {
             newFilters.viewMode = options.currentViewMode
         }
@@ -280,10 +301,16 @@ export const PreferencesProvider = ({ children }) => {
     const saveLastViewedFilters = async filters => {
         try {
             if (!userId) return
-            await UserPreferencesService.saveLastViewedFilters(userId, filters)
+            const finalFilters = filters || {
+                mixer: preferences.mixerFilters,
+                tractor: preferences.tractorFilters,
+                trailer: preferences.trailerFilters,
+                equipment: preferences.equipmentFilters
+            }
+            await UserPreferencesService.saveLastViewedFilters(userId, finalFilters)
             setPreferences(prev => ({
                 ...prev,
-                lastViewedFilters: filters
+                lastViewedFilters: finalFilters
             }))
         } catch (error) {
             logSupabaseError('saving last viewed filters', error)

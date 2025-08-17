@@ -2,12 +2,12 @@ const DatabaseUtility = {
     async checkTableSchema(supabase, tableName) {
         if (!supabase || !tableName) throw new Error('Supabase client and table name are required')
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from(tableName)
                 .select('*')
                 .limit(1)
             if (error) {
-                return { exists: false, error: error.message, columns: null }
+                return {exists: false, error: error.message, columns: null}
             }
             return {
                 exists: true,
@@ -15,7 +15,7 @@ const DatabaseUtility = {
                 sample: data?.[0] ?? null
             }
         } catch (error) {
-            return { exists: false, error: error.message, columns: null }
+            return {exists: false, error: error.message, columns: null}
         }
     },
     storeDebugData(key, data) {
@@ -25,12 +25,13 @@ const DatabaseUtility = {
                 timestamp: new Date().toISOString(),
                 data
             }))
-        } catch (error) {}
+        } catch (error) {
+        }
     },
     async getRequiredFields(supabase, tableName) {
         if (!supabase || !tableName) throw new Error('Supabase client and table name are required')
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from(tableName)
                 .select('*')
                 .limit(10)
@@ -46,4 +47,4 @@ const DatabaseUtility = {
 }
 
 export default DatabaseUtility
-export { DatabaseUtility }
+export {DatabaseUtility}

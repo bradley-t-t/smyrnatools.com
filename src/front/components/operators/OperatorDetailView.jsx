@@ -1,13 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {PlantService} from '../../../services/PlantService';
-import {OperatorService} from '../../../services/OperatorService';
-import {UserService} from '../../../services/UserService';
-import LoadingScreen from '../common/LoadingScreen';
 import supabase from '../../../services/DatabaseService';
-import {usePreferences} from '../../../app/context/PreferencesContext';
 import OperatorCard from './OperatorCard';
-import {generateEmployeeIdFromUUID, generateRandomEmployeeId} from '../../../utils/IDUtility';
-import { AuthService } from '../../../services/AuthService';
 import './styles/OperatorDetailView.css';
 import OperatorScheduledOffButton from './OperatorScheduledOffView';
 
@@ -27,9 +20,9 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [isTrainer, setIsTrainer] = useState(false);
     const [assignedTrainer, setAssignedTrainer] = useState('');
     const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
-    const [updatedByEmail, setUpdatedByEmail] = useState('');
+    const [updatedByEmail] = useState('');
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [hasUnsavedChanges] = useState(false);
     const [scheduledOffDays, setScheduledOffDays] = useState([]);
     const [rating, setRating] = useState(0);
 
@@ -48,12 +41,12 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     }, [operatorId]);
 
     const fetchPlants = async () => {
-        const { data } = await supabase.from('plants').select('*');
+        const {data} = await supabase.from('plants').select('*');
         setPlants(data || []);
     };
 
     const fetchTrainers = async () => {
-        const { data } = await supabase
+        const {data} = await supabase
             .from('operators')
             .select('employee_id, name, is_trainer')
             .eq('is_trainer', true);
@@ -66,7 +59,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const { data } = await supabase
+            const {data} = await supabase
                 .from('operators')
                 .select('*')
                 .eq('employee_id', operatorId)
@@ -89,7 +82,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
 
     const fetchScheduledOff = async () => {
         if (!operatorId) return;
-        const { data } = await supabase
+        const {data} = await supabase
             .from('operators_scheduled_off')
             .select('days_off')
             .eq('id', operatorId)
@@ -131,7 +124,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             rating: typeof rating === 'number' ? rating : Number(rating) || 0
         }
         try {
-            const { error } = await supabase
+            const {error} = await supabase
                 .from('operators')
                 .update(updateObj)
                 .eq('employee_id', operatorId);
@@ -206,11 +199,13 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                     <div className="metadata-info" style={{display: 'none'}}>
                         <div className="metadata-row">
                             <span className="metadata-label">Created:</span>
-                            <span className="metadata-value">{operator && operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'Not Assigned'}</span>
+                            <span
+                                className="metadata-value">{operator && operator.createdAt ? new Date(operator.createdAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         <div className="metadata-row">
                             <span className="metadata-label">Last Updated:</span>
-                            <span className="metadata-value">{operator && operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'Not Assigned'}</span>
+                            <span
+                                className="metadata-value">{operator && operator.updatedAt ? new Date(operator.updatedAt).toLocaleString() : 'Not Assigned'}</span>
                         </div>
                         {operator && operator.updatedBy && (
                             <div className="metadata-row">
@@ -296,7 +291,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                     <div className="form-group">
                         <label>Rating</label>
                         <div style={{display: 'flex', alignItems: 'center', gap: 4}}>
-                            {[1,2,3,4,5].map(star => (
+                            {[1, 2, 3, 4, 5].map(star => (
                                 <span
                                     key={star}
                                     style={{
@@ -306,7 +301,9 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                                         userSelect: 'none'
                                     }}
                                     onClick={() => setRating(star)}
-                                    onKeyDown={e => { if (e.key === 'Enter') setRating(star); }}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') setRating(star);
+                                    }}
                                     tabIndex={0}
                                     aria-label={`Set rating to ${star} star${star > 1 ? 's' : ''}`}
                                     role="button"
@@ -380,9 +377,11 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Confirm Delete</h2>
-                        <p>Are you sure you want to delete {operator && operator.name}? This action cannot be undone.</p>
+                        <p>Are you sure you want to delete {operator && operator.name}? This action cannot be
+                            undone.</p>
                         <div className="confirmation-actions">
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button>
+                            <button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel
+                            </button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>

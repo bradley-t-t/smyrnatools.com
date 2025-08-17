@@ -1,5 +1,5 @@
 import MixerUtility from '../../../utils/MixerUtility'
-import { DateUtility } from '../../../utils/DateUtility'
+import {DateUtility} from '../../../utils/DateUtility'
 
 export class Mixer {
     constructor(data = {}) {

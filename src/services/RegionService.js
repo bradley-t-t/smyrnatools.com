@@ -8,7 +8,7 @@ class RegionServiceImpl {
     allRegions = []
 
     async fetchRegions() {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(REGIONS_TABLE)
             .select('*')
             .order('region_code')
@@ -21,7 +21,7 @@ class RegionServiceImpl {
         if (!regionCode) throw new Error('Region code is required')
         const region = this.getRegionByCode(regionCode)
         if (region) return region
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(REGIONS_TABLE)
             .select('*')
             .eq('region_code', regionCode)
@@ -48,7 +48,7 @@ class RegionServiceImpl {
             created_at: now,
             updated_at: now
         }
-        const { error } = await supabase
+        const {error} = await supabase
             .from(REGIONS_TABLE)
             .insert(region)
         if (error) throw error
@@ -58,14 +58,14 @@ class RegionServiceImpl {
 
     async updateRegion(regionCode, regionName, plantCodes = []) {
         if (!regionCode?.trim() || !regionName?.trim()) throw new Error('Region code and name are required')
-        const { data: regionData, error: regionError } = await supabase
+        const {data: regionData, error: regionError} = await supabase
             .from(REGIONS_TABLE)
             .select('id')
             .eq('region_code', regionCode)
             .single()
         if (regionError || !regionData) throw regionError || new Error('Region not found')
         const regionId = regionData.id
-        const { error: updateError } = await supabase
+        const {error: updateError} = await supabase
             .from(REGIONS_TABLE)
             .update({
                 region_name: regionName.trim(),
@@ -73,7 +73,7 @@ class RegionServiceImpl {
             })
             .eq('region_code', regionCode)
         if (updateError) throw updateError
-        const { error: deleteError } = await supabase
+        const {error: deleteError} = await supabase
             .from(REGION_PLANTS_TABLE)
             .delete()
             .eq('region_id', regionId)
@@ -84,7 +84,7 @@ class RegionServiceImpl {
                 plant_code: plantCode.trim(),
                 created_at: new Date().toISOString()
             }))
-            const { error: insertError } = await supabase
+            const {error: insertError} = await supabase
                 .from(REGION_PLANTS_TABLE)
                 .insert(regionPlants)
             if (insertError) throw insertError
@@ -95,19 +95,19 @@ class RegionServiceImpl {
 
     async deleteRegion(regionCode) {
         if (!regionCode) throw new Error('Region code is required')
-        const { data: regionData, error: regionError } = await supabase
+        const {data: regionData, error: regionError} = await supabase
             .from(REGIONS_TABLE)
             .select('id')
             .eq('region_code', regionCode)
             .single()
         if (regionError || !regionData) throw regionError || new Error('Region not found')
         const regionId = regionData.id
-        const { error: deletePlantsError } = await supabase
+        const {error: deletePlantsError} = await supabase
             .from(REGION_PLANTS_TABLE)
             .delete()
             .eq('region_id', regionId)
         if (deletePlantsError) throw deletePlantsError
-        const { error: deleteRegionError } = await supabase
+        const {error: deleteRegionError} = await supabase
             .from(REGIONS_TABLE)
             .delete()
             .eq('region_code', regionCode)
@@ -118,14 +118,14 @@ class RegionServiceImpl {
 
     async fetchRegionPlants(regionCode) {
         if (!regionCode) throw new Error('Region code is required')
-        const { data: regionData, error: regionError } = await supabase
+        const {data: regionData, error: regionError} = await supabase
             .from(REGIONS_TABLE)
             .select('id')
             .eq('region_code', regionCode)
             .single()
         if (regionError || !regionData) throw regionError || new Error('Region not found')
         const regionId = regionData.id
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from(REGION_PLANTS_TABLE)
             .select('plant_code, plants!inner(plant_code, plant_name)')
             .eq('region_id', regionId)
@@ -141,7 +141,7 @@ class RegionServiceImpl {
         const region = await this.fetchRegionByCode(regionCode)
         if (!region) return null
         const plants = await this.fetchRegionPlants(regionCode)
-        return { ...region, plants }
+        return {...region, plants}
     }
 }
 

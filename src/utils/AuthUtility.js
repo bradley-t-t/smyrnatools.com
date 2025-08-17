@@ -58,10 +58,6 @@ const AuthUtility = {
             throw error
         }
     },
-    async verifyPassword(password, hash, salt) {
-        const computedHash = await AuthUtility.hashPassword(password, salt)
-        return computedHash === hash
-    },
     async getUserId() {
         let userId = sessionStorage.getItem('userId')
         if (userId) return userId
@@ -71,7 +67,8 @@ const AuthUtility = {
                 sessionStorage.setItem('userId', data.session.user.id)
                 return data.session.user.id
             }
-        } catch {}
+        } catch {
+        }
         return null
     }
 }

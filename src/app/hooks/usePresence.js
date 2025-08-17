@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { UserPresenceService } from '../../services/UserPresenceService';
+import {useEffect, useState} from 'react';
+import {UserPresenceService} from '../../services/UserPresenceService';
 
 export function usePresence() {
     const [onlineUsers, setOnlineUsers] = useState([]);
@@ -43,7 +43,7 @@ export function usePresence() {
         };
     }, []);
 
-    return { onlineUsers, loading, error };
+    return {onlineUsers, loading, error};
 }
 
 export default usePresence;

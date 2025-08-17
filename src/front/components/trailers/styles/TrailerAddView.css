@@ -22,7 +22,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: slide-up 0.25s cubic-bezier(.4,1.4,.6,1) 1;
+    animation: slide-up 0.25s cubic-bezier(.4, 1.4, .6, 1) 1;
     border: 1px solid var(--border-light);
 }
 
@@ -223,6 +223,7 @@
     .trailer-star-button {
         color: var(--star-unselected-dark);
     }
+
     .trailer-star-button.active {
         color: var(--accent);
     }
@@ -275,14 +276,17 @@
         max-width: 100vw;
         border-radius: 0;
     }
+
     .add-trailer-content, .add-trailer-header {
         padding-left: 12px;
         padding-right: 12px;
     }
+
     .trailer-form-section {
         padding-left: 8px;
         padding-right: 8px;
     }
+
     .trailer-form-row {
         flex-direction: column;
         gap: 0;
@@ -296,12 +300,15 @@
         max-height: 100%;
         border-radius: 0;
     }
+
     .add-trailer-header {
         padding-top: 20px;
     }
+
     .add-trailer-content {
         padding: 12px 4px 8px 4px;
     }
+
     .trailer-form-section {
         padding: 8px 4px 6px 4px;
     }

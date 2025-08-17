@@ -1,5 +1,5 @@
-import { TractorUtility } from '../../../utils/TractorUtility'
-import { DateUtility } from '../../../utils/DateUtility'
+import {TractorUtility} from '../../../utils/TractorUtility'
+import {DateUtility} from '../../../utils/DateUtility'
 
 export class Tractor {
     constructor(data = {}) {

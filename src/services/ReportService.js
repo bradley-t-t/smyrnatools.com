@@ -17,7 +17,7 @@ class ReportServiceImpl {
         const saturday = new Date(monday)
         saturday.setDate(monday.getDate() + 5)
         saturday.setHours(0, 0, 0, 0)
-        return { monday, saturday }
+        return {monday, saturday}
     }
 
     getMondayISO(date) {
@@ -112,9 +112,9 @@ class ReportServiceImpl {
         const csvContent = csvRows.map(r =>
             r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
         ).join('\r\n')
-        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const blob = new Blob([csvContent], {type: 'text/csv'})
         const url = URL.createObjectURL(blob)
-        const safeDate = reportDate ? reportDate.replace(/[^0-9\-]/g, '') : ''
+        const safeDate = reportDate ? reportDate.replace(/[^0-9-]/g, '') : ''
         const a = document.createElement('a')
         a.href = url
         a.download = `Plant Production Report${safeDate ? ' - ' + safeDate : ''}.csv`
@@ -168,7 +168,7 @@ class ReportServiceImpl {
             const csvContent = csvRows.map(r =>
                 r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
             ).join('\r\n')
-            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const blob = new Blob([csvContent], {type: 'text/csv'})
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
@@ -187,7 +187,7 @@ class ReportServiceImpl {
         const csvContent = csvRows.map(r =>
             r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
         ).join('\r\n')
-        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const blob = new Blob([csvContent], {type: 'text/csv'})
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -253,7 +253,7 @@ class ReportServiceImpl {
         else if (lostGrade === 'average') lostLabel = 'Average'
         else if (lostGrade === 'poor') lostLabel = 'Poor'
 
-        return { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel }
+        return {yph, yphGrade, yphLabel, lost, lostGrade, lostLabel}
     }
 
     getYphColor(grade) {
@@ -271,11 +271,13 @@ class ReportServiceImpl {
             if (isNaN(h) || isNaN(m)) return null
             return h * 60 + m
         }
+
         function isExcludedRow(row) {
             if (!row) return true
             const keys = Object.keys(row).filter(k => k !== 'name' && k !== 'truck_number')
             return keys.every(k => row[k] === '' || row[k] === undefined || row[k] === null || row[k] === 0)
         }
+
         let totalLoads = 0
         let totalHours = 0
         let totalElapsedStart = 0
@@ -286,7 +288,7 @@ class ReportServiceImpl {
         let loadsPerHourSum = 0
         let loadsPerHourCount = 0
         const includedRows = rows.filter(row => !isExcludedRow(row))
-        includedRows.forEach((row, idx) => {
+        includedRows.forEach(row => {
             const start = parseTimeToMinutes(row.start_time)
             const firstLoad = parseTimeToMinutes(row.first_load)
             const punchOut = parseTimeToMinutes(row.punch_out)

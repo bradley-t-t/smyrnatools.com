@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { EquipmentService } from '../../../services/EquipmentService';
-import { usePreferences } from '../../../app/context/PreferencesContext';
-import ErrorBoundary from '../common/ErrorBoundary';
+import React, {useEffect, useState} from 'react';
+import {EquipmentService} from '../../../services/EquipmentService';
 import ErrorMessage from '../common/ErrorMessage';
+import ErrorBoundary from '../common/ErrorBoundary';
 import './styles/EquipmentIssueModal.css';
 
-function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
-    const { preferences } = usePreferences();
+function EquipmentIssueModal({equipmentId, equipmentNumber, onClose}) {
     const [issues, setIssues] = useState([]);
     const [newIssue, setNewIssue] = useState('');
     const [severity, setSeverity] = useState('Medium');
@@ -107,7 +105,8 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
                         details: err.originalError?.details
                     }
                 }));
-            } catch (e) {}
+            } catch (e) {
+            }
             setError(errorMessage);
         } finally {
             setIsSubmitting(false);
@@ -122,10 +121,14 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
 
     const getSeverityClass = (severityLevel) => {
         switch (severityLevel) {
-            case 'High': return 'severity-high';
-            case 'Medium': return 'severity-medium';
-            case 'Low': return 'severity-low';
-            default: return '';
+            case 'High':
+                return 'severity-high';
+            case 'Medium':
+                return 'severity-medium';
+            case 'Low':
+                return 'severity-low';
+            default:
+                return '';
         }
     };
 
@@ -205,7 +208,8 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
                                         openIssues.map(issue => (
                                             <div key={issue.id} className="issue-item">
                                                 <div className="issue-header">
-                                                    <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
+                                                    <span
+                                                        className={`issue-severity ${getSeverityClass(issue.severity)}`}>
                                                         {issue.severity}
                                                     </span>
                                                     <span className="issue-date">
@@ -246,7 +250,8 @@ function EquipmentIssueModal({ equipmentId, equipmentNumber, onClose }) {
                                         resolvedIssues.map(issue => (
                                             <div key={issue.id} className="issue-item resolved-issue">
                                                 <div className="issue-header">
-                                                    <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
+                                                    <span
+                                                        className={`issue-severity ${getSeverityClass(issue.severity)}`}>
                                                         {issue.severity}
                                                     </span>
                                                     <span className="issue-date">

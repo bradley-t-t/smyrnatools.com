@@ -18,7 +18,7 @@
     flex: 1 1 0;
     background: var(--card-bg);
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(49,130,206,0.10);
+    box-shadow: 0 4px 24px rgba(49, 130, 206, 0.10);
     padding: 24px 24px 32px 24px;
     min-width: 340px;
     max-width: 600px;
@@ -52,7 +52,7 @@
 .report-card {
     background: var(--card-bg);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(49,130,206,0.07);
+    box-shadow: 0 2px 8px rgba(49, 130, 206, 0.07);
     padding: 18px 18px 16px 18px;
     margin-bottom: 8px;
     border: 1px solid var(--divider);
@@ -82,7 +82,7 @@
     margin: 40px auto 0 auto;
     background: var(--card-bg);
     border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(49,130,206,0.10);
+    box-shadow: 0 4px 32px rgba(49, 130, 206, 0.10);
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -96,7 +96,7 @@
     margin: 40px auto 0 auto;
     background: var(--card-bg);
     border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(49,130,206,0.10);
+    box-shadow: 0 4px 32px rgba(49, 130, 206, 0.10);
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -133,7 +133,7 @@
     background: var(--background);
     color: #222;
     transition: border 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 12px rgba(49,130,206,0.07);
+    box-shadow: 0 2px 12px rgba(49, 130, 206, 0.07);
     outline: none;
 }
 
@@ -144,7 +144,7 @@
 
 .reports-search:focus {
     border-color: var(--divider);
-    box-shadow: 0 4px 18px rgba(49,130,206,0.13);
+    box-shadow: 0 4px 18px rgba(49, 130, 206, 0.13);
     background: #fff;
 }
 
@@ -258,7 +258,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(26,32,44,0.35);
+    background: rgba(26, 32, 44, 0.35);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -268,7 +268,7 @@
 .report-modal {
     background: var(--card-bg);
     border-radius: 14px;
-    box-shadow: 0 8px 32px rgba(49,130,206,0.18);
+    box-shadow: 0 8px 32px rgba(49, 130, 206, 0.18);
     width: 98%;
     max-width: 480px;
     padding: 0;
@@ -407,6 +407,7 @@
         flex-direction: column;
         gap: 24px;
     }
+
     .reports-column {
         max-width: 100%;
         min-width: 0;
@@ -420,22 +421,27 @@
         box-shadow: none;
         min-height: 0;
     }
+
     .reports-toolbar {
         padding: 18px 10px 12px 10px;
     }
+
     .reports-list-item {
         padding: 0 10px;
         min-height: 54px;
         font-size: 0.97rem;
     }
+
     .report-modal {
         max-width: 98vw;
         padding: 0;
     }
+
     .report-modal-header {
         padding: 14px 10px 8px 10px;
         font-size: 1rem;
     }
+
     .report-modal-body {
         padding: 14px 10px 10px 10px;
         gap: 12px;

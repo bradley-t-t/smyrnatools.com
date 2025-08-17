@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { MixerService } from '../../../services/MixerService';
-import { usePreferences } from '../../../app/context/PreferencesContext';
+import React, {useEffect, useState} from 'react';
+import {MixerService} from '../../../services/MixerService';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorMessage from '../common/ErrorMessage';
 import './styles/MixerIssueModal.css';
 
-function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
-    const { preferences } = usePreferences();
+function MixerIssueModal({mixerId, mixerNumber, onClose}) {
     const [issues, setIssues] = useState([]);
     const [newIssue, setNewIssue] = useState('');
     const [severity, setSeverity] = useState('Medium');
@@ -72,7 +70,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
         setIsSubmitting(true);
         setError(null);
         try {
-            const result = await MixerService.addIssue(mixerId, newIssue, severity);
+            await MixerService.addIssue(mixerId, newIssue, severity);
             setNewIssue('');
             setSeverity('Medium');
             await fetchIssues();
@@ -118,10 +116,14 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
 
     const getSeverityClass = (severityLevel) => {
         switch (severityLevel) {
-            case 'High': return 'severity-high';
-            case 'Medium': return 'severity-medium';
-            case 'Low': return 'severity-low';
-            default: return '';
+            case 'High':
+                return 'severity-high';
+            case 'Medium':
+                return 'severity-medium';
+            case 'Low':
+                return 'severity-low';
+            default:
+                return '';
         }
     };
 
@@ -134,7 +136,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
     return (
         <div className="issue-modal-backdrop" onClick={handleBackdropClick}>
             <div className="issue-modal">
-                <div className="issue-modal-header" style={{ backgroundColor: 'var(--accent)' }}>
+                <div className="issue-modal-header" style={{backgroundColor: 'var(--accent)'}}>
                     <h2>Maintenance Issues for Mixer {mixerNumber || mixerId}</h2>
                     <button className="close-button" onClick={onClose}>
                         <i className="fas fa-times"></i>
@@ -171,7 +173,7 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                 type="submit"
                                 className="add-issue-button"
                                 disabled={isSubmitting || !newIssue.trim()}
-                                style={{ backgroundColor: 'var(--accent)' }}
+                                style={{backgroundColor: 'var(--accent)'}}
                             >
                                 {isSubmitting ? 'Adding...' : 'Add Issue'}
                             </button>
@@ -202,7 +204,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                         openIssues.map(issue => (
                                             <div key={issue.id} className="issue-item">
                                                 <div className="issue-header">
-                                                    <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
+                                                    <span
+                                                        className={`issue-severity ${getSeverityClass(issue.severity)}`}>
                                                         {issue.severity}
                                                     </span>
                                                     <span className="issue-date">
@@ -243,7 +246,8 @@ function MixerIssueModal({ mixerId, mixerNumber, onClose }) {
                                         resolvedIssues.map(issue => (
                                             <div key={issue.id} className="issue-item resolved-issue">
                                                 <div className="issue-header">
-                                                    <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
+                                                    <span
+                                                        className={`issue-severity ${getSeverityClass(issue.severity)}`}>
                                                         {issue.severity}
                                                     </span>
                                                     <span className="issue-date">

@@ -12,7 +12,7 @@ const CacheUtility = {
     set(key, value, ttlMs = 60000) {
         if (!key) throw new Error('Key required')
         const expiresAt = ttlMs > 0 ? Date.now() + ttlMs : 0
-        this.caches[key] = { value, expiresAt }
+        this.caches[key] = {value, expiresAt}
         return value
     },
     has(key) {
@@ -27,5 +27,5 @@ const CacheUtility = {
 }
 
 export default CacheUtility
-export { CacheUtility }
+export {CacheUtility}
 

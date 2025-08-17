@@ -130,7 +130,7 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                         <h3>Comments History</h3>
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading comments..." inline={true} />
+                                <LoadingScreen message="Loading comments..." inline={true}/>
                             </div>
                         ) : comments.length === 0 ? (
                             <div className="empty-comments">

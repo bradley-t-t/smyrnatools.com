@@ -1,15 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import './styles/ManagersView.css';
-import {supabase} from '../../../services/DatabaseService';
+import {DatabaseService, supabase} from '../../../services/DatabaseService';
 import {UserService} from '../../../services/UserService';
 import LoadingScreen from '../common/LoadingScreen';
 import ManagerDetailView from './ManagerDetailView';
 import ManagerCard from './ManagerCard';
 import {usePreferences} from '../../../app/context/PreferencesContext';
-import {DatabaseService} from '../../../services/DatabaseService';
 
-function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelectManager}) {
-    const {preferences, updateManagerFilter, resetManagerFilters, updatePreferences} = usePreferences()
+function ManagersView({title = 'Managers', onSelectManager}) {
+    const {preferences, updateManagerFilter, resetManagerFilters} = usePreferences()
     const [managers, setManagers] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -19,7 +18,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
     const [showOverview, setShowOverview] = useState(false)
     const [showDetailView, setShowDetailView] = useState(false)
     const [selectedManager, setSelectedManager] = useState(null)
-    const [currentUserId, setCurrentUserId] = useState(null)
+    const [, setCurrentUserId] = useState(null)
     const [availableRoles, setAvailableRoles] = useState([])
     const [viewMode, setViewMode] = useState(() => {
         if (preferences.managerFilters?.viewMode !== undefined && preferences.managerFilters?.viewMode !== null) return preferences.managerFilters.viewMode
@@ -33,6 +32,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
             const user = await UserService.getCurrentUser();
             if (user) setCurrentUserId(user.id);
         }
+
         fetchCurrentUser();
     }, []);
 
@@ -59,6 +59,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
             if (lastUsed) setViewMode(lastUsed)
         }
     }, [preferences.managerFilters?.viewMode, preferences.defaultViewMode])
+
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
             setViewMode(null)
@@ -83,7 +84,10 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
 
     async function fetchManagers() {
         try {
-            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {data: permissions, error: permissionsError}, {data: rolesList, error: rolesError}] = await Promise.all([
+            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {
+                data: permissions,
+                error: permissionsError
+            }, {data: rolesList, error: rolesError}] = await Promise.all([
                 supabase.from('users').select('id, email, created_at, updated_at'),
                 supabase.from('users_profiles').select('id, first_name, last_name, plant_code, created_at, updated_at'),
                 supabase.from('users_permissions').select('user_id, role_id'),
@@ -231,7 +235,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
         ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const blob = new Blob([csvContent], {type: 'text/csv'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -260,18 +264,18 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                         <div className="plant-distribution-table">
                             <table className="distribution-table">
                                 <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Managers</th>
-                                    </tr>
+                                <tr>
+                                    <th>Plant</th>
+                                    <th>Managers</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {plants.map(plant => (
-                                        <tr key={plant.plant_code}>
-                                            <td className="plant-name">{plant.plant_name}</td>
-                                            <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
-                                        </tr>
-                                    ))}
+                                {plants.map(plant => (
+                                    <tr key={plant.plant_code}>
+                                        <td className="plant-name">{plant.plant_name}</td>
+                                        <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
+                                    </tr>
+                                ))}
                                 </tbody>
                             </table>
                         </div>
@@ -395,7 +399,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                                     setSearchText('')
                                     setSelectedPlant('')
                                     setRoleFilter('')
-                                    resetManagerFilters?.({ keepViewMode: true, currentViewMode })
+                                    resetManagerFilters?.({keepViewMode: true, currentViewMode})
                                 }}>
                                     <i className="fas fa-undo"></i>
                                 </button>
@@ -408,7 +412,7 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading managers..." inline={true} />
+                                <LoadingScreen message="Loading managers..." inline={true}/>
                             </div>
                         ) : filteredManagers.length === 0 ? (
                             <div className="no-results-container">
@@ -421,31 +425,34 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                         ) : viewMode === 'grid' ? (
                             <div className={`managers-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredManagers.map(manager => (
-                                    <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={() => handleSelectManager(manager)} />
+                                    <ManagerCard key={manager.id} manager={manager}
+                                                 plantName={getPlantName(manager.plantCode)}
+                                                 onSelect={() => handleSelectManager(manager)}/>
                                 ))}
                             </div>
                         ) : viewMode === 'list' ? (
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
                                     <thead>
-                                        <tr>
-                                            <th>Plant</th>
-                                            <th>Email</th>
-                                            <th>First Name</th>
-                                            <th>Last Name</th>
-                                            <th>Role</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Email</th>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Role</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredManagers.map(manager => (
-                                            <tr key={manager.id} onClick={() => handleSelectManager(manager)} style={{cursor: 'pointer'}}>
-                                                <td>{manager.plantCode ? manager.plantCode : "---"}</td>
-                                                <td>{manager.email ? manager.email : "---"}</td>
-                                                <td>{manager.firstName ? manager.firstName : "---"}</td>
-                                                <td>{manager.lastName ? manager.lastName : "---"}</td>
-                                                <td>{manager.roleName ? manager.roleName : "---"}</td>
-                                            </tr>
-                                        ))}
+                                    {filteredManagers.map(manager => (
+                                        <tr key={manager.id} onClick={() => handleSelectManager(manager)}
+                                            style={{cursor: 'pointer'}}>
+                                            <td>{manager.plantCode ? manager.plantCode : "---"}</td>
+                                            <td>{manager.email ? manager.email : "---"}</td>
+                                            <td>{manager.firstName ? manager.firstName : "---"}</td>
+                                            <td>{manager.lastName ? manager.lastName : "---"}</td>
+                                            <td>{manager.roleName ? manager.roleName : "---"}</td>
+                                        </tr>
+                                    ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -453,30 +460,31 @@ function ManagersView({title = 'Managers', showSidebar, setShowSidebar, onSelect
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
                                     <thead>
-                                        <tr>
-                                            <th>Plant</th>
-                                            <th>Email</th>
-                                            <th>First Name</th>
-                                            <th>Last Name</th>
-                                            <th>Role</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Plant</th>
+                                        <th>Email</th>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Role</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredManagers.map(manager => (
-                                            <tr key={manager.id} onClick={() => handleSelectManager(manager)} style={{cursor: 'pointer'}}>
-                                                <td>{manager.plantCode ? manager.plantCode : "---"}</td>
-                                                <td>{manager.email ? manager.email : "---"}</td>
-                                                <td>{manager.firstName ? manager.firstName : "---"}</td>
-                                                <td>{manager.lastName ? manager.lastName : "---"}</td>
-                                                <td>{manager.roleName ? manager.roleName : "---"}</td>
-                                            </tr>
-                                        ))}
+                                    {filteredManagers.map(manager => (
+                                        <tr key={manager.id} onClick={() => handleSelectManager(manager)}
+                                            style={{cursor: 'pointer'}}>
+                                            <td>{manager.plantCode ? manager.plantCode : "---"}</td>
+                                            <td>{manager.email ? manager.email : "---"}</td>
+                                            <td>{manager.firstName ? manager.firstName : "---"}</td>
+                                            <td>{manager.lastName ? manager.lastName : "---"}</td>
+                                            <td>{manager.roleName ? manager.roleName : "---"}</td>
+                                        </tr>
+                                    ))}
                                     </tbody>
                                 </table>
                             </div>
                         )}
                     </div>
-                    {showOverview && <OverviewPopup />}
+                    {showOverview && <OverviewPopup/>}
                 </>
             )}
         </div>

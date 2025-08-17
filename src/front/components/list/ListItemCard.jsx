@@ -27,7 +27,8 @@ function ListItemCard({item, plantName, creatorName, onSelect, truncateText}) {
             ></div>
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="item-description" style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                    <h3 className="item-description"
+                        style={{color: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
                         {truncateText ? ListService.truncateText(item.description, 5, true) : item.description}
                     </h3>
                 </div>

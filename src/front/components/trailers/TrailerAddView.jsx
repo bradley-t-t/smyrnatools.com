@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { TrailerService } from '../../../services/TrailerService';
+import React, {useEffect, useState} from 'react';
+import {TrailerService} from '../../../services/TrailerService';
 import Trailer from '../../../config/models/trailers/Trailer';
-import { AuthService } from '../../../services/AuthService';
+import {AuthService} from '../../../services/AuthService';
 import './styles/TrailerAddView.css';
 
-function TrailerAddView({ plants, onClose, onTrailerAdded }) {
+function TrailerAddView({plants, onClose, onTrailerAdded}) {
     const [trailerNumber, setTrailerNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [trailerType, setTrailerType] = useState('Cement');
@@ -15,11 +15,12 @@ function TrailerAddView({ plants, onClose, onTrailerAdded }) {
     useEffect(() => {
         async function loadTrailers() {
             try {
-                const trailers = await TrailerService.fetchTrailers();
+                await TrailerService.fetchTrailers();
             } catch (error) {
                 console.error('Error loading trailers:', error);
             }
         }
+
         loadTrailers();
     }, []);
 
@@ -138,7 +139,8 @@ function TrailerAddView({ plants, onClose, onTrailerAdded }) {
                                             onChange={e => setCleanlinessRating(Number(e.target.value))}
                                         >
                                             {[1, 2, 3, 4, 5].map(rating => (
-                                                <option key={rating} value={rating}>{rating} Star{rating > 1 ? 's' : ''}</option>
+                                                <option key={rating}
+                                                        value={rating}>{rating} Star{rating > 1 ? 's' : ''}</option>
                                             ))}
                                         </select>
                                     </div>

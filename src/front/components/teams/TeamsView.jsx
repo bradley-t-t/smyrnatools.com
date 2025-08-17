@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../../services/DatabaseService';
+import React, {useEffect, useState} from 'react';
+import {supabase} from '../../../services/DatabaseService';
 import ThemeUtility from '../../../utils/ThemeUtility';
 import OperatorCard from '../operators/OperatorCard';
-import { UserService } from '../../../services/UserService';
+import {UserService} from '../../../services/UserService';
 import '../../styles/FilterStyles.css';
 import './styles/TeamsView.css';
 import LoadingScreen from '../common/LoadingScreen';
@@ -49,7 +49,7 @@ function TeamsView() {
     const [selectedPlant, setSelectedPlant] = useState('');
     const [userPlant, setUserPlant] = useState('');
     const [operators, setOperators] = useState([]);
-    const [teams, setTeams] = useState({ A: [], B: [] });
+    const [teams, setTeams] = useState({A: [], B: []});
     const [draggedOperator, setDraggedOperator] = useState(null);
     const [dragOverTeam, setDragOverTeam] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -76,14 +76,16 @@ function TeamsView() {
                 setCurrentUserId('');
             }
         }
+
         fetchCurrentUserAndPlant();
     }, []);
 
     useEffect(() => {
         async function fetchPlants() {
-            const { data: plantData } = await supabase.from(PLANTS_TABLE).select('plant_code, plant_name');
+            const {data: plantData} = await supabase.from(PLANTS_TABLE).select('plant_code, plant_name');
             setPlants(plantData || []);
         }
+
         fetchPlants();
     }, []);
 
@@ -94,20 +96,22 @@ function TeamsView() {
                 setCanBypassPlantRestriction(!!hasBypass);
             }
         }
+
         checkPermission();
     }, [currentUserId]);
 
     useEffect(() => {
         setLoading(true);
+
         async function fetchOperatorsAndTeams() {
             let ops;
             if (!selectedPlant) {
-                const { data } = await supabase
+                const {data} = await supabase
                     .from(OPERATORS_TABLE)
                     .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date');
                 ops = data || [];
             } else {
-                const { data } = await supabase
+                const {data} = await supabase
                     .from(OPERATORS_TABLE)
                     .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
                     .eq('plant_code', selectedPlant);
@@ -118,7 +122,7 @@ function TeamsView() {
                     (!statusFilter || op.status === statusFilter)
                 )
                 .filter(op => op.position && op.position.toLowerCase().includes('mixer'));
-            const { data: teamData } = await supabase
+            const {data: teamData} = await supabase
                 .from(OPERATORS_TEAMS_TABLE)
                 .select('employee_id, team')
                 .in('employee_id', filteredOps.map(o => o.employee_id));
@@ -130,7 +134,7 @@ function TeamsView() {
                         employee_id: op.employee_id,
                         team: 'A'
                     })));
-                const { data: newTeamData } = await supabase
+                const {data: newTeamData} = await supabase
                     .from(TEAMS_TABLE)
                     .select('employee_id, team')
                     .in('employee_id', filteredOps.map(o => o.employee_id));
@@ -141,8 +145,9 @@ function TeamsView() {
             setOperators(filteredOps);
             setLoading(false);
         }
+
         function buildTeams(ops, teamData) {
-            const teamsObj = { A: [], B: [] };
+            const teamsObj = {A: [], B: []};
             ops.forEach(op => {
                 const teamEntry = (teamData || []).find(t => t.employee_id === op.employee_id);
                 if (teamEntry?.team === 'B') {
@@ -153,12 +158,13 @@ function TeamsView() {
             });
             setTeams(teamsObj);
         }
+
         fetchOperatorsAndTeams();
     }, [selectedPlant, statusFilter]);
 
     useEffect(() => {
         async function fetchScheduledOff() {
-            const { data: offData } = await supabase
+            const {data: offData} = await supabase
                 .from(SCHEDULED_OFF_TABLE)
                 .select('id, days_off');
             const offMap = {};
@@ -167,6 +173,7 @@ function TeamsView() {
             });
             setScheduledOff(offMap);
         }
+
         fetchScheduledOff();
     }, [selectedPlant]);
 
@@ -174,9 +181,12 @@ function TeamsView() {
 
     const handleDragStart = (operator, team) => {
         if (!canEditPlant) return;
-        setDraggedOperator({ ...operator, fromTeam: team });
+        setDraggedOperator({...operator, fromTeam: team});
     };
-    const handleDragEnd = () => { setDraggedOperator(null); setDragOverTeam(null); };
+    const handleDragEnd = () => {
+        setDraggedOperator(null);
+        setDragOverTeam(null);
+    };
     const handleDragOver = (team) => {
         if (!canEditPlant) return;
         setDragOverTeam(team);
@@ -186,18 +196,18 @@ function TeamsView() {
         setLoading(true);
         await supabase
             .from(TEAMS_TABLE)
-            .update({ team: toTeam })
+            .update({team: toTeam})
             .eq('employee_id', draggedOperator.employee_id);
         setDraggedOperator(null);
         setDragOverTeam(null);
         let ops;
         if (!selectedPlant) {
-            const { data } = await supabase
+            const {data} = await supabase
                 .from(OPERATORS_TABLE)
                 .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date');
             ops = data || [];
         } else {
-            const { data } = await supabase
+            const {data} = await supabase
                 .from(OPERATORS_TABLE)
                 .select('employee_id, name, plant_code, status, is_trainer, assigned_trainer, position, smyrna_id, pending_start_date')
                 .eq('plant_code', selectedPlant);
@@ -208,11 +218,11 @@ function TeamsView() {
                 (!statusFilter || op.status === statusFilter)
             )
             .filter(op => op.position && op.position.toLowerCase().includes('mixer'));
-        const { data: teamData } = await supabase
+        const {data: teamData} = await supabase
             .from(TEAMS_TABLE)
             .select('employee_id, team')
             .in('employee_id', filteredOps.map(o => o.employee_id));
-        const teamsObj = { A: [], B: [] };
+        const teamsObj = {A: [], B: []};
         filteredOps.forEach(op => {
             const teamEntry = (teamData || []).find(t => t.employee_id === op.employee_id);
             if (teamEntry?.team === 'B') {
@@ -351,16 +361,19 @@ function TeamsView() {
             </div>
             <div className="content-container teams-split-table">
                 {loading ? (
-                    <LoadingScreen message="Loading teams..." inline={true} />
+                    <LoadingScreen message="Loading teams..." inline={true}/>
                 ) : !selectedPlant && operators.length === 0 ? (
-                    <LoadingScreen message="Loading teams..." inline={true} />
+                    <LoadingScreen message="Loading teams..." inline={true}/>
                 ) : (
                     <>
                         {viewMode === 'grid' ? (
                             <div className="teams-split-cards">
                                 <div
                                     className={`team-card team-A${dragOverTeam === 'A' ? ' drag-over' : ''}`}
-                                    onDragOver={e => { e.preventDefault(); handleDragOver('A'); }}
+                                    onDragOver={e => {
+                                        e.preventDefault();
+                                        handleDragOver('A');
+                                    }}
                                     onDrop={() => handleDrop('A')}
                                     onDragLeave={() => setDragOverTeam(null)}
                                 >
@@ -386,7 +399,7 @@ function TeamsView() {
                                             <div className="no-operators">
                                                 <span className="no-operators-inner">
                                                     <i className="fas fa-hand-pointer"></i>
-                                                    No operators<br />
+                                                    No operators<br/>
                                                     <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
                                                 </span>
                                             </div>
@@ -402,7 +415,7 @@ function TeamsView() {
                                                 onDragStart={() => handleDragStart(op, 'A')}
                                                 onDragEnd={handleDragEnd}
                                                 className="operator-card-wrapper"
-                                                style={!canEditPlant ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                                style={!canEditPlant ? {opacity: 0.5, cursor: 'not-allowed'} : {}}
                                             >
                                                 <OperatorCard
                                                     operator={{
@@ -421,7 +434,10 @@ function TeamsView() {
                                 </div>
                                 <div
                                     className={`team-card team-B${dragOverTeam === 'B' ? ' drag-over' : ''}`}
-                                    onDragOver={e => { e.preventDefault(); handleDragOver('B'); }}
+                                    onDragOver={e => {
+                                        e.preventDefault();
+                                        handleDragOver('B');
+                                    }}
                                     onDrop={() => handleDrop('B')}
                                     onDragLeave={() => setDragOverTeam(null)}
                                 >
@@ -447,7 +463,7 @@ function TeamsView() {
                                             <div className="no-operators">
                                                 <span className="no-operators-inner">
                                                     <i className="fas fa-hand-pointer"></i>
-                                                    No operators<br />
+                                                    No operators<br/>
                                                     <span className="no-operators-hint">Drag and drop cards to move operators between teams.</span>
                                                 </span>
                                             </div>
@@ -463,7 +479,7 @@ function TeamsView() {
                                                 onDragStart={() => handleDragStart(op, 'B')}
                                                 onDragEnd={handleDragEnd}
                                                 className="operator-card-wrapper"
-                                                style={!canEditPlant ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                                style={!canEditPlant ? {opacity: 0.5, cursor: 'not-allowed'} : {}}
                                             >
                                                 <OperatorCard
                                                     operator={{
@@ -485,35 +501,36 @@ function TeamsView() {
                             <div className="teams-list-table-container">
                                 <table className="teams-list-table">
                                     <thead>
-                                        <tr>
-                                            <th>Team</th>
-                                            <th>Name</th>
-                                            <th>Status</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Team</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {['A', 'B'].map(teamKey =>
-                                            filteredTeams[teamKey].filter(op =>
-                                                (!searchText ||
-                                                    op.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                                                    (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
-                                            ).map(op => (
-                                                <tr key={op.employee_id} style={{cursor: 'pointer'}}>
-                                                    <td>{teamKey}</td>
-                                                    <td>{op.name}</td>
-                                                    <td>{op.status || "---"}</td>
-                                                </tr>
-                                            ))
-                                        )}
+                                    {['A', 'B'].map(teamKey =>
+                                        filteredTeams[teamKey].filter(op =>
+                                            (!searchText ||
+                                                op.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                                                (op.smyrna_id && op.smyrna_id.toLowerCase().includes(searchText.toLowerCase())))
+                                        ).map(op => (
+                                            <tr key={op.employee_id} style={{cursor: 'pointer'}}>
+                                                <td>{teamKey}</td>
+                                                <td>{op.name}</td>
+                                                <td>{op.status || "---"}</td>
+                                            </tr>
+                                        ))
+                                    )}
                                     </tbody>
                                 </table>
                             </div>
                         )}
                         <div className="teams-rotation-note teams-rotation-note-centered">
                             <em>
-                                Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to Work</b> Saturday. Teams alternate weekly.
+                                Saturday rotation reference: <b>July 26, 2025</b> is an <b>A Team Required to
+                                Work</b> Saturday. Teams alternate weekly.
                             </em>
-                            <br />
+                            <br/>
                             <em>
                                 Operators scheduled off for this Saturday will not be listed.
                             </em>

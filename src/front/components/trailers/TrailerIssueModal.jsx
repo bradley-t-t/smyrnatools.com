@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import './styles/TrailerIssueModal.css';
-import { supabase } from '../../../services/DatabaseService';
-import { v4 as uuidv4 } from 'uuid';
+import {supabase} from '../../../services/DatabaseService';
 import LoadingScreen from '../common/LoadingScreen';
 import TrailerService from '../../../services/TrailerService';
 
@@ -10,7 +9,7 @@ const ADD_ISSUE_ERROR = 'Failed to add issue. Please try again.';
 const DELETE_ISSUE_ERROR = 'Failed to delete issue. Please try again.';
 const COMPLETE_ISSUE_ERROR = 'Failed to complete issue. Please try again.';
 
-function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
+function TrailerIssueModal({trailerId, trailerNumber, onClose}) {
     const [issues, setIssues] = useState([]);
     const [newIssue, setNewIssue] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +61,7 @@ function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
         setIsSubmitting(true);
         setError(null);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const {data: {user}} = await supabase.auth.getUser();
             const userId = user?.id || sessionStorage.getItem('userId');
             if (!userId) {
                 throw new Error('You must be logged in to add issues');
@@ -135,7 +134,7 @@ function TrailerIssueModal({ trailerId, trailerNumber, onClose }) {
                         <h3>Issues History</h3>
                         {isLoading ? (
                             <div className="loading-container">
-                                <LoadingScreen message="Loading issues..." inline={true} />
+                                <LoadingScreen message="Loading issues..." inline={true}/>
                             </div>
                         ) : issues.length === 0 ? (
                             <div className="empty-issues">
