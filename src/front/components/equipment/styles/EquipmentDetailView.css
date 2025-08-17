@@ -231,9 +231,9 @@
     color: var(--text-primary);
 }
 
-.equipment-edit-instructions {
+.edit-instructions {
     font-size: 14px;
-    color: var(--text-light);
+    color: var(--edit-instructions-color);
     margin: 10px 0 20px;
     padding: 10px 15px;
     background-color: var(--accent);
@@ -242,21 +242,15 @@
     display: flex;
     align-items: center;
 }
-
-.equipment-edit-instructions:before {
+.edit-instructions:before {
     content: '\f05a';
     font-family: 'Font Awesome 5 Free';
     font-weight: 900;
     margin-right: 10px;
-    color: var(--text-light);
+    color: var(--edit-instructions-color);
 }
-
-@media (max-width: 768px) {
-    .equipment-form-sections {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-}
+.equipment-edit-instructions { display:none; }
+.equipment-rating-label, .rating-label { color: var(--rating-label-color) !important; }
 
 .equipment-form-control {
     width: 100%;

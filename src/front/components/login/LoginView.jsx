@@ -72,7 +72,10 @@ function LoginView() {
                 <div className="login-container">
                     <VersionPopup version={version}/>
                     <div className="login-wrapper">
-                        <div className="login-info" style={{ backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                        <div className="login-info">
+                            <div className="login-info-media">
+                                <img src={BG} alt="" aria-hidden="true" fetchPriority="high" loading="eager" decoding="async" />
+                            </div>
                             <div className="login-info-overlay">
                                 <img src={SmyrnaLogo} alt="SRM Logo" className="login-info-logo"/>
                                 <h2>Smyrna Tools - Built for SRM Concrete</h2>
@@ -129,5 +132,4 @@ function LoginView() {
         </>
     );
 }
-
 export default LoginView;

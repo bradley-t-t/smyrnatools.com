@@ -49,6 +49,8 @@
     --accent-row-bg: #e6ecf7;
     --accent-row-hover-bg: #d0dbf2;
     --text-placeholder: #222;
+    --rating-label-color: #ffffff;
+    --edit-instructions-color: #ffffff;
 }
 
 .dark-mode {
@@ -97,6 +99,8 @@
     --accent-row-bg: #23272a;
     --accent-row-hover-bg: #36393f;
     --text-placeholder: #bbb;
+    --rating-label-color: #000000;
+    --edit-instructions-color: #000000;
 }
 
 .accent-red {
@@ -510,6 +514,27 @@ button.primary:hover {
 .equipments-list-table td:last-child {
     border-bottom-right-radius: 10px;
 }
+
+.edit-instructions {
+    background-color: var(--accent);
+    border-left: 3px solid var(--accent);
+}
+
+.dark-mode .edit-instructions {
+    background-color: var(--accent-light-theme);
+}
+
+.rating-value-display {
+    background-color: var(--accent);
+    color: var(--rating-label-color);
+}
+
+.dark-mode .rating-value-display {
+    background-color: var(--accent-light-theme);
+}
+
+.edit-instructions { color: var(--edit-instructions-color) !important; }
+.rating-label { color: var(--rating-label-color) !important; }
 
 @media (max-width: 900px) {
     .mixers-list-table-container,

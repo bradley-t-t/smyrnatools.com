@@ -461,7 +461,7 @@
 
 .edit-instructions {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--edit-instructions-color);
     margin: 10px 0 20px;
     padding: 10px 15px;
     background-color: rgba(59, 130, 246, 0.08);
@@ -633,7 +633,7 @@ input[type="date"].form-control {
 .rating-label {
     font-weight: 600;
     font-size: 16px;
-    color: var(--accent);
+    color: var(--rating-label-color);
 }
 
 .star-button {
@@ -885,12 +885,6 @@ input[type="date"].form-control {
     font-weight: 400;
 }
 
-.edit-instructions {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-bottom: 16px;
-}
-
 .rating-value-display {
     text-align: center;
     font-size: 16px;
@@ -898,10 +892,6 @@ input[type="date"].form-control {
     padding: 8px 0;
 }
 
-.rating-label {
-    font-weight: 500;
-    color: var(--accent);
-}
 
 .saving-overlay {
     position: fixed;

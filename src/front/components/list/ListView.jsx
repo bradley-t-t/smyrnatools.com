@@ -8,6 +8,7 @@ import ListOverview from './ListOverview'
 import {usePreferences} from '../../../app/context/PreferencesContext'
 import ListAddView from './ListAddView'
 import ListDetailView from './ListDetailView'
+import {supabase} from '../../../services/DatabaseService'
 
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const {preferences, updateListFilter, resetListFilters} = usePreferences()
@@ -31,7 +32,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 const hasPermission = await UserService.hasPermission(user.id, 'list.bypass.plantrestriction')
                 setCanBypassPlantRestriction(hasPermission)
                 if (!hasPermission) {
-                    const {data: profileData} = await ListService.supabase
+                    const {data: profileData} = await supabase
                         .from('users_profiles')
                         .select('plant_code')
                         .eq('id', user.id)
