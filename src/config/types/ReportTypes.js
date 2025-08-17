@@ -1,10 +1,28 @@
-export const reportTypes = [
-  {
+function createReportType({ name, title, frequency, assignment, review, fields }) {
+  return {
+    name,
+    title,
+    frequency,
+    assignment: Array.isArray(assignment) ? assignment : [],
+    review: Array.isArray(review) ? review : [],
+    fields: Array.isArray(fields)
+      ? fields.map(f => ({
+          ...f,
+          required: !!f.required,
+          type: f.type || 'text',
+          label: f.label || f.name
+        }))
+      : []
+  }
+}
+
+const reportTypes = [
+  createReportType({
     name: "district_manager",
     title: "District Manager Report",
     frequency: "weekly",
     assignment: ["reports.assigned.district_manager"],
-    manage: ["reports.manage.district_manager"],
+    review: ["reports.review.district_manager"],
     fields: [
       { name: "monday", label: "Monday Recap", type: "textarea", required: true },
       { name: "tuesday", label: "Tuesday Recap", type: "textarea", required: true },
@@ -13,13 +31,13 @@ export const reportTypes = [
       { name: "friday", label: "Friday Recap", type: "textarea", required: true },
       { name: "saturday", label: "Saturday Recap", type: "textarea", required: true }
     ]
-  },
-  {
+  }),
+  createReportType({
     name: "plant_manager",
     title: "Plant Manager Report",
     frequency: "weekly",
     assignment: ["reports.assigned.plant_manager"],
-    manage: ["reports.manage.plant_manager"],
+    review: ["reports.review.plant_manager"],
     fields: [
       { name: "yardage", label: "Yardage", type: "number", required: true },
       { name: "total_hours", label: "Total Hours", type: "number", required: true },
@@ -32,13 +50,13 @@ export const reportTypes = [
       { name: "friday_recap", label: "Friday Recap", type: "textarea", required: true },
       { name: "saturday_recap", label: "Saturday Recap", type: "textarea", required: true }
     ]
-  },
-  {
+  }),
+  createReportType({
     name: "plant_production",
     title: "Weekly Plant Production Report",
     frequency: "weekly",
     assignment: ["reports.assigned.plant_production"],
-    manage: ["reports.manage.plant_production"],
+    review: ["reports.review.plant_production"],
     fields: [
       {
         name: "rows",
@@ -47,13 +65,13 @@ export const reportTypes = [
         required: false
       }
     ]
-  },
-  {
+  }),
+  createReportType({
     name: "aggregate_production",
     title: "Aggregate Production",
     frequency: "weekly",
     assignment: ["reports.assigned.aggregate_production"],
-    manage: ["reports.manage.aggregate_production"],
+    review: ["reports.review.aggregate_production"],
     fields: [
       { name: "sand", label: "Sand", type: "number", required: true },
       { name: "fill_dirt", label: "Fill Dirt", type: "number", required: true },
@@ -73,5 +91,9 @@ export const reportTypes = [
       { name: "paverstone_base", label: "Paverstone Base", type: "number", required: true },
       { name: "rip_rap", label: "Rip Rap", type: "number", required: true }
     ]
-  }
+  })
 ]
+
+const reportTypeMap = Object.fromEntries(reportTypes.map(rt => [rt.name, rt]))
+
+export { reportTypes, reportTypeMap }

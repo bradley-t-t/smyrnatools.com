@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { usePreferences } from '../../../app/context/PreferencesContext';
 import { AuthService } from '../../../services/AuthService';
 import { UserService } from "../../../services/UserService";
-import { useUserPresence } from "../../../app/hooks/UserPresence";
+import { useUserHook } from "../../../app/hooks/UserHook";
 import './styles/OnlineUsersOverlay.css';
 
 function OnlineUsersOverlay() {
-    const { onlineUsers, loading, error } = useUserPresence();
+    const { onlineUsers, loading, error } = useUserHook();
     const { preferences } = usePreferences();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isMinimized, setIsMinimized] = useState(true);
