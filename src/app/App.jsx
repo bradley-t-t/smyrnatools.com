@@ -18,6 +18,7 @@ import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import {PreferencesProvider} from './context/PreferencesContext';
 import {AccountProvider} from './context/AccountContext';
 import ListView from '../front/components/list/ListView';
+import GuestView from '../front/components/guest/GuestView';
 
 function App() {
     return (
@@ -33,6 +34,7 @@ function App() {
                             <Route path="/verify-email" element={<VerifyEmailPage/>}/>
                         </Route>
                         <Route element={<ProtectedRoute><AppLayout/></ProtectedRoute>}>
+                            <Route path="/guest" element={<GuestView/>}/>
                             <Route path="/" element={<HomePage/>}/>
                             <Route path="/operators" element={<OperatorsPage/>}/>
                             <Route path="/operators/training" element={<TrainingHistoryPage/>}/>

@@ -2,6 +2,7 @@ import React, {createContext, useContext, useEffect, useState} from 'react'
 import {isSupabaseConfigured, supabase} from '../../services/DatabaseService'
 import {AuthUtility} from '../../utils/AuthUtility'
 import {UserService} from '../../services/UserService'
+import {generateUUID} from '../../utils/UserUtility'
 
 const AuthContext = createContext()
 
@@ -144,52 +145,39 @@ export function AuthProvider({children}) {
             }
             const normFirst = normalizeName(firstName)
             const normLast = normalizeName(lastName)
-            if (normFirst !== 'Trenton' || normLast !== 'Trenton') {
-                throw new Error('First and last names must be "Trenton" with proper capitalization and no spaces.')
-            }
+            if (!normFirst || !normLast) throw new Error('First and last names are required')
             const trimmedEmail = email.trim().toLowerCase()
             const {data: existingUsers} = await supabase
                 .from('users')
                 .select('id')
                 .eq('email', trimmedEmail)
             if (existingUsers?.length) throw new Error('Email is already registered')
-            const {generateUUID} = await import('../../utils/./userUtility')
             const userId = generateUUID()
             const now = new Date().toISOString()
             const salt = AuthUtility.generateSalt()
             const passwordHash = await AuthUtility.hashPassword(password, salt)
-            const userRecord = {
-                id: userId,
-                email: trimmedEmail,
-                password_hash: passwordHash,
-                salt,
-                created_at: now,
-                updated_at: now
-            }
-            const profile = {
-                id: userId,
-                first_name: normFirst,
-                last_name: normLast,
-                plant_code: '',
-                created_at: now,
-                updated_at: now
-            }
-            const [{error: userError}, {error: profileError}] = await Promise.all([
-                supabase.from('users').insert(userRecord),
-                supabase.from('users_profiles').insert(profile)
-            ])
-            if (userError || profileError) {
-                if (!userError && profileError) {
-                    await supabase.from('users').delete().eq('id', userId)
-                }
-                throw new Error(userError?.message || profileError?.message || 'User creation error')
+            const userRecord = { id: userId, email: trimmedEmail, password_hash: passwordHash, salt, created_at: now, updated_at: now }
+            const { error: userError } = await supabase.from('users').insert(userRecord)
+            if (userError) throw new Error(userError.message || 'User creation error')
+            const profile = { id: userId, first_name: normFirst, last_name: normLast, plant_code: '', created_at: now, updated_at: now }
+            const { error: profileError } = await supabase.from('users_profiles').insert(profile)
+            if (profileError) {
+                await supabase.from('users').delete().eq('id', userId)
+                throw new Error(profileError.message || 'Profile creation error')
             }
             const guestRole = await UserService.getRoleByName('Guest')
-            if (!guestRole) throw new Error('Could not find Guest role')
-            if (!(await UserService.assignRole(userId, guestRole.id))) {
+            if (!guestRole) {
+                await supabase.from('users_profiles').delete().eq('id', userId)
+                await supabase.from('users').delete().eq('id', userId)
+                throw new Error('Could not find Guest role')
+            }
+            const roleAssigned = await UserService.assignRole(userId, guestRole.id).catch(e => { throw new Error(e.message || 'Role assignment failed') })
+            if (!roleAssigned) {
+                await supabase.from('users_profiles').delete().eq('id', userId)
+                await supabase.from('users').delete().eq('id', userId)
                 throw new Error('Role assignment failed')
             }
-            setUser({...userRecord, profile})
+            setUser({ ...userRecord, profile })
             sessionStorage.setItem('userId', userId)
             setLoading(false)
             return userRecord
