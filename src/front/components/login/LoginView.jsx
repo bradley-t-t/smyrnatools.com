@@ -71,7 +71,7 @@ function LoginView() {
             ) : (
                 <div className="login-container">
                     <VersionPopup version={version}/>
-                    <div className="login-wrapper">
+                    <div className={"login-wrapper" + (isSignUp ? " sign-up-mode" : "")}>
                         <div className="login-info">
                             <div className="login-info-media">
                                 <img src={BG} alt="" aria-hidden="true" fetchPriority="high" loading="eager" decoding="async" />

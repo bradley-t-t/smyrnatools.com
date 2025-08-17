@@ -42,6 +42,15 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
+    --password-float-base: -150%;
+    --password-float-active: -250%;
+    --confirm-active-shift: -150%;
+}
+
+.login-wrapper.sign-up-mode {
+    --password-float-base: -50%;
+    --password-float-active: -235%;
+    --confirm-active-shift: -200%;
 }
 
 .login-info {
@@ -204,7 +213,19 @@
 }
 
 .form-group label[for=password] {
+    transform: translateY(var(--password-float-base));
+}
+
+.form-group label[for=confirmPassword],
+.form-group label[for=firstName],
+.form-group label[for=lastName] {
     transform: translateY(-150%);
+}
+
+.login-wrapper.sign-up-mode .form-group label[for=confirmPassword],
+.login-wrapper.sign-up-mode .form-group label[for=firstName],
+.login-wrapper.sign-up-mode .form-group label[for=lastName] {
+    transform: translateY(-50%);
 }
 
 .floating-label.active {
@@ -217,7 +238,13 @@
 }
 
 .form-group label[for=password].floating-label.active {
-    transform: translateY(-250%);
+    transform: translateY(var(--password-float-active));
+}
+
+.form-group label[for=confirmPassword].floating-label.active,
+.form-group label[for=firstName].floating-label.active,
+.form-group label[for=lastName].floating-label.active {
+    transform: translateY(-150%);
 }
 
 .password-strength {
