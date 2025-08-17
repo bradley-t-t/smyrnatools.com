@@ -315,7 +315,7 @@ button.primary:hover {
     position: fixed;
     top: 12px;
     left: 12px;
-    background: var(--primary-dark);
+    background: var(--accent);
     color: var(--text-light);
     opacity: 0.12;
     padding: 6px 16px;
@@ -330,9 +330,9 @@ button.primary:hover {
     left: 50%;
     bottom: 10px;
     transform: translateX(-50%);
-    background: var(--primary-dark);
+    background: var(--accent);
     color: var(--text-light);
-    opacity: 0.12;
+    opacity: 0.32;
     padding: 6px 16px;
     border-radius: 8px;
     font-size: 14px;
@@ -340,7 +340,6 @@ button.primary:hover {
     z-index: 99999;
 }
 
-/* Table/List Layout Styles for all views */
 .mixers-list-table-container,
 .tractors-list-table-container,
 .trailers-list-table-container,
