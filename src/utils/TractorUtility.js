@@ -12,24 +12,24 @@ const TractorUtility = {
     },
 
     isVerified(updatedLast, updatedAt, updatedBy) {
-        const useHardcodedDate = false
-        const hardcodedToday = new Date('2024-07-30T00:00:00Z')
         if (!updatedLast || !updatedBy) return false
         try {
             const lastVerified = new Date(updatedLast)
             const lastUpdated = new Date(updatedAt)
-            const today = useHardcodedDate ? hardcodedToday : new Date()
+            const now = new Date()
             if (lastUpdated > lastVerified) return false
-            const checkForMonday = (start, end) => {
-                const current = new Date(start)
-                current.setDate(current.getDate() + 1)
-                while (current <= end) {
-                    if (current.getDay() === 1) return true
-                    current.setDate(current.getDate() + 1)
-                }
-                return false
+            const getMostRecentMonday5pmCST = (date) => {
+                const CST_OFFSET = -6
+                const d = new Date(date)
+                const utcDay = d.getUTCDay()
+                const diff = (utcDay + 6) % 7
+                d.setUTCDate(d.getUTCDate() - diff)
+                d.setUTCHours(17 - CST_OFFSET, 0, 0, 0)
+                if (d > date) d.setUTCDate(d.getUTCDate() - 7)
+                return d
             }
-            return !checkForMonday(lastVerified, today)
+            const mostRecentMonday5pmCST = getMostRecentMonday5pmCST(now)
+            return lastVerified > mostRecentMonday5pmCST
         } catch {
             return false
         }

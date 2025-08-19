@@ -32,7 +32,7 @@
     --accent-primary: #003896;
     --accent-secondary: #2563eb;
     --accent-hover: #1d4ed8;
-    --accent-light-theme: #dbeafe;
+    --accent-light-theme: var(--accent);
     --accent-border: #93c5fd;
     --accent-primary-rgb: 0, 56, 150;
     --detail-header-bg: #ffffff;
@@ -51,6 +51,11 @@
     --text-placeholder: #222;
     --rating-label-color: #ffffff;
     --edit-instructions-color: #ffffff;
+    --success-bg: rgba(16, 185, 129, 0.1);
+    --danger-bg: rgba(239, 68, 68, 0.1);
+    --danger-bg-hover: rgba(239, 68, 68, 0.2);
+    --danger: #b80017;
+    --verified-badge-text: #fff;
 }
 
 .dark-mode {
@@ -87,7 +92,7 @@
     --accent-primary: #5865f2;
     --accent-secondary: #7289da;
     --accent-hover: #4752c4;
-    --accent-light-theme: #99aab5;
+    --accent-light-theme: var(--accent);
     --accent-border: #5865f2;
     --accent-primary-rgb: 88, 101, 242;
     --detail-header-bg: #181a20;
@@ -99,8 +104,13 @@
     --accent-row-bg: #23272a;
     --accent-row-hover-bg: #36393f;
     --text-placeholder: #bbb;
-    --rating-label-color: #000000;
-    --edit-instructions-color: #000000;
+    --rating-label-color: #fff;
+    --edit-instructions-color: #fff;
+    --success-bg: rgba(16, 185, 129, 0.25);
+    --danger-bg: rgba(184, 0, 23, 0.18);
+    --danger-bg-hover: rgba(184, 0, 23, 0.32);
+    --danger: #ff5a5a;
+    --verified-badge-text: #000;
 }
 
 .accent-red {
@@ -110,7 +120,7 @@
     --accent-primary: #b80017;
     --accent-secondary: #dc2626;
     --accent-hover: #b91c1c;
-    --accent-light-theme: #fee2e2;
+    --accent-light-theme: var(--accent);
     --accent-border: #fca5a5;
     --accent-primary-rgb: 184, 0, 23;
 }
@@ -520,7 +530,7 @@ button.primary:hover {
 }
 
 .dark-mode .edit-instructions {
-    background-color: var(--accent-light-theme);
+    background-color: var(--accent);
 }
 
 .rating-value-display {
@@ -529,11 +539,11 @@ button.primary:hover {
 }
 
 .dark-mode .rating-value-display {
-    background-color: var(--accent-light-theme);
+    background-color: var(--accent);
 }
 
-.edit-instructions { color: var(--edit-instructions-color) !important; }
-.rating-label { color: var(--rating-label-color) !important; }
+.edit-instructions { color: #fff !important; }
+.rating-label { color: #fff !important; }
 
 @media (max-width: 900px) {
     .mixers-list-table-container,
@@ -545,7 +555,6 @@ button.primary:hover {
         border-radius: 8px;
         padding: 0;
     }
-
     .mixers-list-table,
     .tractors-list-table,
     .trailers-list-table,
@@ -557,7 +566,6 @@ button.primary:hover {
         min-width: 400px;
         table-layout: fixed;
     }
-
     .mixers-list-table th,
     .tractors-list-table th,
     .trailers-list-table th,
@@ -566,7 +574,6 @@ button.primary:hover {
     .equipments-list-table th {
         padding: 10px 4px;
     }
-
     .mixers-list-table td,
     .tractors-list-table td,
     .trailers-list-table td,
@@ -577,7 +584,6 @@ button.primary:hover {
         max-width: 80px;
         min-width: 80px;
     }
-
     .mixers-list-table td:last-child,
     .tractors-list-table td:last-child,
     .trailers-list-table td:last-child,
@@ -596,7 +602,6 @@ button.primary:hover {
         font-size: 12px;
         padding: 6px 2px;
     }
-
     .mixers-list-table td,
     .tractors-list-table td,
     .trailers-list-table td,
@@ -608,7 +613,6 @@ button.primary:hover {
         max-width: 60px;
         min-width: 60px;
     }
-
     .mixers-list-table td:last-child,
     .tractors-list-table td:last-child,
     .trailers-list-table td:last-child,

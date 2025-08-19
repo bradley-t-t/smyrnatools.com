@@ -170,7 +170,7 @@
 
 .stat-icon {
     font-size: 32px;
-    color: var(--accent);
+    color: #fff;
     background-color: var(--accent-light-theme);
     width: 60px;
     height: 60px;
@@ -283,14 +283,12 @@
         margin-bottom: var(--spacing-sm);
         justify-content: flex-start;
     }
-
     .filters {
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
         width: 100%;
     }
-
     .search-bar {
         max-width: 100%;
         width: 100%;
@@ -1240,17 +1238,14 @@
         max-width: 100vw;
         border-radius: 10px;
     }
-
     .active-operators-table {
         min-width: 320px;
         font-size: 0.93rem;
     }
-
     .active-operators-table th,
     .active-operators-table td {
         padding: 8px 10px;
     }
-
     .active-operators-section h2 {
         padding: 14px 12px 10px 12px;
         font-size: 1rem;

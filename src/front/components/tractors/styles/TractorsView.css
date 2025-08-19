@@ -42,7 +42,7 @@
 
 .stat-icon {
     font-size: 32px;
-    color: var(--accent);
+    color: #fff;
     background-color: var(--accent-light-theme);
     width: 60px;
     height: 60px;

@@ -165,7 +165,7 @@
 
 .stat-icon {
     font-size: 32px;
-    color: var(--accent);
+    color: #fff;
     background-color: rgba(49, 130, 206, 0.1);
     width: 60px;
     height: 60px;
@@ -195,7 +195,7 @@
 
 .stat-card.warning .stat-icon {
     background-color: rgba(229, 62, 62, 0.1);
-    color: var(--error);
+    color: #fff;
 }
 
 .ios-button {
