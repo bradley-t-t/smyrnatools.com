@@ -181,6 +181,28 @@ class ReportServiceImpl {
             }, 0)
             return
         }
+        if (report.name === 'safety_manager') {
+            const issues = Array.isArray(form.issues) ? form.issues : []
+            if (issues.length === 0) return
+            const headers = ['Description', 'Plant', 'Tag']
+            const rows = issues.map(i => [i.description || '', i.plant || '', i.tag || ''])
+            const csvRows = [headers, ...rows]
+            const csvContent = csvRows.map(r =>
+                r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+            ).join('\r\n')
+            const blob = new Blob([csvContent], {type: 'text/csv'})
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${report.title || report.name}.csv`
+            document.body.appendChild(a)
+            a.click()
+            setTimeout(() => {
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+            }, 0)
+            return
+        }
         const headers = report.fields.map(f => f.label || f.name)
         const values = report.fields.map(f => form[f.name] || '')
         const csvRows = [headers, values]

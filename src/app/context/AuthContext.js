@@ -35,7 +35,7 @@ export function AuthProvider({children}) {
             return false
         }
         try {
-            const {json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/restore-session`, { userId })
+            const {json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/restore-session`, {userId})
             if (json.success && json.user) {
                 setUser(json.user)
                 setLoading(false)
@@ -58,7 +58,7 @@ export function AuthProvider({children}) {
         setError(null)
         setLoading(true)
         try {
-            const {res, json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/sign-in`, { email, password })
+            const {res, json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/sign-in`, {email, password})
             if (!res.ok) {
                 setError(json.error || 'Invalid email or password')
                 setLoading(false)
@@ -68,7 +68,8 @@ export function AuthProvider({children}) {
             sessionStorage.setItem('userId', json.id)
             setLoading(false)
             window.dispatchEvent(new CustomEvent('authSuccess', {detail: {userId: json.id}}))
-            setTimeout(() => loadUserProfile(json.id).catch(() => {}), 100)
+            setTimeout(() => loadUserProfile(json.id).catch(() => {
+            }), 100)
             return json
         } catch (e) {
             setError(e.message || 'An unknown error occurred')
@@ -80,18 +81,26 @@ export function AuthProvider({children}) {
     async function loadUserProfile(userId) {
         if (!userId) return
         try {
-            const {json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/load-profile`, { userId })
+            const {json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/load-profile`, {userId})
             if (json.profile) {
                 setUser(cu => ({...cu, profile: json.profile}))
             }
-        } catch {}
+        } catch {
+        }
     }
 
     async function signUp(email, password, firstName, lastName) {
+        console.log('Calling signUp with:', {email, password, firstName, lastName});
+
         setError(null)
         setLoading(true)
         try {
-            const {res, json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/sign-up`, { email, password, firstName, lastName })
+            const {res, json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/sign-up`, {
+                email,
+                password,
+                firstName,
+                lastName
+            })
             if (!res.ok) {
                 setError(json.error || 'Sign up failed')
                 setLoading(false)
@@ -122,7 +131,12 @@ export function AuthProvider({children}) {
         setError(null)
         setLoading(true)
         try {
-            const {res, json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/update-profile`, { userId, firstName, lastName, plantCode })
+            const {res, json} = await APIUtility.post(`${AUTH_CONTEXT_FUNCTION}/update-profile`, {
+                userId,
+                firstName,
+                lastName,
+                plantCode
+            })
             if (!res.ok || !json.success) {
                 setError(json.error || 'Update profile failed')
                 setLoading(false)
@@ -139,7 +153,18 @@ export function AuthProvider({children}) {
     }
 
     return (
-        <AuthContext.Provider value={{user, loading, error, signIn, signUp, signOut, restoreSession, loadUserProfile, updateProfile, isAuthenticated: !!user}}>
+        <AuthContext.Provider value={{
+            user,
+            loading,
+            error,
+            signIn,
+            signUp,
+            signOut,
+            restoreSession,
+            loadUserProfile,
+            updateProfile,
+            isAuthenticated: !!user
+        }}>
             {children}
         </AuthContext.Provider>
     )

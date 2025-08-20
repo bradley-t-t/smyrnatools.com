@@ -91,6 +91,16 @@ const reportTypes = [
             {name: "paverstone_base", label: "Paverstone Base", type: "number", required: true},
             {name: "rip_rap", label: "Rip Rap", type: "number", required: true}
         ]
+    }),
+    createReportType({
+        name: "safety_manager",
+        title: "Safety Manager Report",
+        frequency: "weekly",
+        assignment: ["reports.assigned.safety_manager"],
+        review: ["reports.review.safety_manager"],
+        fields: [
+            {name: "issues", label: "Issues", type: "table", required: false}
+        ]
     })
 ]
 

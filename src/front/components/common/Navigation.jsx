@@ -63,7 +63,6 @@ const menuItems = [
     {text: 'Heavy Equipment', id: 'Heavy Equipment', permission: 'equipment.view', alwaysVisible: false},
     {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
     {text: 'Operators', id: 'Operators', permission: 'operators.view', alwaysVisible: false},
-    {text: 'Scheduled Off', id: 'ScheduledOff', permission: 'operators_scheduled_off.view', alwaysVisible: false},
     {text: 'Managers', id: 'Managers', permission: 'managers.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
     {text: 'Reports', id: 'Reports', permission: 'reports.view', alwaysVisible: false},

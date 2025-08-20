@@ -5,11 +5,13 @@ import {ReportService} from '../../../services/ReportService'
 import {PlantManagerSubmitPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
 import {DistrictManagerSubmitPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
 import {PlantProductionSubmitPlugin} from './plugins/WeeklyPlantProductionReportPlugin'
+import {SafetyManagerSubmitPlugin} from './plugins/WeeklySafetyManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
     district_manager: DistrictManagerSubmitPlugin,
-    plant_production: PlantProductionSubmitPlugin
+    plant_production: PlantProductionSubmitPlugin,
+    safety_manager: SafetyManagerSubmitPlugin
 }
 
 function getTruckNumberForOperator(row, mixers) {
@@ -107,6 +109,13 @@ function ReportsSubmitView({
         if (report.name === 'plant_manager') {
             setShowConfirmationModal(true)
             return
+        }
+        if (report.name === 'safety_manager') {
+            const issues = Array.isArray(form.issues) ? form.issues : []
+            if (issues.some(i => !i.description || !i.plant || !i.tag)) {
+                setError('All issues must have a description, plant, and tag.')
+                return
+            }
         }
         if (report.name !== 'general_manager') {
             for (const field of report.fields) {
@@ -701,7 +710,7 @@ function ReportsSubmitView({
                                                                         placeholder="Start Time"
                                                                         value={form.rows[carouselIndex]?.start_time || ''}
                                                                         onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
-                                                                        disabled={readOnly ? true : false}
+                                                                        disabled={!!readOnly}
                                                                         style={{
                                                                             background: 'var(--background)',
                                                                             border: '1px solid var(--divider)',
@@ -722,7 +731,7 @@ function ReportsSubmitView({
                                                                         placeholder="1st Load"
                                                                         value={form.rows[carouselIndex]?.first_load || ''}
                                                                         onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
-                                                                        disabled={readOnly ? true : false}
+                                                                        disabled={!!readOnly}
                                                                         style={{
                                                                             background: 'var(--background)',
                                                                             border: '1px solid var(--divider)',
@@ -745,7 +754,7 @@ function ReportsSubmitView({
                                                                         placeholder="EOD"
                                                                         value={form.rows[carouselIndex]?.eod_in_yard || ''}
                                                                         onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
-                                                                        disabled={readOnly ? true : false}
+                                                                        disabled={!!readOnly}
                                                                         style={{
                                                                             background: 'var(--background)',
                                                                             border: '1px solid var(--divider)',
@@ -766,7 +775,7 @@ function ReportsSubmitView({
                                                                         placeholder="Punch Out"
                                                                         value={form.rows[carouselIndex]?.punch_out || ''}
                                                                         onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
-                                                                        disabled={readOnly ? true : false}
+                                                                        disabled={!!readOnly}
                                                                         style={{
                                                                             background: 'var(--background)',
                                                                             border: '1px solid var(--divider)',
@@ -928,42 +937,44 @@ function ReportsSubmitView({
                                     </div>
                                 </div>
                             </>
-                        ) : report.name === 'general_manager' ? null : (
+                        ) : report.name === 'general_manager' ? null : report.name === 'safety_manager' ? null : (
                             report.fields.map(field => (
-                                <div key={field.name} className="report-form-field-wide">
-                                    <label>
-                                        {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                        {field.required && <span className="report-modal-required">*</span>}
-                                    </label>
-                                    {field.type === 'textarea' ? (
-                                        <textarea
-                                            value={form[field.name] || ''}
-                                            onChange={e => handleChange(e, field.name)}
-                                            required={field.required}
-                                            disabled={readOnly}
-                                        />
-                                    ) : field.type === 'select' ? (
-                                        <select
-                                            value={form[field.name] || ''}
-                                            onChange={e => handleChange(e, field.name)}
-                                            required={field.required}
-                                            disabled={readOnly}
-                                        >
-                                            <option value="">Select...</option>
-                                            {field.options?.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <input
-                                            type={field.type}
-                                            value={form[field.name] || ''}
-                                            onChange={e => handleChange(e, field.name)}
-                                            required={field.required}
-                                            disabled={readOnly}
-                                        />
-                                    )}
-                                </div>
+                                field.name === 'issues' ? null : (
+                                    <div key={field.name} className="report-form-field-wide">
+                                        <label>
+                                            {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                            {field.required && <span className="report-modal-required">*</span>}
+                                        </label>
+                                        {field.type === 'textarea' ? (
+                                            <textarea
+                                                value={form[field.name] || ''}
+                                                onChange={e => handleChange(e, field.name)}
+                                                required={field.required}
+                                                disabled={readOnly}
+                                            />
+                                        ) : field.type === 'select' ? (
+                                            <select
+                                                value={form[field.name] || ''}
+                                                onChange={e => handleChange(e, field.name)}
+                                                required={field.required}
+                                                disabled={readOnly}
+                                            >
+                                                <option value="">Select...</option>
+                                                {field.options?.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type={field.type}
+                                                value={form[field.name] || ''}
+                                                onChange={e => handleChange(e, field.name)}
+                                                required={field.required}
+                                                disabled={readOnly}
+                                            />
+                                        )}
+                                    </div>
+                                )
                             ))
                         )}
                     </div>
@@ -984,6 +995,9 @@ function ReportsSubmitView({
                                 setDebugMsg={setDebugMsg}
                                 allReports={report.name === 'general_manager' ? allReports : undefined}
                                 weekIso={report.name === 'general_manager' ? report.weekIso : undefined}
+                                setForm={setForm}
+                                plants={plants}
+                                readOnly={readOnly}
                             />
                         </>
                     )}

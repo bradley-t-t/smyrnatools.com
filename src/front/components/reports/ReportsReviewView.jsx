@@ -7,11 +7,13 @@ import {ReportService} from '../../../services/ReportService'
 import {PlantManagerReviewPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
 import {DistrictManagerReviewPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
 import {PlantProductionReviewPlugin} from './plugins/WeeklyPlantProductionReportPlugin'
+import {SafetyManagerReviewPlugin} from './plugins/WeeklySafetyManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,
     district_manager: DistrictManagerReviewPlugin,
-    plant_production: PlantProductionReviewPlugin
+    plant_production: PlantProductionReviewPlugin,
+    safety_manager: SafetyManagerReviewPlugin
 }
 
 function formatDateTime(dt) {
@@ -321,42 +323,43 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                             {report.name === 'plant_production' ? null : (
                                 <div className="report-form-fields-grid">
                                     {report.fields.map(field => (
-                                        <div key={field.name} className="report-form-field-wide">
-                                            <label>
-                                                {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                                {field.required && <span className="report-modal-required">*</span>}
-                                            </label>
-                                            {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
-                                                <textarea
-                                                    value={form[field.name] || ''}
-                                                    readOnly
-                                                    disabled
-                                                    style={{
-                                                        minHeight: 60,
-                                                        maxHeight: 300,
-                                                        resize: 'vertical',
-                                                        width: '100%',
-                                                        fontSize: 15,
-                                                        background: 'var(--background)',
-                                                        border: '1px solid var(--divider)',
-                                                        borderRadius: 6,
-                                                        color: 'var(--text-primary)',
-                                                        padding: '7px 10px',
-                                                        overflowY: 'auto'
-                                                    }}
-                                                />
-                                            ) : field.type === 'select' ? (
-                                                <select value={form[field.name] || ''} readOnly disabled>
-                                                    <option value="">Select...</option>
-                                                    {field.options?.map(opt => (
-                                                        <option key={opt} value={opt}>{opt}</option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <input type={field.type} value={form[field.name] || ''} readOnly
-                                                       disabled/>
-                                            )}
-                                        </div>
+                                        (report.name === 'safety_manager' && field.name === 'issues') ? null : (
+                                            <div key={field.name} className="report-form-field-wide">
+                                                <label>
+                                                    {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                                    {field.required && <span className="report-modal-required">*</span>}
+                                                </label>
+                                                {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
+                                                    <textarea
+                                                        value={form[field.name] || ''}
+                                                        readOnly
+                                                        disabled
+                                                        style={{
+                                                            minHeight: 60,
+                                                            maxHeight: 300,
+                                                            resize: 'vertical',
+                                                            width: '100%',
+                                                            fontSize: 15,
+                                                            background: 'var(--background)',
+                                                            border: '1px solid var(--divider)',
+                                                            borderRadius: 6,
+                                                            color: 'var(--text-primary)',
+                                                            padding: '7px 10px',
+                                                            overflowY: 'auto'
+                                                        }}
+                                                    />
+                                                ) : field.type === 'select' ? (
+                                                    <select value={form[field.name] || ''} readOnly disabled>
+                                                        <option value="">Select...</option>
+                                                        {field.options?.map(opt => (
+                                                            <option key={opt} value={opt}>{opt}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <input type={field.type} value={form[field.name] || ''} readOnly disabled/>
+                                                )}
+                                            </div>
+                                        )
                                     ))}
                                 </div>
                             )}
