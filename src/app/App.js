@@ -31,6 +31,7 @@ import PlantsView from '../front/components/plants/PlantsView'
 import RegionsView from '../front/components/regions/RegionsView'
 import SmyrnaLogo from '../assets/images/SmyrnaLogo.png'
 import GuestView from '../front/components/guest/GuestView'
+import DesktopOnly from '../front/components/desktop-only/DesktopOnly'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -274,6 +275,7 @@ function AppContent() {
         }
     }
 
+    if (isMobile) return <DesktopOnly/>
     if (updateMode) return <UpdateLoadingScreen version={latestVersion || currentVersion}/>
 
     if (!userId) return (

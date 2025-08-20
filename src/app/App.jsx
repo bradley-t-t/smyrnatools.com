@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import './App.css';
 import HomePage from './pages/HomePage';
@@ -19,8 +19,24 @@ import {PreferencesProvider} from './context/PreferencesContext';
 import {AccountProvider} from './context/AccountContext';
 import ListView from '../front/components/list/ListView';
 import GuestView from '../front/components/guest/GuestView';
+import DesktopOnly from '../front/components/desktop-only/DesktopOnly';
 
 function App() {
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) return (
+        <PreferencesProvider>
+            <AccountProvider>
+                <DesktopOnly/>
+            </AccountProvider>
+        </PreferencesProvider>
+    );
+
     return (
         <PreferencesProvider>
             <AccountProvider>
@@ -52,3 +68,5 @@ function App() {
 }
 
 export default App;
+
+
