@@ -1,35 +1,27 @@
-const HASH_TIMEOUT = 5000
+import APIUtility from './APIUtility'
+
+const CRYPTO_UTILITY_FUNCTION = '/crypto-utility'
 
 const CryptoUtility = Object.freeze({
     async crypto(data) {
-        if (!crypto?.subtle) {
-            return CryptoUtility.hash(data)
-        }
-        try {
-            const encoder = new TextEncoder()
-            const dataBuffer = encoder.encode(typeof data === 'string' ? data : String(data))
-            const hashPromise = crypto.subtle.digest('SHA-256', dataBuffer)
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('SHA-256 hash timed out')), HASH_TIMEOUT))
-            const hashBuffer = await Promise.race([hashPromise, timeoutPromise])
-            return Array.from(new Uint8Array(hashBuffer))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('')
-        } catch {
-            return CryptoUtility.hash(data)
-        }
+        const {res, json} = await APIUtility.post(`${CRYPTO_UTILITY_FUNCTION}/hash`, { data })
+        return res.ok && json.hash ? json.hash : ''
     },
-    hash(data) {
-        let hash = 5381
-        for (let i = 0; i < data.length; i++) {
-            hash = ((hash << 5) + hash) ^ data.charCodeAt(i)
-        }
-        let hex = (hash >>> 0).toString(16)
-        while (hex.length < 64) hex += '0'
-        return hex.slice(0, 64)
+    async generateUUID() {
+        const {res, json} = await APIUtility.post(`${CRYPTO_UTILITY_FUNCTION}/uuid`)
+        return res.ok && json.uuid ? json.uuid : ''
     },
-    generateUUID() {
-        return crypto.randomUUID()
+    async generateSalt(length = 16) {
+        const {res, json} = await APIUtility.post(`${CRYPTO_UTILITY_FUNCTION}/generate-salt`, { length })
+        return res.ok && json.salt ? json.salt : ''
+    },
+    async hashPassword(password, salt) {
+        const {res, json} = await APIUtility.post(`${CRYPTO_UTILITY_FUNCTION}/hash-password`, { password, salt })
+        return res.ok && json.hash ? json.hash : ''
+    },
+    async batchHash(items) {
+        const {res, json} = await APIUtility.post(`${CRYPTO_UTILITY_FUNCTION}/batch-hash`, { items })
+        return res.ok && json.results ? json.results : []
     }
 })
 

@@ -1,40 +1,19 @@
+import APIUtility from './APIUtility'
+
+const USER_UTILITY_FUNCTION = '/user-utility'
+
 const userUtility = {
-    generateUUID() {
-        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-            return crypto.randomUUID()
-        }
-        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-            const arr = new Uint8Array(16)
-            crypto.getRandomValues(arr)
-            arr[6] = (arr[6] & 0x0f) | 0x40
-            arr[8] = (arr[8] & 0x3f) | 0x80
-            return [
-                userUtility._byteToHex(arr[0]), userUtility._byteToHex(arr[1]),
-                userUtility._byteToHex(arr[2]), userUtility._byteToHex(arr[3]), '-',
-                userUtility._byteToHex(arr[4]), userUtility._byteToHex(arr[5]), '-',
-                userUtility._byteToHex(arr[6]), userUtility._byteToHex(arr[7]), '-',
-                userUtility._byteToHex(arr[8]), userUtility._byteToHex(arr[9]), '-',
-                userUtility._byteToHex(arr[10]), userUtility._byteToHex(arr[11]),
-                userUtility._byteToHex(arr[12]), userUtility._byteToHex(arr[13]),
-                userUtility._byteToHex(arr[14]), userUtility._byteToHex(arr[15])
-            ].join('')
-        }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
-        })
+    async generateUUID() {
+        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/generate-uuid`)
+        return res.ok && json.uuid ? json.uuid : ''
     },
-
-    _byteToHex(byte) {
-        return byte.toString(16).padStart(2, '0')
+    async isValidUUID(uuid) {
+        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/validate-uuid`, { uuid })
+        return res.ok && typeof json.isValid === 'boolean' ? json.isValid : false
     },
-
-    isValidUUID(uuid) {
-        return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid)
-    },
-
-    safeUUID(uuid) {
-        return (!uuid || uuid === '' || uuid === '0') ? null : uuid
+    async safeUUID(uuid) {
+        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/safe-uuid`, { uuid })
+        return res.ok ? json.safeUuid : null
     }
 }
 
