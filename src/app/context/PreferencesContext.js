@@ -73,8 +73,7 @@ export const PreferencesProvider = ({children}) => {
                     document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
                     document.documentElement.classList.add(`accent-${parsedPrefs.accentColor}`)
                 }
-            } catch {
-            }
+            } catch {}
         }
         applyThemeFromStorage()
         const handleStorageChange = e => {
@@ -120,8 +119,7 @@ export const PreferencesProvider = ({children}) => {
         document.documentElement.classList.add(`accent-${preferences.accentColor}`)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(preferences))
-        } catch {
-        }
+        } catch {}
     }, [preferences])
 
     const fetchUserPreferences = async uid => {
@@ -184,8 +182,7 @@ export const PreferencesProvider = ({children}) => {
         setPreferences(newPreferences)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(newPreferences))
-        } catch {
-        }
+        } catch {}
     }
 
     const updatePreferences = async (keyOrObject, value) => {
@@ -198,7 +195,9 @@ export const PreferencesProvider = ({children}) => {
         setPreferences(updatedPreferences)
         localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences))
         if (userId) {
-            const updateData = {
+            const now = new Date().toISOString()
+            const upsertData = {
+                user_id: userId,
                 navbar_minimized: updatedPreferences.navbarMinimized,
                 theme_mode: updatedPreferences.themeMode,
                 accent_color: updatedPreferences.accentColor,
@@ -213,12 +212,16 @@ export const PreferencesProvider = ({children}) => {
                 trailer_filters: updatedPreferences.trailerFilters,
                 equipment_filters: updatedPreferences.equipmentFilters,
                 last_viewed_filters: updatedPreferences.lastViewedFilters,
-                updated_at: new Date().toISOString()
+                updated_at: now,
+                created_at: now
             }
-            await supabase
-                .from('users_preferences')
-                .update(updateData)
-                .eq('user_id', userId)
+            try {
+                await supabase
+                    .from('users_preferences')
+                    .upsert(upsertData, {onConflict: 'user_id'})
+            } catch (e) {
+                logSupabaseError('upserting preferences', e)
+            }
         }
     }
 

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../app/context/AuthContext';
 import { AuthUtility } from '../../../utils/AuthUtility';
 import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png';
-import PasswordRecoveryView from './PasswordRecoveryView';
 import BG from '../../../assets/images/BG.png';
 import './styles/LoginView.css';
 import VersionPopup from '../common/VersionPopup';
@@ -11,7 +10,6 @@ import { useVersion } from '../../../app/hooks/useVersion';
 function LoginView() {
     const version = useVersion();
     const [isSignUp, setIsSignUp] = useState(false);
-    const [showRecovery, setShowRecovery] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -83,10 +81,8 @@ function LoginView() {
                     setIsSubmitting(false);
                     return;
                 }
-                // Await normalizeName to resolve Promises to strings
                 const normFirst = await AuthUtility.normalizeName(firstName);
                 const normLast = await AuthUtility.normalizeName(lastName);
-                // Verify they're strings
                 if (typeof normFirst !== 'string' || typeof normLast !== 'string') {
                     throw new Error('First and last name must be strings after normalization');
                 }
@@ -119,174 +115,161 @@ function LoginView() {
     };
 
     return (
-        <>
-            {showRecovery ? (
-                <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)} />
-            ) : (
-                <div className="login-container">
-                    <VersionPopup version={version} />
-                    <div className={"login-wrapper" + (isSignUp ? " sign-up-mode" : "")}>
-                        <div className="login-info">
-                            <div className="login-info-media">
-                                <img src={BG} alt="" aria-hidden="true" fetchPriority="high" loading="eager" decoding="async" />
-                            </div>
-                            <div className="login-info-overlay">
-                                <img src={SmyrnaLogo} alt="SRM Logo" className="login-info-logo" />
-                                <h2>Smyrna Tools - Built for SRM Concrete</h2>
-                                <p>
-                                    Since 1999, SRM has been the leading ready-mix concrete supplier in the U.S., with 8,500 team members across 23 states. Join us to experience industry-leading quality and service.
-                                </p>
-                            </div>
+        <div className="login-container">
+            <VersionPopup version={version} />
+            <div className={"login-wrapper" + (isSignUp ? " sign-up-mode" : "")}>
+                <div className="login-info">
+                    <div className="login-info-media">
+                        <img src={BG} alt="" aria-hidden="true" fetchPriority="high" loading="eager" decoding="async" />
+                    </div>
+                    <div className="login-info-overlay">
+                        <img src={SmyrnaLogo} alt="SRM Logo" className="login-info-logo" />
+                        <h2>Smyrna Tools - Built for SRM Concrete</h2>
+                        <p>
+                            Since 1999, SRM has been the leading ready-mix concrete supplier in the U.S., with 8,500 team members across 23 states. Join us to experience industry-leading quality and service.
+                        </p>
+                    </div>
+                </div>
+                <div className="login-card">
+                    <div className="login-card-header">
+                        <img src={SmyrnaLogo} alt="SRM Logo" className="login-card-logo" />
+                        <h1>{isSignUp ? 'Create Account' : 'Sign In'}</h1>
+                        <div className="login-tabs">
+                            <button
+                                className={`login-tab ${!isSignUp ? 'active' : ''}`}
+                                onClick={() => setIsSignUp(false)}
+                                type="button"
+                                aria-pressed={!isSignUp}
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                className={`login-tab ${isSignUp ? 'active' : ''}`}
+                                onClick={() => setIsSignUp(true)}
+                                type="button"
+                                aria-pressed={isSignUp}
+                            >
+                                Sign Up
+                            </button>
                         </div>
-                        <div className="login-card">
-                            <div className="login-card-header">
-                                <img src={SmyrnaLogo} alt="SRM Logo" className="login-card-logo" />
-                                <h1>{isSignUp ? 'Create Account' : 'Sign In'}</h1>
-                                <div className="login-tabs">
-                                    <button
-                                        className={`login-tab ${!isSignUp ? 'active' : ''}`}
-                                        onClick={() => setIsSignUp(false)}
-                                        type="button"
-                                        aria-pressed={!isSignUp}
-                                    >
-                                        Sign In
-                                    </button>
-                                    <button
-                                        className={`login-tab ${isSignUp ? 'active' : ''}`}
-                                        onClick={() => setIsSignUp(true)}
-                                        type="button"
-                                        aria-pressed={isSignUp}
-                                    >
-                                        Sign Up
-                                    </button>
+                    </div>
+                    <form onSubmit={handleSubmit} className="login-form" noValidate>
+                        <div className="form-group">
+                            <label htmlFor="email" className={email ? 'floating-label active' : 'floating-label'}>
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                autoComplete="username"
+                                aria-label="Email address"
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="password" className={password ? 'floating-label active' : 'floating-label'}>
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="current-password"
+                                aria-label="Password"
+                                required
+                            />
+                            {isSignUp && password && (
+                                <div className="password-strength" style={{ color: passwordStrength.color }}>
+                                    Password Strength: {passwordStrength.value}
                                 </div>
-                            </div>
-                            <form onSubmit={handleSubmit} className="login-form" noValidate>
-                                <div className="form-group">
-                                    <label htmlFor="email" className={email ? 'floating-label active' : 'floating-label'}>
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        autoComplete="username"
-                                        aria-label="Email address"
-                                        required
-                                    />
+                            )}
+                            {!isSignUp && (
+                                <div className="forgot-password">
+                                    <p>Forgot Password?</p>
                                 </div>
+                            )}
+                        </div>
+                        {isSignUp && (
+                            <>
                                 <div className="form-group">
-                                    <label htmlFor="password" className={password ? 'floating-label active' : 'floating-label'}>
-                                        Password
+                                    <label htmlFor="confirmPassword" className={confirmPassword ? 'floating-label active' : 'floating-label'}>
+                                        Confirm Password
                                     </label>
                                     <input
                                         type="password"
-                                        id="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        autoComplete="current-password"
-                                        aria-label="Password"
+                                        id="confirmPassword"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        aria-label="Confirm password"
                                         required
                                     />
-                                    {isSignUp && password && (
-                                        <div className="password-strength" style={{ color: passwordStrength.color }}>
-                                            Password Strength: {passwordStrength.value}
-                                        </div>
-                                    )}
-                                    {!isSignUp && (
-                                        <div className="forgot-password">
-                                            <button
-                                                type="button"
-                                                className="text-button"
-                                                onClick={() => setShowRecovery(true)}
-                                                aria-label="Forgot password"
-                                            >
-                                                Forgot Password?
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
-                                {isSignUp && (
-                                    <>
-                                        <div className="form-group">
-                                            <label htmlFor="confirmPassword" className={confirmPassword ? 'floating-label active' : 'floating-label'}>
-                                                Confirm Password
-                                            </label>
-                                            <input
-                                                type="password"
-                                                id="confirmPassword"
-                                                value={confirmPassword}
-                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                aria-label="Confirm password"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label htmlFor="firstName" className={firstName ? 'floating-label active' : 'floating-label'}>
-                                                First Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="firstName"
-                                                value={firstName}
-                                                onChange={(e) => setFirstName(e.target.value)}
-                                                aria-label="First name"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label htmlFor="lastName" className={lastName ? 'floating-label active' : 'floating-label'}>
-                                                Last Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="lastName"
-                                                value={lastName}
-                                                onChange={(e) => setLastName(e.target.value)}
-                                                aria-label="Last name"
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
-                                <button
-                                    type="submit"
-                                    className="login-btn"
-                                    disabled={isSubmitting || loading}
-                                    aria-label={isSignUp ? 'Create account' : 'Sign in'}
-                                >
-                                    {isSubmitting || loading ? (
-                                        <span className="login-loading">
-                      <span className="loading-dot"></span>
-                      <span className="loading-dot"></span>
-                      <span className="loading-dot"></span>
-                                            {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                    </span>
-                                    ) : isSignUp ? (
-                                        'Create Account'
-                                    ) : (
-                                        'Sign In'
-                                    )}
-                                </button>
-                                {errorMessage && <div className="error-message">{errorMessage}</div>}
-                                {successMessage && <div className="success-message">{successMessage}</div>}
-                            </form>
-                            <div className="login-footer">
-                                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-                                <button
-                                    className="text-button"
-                                    onClick={() => setIsSignUp(!isSignUp)}
-                                    aria-label={isSignUp ? 'Switch to sign in' : 'Switch to sign up'}
-                                >
-                                    {isSignUp ? 'Sign In' : 'Sign Up'}
-                                </button>
-                            </div>
-                        </div>
+                                <div className="form-group">
+                                    <label htmlFor="firstName" className={firstName ? 'floating-label active' : 'floating-label'}>
+                                        First Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="firstName"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        aria-label="First name"
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="lastName" className={lastName ? 'floating-label active' : 'floating-label'}>
+                                        Last Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="lastName"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        aria-label="Last name"
+                                        required
+                                    />
+                                </div>
+                            </>
+                        )}
+                        <button
+                            type="submit"
+                            className="login-btn"
+                            disabled={isSubmitting || loading}
+                            aria-label={isSignUp ? 'Create account' : 'Sign in'}
+                        >
+                            {isSubmitting || loading ? (
+                                <span className="login-loading">
+                  <span className="loading-dot"></span>
+                  <span className="loading-dot"></span>
+                  <span className="loading-dot"></span>
+                                    {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                </span>
+                            ) : isSignUp ? (
+                                'Create Account'
+                            ) : (
+                                'Sign In'
+                            )}
+                        </button>
+                        {errorMessage && <div className="error-message">{errorMessage}</div>}
+                        {successMessage && <div className="success-message">{successMessage}</div>}
+                    </form>
+                    <div className="login-footer">
+                        {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+                        <button
+                            className="text-button"
+                            onClick={() => setIsSignUp(!isSignUp)}
+                            aria-label={isSignUp ? 'Switch to sign in' : 'Switch to sign up'}
+                        >
+                            {isSignUp ? 'Sign In' : 'Sign Up'}
+                        </button>
                     </div>
                 </div>
-            )}
-        </>
+            </div>
+        </div>
     );
 }
 

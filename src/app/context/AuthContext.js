@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useEffect, useState} from 'react'
 import APIUtility from '../../utils/APIUtility'
+import {supabase} from '../../services/DatabaseService'
 
 const AUTH_CONTEXT_FUNCTION = '/auth-context'
 
@@ -68,8 +69,7 @@ export function AuthProvider({children}) {
             sessionStorage.setItem('userId', json.id)
             setLoading(false)
             window.dispatchEvent(new CustomEvent('authSuccess', {detail: {userId: json.id}}))
-            setTimeout(() => loadUserProfile(json.id).catch(() => {
-            }), 100)
+            setTimeout(() => loadUserProfile(json.id).catch(() => {}), 100)
             return json
         } catch (e) {
             setError(e.message || 'An unknown error occurred')
@@ -85,13 +85,40 @@ export function AuthProvider({children}) {
             if (json.profile) {
                 setUser(cu => ({...cu, profile: json.profile}))
             }
-        } catch {
-        }
+        } catch {}
+    }
+
+    async function createDefaultPreferencesRow(userId) {
+        if (!userId) return
+        try {
+            const now = new Date().toISOString()
+            const baseFilters = {searchText: '', selectedPlant: '', statusFilter: '', viewMode: 'grid'}
+            const roleFilters = {searchText: '', selectedPlant: '', roleFilter: '', viewMode: 'grid'}
+            await supabase
+                .from('users_preferences')
+                .upsert({
+                    user_id: userId,
+                    navbar_minimized: false,
+                    theme_mode: 'light',
+                    accent_color: 'red',
+                    show_tips: true,
+                    show_online_overlay: true,
+                    auto_overview: false,
+                    default_view_mode: null,
+                    mixer_filters: baseFilters,
+                    operator_filters: baseFilters,
+                    manager_filters: roleFilters,
+                    tractor_filters: baseFilters,
+                    trailer_filters: baseFilters,
+                    equipment_filters: baseFilters,
+                    last_viewed_filters: null,
+                    created_at: now,
+                    updated_at: now
+                }, {onConflict: 'user_id'})
+        } catch {}
     }
 
     async function signUp(email, password, firstName, lastName) {
-        console.log('Calling signUp with:', {email, password, firstName, lastName});
-
         setError(null)
         setLoading(true)
         try {
@@ -108,6 +135,7 @@ export function AuthProvider({children}) {
             }
             setUser(json)
             sessionStorage.setItem('userId', json.id)
+            await createDefaultPreferencesRow(json.id)
             setLoading(false)
             return json
         } catch (e) {

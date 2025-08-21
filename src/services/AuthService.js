@@ -1,4 +1,5 @@
 import APIUtility from '../utils/APIUtility'
+import {supabase} from './DatabaseService'
 
 const AUTH_SERVICE_FUNCTION = '/auth-service'
 
@@ -17,12 +18,41 @@ class AuthServiceImpl {
         return this.currentUser
     }
 
+    async _createDefaultPreferencesRow(userId) {
+        if (!userId) return
+        try {
+            const now = new Date().toISOString()
+            const baseFilters = {searchText: '', selectedPlant: '', statusFilter: '', viewMode: 'grid'}
+            const roleFilters = {searchText: '', selectedPlant: '', roleFilter: '', viewMode: 'grid'}
+            await supabase.from('users_preferences').upsert({
+                user_id: userId,
+                navbar_minimized: false,
+                theme_mode: 'light',
+                accent_color: 'red',
+                show_tips: true,
+                show_online_overlay: true,
+                auto_overview: false,
+                default_view_mode: null,
+                mixer_filters: baseFilters,
+                operator_filters: baseFilters,
+                manager_filters: roleFilters,
+                tractor_filters: baseFilters,
+                trailer_filters: baseFilters,
+                equipment_filters: baseFilters,
+                last_viewed_filters: null,
+                created_at: now,
+                updated_at: now
+            }, {onConflict: 'user_id'})
+        } catch {}
+    }
+
     async signUp(email, password, firstName, lastName) {
         const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/sign-up`, { email, password, firstName, lastName })
         if (!res.ok) throw new Error(json.error || 'Sign up failed')
         this.currentUser = { userId: json.userId, email: json.email }
         this.isAuthenticated = true
         sessionStorage.setItem('userId', json.userId)
+        await this._createDefaultPreferencesRow(json.userId)
         this._notifyObservers()
         return this.currentUser
     }
