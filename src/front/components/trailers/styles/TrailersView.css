@@ -1,4 +1,4 @@
-/* TrailersView.css */
+
 :root {
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
@@ -237,7 +237,6 @@
     white-space: nowrap;
 }
 
-/* --- Updated search-filters layout --- */
 .search-filters {
     background-color: var(--card-bg);
     padding: var(--spacing-lg);

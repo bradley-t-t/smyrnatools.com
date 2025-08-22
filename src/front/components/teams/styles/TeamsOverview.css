@@ -56,7 +56,6 @@
     color: #888;
 }
 
-/* Dark mode support */
 .dark-mode .overview-metrics {
     background: var(--bg-primary, #18181b);
     color: var(--text-primary, #f5f5f5);

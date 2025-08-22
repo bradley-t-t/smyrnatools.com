@@ -1,4 +1,4 @@
-/* TractorCommentModal.css */
+
 .comment-modal-backdrop {
     position: fixed;
     top: 0;
@@ -191,7 +191,6 @@
     cursor: not-allowed;
 }
 
-/* Comments list */
 .comments-list {
     background-color: var(--bg-secondary);
     border-radius: var(--border-radius);

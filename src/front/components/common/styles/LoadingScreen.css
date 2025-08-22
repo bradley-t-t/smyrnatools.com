@@ -22,7 +22,7 @@
     transform: translate(-50%, -50%);
     padding: 20px;
     border-radius: 12px;
-    background-color: rgba(0, 0, 0, 0.5); /* overridden in dark mode by Theme.css */
+    background-color: rgba(0, 0, 0, 0.5);
     color: var(--text-primary);
 }
 
@@ -45,7 +45,7 @@
     border-radius: 12px;
     max-width: 90%;
     width: 320px;
-    transform: none; /* Prevent inheriting transforms */
+    transform: none;
     background-color: var(--card-bg);
     box-shadow: var(--shadow-lg);
     color: var(--text-primary);
@@ -65,7 +65,7 @@
     width: 80px;
     height: 80px;
     animation: bounce 0.8s ease-in-out infinite alternate;
-    will-change: transform; /* Optimize the animation */
+    will-change: transform;
 }
 
 .loading-message {

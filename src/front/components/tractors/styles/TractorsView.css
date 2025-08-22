@@ -1,4 +1,4 @@
-/* TractorsView.css */
+
 .dashboard-container {
     font-family: var(--font-family);
     width: 100%;
@@ -757,7 +757,6 @@
     }
 }
 
-/* --- Updated search-filters layout --- */
 .search-filters {
     background-color: var(--card-bg);
     padding: var(--spacing-lg);

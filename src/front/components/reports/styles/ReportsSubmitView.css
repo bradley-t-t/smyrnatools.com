@@ -4,7 +4,7 @@
     --error: #e53e3e;
     --excellent: #2563eb;
     --below: #f59e42;
-    --text-placeholder: #a0aec0; /* Added placeholder color variable */
+    --text-placeholder: #a0aec0;
 }
 
 .report-form-outer {

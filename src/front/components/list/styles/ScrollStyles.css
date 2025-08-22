@@ -1,4 +1,4 @@
-/* Consistent scrollbar styling across components */
+
 .detail-content,
 .delete-modal-body,
 .modal-detail-content {
@@ -25,7 +25,6 @@
     border-radius: 6px;
 }
 
-/* Dark mode scrollbar adjustments */
 @media (prefers-color-scheme: dark) {
     .detail-content,
     .delete-modal-body,

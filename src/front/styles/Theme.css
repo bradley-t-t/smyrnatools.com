@@ -280,7 +280,6 @@ button.primary:hover {
     color: var(--text-secondary);
 }
 
-
 .dark-mode .loading-screen.full-page {
     background-color: var(--background);
 }

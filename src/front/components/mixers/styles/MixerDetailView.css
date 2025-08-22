@@ -527,7 +527,6 @@
     color: var(--accent);
 }
 
-
 .star-button {
     background: none;
     border: none;
@@ -783,7 +782,6 @@
     color: var(--text-primary);
     padding: 8px 0;
 }
-
 
 .saving-overlay {
     position: fixed;

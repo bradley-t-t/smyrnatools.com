@@ -1,4 +1,4 @@
-/* TractorHistoryView.css */
+
 .history-modal-backdrop {
     position: fixed;
     top: 0;
@@ -174,7 +174,6 @@
     margin-top: var(--spacing-sm);
 }
 
-/* Timeline styles */
 .history-timeline {
     display: flex;
     flex-direction: column;

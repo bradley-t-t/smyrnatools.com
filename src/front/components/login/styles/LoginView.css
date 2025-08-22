@@ -409,7 +409,6 @@
     border-left: 5px solid var(--success);
 }
 
-
 @keyframes login-notification-fadein {
     from {
         opacity: 0;

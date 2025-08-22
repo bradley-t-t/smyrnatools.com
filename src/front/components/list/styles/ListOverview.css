@@ -7,14 +7,12 @@
     color: var(--text-primary, #212122);
 }
 
-/* Modal container for overview */
 .overview-modal,
 .modal-content.overview-modal {
     background: var(--bg-primary, #fff);
     color: var(--text-primary, #212122);
 }
 
-/* Dark mode support for modal background */
 .dark-mode .overview-modal,
 .dark-mode .modal-content.overview-modal {
     background: var(--bg-primary, #18181b);
@@ -199,7 +197,6 @@
     }
 }
 
-/* Dark mode support */
 .dark-mode .list-overview {
     background: var(--bg-primary, #18181b);
     color: var(--text-primary, #f5f5f5);

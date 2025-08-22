@@ -1299,7 +1299,6 @@
     min-width: 0;
 }
 
-
 @media (max-width: 900px) {
     .mixers-list-row-outer {
         flex-direction: column;
