@@ -2,10 +2,8 @@ import React, {useEffect, useState} from 'react';
 import './styles/ListAddView.css';
 import {ListService} from '../../../services/ListService';
 import {UserService} from '../../../services/UserService';
-import {usePreferences} from '../../../app/context/PreferencesContext';
 
 function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
-    const {preferences} = usePreferences();
     const [description, setDescription] = useState('');
     const [plantCode, setPlantCode] = useState('');
     const [deadline, setDeadline] = useState(() => {
@@ -73,7 +71,11 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
             let userId = currentUserId;
             if (!userId) {
                 const user = await UserService.getCurrentUser();
-                if (!user || !user.id) throw new Error('User ID is required. Please ensure you are logged in.');
+                if (!user || !user.id) {
+                    alert('User ID is required. Please ensure you are logged in.');
+                    setIsSaving(false);
+                    return;
+                }
                 userId = user.id;
                 setCurrentUserId(userId);
             }
@@ -89,6 +91,7 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                 await ListService.createListItem(plantCode, description, new Date(deadline), comments);
             }
             onItemAdded?.();
+            onClose?.();
         } catch (error) {
             alert(`Failed to save list item: ${error.message || 'Unknown error'}. Please try again.`);
         } finally {
@@ -130,10 +133,9 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                                 className="form-control"
                                 value={plantCode}
                                 onChange={e => setPlantCode(e.target.value)}
-                                disabled={!canBypassPlantRestriction && userPlantCode}
                                 required
                             >
-                                <option value="">Select a plant</option>
+                                <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>Select a plant</option>
                                 {plants.map(plant => (
                                     <option
                                         key={plant.plant_code}
@@ -173,7 +175,6 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                             type="button"
                             className="cancel-button"
                             onClick={onClose}
-                            style={{borderColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}
                         >
                             Cancel
                         </button>

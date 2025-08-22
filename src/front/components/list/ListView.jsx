@@ -11,7 +11,7 @@ import ListDetailView from './ListDetailView'
 import {supabase} from '../../../services/DatabaseService'
 
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
-    const {preferences, updateListFilter, resetListFilters} = usePreferences()
+    const {updateListFilter, resetListFilters} = usePreferences()
     const [, setListItems] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -44,6 +44,13 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 
         fetchCurrentUser()
     }, [])
+
+    useEffect(() => {
+        if (!canBypassPlantRestriction && userPlantCode) {
+            setSelectedPlant(prev => prev || userPlantCode)
+            updateListFilter?.('selectedPlant', userPlantCode)
+        }
+    }, [canBypassPlantRestriction, userPlantCode, updateListFilter])
 
     useEffect(() => {
         fetchAllData()
@@ -231,16 +238,19 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                                 setSelectedPlant(e.target.value)
                                 updateListFilter?.('selectedPlant', e.target.value)
                             }}
-                            disabled={!canBypassPlantRestriction && userPlantCode}
                             aria-label="Filter by plant"
                             style={{
-                                '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                                '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                '--select-active-border': 'var(--accent)',
+                                '--select-focus-border': 'var(--accent)'
                             }}
                         >
-                            <option value="">All Plants</option>
+                            <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants</option>
                             {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
-                                <option key={plant.plant_code} value={plant.plant_code}>
+                                <option
+                                    key={plant.plant_code}
+                                    value={plant.plant_code}
+                                    disabled={!canBypassPlantRestriction && userPlantCode && plant.plant_code !== userPlantCode}
+                                >
                                     ({plant.plant_code}) {plant.plant_name}
                                 </option>
                             ))}
@@ -268,8 +278,8 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                             }}
                             aria-label="Filter by status"
                             style={{
-                                '--select-active-border': preferences.accentColor === 'red' ? '#b80017' : '#003896',
-                                '--select-focus-border': preferences.accentColor === 'red' ? '#b80017' : '#003896'
+                                '--select-active-border': 'var(--accent)',
+                                '--select-focus-border': 'var(--accent)'
                             }}
                         >
                             <option value="">All Status</option>
@@ -399,38 +409,23 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                     </div>
                 )}
             </div>
+
             {showAddSheet && (
                 <ListAddView
                     onClose={() => setShowAddSheet(false)}
-                    onItemAdded={() => {
-                        setShowAddSheet(false)
-                        fetchAllData()
-                    }}
+                    onItemAdded={() => fetchAllData()}
                     plants={plants}
-                    item={selectedItem}
                 />
             )}
-            {showOverview && <OverviewPopup/>}
-            {showDetailView && selectedItem && (
-                <div className="modal-backdrop">
-                    <div className="modal-detail-content" style={{
-                        background: 'none',
-                        boxShadow: 'none',
-                        padding: 0,
-                        maxHeight: 'unset',
-                        overflow: 'visible'
-                    }}>
-                        <ListDetailView
-                            itemId={selectedItem.id}
-                            onClose={() => {
-                                setShowDetailView(false)
-                                setSelectedItem(null)
-                                fetchAllData()
-                            }}
-                        />
-                    </div>
-                </div>
+
+            {showDetailView && (
+                <ListDetailView
+                    itemId={selectedItem?.id}
+                    onClose={() => setShowDetailView(false)}
+                />
             )}
+
+            {showOverview && <OverviewPopup/>}
         </div>
     )
 }

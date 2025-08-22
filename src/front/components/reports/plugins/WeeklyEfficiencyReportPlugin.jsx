@@ -222,7 +222,7 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                 </colgroup>
                 <thead>
                 <tr>
-                    {['Operator','Truck #','Δ Start→1st','Δ EOD→Punch','L/H','']
+                    {['Operator','Truck #','Punch In -> 1st Load','Washout -> Punch Out','L/H','']
                         .map((h, i) => (
                             <th key={i} style={{
                                 position: 'sticky',

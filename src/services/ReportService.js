@@ -361,12 +361,12 @@ class ReportServiceImpl {
             avgWarnings.push('Reported Start and 1st Load times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
         }
         if (avgElapsedEnd !== null && avgElapsedEnd < 0) {
-            avgWarnings.push('Reported EOD In Yard and Punch Out times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
+            avgWarnings.push('Reported Washout -> Punch Out times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
         }
         if (avgElapsedStart !== null && avgElapsedStart > 15) {
-            avgWarnings.push(`Avg Start to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`) }
+            avgWarnings.push(`Avg Punch In to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`) }
         if (avgElapsedEnd !== null && avgElapsedEnd > 15) {
-            avgWarnings.push(`Avg EOD to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`) }
+            avgWarnings.push(`Washout to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`) }
         if (avgLoads !== null && avgLoads < 3) {
             avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`) }
         if (avgHours !== null && avgHours > 14) {

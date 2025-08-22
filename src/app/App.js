@@ -102,7 +102,7 @@ function AppContent() {
                     setLatestVersion(data.version)
                     setUpdateMode(true)
                 }
-            })
+            }).catch(() => {})
         }
         if (currentVersion) intervalId = setInterval(pollVersion, 30000)
         return () => { if (intervalId) clearInterval(intervalId) }
