@@ -6,13 +6,13 @@ import {UserService} from '../../../services/UserService'
 import {ReportService} from '../../../services/ReportService'
 import {PlantManagerReviewPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
 import {DistrictManagerReviewPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
-import {PlantProductionReviewPlugin} from './plugins/WeeklyPlantProductionReportPlugin'
+import {EfficiencyReviewPlugin} from './plugins/WeeklyEfficiencyReportPlugin'
 import {SafetyManagerReviewPlugin} from './plugins/WeeklySafetyManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,
     district_manager: DistrictManagerReviewPlugin,
-    plant_production: PlantProductionReviewPlugin,
+    plant_production: EfficiencyReviewPlugin,
     safety_manager: SafetyManagerReviewPlugin
 }
 

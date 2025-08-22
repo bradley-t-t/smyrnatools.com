@@ -4,13 +4,13 @@ import {supabase} from '../../../services/DatabaseService'
 import {ReportService} from '../../../services/ReportService'
 import {PlantManagerSubmitPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
 import {DistrictManagerSubmitPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
-import {PlantProductionSubmitPlugin} from './plugins/WeeklyPlantProductionReportPlugin'
+import {EfficiencySubmitPlugin} from './plugins/WeeklyEfficiencyReportPlugin'
 import {SafetyManagerSubmitPlugin} from './plugins/WeeklySafetyManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
     district_manager: DistrictManagerSubmitPlugin,
-    plant_production: PlantProductionSubmitPlugin,
+    plant_production: EfficiencySubmitPlugin,
     safety_manager: SafetyManagerSubmitPlugin
 }
 

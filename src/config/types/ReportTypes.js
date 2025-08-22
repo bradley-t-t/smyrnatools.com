@@ -53,7 +53,7 @@ const reportTypes = [
     }),
     createReportType({
         name: "plant_production",
-        title: "Weekly Plant Production Report",
+        title: "Weekly Plant Efficiency Report",
         frequency: "weekly",
         assignment: ["reports.assigned.plant_production"],
         review: ["reports.review.plant_production"],
