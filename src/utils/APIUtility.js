@@ -18,4 +18,3 @@ const APIUtility = {
 
 export default APIUtility
 export {APIUtility}
-

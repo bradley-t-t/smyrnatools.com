@@ -19,18 +19,15 @@ const AuthUtility = {
         try {
             const { res, json } = await APIUtility.post(`/${AUTH_UTILITY_FUNCTION}/generate-salt`)
             if (res.ok && typeof json.salt === 'string' && json.salt.length === 32 && /^[0-9a-f]{32}$/i.test(json.salt)) {
-                console.log('Valid salt from API:', json.salt)
                 return json.salt
             }
             console.warn('Invalid salt from API, generating client-side:', json)
         } catch (err) {
             console.warn('Failed to fetch salt from API, generating client-side:', err)
         }
-        // Fallback to client-side salt generation
         const randomBytes = new Uint8Array(16)
         crypto.getRandomValues(randomBytes)
         const salt = Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
-        console.log('Generated client-side salt:', salt)
         return salt
     },
     async hashPassword(password, salt) {

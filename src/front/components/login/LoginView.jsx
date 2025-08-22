@@ -6,6 +6,7 @@ import BG from '../../../assets/images/BG.png';
 import './styles/LoginView.css';
 import VersionPopup from '../common/VersionPopup';
 import { useVersion } from '../../../app/hooks/useVersion';
+import PasswordRecoveryView from './PasswordRecoveryView';
 
 function LoginView() {
     const version = useVersion();
@@ -21,6 +22,7 @@ function LoginView() {
     const { signIn, signUp, loading, error } = useAuth();
     const timeoutRef = useRef(null);
     const forceReload = () => { window.location.href = window.location.pathname };
+    const [showRecovery, setShowRecovery] = useState(false);
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -114,6 +116,10 @@ function LoginView() {
         }
     };
 
+    if (showRecovery) {
+        return <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)} />;
+    }
+
     return (
         <div className="login-container">
             <VersionPopup version={version} />
@@ -181,14 +187,16 @@ function LoginView() {
                                 aria-label="Password"
                                 required
                             />
+                            {!isSignUp && (
+                                <div className="forgot-password">
+                                    <button type="button" className="text-button" onClick={() => setShowRecovery(true)}>
+                                        Forgot Password?
+                                    </button>
+                                </div>
+                            )}
                             {isSignUp && password && (
                                 <div className="password-strength" style={{ color: passwordStrength.color }}>
                                     Password Strength: {passwordStrength.value}
-                                </div>
-                            )}
-                            {!isSignUp && (
-                                <div className="forgot-password">
-                                    <p>Forgot Password?</p>
                                 </div>
                             )}
                         </div>
@@ -274,3 +282,4 @@ function LoginView() {
 }
 
 export default LoginView;
+
