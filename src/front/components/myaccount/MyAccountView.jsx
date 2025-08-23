@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../../services/DatabaseService';
-import { AuthService } from '../../../services/AuthService';
-import { UserService } from "../../../services/UserService";
-import { usePreferences } from '../../../app/context/PreferencesContext';
+import React, {useEffect, useState} from 'react';
+import {supabase} from '../../../services/DatabaseService';
+import {AuthService} from '../../../services/AuthService';
+import {UserService} from "../../../services/UserService";
+import {usePreferences} from '../../../app/context/PreferencesContext';
 import './styles/MyAccountView.css';
 import SimpleLoading from "../common/SimpleLoading";
 
-function MyAccountView({ userId }) {
-    const { preferences } = usePreferences();
+function MyAccountView({userId}) {
+    const {preferences} = usePreferences();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [firstName, setFirstName] = useState('');
@@ -33,7 +33,7 @@ function MyAccountView({ userId }) {
         setLoading(true);
         setMessage('');
         try {
-            const { data } = await supabase.auth.getSession();
+            const {data} = await supabase.auth.getSession();
             const session = data?.session;
             const userIdToUse = userId || (session?.user?.id) || sessionStorage.getItem('userId');
             if (!userIdToUse) {
@@ -46,7 +46,7 @@ function MyAccountView({ userId }) {
             }
             if (!email) {
                 try {
-                    const { data: userData, error: userError } = await supabase
+                    const {data: userData, error: userError} = await supabase
                         .from('users')
                         .select('email')
                         .eq('id', userIdToUse)
@@ -57,7 +57,7 @@ function MyAccountView({ userId }) {
                 } catch (err) {
                 }
             }
-            const { data: profileData } = await supabase
+            const {data: profileData} = await supabase
                 .from('users_profiles')
                 .select('first_name, last_name, plant_code')
                 .eq('id', userIdToUse)
@@ -66,14 +66,14 @@ function MyAccountView({ userId }) {
                 setEmail(profileData.email);
             }
             if (profileData) {
-                setUser({ ...profileData });
+                setUser({...profileData});
                 setFirstName(profileData.first_name || '');
                 setLastName(profileData.last_name || '');
                 setPlantCode(profileData.plant_code || '');
             } else {
                 try {
-                    const { data: nameData, error: nameError } = await supabase
-                        .rpc('get_user_name', { user_id: userIdToUse });
+                    const {data: nameData, error: nameError} = await supabase
+                        .rpc('get_user_name', {user_id: userIdToUse});
                     if (!nameError && nameData) {
                         if (nameData.first_name) setFirstName(nameData.first_name);
                         if (nameData.last_name) setLastName(nameData.last_name);
@@ -90,7 +90,7 @@ function MyAccountView({ userId }) {
             }
             if (!firstName || !lastName) {
                 try {
-                    const { data: usersData, error: usersError } = await supabase
+                    const {data: usersData, error: usersError} = await supabase
                         .from('users')
                         .select('*, profiles(first_name, last_name)')
                         .eq('id', userIdToUse)
@@ -116,11 +116,11 @@ function MyAccountView({ userId }) {
         try {
             const userIdToUse = userId || sessionStorage.getItem('userId');
             if (!userIdToUse) {
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                const {data: {session}, error: sessionError} = await supabase.auth.getSession();
                 if (sessionError || !session) {
                     throw new Error('No active session or user ID');
                 }
-                const { error: profileError } = await supabase
+                const {error: profileError} = await supabase
                     .from('users_profiles')
                     .update({
                         first_name: firstName,
@@ -130,7 +130,7 @@ function MyAccountView({ userId }) {
                     .eq('id', session.user.id);
                 if (profileError) throw profileError;
             } else {
-                const { error: profileError } = await supabase
+                const {error: profileError} = await supabase
                     .from('users_profiles')
                     .update({
                         first_name: firstName,
@@ -163,7 +163,7 @@ function MyAccountView({ userId }) {
             if (newPassword.length < 8) {
                 throw new Error('Password must be at least 8 characters');
             }
-            const { data: userData, error: userError } = await supabase
+            const {data: userData, error: userError} = await supabase
                 .from('users')
                 .select('id, email, password_hash, salt')
                 .eq('email', email)
@@ -171,7 +171,7 @@ function MyAccountView({ userId }) {
             if (userError || !userData) {
                 throw new Error('Could not verify current password');
             }
-            const { AuthUtility } = await import('../../../utils/AuthUtility');
+            const {AuthUtility} = await import('../../../utils/AuthUtility');
             const computedHash = await AuthUtility.hashPassword(currentPassword, userData.salt);
             if (computedHash !== userData.password_hash) {
                 throw new Error('Current password is incorrect');
@@ -181,7 +181,7 @@ function MyAccountView({ userId }) {
                 throw new Error('Failed to generate valid salt');
             }
             const newPasswordHash = await AuthUtility.hashPassword(newPassword, salt);
-            const { error: updateError } = await supabase
+            const {error: updateError} = await supabase
                 .from('users')
                 .update({
                     password_hash: newPasswordHash,
@@ -197,7 +197,10 @@ function MyAccountView({ userId }) {
             setConfirmPassword('');
             setShowPasswordModal(false);
             await AuthService.signOut();
-            try { await supabase.auth.signOut(); } catch (e2) {}
+            try {
+                await supabase.auth.signOut();
+            } catch (e2) {
+            }
             sessionStorage.removeItem('userId');
             window.location.href = '/login';
         } catch (error) {
@@ -235,9 +238,9 @@ function MyAccountView({ userId }) {
 
     return (
         <div className="my-account-container">
-            {loading && <SimpleLoading />}
+            {loading && <SimpleLoading/>}
             <div className="account-hero">
-                <div className="account-avatar" style={{ borderColor: 'var(--myaccount-accent)' }}>
+                <div className="account-avatar" style={{borderColor: 'var(--myaccount-accent)'}}>
                     {firstName && lastName
                         ? `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
                         : <i className="fas fa-user"></i>
@@ -252,7 +255,7 @@ function MyAccountView({ userId }) {
                     <p className="account-subtitle">{email || 'No email available'}</p>
                     <div className="account-badges-row">
                         {userRole && <div className="account-badge"
-                                          style={{ backgroundColor: 'var(--myaccount-accent)' }}>{userRole}</div>}
+                                          style={{backgroundColor: 'var(--myaccount-accent)'}}>{userRole}</div>}
                         {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
                     </div>
                 </div>
@@ -278,22 +281,23 @@ function MyAccountView({ userId }) {
                 <button
                     className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
                     onClick={() => setActiveTab('profile')}
-                    style={activeTab === 'profile' ? { borderBottomColor: 'var(--myaccount-accent)' } : {}}
+                    style={activeTab === 'profile' ? {borderBottomColor: 'var(--myaccount-accent)'} : {}}
                 >
                     <i className="fas fa-user"></i> Profile
                 </button>
                 <button
                     className={`tab ${activeTab === 'security' ? 'active' : ''}`}
                     onClick={() => setActiveTab('security')}
-                    style={activeTab === 'security' ? { borderBottomColor: 'var(--myaccount-accent)' } : {}}
+                    style={activeTab === 'security' ? {borderBottomColor: 'var(--myaccount-accent)'} : {}}
                 >
                     <i className="fas fa-shield-alt"></i> Security
                 </button>
             </div>
-            <div className="account-tab-content" style={{ display: activeTab === 'profile' ? 'block' : 'none' }}>
+            <div className="account-tab-content" style={{display: activeTab === 'profile' ? 'block' : 'none'}}>
                 <div className="account-section">
                     <div className="section-header">
-                        <h2><i className="fas fa-id-card" style={{ color: 'var(--myaccount-accent)' }}></i> Personal Information</h2>
+                        <h2><i className="fas fa-id-card" style={{color: 'var(--myaccount-accent)'}}></i> Personal
+                            Information</h2>
                         <p>Update your personal details</p>
                     </div>
                     <div className="account-card elevated">
@@ -302,7 +306,8 @@ function MyAccountView({ userId }) {
                                 <div className="form-group">
                                     <label htmlFor="first_name">First Name</label>
                                     <div className="input-with-icon">
-                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
+                                        <i className="fas fa-user"
+                                           style={{color: 'var(--myaccount-accent)', marginRight: "8px"}}></i>
                                         <input
                                             type="text"
                                             id="first_name"
@@ -310,14 +315,15 @@ function MyAccountView({ userId }) {
                                             onChange={(e) => setFirstName(e.target.value)}
                                             placeholder="Enter your first name"
                                             required
-                                            style={{ paddingLeft: "45px" }}
+                                            style={{paddingLeft: "45px"}}
                                         />
                                     </div>
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="last_name">Last Name</label>
                                     <div className="input-with-icon">
-                                        <i className="fas fa-user" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
+                                        <i className="fas fa-user"
+                                           style={{color: 'var(--myaccount-accent)', marginRight: "8px"}}></i>
                                         <input
                                             type="text"
                                             id="last_name"
@@ -325,7 +331,7 @@ function MyAccountView({ userId }) {
                                             onChange={(e) => setLastName(e.target.value)}
                                             placeholder="Enter your last name"
                                             required
-                                            style={{ paddingLeft: "45px" }}
+                                            style={{paddingLeft: "45px"}}
                                         />
                                     </div>
                                 </div>
@@ -335,7 +341,7 @@ function MyAccountView({ userId }) {
                                     type="submit"
                                     className="btn primary"
                                     disabled={loading}
-                                    style={{ backgroundColor: 'var(--myaccount-accent)' }}
+                                    style={{backgroundColor: 'var(--myaccount-accent)'}}
                                 >
                                     <i className="fas fa-save"></i> Save Changes
                                 </button>
@@ -345,14 +351,15 @@ function MyAccountView({ userId }) {
                 </div>
                 <div className="account-section">
                     <div className="section-header">
-                        <h2><i className="fas fa-info-circle" style={{ color: 'var(--myaccount-accent)' }}></i> Account Details</h2>
+                        <h2><i className="fas fa-info-circle" style={{color: 'var(--myaccount-accent)'}}></i> Account
+                            Details</h2>
                         <p>Your account information</p>
                     </div>
                     <div className="account-card elevated">
                         <div className="info-grid">
                             <div className="info-item">
                                 <div className="info-label">
-                                    <i className="fas fa-envelope" style={{ color: 'var(--myaccount-accent)' }}></i>
+                                    <i className="fas fa-envelope" style={{color: 'var(--myaccount-accent)'}}></i>
                                     Email
                                 </div>
                                 <div className="info-value">{email || 'Not available'}</div>
@@ -360,7 +367,7 @@ function MyAccountView({ userId }) {
                             {userRole && (
                                 <div className="info-item">
                                     <div className="info-label">
-                                        <i className="fas fa-user-tag" style={{ color: 'var(--myaccount-accent)' }}></i>
+                                        <i className="fas fa-user-tag" style={{color: 'var(--myaccount-accent)'}}></i>
                                         Role
                                     </div>
                                     <div className="info-value">{userRole}</div>
@@ -369,7 +376,7 @@ function MyAccountView({ userId }) {
                             {plantCode && (
                                 <div className="info-item">
                                     <div className="info-label">
-                                        <i className="fas fa-building" style={{ color: 'var(--myaccount-accent)' }}></i>
+                                        <i className="fas fa-building" style={{color: 'var(--myaccount-accent)'}}></i>
                                         Plant Code
                                     </div>
                                     <div className="info-value">{plantCode}</div>
@@ -379,16 +386,17 @@ function MyAccountView({ userId }) {
                     </div>
                 </div>
             </div>
-            <div className="account-tab-content" style={{ display: activeTab === 'security' ? 'block' : 'none' }}>
+            <div className="account-tab-content" style={{display: activeTab === 'security' ? 'block' : 'none'}}>
                 <div className="account-section">
                     <div className="section-header">
-                        <h2><i className="fas fa-shield-alt" style={{ color: 'var(--myaccount-accent)' }}></i> Account Security</h2>
+                        <h2><i className="fas fa-shield-alt" style={{color: 'var(--myaccount-accent)'}}></i> Account
+                            Security</h2>
                         <p>Manage your password and protect your account</p>
                     </div>
                     <div className="security-actions-grid">
                         <div className="security-action-card">
                             <div className="action-card-content">
-                                <div className="action-icon" style={{ backgroundColor: 'var(--myaccount-accent)' }}>
+                                <div className="action-icon" style={{backgroundColor: 'var(--myaccount-accent)'}}>
                                     <i className="fas fa-key"></i>
                                 </div>
                                 <h3>Password Management</h3>
@@ -396,7 +404,7 @@ function MyAccountView({ userId }) {
                                 <button
                                     className="btn action-btn"
                                     onClick={() => setShowPasswordModal(true)}
-                                    style={{ backgroundColor: 'var(--myaccount-accent)' }}
+                                    style={{backgroundColor: 'var(--myaccount-accent)'}}
                                 >
                                     <i className="fas fa-lock"></i> Change Password
                                 </button>
@@ -404,7 +412,7 @@ function MyAccountView({ userId }) {
                         </div>
                         <div className="security-action-card">
                             <div className="action-card-content">
-                                <div className="action-icon" style={{ backgroundColor: 'var(--myaccount-accent)' }}>
+                                <div className="action-icon" style={{backgroundColor: 'var(--myaccount-accent)'}}>
                                     <i className="fas fa-laptop"></i>
                                 </div>
                                 <h3>Session Management</h3>
@@ -426,11 +434,12 @@ function MyAccountView({ userId }) {
                 </div>
                 <div className="account-section">
                     <div className="section-header">
-                        <h2><i className="fas fa-cogs" style={{ color: 'var(--myaccount-accent)' }}></i> Account Actions</h2>
+                        <h2><i className="fas fa-cogs" style={{color: 'var(--myaccount-accent)'}}></i> Account Actions
+                        </h2>
                         <p>Manage your account settings and sessions</p>
                     </div>
                     <div className="account-actions">
-                        <div className="action-button-container" style={{ width: '100%' }}>
+                        <div className="action-button-container" style={{width: '100%'}}>
                             <button
                                 className="action-button logout"
                                 onClick={handleSignOut}
@@ -468,7 +477,7 @@ function MyAccountView({ userId }) {
                                     textAlign: 'left'
                                 }}>
                   <span className="action-title"
-                        style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>
+                        style={{fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem'}}>
                     Sign Out
                   </span>
                                 </div>
@@ -479,10 +488,11 @@ function MyAccountView({ userId }) {
             </div>
             {showPasswordModal && (
                 <div className="modal-overlay" onClick={() => !loading && setShowPasswordModal(false)}
-                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ margin: '0 auto' }}>
+                     style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                    <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{margin: '0 auto'}}>
                         <div className="modal-header">
-                            <h3><i className="fas fa-key" style={{ color: 'var(--myaccount-accent)' }}></i> Change Password</h3>
+                            <h3><i className="fas fa-key" style={{color: 'var(--myaccount-accent)'}}></i> Change
+                                Password</h3>
                             <button
                                 className="modal-close"
                                 onClick={() => !loading && setShowPasswordModal(false)}
@@ -504,14 +514,15 @@ function MyAccountView({ userId }) {
                                 color: '#d32f2f'
                             }}>
                                 <i className="fas fa-exclamation-circle"></i>
-                                <p style={{ margin: 0 }}>{passwordError}</p>
+                                <p style={{margin: 0}}>{passwordError}</p>
                             </div>
                         )}
                         <form onSubmit={updatePassword} className="password-form">
                             <div className="form-group">
                                 <label htmlFor="current_password">Current Password</label>
                                 <div className="input-with-icon">
-                                    <i className="fas fa-lock" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
+                                    <i className="fas fa-lock"
+                                       style={{color: 'var(--myaccount-accent)', marginRight: "8px"}}></i>
                                     <input
                                         type="password"
                                         id="current_password"
@@ -519,14 +530,15 @@ function MyAccountView({ userId }) {
                                         onChange={(e) => setCurrentPassword(e.target.value)}
                                         placeholder="Enter your current password"
                                         required
-                                        style={{ paddingLeft: "45px" }}
+                                        style={{paddingLeft: "45px"}}
                                     />
                                 </div>
                             </div>
                             <div className="form-group">
                                 <label htmlFor="new_password">New Password</label>
                                 <div className="input-with-icon">
-                                    <i className="fas fa-lock" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
+                                    <i className="fas fa-lock"
+                                       style={{color: 'var(--myaccount-accent)', marginRight: "8px"}}></i>
                                     <input
                                         type="password"
                                         id="new_password"
@@ -534,7 +546,7 @@ function MyAccountView({ userId }) {
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         placeholder="Enter new password"
                                         required
-                                        style={{ paddingLeft: "45px" }}
+                                        style={{paddingLeft: "45px"}}
                                     />
                                 </div>
                                 <small>Password must be at least 8 characters</small>
@@ -542,7 +554,8 @@ function MyAccountView({ userId }) {
                             <div className="form-group">
                                 <label htmlFor="confirm_password">Confirm New Password</label>
                                 <div className="input-with-icon">
-                                    <i className="fas fa-lock" style={{ color: 'var(--myaccount-accent)', marginRight: "8px" }}></i>
+                                    <i className="fas fa-lock"
+                                       style={{color: 'var(--myaccount-accent)', marginRight: "8px"}}></i>
                                     <input
                                         type="password"
                                         id="confirm_password"
@@ -550,7 +563,7 @@ function MyAccountView({ userId }) {
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         placeholder="Confirm new password"
                                         required
-                                        style={{ paddingLeft: "45px" }}
+                                        style={{paddingLeft: "45px"}}
                                     />
                                 </div>
                             </div>
@@ -567,7 +580,7 @@ function MyAccountView({ userId }) {
                                     type="submit"
                                     className="btn primary"
                                     disabled={loading || !currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8}
-                                    style={{ backgroundColor: 'var(--myaccount-accent)' }}
+                                    style={{backgroundColor: 'var(--myaccount-accent)'}}
                                 >
                                     <i className="fas fa-check"></i> Update Password
                                 </button>

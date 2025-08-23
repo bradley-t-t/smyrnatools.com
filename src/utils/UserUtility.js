@@ -8,11 +8,11 @@ const userUtility = {
         return res.ok && json.uuid ? json.uuid : ''
     },
     async isValidUUID(uuid) {
-        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/validate-uuid`, { uuid })
+        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/validate-uuid`, {uuid})
         return res.ok && typeof json.isValid === 'boolean' ? json.isValid : false
     },
     async safeUUID(uuid) {
-        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/safe-uuid`, { uuid })
+        const {res, json} = await APIUtility.post(`${USER_UTILITY_FUNCTION}/safe-uuid`, {uuid})
         return res.ok ? json.safeUuid : null
     }
 }

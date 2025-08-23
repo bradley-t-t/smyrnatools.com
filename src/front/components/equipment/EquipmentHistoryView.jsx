@@ -96,11 +96,22 @@ function EquipmentHistoryView({equipment, onClose}) {
         if (sortConfig) {
             sortableItems.sort((a, b) => {
                 let aValue, bValue;
-                if (sortConfig.key === 'changedAt') { aValue = a.changed_at; bValue = b.changed_at; }
-                else if (sortConfig.key === 'fieldName') { aValue = a.field_name; bValue = b.field_name; }
-                else if (sortConfig.key === 'oldValue') { aValue = a.old_value; bValue = b.old_value; }
-                else if (sortConfig.key === 'newValue') { aValue = a.new_value; bValue = b.new_value; }
-                else if (sortConfig.key === 'changedBy') { aValue = a.changed_by; bValue = b.changed_by; }
+                if (sortConfig.key === 'changedAt') {
+                    aValue = a.changed_at;
+                    bValue = b.changed_at;
+                } else if (sortConfig.key === 'fieldName') {
+                    aValue = a.field_name;
+                    bValue = b.field_name;
+                } else if (sortConfig.key === 'oldValue') {
+                    aValue = a.old_value;
+                    bValue = b.old_value;
+                } else if (sortConfig.key === 'newValue') {
+                    aValue = a.new_value;
+                    bValue = b.new_value;
+                } else if (sortConfig.key === 'changedBy') {
+                    aValue = a.changed_by;
+                    bValue = b.changed_by;
+                }
                 if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
                 if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
                 return 0;

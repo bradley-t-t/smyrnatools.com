@@ -21,9 +21,18 @@ function StatsBar({insights}) {
         {label: 'Total Hours', value: insights.totalHours !== null ? insights.totalHours.toFixed(2) : '--'},
         {label: 'Avg Loads', value: insights.avgLoads !== null ? insights.avgLoads.toFixed(2) : '--'},
         {label: 'Avg Hours', value: insights.avgHours !== null ? insights.avgHours.toFixed(2) : '--'},
-        {label: 'Avg Loads/Hour', value: insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'},
-        {label: 'Avg Punch In -> 1st Load', value: insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'},
-        {label: 'Avg Washout -> Punch Out', value: insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'}
+        {
+            label: 'Avg Loads/Hour',
+            value: insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'
+        },
+        {
+            label: 'Avg Punch In -> 1st Load',
+            value: insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'
+        },
+        {
+            label: 'Avg Washout -> Punch Out',
+            value: insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'
+        }
     ]
     return (
         <div style={{
@@ -91,6 +100,7 @@ function Toolbar({filterText, setFilterText, sortKey, sortDir, setSort, onExpand
             setSort(key, 'asc')
         }
     }
+
     const sortButtonStyle = {
         background: 'var(--background-elevated)',
         border: '1px solid var(--divider)',
@@ -102,7 +112,13 @@ function Toolbar({filterText, setFilterText, sortKey, sortDir, setSort, onExpand
         cursor: 'pointer'
     }
     return (
-        <div style={{display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between', margin: '8px 0 10px 0'}}>
+        <div style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            margin: '8px 0 10px 0'
+        }}>
             <input
                 type="text"
                 value={filterText}
@@ -144,9 +160,11 @@ function Toolbar({filterText, setFilterText, sortKey, sortDir, setSort, onExpand
 
 function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expandAllSeq, collapseAllSeq}) {
     const [expanded, setExpanded] = useState(new Set())
+
     function minutes(timeStr) {
         return ReportService.parseTimeToMinutes(timeStr)
     }
+
     const processed = useMemo(() => {
         const lower = (filterText || '').toLowerCase().trim()
         const filtered = rows.filter(r => {
@@ -168,6 +186,7 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
             return {r, start, first, eod, punch, dStart, dEnd, hours, lph, key}
         })
         const dir = sortDir === 'desc' ? -1 : 1
+
         function cmp(a, b) {
             const A = a.r
             const B = b.r
@@ -178,6 +197,7 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
             if (sortKey === 'start') return (((a.start ?? -1)) - ((b.start ?? -1))) * dir
             return 0
         }
+
         return sortKey ? [...withCalcs].sort(cmp) : withCalcs
     }, [rows, operatorOptions, sortKey, sortDir, filterText])
 
@@ -222,7 +242,7 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                 </colgroup>
                 <thead>
                 <tr>
-                    {['Operator','Truck #','Punch In -> 1st Load','Washout -> Punch Out','L/H','']
+                    {['Operator', 'Truck #', 'Punch In -> 1st Load', 'Washout -> Punch Out', 'L/H', '']
                         .map((h, i) => (
                             <th key={i} style={{
                                 position: 'sticky',
@@ -248,11 +268,40 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                     return (
                         <React.Fragment key={key}>
                             <tr style={{borderBottom: '1px solid var(--divider)'}}>
-                                <td style={{padding: '8px 10px', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={getOperatorName(r, operatorOptions)}>{getOperatorName(r, operatorOptions) || 'No Name'}</td>
-                                <td style={{padding: '8px 10px', fontSize: 14, color: 'var(--text-secondary)', whiteSpace: 'nowrap'}}>{r.truck_number || '--'}</td>
-                                <td style={{padding: '8px 10px', fontSize: 14, color: warnStart ? 'var(--error)' : 'var(--text-primary)', whiteSpace: 'nowrap'}}>{dStart !== null ? `${dStart} min` : '--'}</td>
-                                <td style={{padding: '8px 10px', fontSize: 14, color: warnEnd ? 'var(--error)' : 'var(--text-primary)', whiteSpace: 'nowrap'}}>{dEnd !== null ? `${dEnd} min` : '--'}</td>
-                                <td style={{padding: '8px 10px', fontSize: 14, textAlign: 'right', whiteSpace: 'nowrap'}}>{lph !== null && lph !== undefined && lph !== '' ? Number(lph).toFixed(2) : '--'}</td>
+                                <td style={{
+                                    padding: '8px 10px',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: 'var(--text-primary)',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}
+                                    title={getOperatorName(r, operatorOptions)}>{getOperatorName(r, operatorOptions) || 'No Name'}</td>
+                                <td style={{
+                                    padding: '8px 10px',
+                                    fontSize: 14,
+                                    color: 'var(--text-secondary)',
+                                    whiteSpace: 'nowrap'
+                                }}>{r.truck_number || '--'}</td>
+                                <td style={{
+                                    padding: '8px 10px',
+                                    fontSize: 14,
+                                    color: warnStart ? 'var(--error)' : 'var(--text-primary)',
+                                    whiteSpace: 'nowrap'
+                                }}>{dStart !== null ? `${dStart} min` : '--'}</td>
+                                <td style={{
+                                    padding: '8px 10px',
+                                    fontSize: 14,
+                                    color: warnEnd ? 'var(--error)' : 'var(--text-primary)',
+                                    whiteSpace: 'nowrap'
+                                }}>{dEnd !== null ? `${dEnd} min` : '--'}</td>
+                                <td style={{
+                                    padding: '8px 10px',
+                                    fontSize: 14,
+                                    textAlign: 'right',
+                                    whiteSpace: 'nowrap'
+                                }}>{lph !== null && lph !== undefined && lph !== '' ? Number(lph).toFixed(2) : '--'}</td>
                                 <td style={{padding: '8px 10px', textAlign: 'right'}}>
                                     <button
                                         type="button"
@@ -286,31 +335,60 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                                         }}>
                                             <div style={{display: 'flex', flexDirection: 'column'}}>
                                                 <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Start</div>
-                                                <div style={{fontSize: 14, fontWeight: 600}}>{r.start_time || '--'}</div>
+                                                <div
+                                                    style={{fontSize: 14, fontWeight: 600}}>{r.start_time || '--'}</div>
                                             </div>
                                             <div style={{display: 'flex', flexDirection: 'column'}}>
-                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>1st Load</div>
-                                                <div style={{fontSize: 14, fontWeight: 600}}>{r.first_load || '--'}</div>
+                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>1st Load
+                                                </div>
+                                                <div
+                                                    style={{fontSize: 14, fontWeight: 600}}>{r.first_load || '--'}</div>
                                             </div>
                                             <div style={{display: 'flex', flexDirection: 'column'}}>
-                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>EOD In Yard</div>
-                                                <div style={{fontSize: 14, fontWeight: 600}}>{r.eod_in_yard || '--'}</div>
+                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>EOD In
+                                                    Yard
+                                                </div>
+                                                <div style={{
+                                                    fontSize: 14,
+                                                    fontWeight: 600
+                                                }}>{r.eod_in_yard || '--'}</div>
                                             </div>
                                             <div style={{display: 'flex', flexDirection: 'column'}}>
-                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Punch Out</div>
+                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Punch Out
+                                                </div>
                                                 <div style={{fontSize: 14, fontWeight: 600}}>{r.punch_out || '--'}</div>
                                             </div>
                                             <div style={{display: 'flex', flexDirection: 'column'}}>
-                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Total Loads</div>
-                                                <div style={{fontSize: 14, fontWeight: 700, color: (r.loads !== undefined && r.loads !== '' && Number(r.loads) < 3) ? 'var(--error)' : 'var(--text-primary)'}}>{r.loads || '--'}</div>
+                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Total
+                                                    Loads
+                                                </div>
+                                                <div style={{
+                                                    fontSize: 14,
+                                                    fontWeight: 700,
+                                                    color: (r.loads !== undefined && r.loads !== '' && Number(r.loads) < 3) ? 'var(--error)' : 'var(--text-primary)'
+                                                }}>{r.loads || '--'}</div>
                                             </div>
                                             <div style={{display: 'flex', flexDirection: 'column'}}>
-                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Total Hours</div>
-                                                <div style={{fontSize: 14, fontWeight: 700, color: (hours !== null && hours > 14) ? 'var(--error)' : 'var(--text-primary)'}}>{hours !== null ? hours.toFixed(2) : '--'}</div>
+                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Total
+                                                    Hours
+                                                </div>
+                                                <div style={{
+                                                    fontSize: 14,
+                                                    fontWeight: 700,
+                                                    color: (hours !== null && hours > 14) ? 'var(--error)' : 'var(--text-primary)'
+                                                }}>{hours !== null ? hours.toFixed(2) : '--'}</div>
                                             </div>
-                                            <div style={{gridColumn: '1 / -1', display: 'flex', flexDirection: 'column'}}>
-                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Comments</div>
-                                                <div style={{fontSize: 14, color: 'var(--text-secondary)'}}>{r.comments || ''}</div>
+                                            <div style={{
+                                                gridColumn: '1 / -1',
+                                                display: 'flex',
+                                                flexDirection: 'column'
+                                            }}>
+                                                <div style={{fontSize: 12, color: 'var(--text-secondary)'}}>Comments
+                                                </div>
+                                                <div style={{
+                                                    fontSize: 14,
+                                                    color: 'var(--text-secondary)'
+                                                }}>{r.comments || ''}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -333,7 +411,12 @@ function EfficiencyPluginBody({form, operatorOptions}) {
     const [collapseAllSeq, setCollapseAllSeq] = useState(0)
     const rows = getRows(form)
     const insights = ReportService.getPlantProductionInsights(rows)
-    function setSort(k, d) { setSortKey(k); setSortDir(d) }
+
+    function setSort(k, d) {
+        setSortKey(k);
+        setSortDir(d)
+    }
+
     if (!rows.length) return null
     return (
         <div style={{marginTop: 20}}>

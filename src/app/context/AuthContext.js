@@ -69,7 +69,8 @@ export function AuthProvider({children}) {
             sessionStorage.setItem('userId', json.id)
             setLoading(false)
             window.dispatchEvent(new CustomEvent('authSuccess', {detail: {userId: json.id}}))
-            setTimeout(() => loadUserProfile(json.id).catch(() => {}), 100)
+            setTimeout(() => loadUserProfile(json.id).catch(() => {
+            }), 100)
             return json
         } catch (e) {
             setError(e.message || 'An unknown error occurred')
@@ -85,7 +86,8 @@ export function AuthProvider({children}) {
             if (json.profile) {
                 setUser(cu => ({...cu, profile: json.profile}))
             }
-        } catch {}
+        } catch {
+        }
     }
 
     async function createDefaultPreferencesRow(userId) {
@@ -115,7 +117,8 @@ export function AuthProvider({children}) {
                     created_at: now,
                     updated_at: now
                 }, {onConflict: 'user_id'})
-        } catch {}
+        } catch {
+        }
     }
 
     async function signUp(email, password, firstName, lastName) {

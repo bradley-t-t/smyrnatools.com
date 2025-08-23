@@ -130,6 +130,7 @@ function ReportsView() {
                 setIsLoadingUser(false)
             }
         }
+
         init()
     }, [])
 
@@ -177,12 +178,14 @@ function ReportsView() {
     useEffect(() => {
         if (!user || isLoadingPermissions) return
         const initialMyWeeks = getLastNWeekIsos(2)
+
         async function loadInitial() {
             setIsLoadingMy(true)
             await fetchReportsBatch({weeks: initialMyWeeks, scope: 'my'})
             setMyLoadedWeeks(new Set(initialMyWeeks))
             setIsLoadingMy(false)
         }
+
         loadInitial()
     }, [user, isLoadingPermissions, hasAssigned])
 
@@ -192,14 +195,18 @@ function ReportsView() {
         const toLoad = Array.from(desiredWeeks).filter(w => !reviewLoadedWeeks.has(w))
         if (toLoad.length === 0) return
         let cancelled = false
+
         async function loadReview() {
             setIsLoadingReview(true)
             await fetchReportsBatch({weeks: toLoad, scope: 'review'})
             if (!cancelled) setReviewLoadedWeeks(prev => new Set([...Array.from(prev), ...toLoad]))
             setIsLoadingReview(false)
         }
+
         loadReview()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [tab, user, isLoadingPermissions, reviewVisibleWeeks])
 
     useEffect(() => {
@@ -208,14 +215,18 @@ function ReportsView() {
         const toLoad = Array.from(desiredWeeks).filter(w => !myLoadedWeeks.has(w))
         if (toLoad.length === 0) return
         let cancelled = false
+
         async function loadMoreMy() {
             setIsLoadingMy(true)
             await fetchReportsBatch({weeks: toLoad, scope: 'my'})
             if (!cancelled) setMyLoadedWeeks(prev => new Set([...Array.from(prev), ...toLoad]))
             setIsLoadingMy(false)
         }
+
         loadMoreMy()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [myReportsVisibleWeeks, user, isLoadingPermissions])
 
     const totalMyWeeks = getTotalWeeksSinceStart()

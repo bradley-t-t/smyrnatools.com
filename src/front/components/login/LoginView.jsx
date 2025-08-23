@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useAuth } from '../../../app/context/AuthContext';
-import { AuthUtility } from '../../../utils/AuthUtility';
+import React, {useEffect, useRef, useState} from 'react';
+import {useAuth} from '../../../app/context/AuthContext';
+import {AuthUtility} from '../../../utils/AuthUtility';
 import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png';
 import BG from '../../../assets/images/BG.png';
 import './styles/LoginView.css';
 import VersionPopup from '../common/VersionPopup';
-import { useVersion } from '../../../app/hooks/useVersion';
+import {useVersion} from '../../../app/hooks/useVersion';
 import PasswordRecoveryView from './PasswordRecoveryView';
 
 function LoginView() {
@@ -18,10 +18,12 @@ function LoginView() {
     const [lastName, setLastName] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [passwordStrength, setPasswordStrength] = useState({ value: '', color: '' });
-    const { signIn, signUp, loading, error } = useAuth();
+    const [passwordStrength, setPasswordStrength] = useState({value: '', color: ''});
+    const {signIn, signUp, loading, error} = useAuth();
     const timeoutRef = useRef(null);
-    const forceReload = () => { window.location.href = window.location.pathname };
+    const forceReload = () => {
+        window.location.href = window.location.pathname
+    };
     const [showRecovery, setShowRecovery] = useState(false);
 
     useEffect(() => {
@@ -46,7 +48,7 @@ function LoginView() {
 
     useEffect(() => {
         if (password && isSignUp) setPasswordStrength(AuthUtility.passwordStrength(password));
-        else setPasswordStrength({ value: '', color: '' });
+        else setPasswordStrength({value: '', color: ''});
     }, [password, isSignUp]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,28 +119,29 @@ function LoginView() {
     };
 
     if (showRecovery) {
-        return <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)} />;
+        return <PasswordRecoveryView onBackToLogin={() => setShowRecovery(false)}/>;
     }
 
     return (
         <div className="login-container">
-            <VersionPopup version={version} />
+            <VersionPopup version={version}/>
             <div className={"login-wrapper" + (isSignUp ? " sign-up-mode" : "")}>
                 <div className="login-info">
                     <div className="login-info-media">
-                        <img src={BG} alt="" aria-hidden="true" fetchPriority="high" loading="eager" decoding="async" />
+                        <img src={BG} alt="" aria-hidden="true" fetchPriority="high" loading="eager" decoding="async"/>
                     </div>
                     <div className="login-info-overlay">
-                        <img src={SmyrnaLogo} alt="SRM Logo" className="login-info-logo" />
+                        <img src={SmyrnaLogo} alt="SRM Logo" className="login-info-logo"/>
                         <h2>Smyrna Tools - Built for SRM Concrete</h2>
                         <p>
-                            Since 1999, SRM has been the leading ready-mix concrete supplier in the U.S., with 8,500 team members across 23 states. Join us to experience industry-leading quality and service.
+                            Since 1999, SRM has been the leading ready-mix concrete supplier in the U.S., with 8,500
+                            team members across 23 states. Join us to experience industry-leading quality and service.
                         </p>
                     </div>
                 </div>
                 <div className="login-card">
                     <div className="login-card-header">
-                        <img src={SmyrnaLogo} alt="SRM Logo" className="login-card-logo" />
+                        <img src={SmyrnaLogo} alt="SRM Logo" className="login-card-logo"/>
                         <h1>{isSignUp ? 'Create Account' : 'Sign In'}</h1>
                         <div className="login-tabs">
                             <button
@@ -195,7 +198,7 @@ function LoginView() {
                                 </div>
                             )}
                             {isSignUp && password && (
-                                <div className="password-strength" style={{ color: passwordStrength.color }}>
+                                <div className="password-strength" style={{color: passwordStrength.color}}>
                                     Password Strength: {passwordStrength.value}
                                 </div>
                             )}
@@ -203,7 +206,8 @@ function LoginView() {
                         {isSignUp && (
                             <>
                                 <div className="form-group">
-                                    <label htmlFor="confirmPassword" className={confirmPassword ? 'floating-label active' : 'floating-label'}>
+                                    <label htmlFor="confirmPassword"
+                                           className={confirmPassword ? 'floating-label active' : 'floating-label'}>
                                         Confirm Password
                                     </label>
                                     <input
@@ -216,7 +220,8 @@ function LoginView() {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="firstName" className={firstName ? 'floating-label active' : 'floating-label'}>
+                                    <label htmlFor="firstName"
+                                           className={firstName ? 'floating-label active' : 'floating-label'}>
                                         First Name
                                     </label>
                                     <input
@@ -229,7 +234,8 @@ function LoginView() {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="lastName" className={lastName ? 'floating-label active' : 'floating-label'}>
+                                    <label htmlFor="lastName"
+                                           className={lastName ? 'floating-label active' : 'floating-label'}>
                                         Last Name
                                     </label>
                                     <input

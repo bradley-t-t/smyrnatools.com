@@ -20,8 +20,15 @@ export class Equipment {
         if (Object.keys(data).length) this.#heuristicFill(data)
     }
 
+    static ensureInstance(obj) {
+        return obj instanceof Equipment ? obj : new Equipment(obj || {})
+    }
+
     #heuristicFill(data) {
-        const lower = Object.keys(data).reduce((acc, k) => { acc[k.toLowerCase()] = k; return acc }, {})
+        const lower = Object.keys(data).reduce((acc, k) => {
+            acc[k.toLowerCase()] = k;
+            return acc
+        }, {})
         if (!this.identifyingNumber) {
             const key = Object.keys(lower).find(k => k.includes('ident') || (k.includes('equip') && k.includes('num')))
             if (key) this.identifyingNumber = data[lower[key]] || this.identifyingNumber
@@ -46,10 +53,6 @@ export class Equipment {
             const key = Object.keys(lower).find(k => k.includes('type'))
             if (key) this.equipmentType = data[lower[key]] || this.equipmentType
         }
-    }
-
-    static ensureInstance(obj) {
-        return obj instanceof Equipment ? obj : new Equipment(obj || {})
     }
 
     getStatus() {

@@ -9,9 +9,9 @@ class AuthServiceImpl {
     observers = []
 
     async signIn(email, password) {
-        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/sign-in`, { email, password })
+        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/sign-in`, {email, password})
         if (!res.ok) throw new Error(json.error || 'Sign in failed')
-        this.currentUser = { userId: json.userId, email: json.email }
+        this.currentUser = {userId: json.userId, email: json.email}
         this.isAuthenticated = true
         sessionStorage.setItem('userId', json.userId)
         this._notifyObservers()
@@ -43,13 +43,19 @@ class AuthServiceImpl {
                 created_at: now,
                 updated_at: now
             }, {onConflict: 'user_id'})
-        } catch {}
+        } catch {
+        }
     }
 
     async signUp(email, password, firstName, lastName) {
-        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/sign-up`, { email, password, firstName, lastName })
+        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/sign-up`, {
+            email,
+            password,
+            firstName,
+            lastName
+        })
         if (!res.ok) throw new Error(json.error || 'Sign up failed')
-        this.currentUser = { userId: json.userId, email: json.email }
+        this.currentUser = {userId: json.userId, email: json.email}
         this.isAuthenticated = true
         sessionStorage.setItem('userId', json.userId)
         await this._createDefaultPreferencesRow(json.userId)
@@ -68,7 +74,10 @@ class AuthServiceImpl {
 
     async updateEmail(newEmail) {
         if (!this.currentUser) throw new Error('No authenticated user')
-        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/update-email`, { email: newEmail, userId: this.currentUser.userId })
+        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/update-email`, {
+            email: newEmail,
+            userId: this.currentUser.userId
+        })
         if (!res.ok) throw new Error(json.error || 'Update email failed')
         this.currentUser.email = newEmail.trim().toLowerCase()
         this._notifyObservers()
@@ -77,7 +86,10 @@ class AuthServiceImpl {
 
     async updatePassword(newPassword) {
         if (!this.currentUser) throw new Error('No authenticated user')
-        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/update-password`, { password: newPassword, userId: this.currentUser.userId })
+        const {res, json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/update-password`, {
+            password: newPassword,
+            userId: this.currentUser.userId
+        })
         if (!res.ok) throw new Error(json.error || 'Update password failed')
         return true
     }
@@ -85,13 +97,13 @@ class AuthServiceImpl {
     async restoreSession() {
         const userId = sessionStorage.getItem('userId')
         if (!userId) return false
-        const {json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/restore-session`, { userId })
+        const {json} = await APIUtility.post(`${AUTH_SERVICE_FUNCTION}/restore-session`, {userId})
         if (!json.success) {
             sessionStorage.removeItem('userId')
             this.isAuthenticated = false
             return false
         }
-        this.currentUser = { userId: json.user.userId, email: json.user.email }
+        this.currentUser = {userId: json.user.userId, email: json.user.email}
         this.isAuthenticated = true
         this._notifyObservers()
         return true

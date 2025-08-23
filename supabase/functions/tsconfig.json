@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "target": "ES2022",
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -9,7 +12,9 @@
     "strict": false,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["./_types/deno-shims"]
+    "types": [
+      "./_types/deno-shims"
+    ]
   },
   "include": [
     "./**/*.ts",

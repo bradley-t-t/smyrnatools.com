@@ -73,7 +73,8 @@ export const PreferencesProvider = ({children}) => {
                     document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
                     document.documentElement.classList.add(`accent-${parsedPrefs.accentColor}`)
                 }
-            } catch {}
+            } catch {
+            }
         }
         applyThemeFromStorage()
         const handleStorageChange = e => {
@@ -119,7 +120,8 @@ export const PreferencesProvider = ({children}) => {
         document.documentElement.classList.add(`accent-${preferences.accentColor}`)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(preferences))
-        } catch {}
+        } catch {
+        }
     }, [preferences])
 
     const fetchUserPreferences = async uid => {
@@ -182,7 +184,8 @@ export const PreferencesProvider = ({children}) => {
         setPreferences(newPreferences)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(newPreferences))
-        } catch {}
+        } catch {
+        }
     }
 
     const updatePreferences = async (keyOrObject, value) => {

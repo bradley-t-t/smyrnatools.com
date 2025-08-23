@@ -135,7 +135,8 @@ function ListAddView({onClose, onItemAdded, item = null, plants = []}) {
                                 onChange={e => setPlantCode(e.target.value)}
                                 required
                             >
-                                <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>Select a plant</option>
+                                <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>Select a plant
+                                </option>
                                 {plants.map(plant => (
                                     <option
                                         key={plant.plant_code}

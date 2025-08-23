@@ -53,7 +53,9 @@ function UpdateLoadingScreen({version}) {
             setProgress(prev => Math.min(100, prev + randomStep))
             if (elapsed >= minDuration && progress >= 100) {
                 clearInterval(interval)
-                setTimeout(() => { window.location.reload(true) }, 500)
+                setTimeout(() => {
+                    window.location.reload(true)
+                }, 500)
             }
         }, 300)
         return () => clearInterval(interval)
@@ -63,8 +65,20 @@ function UpdateLoadingScreen({version}) {
             <div className="loading-content">
                 <div className="loading-animation"><img src={SmyrnaLogo} alt="Loading" className="bouncing-logo"/></div>
                 <p className="loading-message">Smyrna Tools is Updating...</p>
-                <div style={{width: '100%', height: '12px', borderRadius: '6px', background: 'var(--card-bg)', marginTop: '32px', overflow: 'hidden'}}>
-                    <div style={{width: `${progress}%`, height: '100%', background: 'var(--accent)', transition: 'width 0.3s'}}/>
+                <div style={{
+                    width: '100%',
+                    height: '12px',
+                    borderRadius: '6px',
+                    background: 'var(--card-bg)',
+                    marginTop: '32px',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        width: `${progress}%`,
+                        height: '100%',
+                        background: 'var(--accent)',
+                        transition: 'width 0.3s'
+                    }}/>
                 </div>
                 <VersionPopup version={version}/>
             </div>
@@ -96,16 +110,21 @@ function AppContent() {
 
     useEffect(() => {
         let intervalId
+
         function pollVersion() {
             fetch('/version.json', {cache: 'no-store'}).then(res => res.json()).then(data => {
                 if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
                     setLatestVersion(data.version)
                     setUpdateMode(true)
                 }
-            }).catch(() => {})
+            }).catch(() => {
+            })
         }
+
         if (currentVersion) intervalId = setInterval(pollVersion, 30000)
-        return () => { if (intervalId) clearInterval(intervalId) }
+        return () => {
+            if (intervalId) clearInterval(intervalId)
+        }
     }, [currentVersion])
 
     function compareVersions(a, b) {
@@ -120,7 +139,10 @@ function AppContent() {
         return 0
     }
 
-    useEffect(() => { UserService.getCurrentUser().catch(() => {}) }, [userId])
+    useEffect(() => {
+        UserService.getCurrentUser().catch(() => {
+        })
+    }, [userId])
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768)
@@ -130,13 +152,16 @@ function AppContent() {
 
     useEffect(() => {
         let timeoutId
+
         function updateOnlineStatus() {
             if (!navigator.onLine) {
-                timeoutId = setTimeout(() => {}, 5000)
+                timeoutId = setTimeout(() => {
+                }, 5000)
             } else {
                 clearTimeout(timeoutId)
             }
         }
+
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)
         updateOnlineStatus()
@@ -148,7 +173,12 @@ function AppContent() {
     }, [])
 
     useEffect(() => {
-        const handleSignOut = () => { setUserId(null); setSelectedView('Mixers'); setIsGuestOnly(false); setRolesLoaded(false) }
+        const handleSignOut = () => {
+            setUserId(null);
+            setSelectedView('Mixers');
+            setIsGuestOnly(false);
+            setRolesLoaded(false)
+        }
         window.addEventListener('authSignOut', handleSignOut)
         return () => window.removeEventListener('authSignOut', handleSignOut)
     }, [])
@@ -166,7 +196,9 @@ function AppContent() {
                     const storedUserId = sessionStorage.getItem('userId')
                     setUserId(storedUserId || null)
                 }
-            } catch { setUserId(null) }
+            } catch {
+                setUserId(null)
+            }
         }
         checkAuth()
         const {data: authListener} = supabase.auth.onAuthStateChange((event, session) => {
@@ -179,11 +211,14 @@ function AppContent() {
                 sessionStorage.removeItem('userId')
             }
         })
-        return () => { if (authListener?.subscription) authListener.subscription.unsubscribe() }
+        return () => {
+            if (authListener?.subscription) authListener.subscription.unsubscribe()
+        }
     }, [])
 
     useEffect(() => {
         let cancelled = false
+
         async function loadRoles() {
             if (!userId) return
             try {
@@ -193,24 +228,40 @@ function AppContent() {
                 setIsGuestOnly(guestOnly)
                 setRolesLoaded(true)
                 if (guestOnly) setSelectedView('Guest')
-            } catch { if (!cancelled) { setIsGuestOnly(false); setRolesLoaded(true) } }
+            } catch {
+                if (!cancelled) {
+                    setIsGuestOnly(false);
+                    setRolesLoaded(true)
+                }
+            }
         }
+
         setRolesLoaded(false)
         if (userId) loadRoles()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [userId])
 
     const fetchUserProfile = async (user) => {
-        const {data, error} = await supabase.from('users_profiles').select('first_name, last_name').eq('id', user.id).single()
+        const {
+            data,
+            error
+        } = await supabase.from('users_profiles').select('first_name, last_name').eq('id', user.id).single()
         if (!error && data && (data.first_name || data.last_name)) setTitle(`Welcome, ${data.first_name || ''} ${data.last_name || ''}`.trim())
     }
 
-    useEffect(() => { if (userId) fetchUserProfile(userId) }, [userId])
+    useEffect(() => {
+        if (userId) fetchUserProfile(userId)
+    }, [userId])
 
     useEffect(() => {
         if (!userId) return
         const getUserData = async () => {
-            const {data, error} = await supabase.from('users_profiles').select('first_name, last_name').eq('id', userId).single()
+            const {
+                data,
+                error
+            } = await supabase.from('users_profiles').select('first_name, last_name').eq('id', userId).single()
             if (!error && data && (data.first_name || data.last_name)) setUserDisplayName(`${data.first_name || ''} ${data.last_name || ''}`.trim())
             else setUserDisplayName(userId.substring(0, 8))
         }
@@ -229,7 +280,8 @@ function AppContent() {
                     sessionStorage.setItem('userId', data.session.user.id)
                     setSession(data.session)
                 }
-            }).catch(() => {})
+            }).catch(() => {
+            })
         }
         if (selectedMixer && viewId !== 'Mixers') setSelectedMixer(null)
         if (selectedTractor && viewId !== 'Tractors') setSelectedTractor(null)
@@ -248,30 +300,53 @@ function AppContent() {
             case 'Mixers': {
                 if (selectedMixer) {
                     try {
-                        return <MixerDetailView mixerId={selectedMixer} onClose={() => { setSelectedMixer(null); setTitle('Mixers') }}/>
+                        return <MixerDetailView mixerId={selectedMixer} onClose={() => {
+                            setSelectedMixer(null);
+                            setTitle('Mixers')
+                        }}/>
                     } catch {
                         setSelectedMixer(null)
                         setTitle('Mixers')
                     }
                 }
-                return <MixersView onSelectMixer={(mixerId) => { if (mixerId) { setSelectedMixer(mixerId); setTitle('Mixer Details') } }}/>
+                return <MixersView onSelectMixer={(mixerId) => {
+                    if (mixerId) {
+                        setSelectedMixer(mixerId);
+                        setTitle('Mixer Details')
+                    }
+                }}/>
             }
-            case 'Operators': return <OperatorsView title={title}/>
-            case 'Managers': return <ManagersView title={title}/>
-            case 'List': return <ListView title="Tasks List"/>
-            case 'Archive': return <ListView title="Archived Items" showArchived/>
+            case 'Operators':
+                return <OperatorsView title={title}/>
+            case 'Managers':
+                return <ManagersView title={title}/>
+            case 'List':
+                return <ListView title="Tasks List"/>
+            case 'Archive':
+                return <ListView title="Archived Items" showArchived/>
             case 'MyAccount': {
                 const effectiveUserId = userId || sessionStorage.getItem('userId') || session?.user?.id
                 return effectiveUserId ? <MyAccountView userId={effectiveUserId}/> : <LoginView/>
             }
-            case 'Settings': return <SettingsView/>
-            case 'Teams': return <TeamsView/>
-            case 'ScheduledOff': return <OperatorScheduledOffView operatorId={userId}/>
-            case 'Reports': return <ReportsView/>
-            case 'Tractors': return <TractorsView title="Tractor Fleet" onSelectTractor={setSelectedTractor}/>
-            case 'Trailers': return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {}}/>
-            case 'Heavy Equipment': return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {}}/>
-            default: return <div className="coming-soon"><h2>{selectedView} view is coming soon!</h2><p>This feature is under development.</p></div>
+            case 'Settings':
+                return <SettingsView/>
+            case 'Teams':
+                return <TeamsView/>
+            case 'ScheduledOff':
+                return <OperatorScheduledOffView operatorId={userId}/>
+            case 'Reports':
+                return <ReportsView/>
+            case 'Tractors':
+                return <TractorsView title="Tractor Fleet" onSelectTractor={setSelectedTractor}/>
+            case 'Trailers':
+                return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {
+                }}/>
+            case 'Heavy Equipment':
+                return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {
+                }}/>
+            default:
+                return <div className="coming-soon"><h2>{selectedView} view is coming soon!</h2><p>This feature is under
+                    development.</p></div>
         }
     }
 
@@ -309,7 +384,10 @@ function App() {
     React.useEffect(() => {
         document.documentElement.style.overflowX = 'hidden'
         document.body.style.overflowX = 'hidden'
-        return () => { document.documentElement.style.overflowX = ''; document.body.style.overflowX = '' }
+        return () => {
+            document.documentElement.style.overflowX = '';
+            document.body.style.overflowX = ''
+        }
     }, [])
     return (
         <AuthProvider>

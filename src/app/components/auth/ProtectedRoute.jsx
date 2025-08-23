@@ -10,6 +10,7 @@ function ProtectedRoute({children}) {
 
     useEffect(() => {
         let active = true
+
         async function loadRoles() {
             if (!user) return
             try {
@@ -19,8 +20,11 @@ function ProtectedRoute({children}) {
                 if (active) setRoles([])
             }
         }
+
         if (user && roles === null) loadRoles()
-        return () => { active = false }
+        return () => {
+            active = false
+        }
     }, [user, roles])
 
     if (loading) return null

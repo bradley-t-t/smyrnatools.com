@@ -8,7 +8,8 @@ function DesktopOnly() {
             <div className="desktop-only-content">
                 <img src={SmyrnaLogo} alt="Smyrna Logo" className="desktop-logo"/>
                 <h1>Desktop Only</h1>
-                <p className="desktop-message">Smyrna Tools is currently available on desktop devices. Please access this site from a desktop or laptop for the best experience.</p>
+                <p className="desktop-message">Smyrna Tools is currently available on desktop devices. Please access
+                    this site from a desktop or laptop for the best experience.</p>
             </div>
         </div>
     );

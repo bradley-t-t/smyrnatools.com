@@ -21,6 +21,7 @@ function formatDateTime(dt) {
     const date = new Date(dt)
     return date.toLocaleString()
 }
+
 function ReportsReviewView({report, initialData, onBack, user, completedByUser, onManagerEdit}) {
     const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
@@ -356,7 +357,8 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                                                         ))}
                                                     </select>
                                                 ) : (
-                                                    <input type={field.type} value={form[field.name] || ''} readOnly disabled/>
+                                                    <input type={field.type} value={form[field.name] || ''} readOnly
+                                                           disabled/>
                                                 )}
                                             </div>
                                         )

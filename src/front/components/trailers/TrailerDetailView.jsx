@@ -157,13 +157,13 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
         try {
             let userObj = await UserService.getCurrentUser();
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
-            let assignedTractorValue = Object.prototype.hasOwnProperty.call(overrideValues,'assignedTractor')
+            let assignedTractorValue = Object.prototype.hasOwnProperty.call(overrideValues, 'assignedTractor')
                 ? overrideValues.assignedTractor
                 : assignedTractor;
-            let trailerTypeValue = Object.prototype.hasOwnProperty.call(overrideValues,'trailerType')
+            let trailerTypeValue = Object.prototype.hasOwnProperty.call(overrideValues, 'trailerType')
                 ? overrideValues.trailerType
                 : trailerType;
-            let statusValue = Object.prototype.hasOwnProperty.call(overrideValues,'status')
+            let statusValue = Object.prototype.hasOwnProperty.call(overrideValues, 'status')
                 ? overrideValues.status
                 : status;
             if (!['Cement', 'End Dump'].includes(trailerTypeValue)) {
@@ -175,12 +175,12 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
             if (assignedTractorValue && statusValue !== 'Active') {
                 statusValue = 'Active';
             }
-            if (Object.prototype.hasOwnProperty.call(overrideValues,'status')) {
+            if (Object.prototype.hasOwnProperty.call(overrideValues, 'status')) {
                 statusValue = overrideValues.status;
             }
             let trailerForHistory = {
                 ...trailer,
-                assignedTractor: Object.prototype.hasOwnProperty.call(overrideValues,'prevAssignedTractor')
+                assignedTractor: Object.prototype.hasOwnProperty.call(overrideValues, 'prevAssignedTractor')
                     ? overrideValues.prevAssignedTractor
                     : trailer.assignedTractor
             };
@@ -241,6 +241,7 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
             setShowDeleteConfirmation(false);
         }
     }
+
     async function handleBackClick() {
         if (hasUnsavedChanges) {
             await handleSave();

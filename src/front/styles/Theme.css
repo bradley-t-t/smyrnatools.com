@@ -541,8 +541,13 @@ button.primary:hover {
     background-color: var(--accent);
 }
 
-.edit-instructions { color: #fff !important; }
-.rating-label { color: #fff !important; }
+.edit-instructions {
+    color: #fff !important;
+}
+
+.rating-label {
+    color: #fff !important;
+}
 
 @media (max-width: 900px) {
     .mixers-list-table-container,
@@ -554,6 +559,7 @@ button.primary:hover {
         border-radius: 8px;
         padding: 0;
     }
+
     .mixers-list-table,
     .tractors-list-table,
     .trailers-list-table,
@@ -565,6 +571,7 @@ button.primary:hover {
         min-width: 400px;
         table-layout: fixed;
     }
+
     .mixers-list-table th,
     .tractors-list-table th,
     .trailers-list-table th,
@@ -573,6 +580,7 @@ button.primary:hover {
     .equipments-list-table th {
         padding: 10px 4px;
     }
+
     .mixers-list-table td,
     .tractors-list-table td,
     .trailers-list-table td,
@@ -583,6 +591,7 @@ button.primary:hover {
         max-width: 80px;
         min-width: 80px;
     }
+
     .mixers-list-table td:last-child,
     .tractors-list-table td:last-child,
     .trailers-list-table td:last-child,
@@ -601,6 +610,7 @@ button.primary:hover {
         font-size: 12px;
         padding: 6px 2px;
     }
+
     .mixers-list-table td,
     .tractors-list-table td,
     .trailers-list-table td,
@@ -612,6 +622,7 @@ button.primary:hover {
         max-width: 60px;
         min-width: 60px;
     }
+
     .mixers-list-table td:last-child,
     .tractors-list-table td:last-child,
     .trailers-list-table td:last-child,

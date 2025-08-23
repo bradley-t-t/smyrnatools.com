@@ -242,6 +242,7 @@
     display: flex;
     align-items: center;
 }
+
 .edit-instructions:before {
     content: '\f05a';
     font-family: 'Font Awesome 5 Free';
@@ -249,8 +250,14 @@
     margin-right: 10px;
     color: var(--edit-instructions-color);
 }
-.equipment-edit-instructions { display:none; }
-.equipment-rating-label, .rating-label { color: var(--rating-label-color) !important; }
+
+.equipment-edit-instructions {
+    display: none;
+}
+
+.equipment-rating-label, .rating-label {
+    color: var(--rating-label-color) !important;
+}
 
 .equipment-form-control {
     width: 100%;
