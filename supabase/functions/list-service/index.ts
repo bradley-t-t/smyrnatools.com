@@ -31,7 +31,10 @@ Deno.serve(async (req) => {
                     .from("list_items")
                     .select("*")
                     .order("created_at", {ascending: false});
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             case "fetch-plants": {
@@ -39,27 +42,53 @@ Deno.serve(async (req) => {
                     .from("plants")
                     .select("*")
                     .order("plant_code");
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             case "fetch-creator-profiles": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const userIds: string[] = Array.isArray(body?.userIds) ? body.userIds.filter((v: any) => typeof v === "string" && v.trim()) : [];
                 if (userIds.length === 0) return new Response(JSON.stringify({profiles: []}), {headers: corsHeaders});
                 const {data, error} = await supabase
                     .from("users_profiles")
                     .select("id, first_name, last_name")
                     .in("id", userIds);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({profiles: data ?? []}), {headers: corsHeaders});
             }
             case "create": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 let {userId, plantCode, description, deadline, comments} = body || {};
-                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
-                if (typeof description !== "string" || !description.trim()) return new Response(JSON.stringify({error: "Description is required"}), {status: 400, headers: corsHeaders});
+                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (typeof description !== "string" || !description.trim()) return new Response(JSON.stringify({error: "Description is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const id = crypto.randomUUID();
                 const now = new Date().toISOString();
                 const item = {
@@ -75,15 +104,31 @@ Deno.serve(async (req) => {
                     completed_by: null
                 };
                 const {error} = await supabase.from("list_items").insert(item);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true, id}), {headers: corsHeaders});
             }
             case "update": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const item = body?.item ?? body;
-                if (!item?.id || typeof item.id !== "string") return new Response(JSON.stringify({error: "Item ID is required"}), {status: 400, headers: corsHeaders});
-                if (typeof item.description !== "string" || !item.description.trim()) return new Response(JSON.stringify({error: "Description is required"}), {status: 400, headers: corsHeaders});
+                if (!item?.id || typeof item.id !== "string") return new Response(JSON.stringify({error: "Item ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (typeof item.description !== "string" || !item.description.trim()) return new Response(JSON.stringify({error: "Description is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const update: Record<string, any> = {
                     plant_code: typeof item.plant_code === "string" ? item.plant_code.trim() : "",
                     description: item.description.trim(),
@@ -96,21 +141,43 @@ Deno.serve(async (req) => {
                     .from("list_items")
                     .update(update)
                     .eq("id", item.id);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "toggle-completion": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const {id, currentUserId, completed} = body || {};
-                if (typeof id !== "string" || !id) return new Response(JSON.stringify({error: "Item ID is required"}), {status: 400, headers: corsHeaders});
-                if (typeof currentUserId !== "string" || !currentUserId) return new Response(JSON.stringify({error: "No authenticated user"}), {status: 400, headers: corsHeaders});
+                if (typeof id !== "string" || !id) return new Response(JSON.stringify({error: "Item ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (typeof currentUserId !== "string" || !currentUserId) return new Response(JSON.stringify({error: "No authenticated user"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const now = new Date().toISOString();
                 const newCompleted = typeof completed === "boolean" ? completed : null;
                 let newStatus: boolean | null = newCompleted;
                 if (newStatus === null) {
-                    const {data, error} = await supabase.from("list_items").select("completed").eq("id", id).maybeSingle();
-                    if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                    const {
+                        data,
+                        error
+                    } = await supabase.from("list_items").select("completed").eq("id", id).maybeSingle();
+                    if (error) return new Response(JSON.stringify({error: error.message}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
                     newStatus = data ? !data.completed : true;
                 }
                 const update = {
@@ -119,22 +186,44 @@ Deno.serve(async (req) => {
                     completed_by: newStatus ? currentUserId : null
                 };
                 const {error} = await supabase.from("list_items").update(update).eq("id", id);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "delete": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const {id} = body || {};
-                if (typeof id !== "string" || !id) return new Response(JSON.stringify({error: "Item ID is required"}), {status: 400, headers: corsHeaders});
+                if (typeof id !== "string" || !id) return new Response(JSON.stringify({error: "Item ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const {error} = await supabase.from("list_items").delete().eq("id", id);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             default:
-                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {status: 404, headers: corsHeaders});
+                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
+                    status: 404,
+                    headers: corsHeaders
+                });
         }
     } catch (error) {
-        return new Response(JSON.stringify({error: "Internal server error", message: (error as Error).message}), {status: 500, headers: corsHeaders});
+        return new Response(JSON.stringify({
+            error: "Internal server error",
+            message: (error as Error).message
+        }), {status: 500, headers: corsHeaders});
     }
 });

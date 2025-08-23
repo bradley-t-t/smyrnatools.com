@@ -28,40 +28,84 @@ Deno.serve(async (req) => {
         switch (endpoint) {
             case "set-online": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const {userId} = body || {};
-                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const now = new Date().toISOString();
                 const {error} = await supabase
                     .from("users_presence")
-                    .upsert({user_id: userId, is_online: true, last_seen: now, updated_at: now}, {onConflict: "user_id"});
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                    .upsert({
+                        user_id: userId,
+                        is_online: true,
+                        last_seen: now,
+                        updated_at: now
+                    }, {onConflict: "user_id"});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "set-offline": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const {userId} = body || {};
-                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const now = new Date().toISOString();
                 const {error} = await supabase
                     .from("users_presence")
                     .update({is_online: false, last_seen: now, updated_at: now})
                     .eq("user_id", userId);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "heartbeat": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const {userId} = body || {};
-                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const now = new Date().toISOString();
                 const {error} = await supabase
                     .from("users_presence")
                     .update({last_seen: now, updated_at: now})
                     .eq("user_id", userId);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "cleanup": {
@@ -71,7 +115,10 @@ Deno.serve(async (req) => {
                     .update({is_online: false, updated_at: new Date().toISOString()})
                     .eq("is_online", true)
                     .lt("last_seen", staleTime);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "fetch-online-users": {
@@ -80,14 +127,23 @@ Deno.serve(async (req) => {
                     .select("user_id, last_seen")
                     .eq("is_online", true)
                     .order("last_seen", {ascending: false});
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             default:
-                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {status: 404, headers: corsHeaders});
+                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
+                    status: 404,
+                    headers: corsHeaders
+                });
         }
     } catch (error) {
-        return new Response(JSON.stringify({error: "Internal server error", message: (error as Error).message}), {status: 500, headers: corsHeaders});
+        return new Response(JSON.stringify({
+            error: "Internal server error",
+            message: (error as Error).message
+        }), {status: 500, headers: corsHeaders});
     }
 });
 

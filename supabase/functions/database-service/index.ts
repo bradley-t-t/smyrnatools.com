@@ -60,7 +60,8 @@ Deno.serve(async (req) => {
                 });
                 const query = `SELECT EXISTS (SELECT
                                               FROM information_schema.tables
-                                              WHERE table_schema = 'public' AND table_name = $1) as exists`;
+                                              WHERE table_schema = 'public'
+                                                AND table_name = $1) as exists`;
                 const {data, error} = await supabase.rpc("execute_sql", {query, params: [tableName]});
                 if (error) return new Response(JSON.stringify({error: error.message}), {
                     status: 400,
