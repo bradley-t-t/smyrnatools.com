@@ -9,7 +9,8 @@ const APIUtility = {
             const {data: sessionData} = await supabase.auth.getSession()
             const accessToken = sessionData?.session?.access_token
             if (accessToken) token = accessToken
-        } catch {}
+        } catch {
+        }
         const res = await fetch(`${EDGE_FUNCTIONS_URL}${path}`, {
             method: 'POST',
             headers: {

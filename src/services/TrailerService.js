@@ -1,186 +1,171 @@
-import {supabase} from './DatabaseService';
+import APIUtility from '../utils/APIUtility';
 import Trailer from '../config/models/trailers/Trailer';
 import {isValidUUID} from '../utils/UserUtility';
+import {UserService} from './UserService';
 
-const TRAILERS = 'trailers';
-const HISTORY = 'trailers_history';
-const COMMENTS = 'trailers_comments';
-const MAINTENANCE = 'trailers_maintenance';
-
-export const TrailerService = {
+const TrailerService = {
     async fetchTrailers() {
-        const {data, error} = await supabase
-            .from(TRAILERS)
-            .select('*')
-            .order('trailer_number', {ascending: true});
-        if (error) throw new Error(error.message);
-        return data ? data.map(Trailer.fromApiFormat) : [];
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-all');
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch trailers');
+        const data = json?.data ?? [];
+        return data.map(Trailer.fromApiFormat);
     },
 
     async fetchTrailerById(trailerId) {
         if (!trailerId) throw new Error('Trailer ID is required');
-        if (typeof trailerId === 'object') {
-            trailerId = trailerId.id || trailerId.trailerId || '';
-        }
+        if (typeof trailerId === 'object') trailerId = trailerId.id || trailerId.trailerId || '';
         if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
-        const {data, error} = await supabase
-            .from(TRAILERS)
-            .select('*')
-            .eq('id', trailerId)
-            .single();
-        if (error) throw new Error(error.message);
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-by-id', {id: trailerId});
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch trailer');
+        const data = json?.data;
         return data ? Trailer.fromApiFormat(data) : null;
     },
 
     async createTrailer(trailer, userId) {
-        const trailerData = {
-            ...trailer.toApiFormat(),
-            updated_by: userId,
-            updated_last: trailer.updatedLast || null,
-            status: trailer.status
-        };
-        const {data, error} = await supabase
-            .from(TRAILERS)
-            .insert([trailerData])
-            .select();
-        if (error) throw new Error(error.message);
-        return data?.length ? Trailer.fromApiFormat(data[0]) : null;
+        const {res, json} = await APIUtility.post('/trailer-service/create', {userId, trailer});
+        if (!res.ok) throw new Error(json?.error || 'Failed to create trailer');
+        return json?.data ? Trailer.fromApiFormat(json.data) : null;
     },
 
-    async updateTrailer(trailerId, updatedTrailer, userId, oldTrailer) {
-        const trailerInstance = updatedTrailer instanceof Trailer
-            ? updatedTrailer
-            : Trailer.ensureInstance(updatedTrailer);
-        const updateUserId = userId || trailerInstance.updatedBy;
-        const trailerData = {
-            ...trailerInstance.toApiFormat(),
-            updated_at: new Date().toISOString(),
-            updated_by: updateUserId,
-            trailer_number: trailerInstance.trailerNumber,
-            status: trailerInstance.status
-        };
-        const {data, error} = await supabase
-            .from(TRAILERS)
-            .update(trailerData)
-            .eq('id', trailerId)
-            .select();
-        if (error) throw new Error(error.message);
-        if (data?.length && oldTrailer) {
-            const fields = [
-                'trailer_number',
-                'assigned_plant',
-                'trailer_type',
-                'assigned_tractor',
-                'cleanliness_rating',
-                'status'
-            ];
-            const changes = fields.reduce((arr, field) => {
-                if (oldTrailer[field] !== trailerData[field]) {
-                    arr.push({
-                        trailer_id: trailerId,
-                        field_name: field,
-                        old_value: oldTrailer[field] || null,
-                        new_value: trailerData[field] || null,
-                        changed_at: new Date().toISOString(),
-                        changed_by: userId
-                    });
-                }
-                return arr;
-            }, []);
-            if (changes.length) {
-                await supabase.from(HISTORY).insert(changes);
-            }
-        }
-        return data?.length ? Trailer.fromApiFormat(data[0]) : null;
+    async updateTrailer(trailerId, updatedTrailer, userId, _oldTrailer) {
+        const id = typeof trailerId === 'object' ? trailerId.id : trailerId;
+        if (!isValidUUID(id)) throw new Error(`Invalid trailer ID format: ${id}`);
+        const trailer = updatedTrailer instanceof Trailer ? updatedTrailer : Trailer.ensureInstance(updatedTrailer);
+        const {res, json} = await APIUtility.post('/trailer-service/update', {id, trailer, userId});
+        if (!res.ok) throw new Error(json?.error || 'Failed to update trailer');
+        return json?.data ? Trailer.fromApiFormat(json.data) : null;
+    },
+
+    async deleteTrailer(id) {
+        if (!isValidUUID(id)) throw new Error(`Invalid trailer ID format: ${id}`);
+        const {res, json} = await APIUtility.post('/trailer-service/delete', {id});
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete trailer');
+        return true;
     },
 
     async getTrailerHistory(trailerId, limit = null) {
-        let query = supabase
-            .from(HISTORY)
-            .select('*')
-            .eq('trailer_id', trailerId)
-            .order('changed_at', {ascending: false});
-        if (limit) query = query.limit(limit);
-        const {data, error} = await query;
-        if (error) throw new Error(error.message);
-        return data || [];
+        if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
+        const payload = {trailerId};
+        if (limit && Number.isInteger(limit)) payload.limit = limit;
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-history', payload);
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch trailer history');
+        return json?.data ?? [];
+    },
+
+    async createHistoryEntry(trailerId, fieldName, oldValue, newValue, changedBy) {
+        if (!isValidUUID(trailerId)) throw new Error('Trailer ID is required');
+        if (!fieldName) throw new Error('Field name required');
+        let userId = changedBy;
+        if (!userId) {
+            const user = await UserService.getCurrentUser();
+            userId = typeof user === 'object' && user !== null ? user.id : user;
+        }
+        if (!userId) userId = '00000000-0000-0000-0000-000000000000';
+        const {res, json} = await APIUtility.post('/trailer-service/add-history', {
+            trailerId,
+            fieldName,
+            oldValue,
+            newValue,
+            changedBy: userId
+        });
+        if (!res.ok) throw new Error(json?.error || 'Failed to create history entry');
+        return json?.data;
+    },
+
+    async getCleanlinessHistory(trailerId = null, months = 6) {
+        const payload = {};
+        if (trailerId) {
+            if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
+            payload.trailerId = trailerId;
+        }
+        if (months) payload.months = months;
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-cleanliness-history', payload);
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch cleanliness history');
+        return json?.data ?? [];
+    },
+
+    async getActiveTrailers() {
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-active');
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch active trailers');
+        return (json?.data ?? []).map(Trailer.fromApiFormat);
+    },
+
+    async getTrailersByStatus(status) {
+        if (!status) throw new Error('Status is required');
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-by-status', {status});
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch trailers by status');
+        return (json?.data ?? []).map(Trailer.fromApiFormat);
+    },
+
+    async searchTrailersByTrailerNumber(query) {
+        if (!query?.trim()) throw new Error('Search query is required');
+        const {res, json} = await APIUtility.post('/trailer-service/search-by-trailer-number', {query: query.trim()});
+        if (!res.ok) throw new Error(json?.error || 'Failed to search trailers');
+        return (json?.data ?? []).map(Trailer.fromApiFormat);
     },
 
     async fetchComments(trailerId) {
-        const {data, error} = await supabase
-            .from(COMMENTS)
-            .select('*')
-            .eq('trailer_id', trailerId)
-            .order('created_at', {ascending: false});
-        if (error) throw new Error(error.message);
-        return data || [];
+        if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-comments', {trailerId});
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch comments');
+        return json?.data ?? [];
     },
 
     async addComment(trailerId, commentText, userId) {
-        const {data, error} = await supabase
-            .from(COMMENTS)
-            .insert([{
-                trailer_id: trailerId,
-                text: commentText,
-                author: userId,
-                created_at: new Date().toISOString()
-            }])
-            .select();
-        if (error) throw new Error(error.message);
-        return data?.length ? data[0] : null;
+        if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
+        if (!commentText?.trim()) throw new Error('Comment text is required');
+        if (!userId?.trim?.()) throw new Error('Author is required');
+        const {res, json} = await APIUtility.post('/trailer-service/add-comment', {
+            trailerId,
+            text: commentText.trim(),
+            author: userId.trim()
+        });
+        if (!res.ok) throw new Error(json?.error || 'Failed to add comment');
+        return json?.data ?? null;
     },
 
     async deleteComment(commentId) {
-        const {error} = await supabase
-            .from(COMMENTS)
-            .delete()
-            .eq('id', commentId);
-        if (error) throw new Error(error.message);
+        if (!isValidUUID(commentId)) throw new Error(`Invalid comment ID format: ${commentId}`);
+        const {res, json} = await APIUtility.post('/trailer-service/delete-comment', {commentId});
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete comment');
+        return true;
     },
 
     async fetchIssues(trailerId) {
-        const {data, error} = await supabase
-            .from(MAINTENANCE)
-            .select('*')
-            .eq('trailer_id', trailerId)
-            .order('time_created', {ascending: false});
-        if (error) throw new Error(error.message);
-        return data || [];
+        if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
+        const {res, json} = await APIUtility.post('/trailer-service/fetch-issues', {trailerId});
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch issues');
+        return json?.data ?? [];
     },
 
     async addIssue(trailerId, issueText, severity) {
-        const {data, error} = await supabase
-            .from(MAINTENANCE)
-            .insert([{
-                id: crypto.randomUUID(),
-                trailer_id: trailerId,
-                issue: issueText,
-                severity,
-                time_created: new Date().toISOString(),
-                time_completed: null
-            }])
-            .select();
-        if (error) throw new Error(error.message);
-        return data?.length ? data[0] : null;
+        if (!isValidUUID(trailerId)) throw new Error(`Invalid trailer ID format: ${trailerId}`);
+        if (!issueText?.trim()) throw new Error('Issue description is required');
+        const allowed = ['Low', 'Medium', 'High'];
+        const finalSeverity = allowed.includes(severity) ? severity : 'Medium';
+        const {res, json} = await APIUtility.post('/trailer-service/add-issue', {
+            trailerId,
+            issue: issueText.trim(),
+            severity: finalSeverity
+        });
+        if (!res.ok) throw new Error(json?.error || 'Failed to add issue');
+        return json?.data ?? null;
     },
 
     async completeIssue(issueId) {
-        const {data, error} = await supabase
-            .from(MAINTENANCE)
-            .update({time_completed: new Date().toISOString()})
-            .eq('id', issueId)
-            .select();
-        if (error) throw new Error(error.message);
-        return data?.length ? data[0] : null;
+        if (!isValidUUID(issueId)) throw new Error(`Invalid issue ID format: ${issueId}`);
+        const {res, json} = await APIUtility.post('/trailer-service/complete-issue', {issueId});
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to complete issue');
+        return true;
     },
 
     async deleteIssue(issueId) {
-        const {error} = await supabase
-            .from(MAINTENANCE)
-            .delete()
-            .eq('id', issueId);
-        if (error) throw new Error(error.message);
+        if (!isValidUUID(issueId)) throw new Error(`Invalid issue ID format: ${issueId}`);
+        const {res, json} = await APIUtility.post('/trailer-service/delete-issue', {issueId});
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete issue');
+        return true;
     }
 };
 
+export {TrailerService};
 export default TrailerService;

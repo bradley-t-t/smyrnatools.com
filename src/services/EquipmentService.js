@@ -1,26 +1,16 @@
-import supabase from './DatabaseService'
+import APIUtility from '../utils/APIUtility'
 import {UserService} from './UserService'
 import {Equipment} from '../config/models/equipment/Equipment'
 import {EquipmentHistory} from '../config/models/equipment/EquipmentHistory'
 import {EquipmentComment} from '../config/models/equipment/EquipmentComment'
-import {v4 as uuidv4} from 'uuid'
-import {DateUtility} from '../utils/DateUtility'
-import {HistoryUtility} from '../utils/HistoryUtility'
 import {ValidationUtility} from '../utils/ValidationUtility'
-
-const EQUIPMENTS_TABLE = 'heavy_equipment'
-const HISTORY_TABLE = 'heavy_equipment_history'
-const EQUIPMENTS_COMMENTS_TABLE = 'heavy_equipment_comments'
-const EQUIPMENT_MAINTENANCE_TABLE = 'heavy_equipment_maintenance'
 
 class EquipmentServiceImpl {
     static async getAllEquipments() {
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .select('*')
-            .order('identifying_number', {ascending: true})
-        if (error) throw error
-        return data.map(row => new Equipment(row));
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-all')
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch equipment')
+        const data = json?.data ?? []
+        return data.map(row => new Equipment(row))
     }
 
     static async fetchEquipments() {
@@ -29,12 +19,9 @@ class EquipmentServiceImpl {
 
     static async getEquipmentById(id) {
         ValidationUtility.requireUUID(id, 'Equipment ID is required')
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .select('*')
-            .eq('id', id)
-            .single()
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-by-id', {id})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch equipment')
+        const data = json?.data
         if (!data) return null
         return new Equipment(data)
     }
@@ -45,53 +32,24 @@ class EquipmentServiceImpl {
     }
 
     static async getActiveEquipments() {
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .select('*')
-            .eq('status', 'Active')
-            .order('identifying_number', {ascending: true})
-        if (error) throw error
-        return data.map(row => new Equipment(row))
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-active')
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch active equipment')
+        return (json?.data ?? []).map(row => new Equipment(row))
     }
 
     static async getEquipmentHistory(equipmentId, limit = null) {
         ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
-        let query = supabase
-            .from(HISTORY_TABLE)
-            .select('*')
-            .eq('equipment_id', equipmentId)
-            .order('changed_at', {ascending: false})
-        if (limit && Number.isInteger(limit) && limit > 0) query = query.limit(limit)
-        const {data, error} = await query
-        if (error) throw error
-        return data.map(entry => new EquipmentHistory(entry))
+        const payload = {equipmentId}
+        if (limit && Number.isInteger(limit) && limit > 0) payload.limit = limit
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-history', payload)
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch equipment history')
+        return (json?.data ?? []).map(entry => EquipmentHistory.fromApiFormat(entry))
     }
 
     static async addEquipment(equipment, userId) {
-        const now = DateUtility.nowDb()
-        const apiData = {
-            identifying_number: equipment.identifyingNumber ?? equipment.identifying_number,
-            assigned_plant: equipment.assignedPlant ?? equipment.assigned_plant,
-            equipment_type: equipment.equipmentType ?? equipment.equipment_type,
-            status: equipment.status ?? 'Active',
-            last_service_date: DateUtility.toDbTimestamp(equipment.lastServiceDate ?? equipment.last_service_date),
-            hours_mileage: equipment.hoursMileage ?? equipment.hours_mileage ?? null,
-            cleanliness_rating: equipment.cleanlinessRating ?? equipment.cleanliness_rating ?? null,
-            condition_rating: equipment.conditionRating ?? equipment.condition_rating ?? null,
-            equipment_make: equipment.equipmentMake ?? equipment.equipment_make,
-            equipment_model: equipment.equipmentModel ?? equipment.equipment_model,
-            year_made: equipment.yearMade ?? equipment.year_made ?? null,
-            created_at: now,
-            updated_at: now,
-            updated_by: userId
-        }
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .insert([apiData])
-            .select()
-            .single()
-        if (error) throw error
-        return new Equipment(data)
+        const {res, json} = await APIUtility.post('/equipment-service/create', {userId, equipment})
+        if (!res.ok) throw new Error(json?.error || 'Failed to create equipment')
+        return json?.data ? new Equipment(json.data) : null
     }
 
     static async createEquipment(equipment, userId) {
@@ -112,63 +70,20 @@ class EquipmentServiceImpl {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) throw new Error('User ID is required')
-        const currentEquipment = prevEquipmentState || await this.getEquipmentById(id)
-        if (!currentEquipment) throw new Error(`Equipment with ID ${id} not found`)
-        const apiData = {
-            identifying_number: equipment.identifyingNumber,
-            assigned_plant: equipment.assignedPlant,
-            equipment_type: equipment.equipmentType,
-            status: equipment.status,
-            last_service_date: DateUtility.toDbTimestamp(equipment.lastServiceDate),
-            hours_mileage: equipment.hoursMileage ? parseFloat(equipment.hoursMileage) : null,
-            cleanliness_rating: equipment.cleanlinessRating,
-            condition_rating: equipment.conditionRating,
-            equipment_make: equipment.equipmentMake,
-            equipment_model: equipment.equipmentModel,
-            year_made: equipment.yearMade ? parseInt(equipment.yearMade) : null,
-            updated_at: DateUtility.nowDb(),
-            updated_by: userId
-        }
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .update(apiData)
-            .eq('id', id)
-            .select()
-            .single()
-        if (error) throw error
-        const historyEntries = HistoryUtility.buildChanges(id,
-            [
-                {field: 'identifyingNumber', dbField: 'identifying_number'},
-                {field: 'assignedPlant', dbField: 'assigned_plant'},
-                {field: 'equipmentType', dbField: 'equipment_type'},
-                {field: 'status', dbField: 'status'},
-                {field: 'lastServiceDate', dbField: 'last_service_date', type: 'date'},
-                {field: 'hoursMileage', dbField: 'hours_mileage', type: 'number'},
-                {field: 'cleanlinessRating', dbField: 'cleanliness_rating', type: 'number'},
-                {field: 'conditionRating', dbField: 'condition_rating', type: 'number'},
-                {field: 'equipmentMake', dbField: 'equipment_make'},
-                {field: 'equipmentModel', dbField: 'equipment_model'},
-                {field: 'yearMade', dbField: 'year_made', type: 'number'}
-            ],
-            currentEquipment,
-            equipment,
-            userId
-        )
-        if (historyEntries.length) {
-            await supabase.from(HISTORY_TABLE).insert(historyEntries)
-        }
-        return new Equipment(data)
+        const {res, json} = await APIUtility.post('/equipment-service/update', {id, equipment, userId})
+        if (!res.ok) throw new Error(json?.error || 'Failed to update equipment')
+        return json?.data ? new Equipment(json.data) : null
     }
 
     static async deleteEquipment(id) {
         ValidationUtility.requireUUID(id, 'Equipment ID is required')
-        await supabase.from(HISTORY_TABLE).delete().eq('equipment_id', id)
-        await supabase.from(EQUIPMENTS_TABLE).delete().eq('id', id)
+        const {res, json} = await APIUtility.post('/equipment-service/delete', {id})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete equipment')
         return true
     }
 
     static async createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy) {
-        ValidationUtility.requireUUID(equipmentId, 'Equipment ID and field name are required')
+        ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         if (!fieldName) throw new Error('Field name required')
         let userId = changedBy
         if (!userId) {
@@ -176,156 +91,102 @@ class EquipmentServiceImpl {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
-        const {data, error} = await supabase
-            .from(HISTORY_TABLE)
-            .insert({
-                equipment_id: equipmentId,
-                field_name: fieldName,
-                old_value: oldValue?.toString() ?? null,
-                new_value: newValue?.toString() ?? null,
-                changed_at: new Date().toISOString(),
-                changed_by: userId
-            })
-            .select()
-            .single()
-        if (error) throw error
-        return data
+        const {res, json} = await APIUtility.post('/equipment-service/add-history', {
+            equipmentId,
+            fieldName,
+            oldValue,
+            newValue,
+            changedBy: userId
+        })
+        if (!res.ok) throw new Error(json?.error || 'Failed to create history entry')
+        return json?.data
     }
 
     static async getCleanlinessHistory(equipmentId = null, months = 6) {
-        const threshold = new Date()
-        threshold.setMonth(threshold.getMonth() - months)
-        let query = supabase
-            .from(HISTORY_TABLE)
-            .select('*')
-            .eq('field_name', 'cleanliness_rating')
-            .gte('changed_at', threshold.toISOString())
-            .order('changed_at', {ascending: true})
-            .abortSignal(AbortSignal.timeout(5000))
-            .limit(200)
-        if (equipmentId) query = query.eq('equipment_id', equipmentId)
-        const {data, error} = await query
-        if (error) throw error
-        return data
+        const payload = {}
+        if (equipmentId) payload.equipmentId = equipmentId
+        if (months) payload.months = months
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-cleanliness-history', payload)
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch cleanliness history')
+        return json?.data ?? []
     }
 
     static async getConditionHistory(equipmentId = null, months = 6) {
-        const threshold = new Date()
-        threshold.setMonth(threshold.getMonth() - months)
-        let query = supabase
-            .from(HISTORY_TABLE)
-            .select('*')
-            .eq('field_name', 'condition_rating')
-            .gte('changed_at', threshold.toISOString())
-            .order('changed_at', {ascending: true})
-            .abortSignal(AbortSignal.timeout(5000))
-            .limit(200)
-        if (equipmentId) query = query.eq('equipment_id', equipmentId)
-        const {data, error} = await query
-        if (error) throw error
-        return data
+        const payload = {}
+        if (equipmentId) payload.equipmentId = equipmentId
+        if (months) payload.months = months
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-condition-history', payload)
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch condition history')
+        return json?.data ?? []
     }
 
     static async getEquipmentsByStatus(status) {
         if (!status) throw new Error('Status is required')
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .select('*')
-            .eq('status', status)
-            .order('identifying_number', {ascending: true})
-        if (error) throw error
-        return data.map(row => new Equipment(row))
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-by-status', {status})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch equipment by status')
+        return (json?.data ?? []).map(row => new Equipment(row))
     }
 
     static async searchEquipmentsByIdentifyingNumber(query) {
         if (!query?.trim()) throw new Error('Search query is required')
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .select('*')
-            .ilike('identifying_number', `%${query.trim()}%`)
-            .order('identifying_number', {ascending: true})
-        if (error) throw error
-        return data.map(row => new Equipment(row))
+        const {
+            res,
+            json
+        } = await APIUtility.post('/equipment-service/search-by-identifying-number', {query: query.trim()})
+        if (!res.ok) throw new Error(json?.error || 'Failed to search equipment')
+        return (json?.data ?? []).map(row => new Equipment(row))
     }
 
     static async getEquipmentsNeedingService(dayThreshold = 30) {
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_TABLE)
-            .select('*')
-            .order('identifying_number', {ascending: true})
-        if (error) throw error
-        const thresholdDate = new Date()
-        thresholdDate.setDate(thresholdDate.getDate() - dayThreshold)
-        return data
-            .filter(equipment => !equipment.last_service_date || new Date(equipment.last_service_date) < thresholdDate)
-            .map(row => new Equipment(row))
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-needing-service', {dayThreshold})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch equipment needing service')
+        return (json?.data ?? []).map(row => new Equipment(row))
     }
 
     static async fetchComments(equipmentId) {
         ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_COMMENTS_TABLE)
-            .select('*')
-            .eq('equipment_id', equipmentId)
-            .order('created_at', {ascending: false})
-        if (error) throw error
-        return data?.map(row => EquipmentComment.fromRow(row)) ?? []
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-comments', {equipmentId})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch comments')
+        return (json?.data ?? []).map(row => EquipmentComment.fromRow(row))
     }
 
     static async addComment(equipmentId, text, author) {
         ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim()) throw new Error('Author is required')
-        const comment = {
-            id: uuidv4(),
-            equipment_id: equipmentId,
+        const {res, json} = await APIUtility.post('/equipment-service/add-comment', {
+            equipmentId,
             text: text.trim(),
-            author: author.trim(),
-            created_at: new Date().toISOString()
-        }
-        const {data, error} = await supabase
-            .from(EQUIPMENTS_COMMENTS_TABLE)
-            .insert([comment])
-            .select()
-            .single()
-        if (error) throw error
-        return data ? EquipmentComment.fromRow(data) : null
+            author: author.trim()
+        })
+        if (!res.ok) throw new Error(json?.error || 'Failed to add comment')
+        return json?.data ? EquipmentComment.fromRow(json.data) : null
     }
 
     static async deleteComment(commentId) {
         ValidationUtility.requireUUID(commentId, 'Comment ID is required')
-        const {error} = await supabase
-            .from(EQUIPMENTS_COMMENTS_TABLE)
-            .delete()
-            .eq('id', commentId)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/equipment-service/delete-comment', {commentId})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete comment')
         return true
     }
 
     static async _fetchHistoryDates() {
-        const {data, error} = await supabase
-            .from(HISTORY_TABLE)
-            .select('equipment_id, changed_at')
-            .order('changed_at', {ascending: false})
-        if (error) return {}
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-history', {limit: 1})
+        if (!res.ok) return {}
         const historyDates = {}
-        data.forEach(entry => {
-            if (!historyDates[entry.equipment_id] || new Date(entry.changed_at) > new Date(historyDates[entry.equipment_id])) {
-                historyDates[entry.equipment_id] = entry.changed_at
-            }
-        })
+        for (const entry of (json?.data ?? [])) {
+            const id = entry?.equipment_id
+            const at = entry?.changed_at
+            if (id && (!historyDates[id] || new Date(at) > new Date(historyDates[id]))) historyDates[id] = at
+        }
         return historyDates
     }
 
     static async fetchIssues(equipmentId) {
         ValidationUtility.requireUUID(equipmentId, 'Equipment ID is required')
-        const {data, error} = await supabase
-            .from(EQUIPMENT_MAINTENANCE_TABLE)
-            .select('*')
-            .eq('equipment_id', equipmentId)
-            .order('time_created', {ascending: false})
-        if (error) throw error
-        return data ?? []
+        const {res, json} = await APIUtility.post('/equipment-service/fetch-issues', {equipmentId})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch issues')
+        return json?.data ?? []
     }
 
     static async addIssue(equipmentId, issueText, severity) {
@@ -333,44 +194,27 @@ class EquipmentServiceImpl {
         if (!issueText?.trim()) throw new Error('Issue description is required')
         const validSeverities = ['Low', 'Medium', 'High']
         const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium'
-        const payload = {
-            id: uuidv4(),
-            equipment_id: equipmentId,
+        const {res, json} = await APIUtility.post('/equipment-service/add-issue', {
+            equipmentId,
             issue: issueText.trim(),
-            severity: finalSeverity,
-            time_created: new Date().toISOString(),
-            time_completed: null
-        }
-        const {data, error} = await supabase
-            .from(EQUIPMENT_MAINTENANCE_TABLE)
-            .insert([payload])
-            .select()
-            .single()
-        if (error) throw error
-        if (!data) throw new Error('Database insert succeeded but no data was returned')
-        return data
+            severity: finalSeverity
+        })
+        if (!res.ok) throw new Error(json?.error || 'Failed to add issue')
+        return json?.data
     }
 
     static async deleteIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
-        const {error} = await supabase
-            .from(EQUIPMENT_MAINTENANCE_TABLE)
-            .delete()
-            .eq('id', issueId)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/equipment-service/delete-issue', {issueId})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete issue')
         return true
     }
 
     static async completeIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
-        const {data, error} = await supabase
-            .from(EQUIPMENT_MAINTENANCE_TABLE)
-            .update({time_completed: new Date().toISOString()})
-            .eq('id', issueId)
-            .select()
-            .single()
-        if (error) throw error
-        return data
+        const {res, json} = await APIUtility.post('/equipment-service/complete-issue', {issueId})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to complete issue')
+        return true
     }
 }
 

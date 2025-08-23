@@ -14,6 +14,10 @@ export function PlantManagerSubmitPlugin({
     const {preferences} = usePreferences()
     const isDark = preferences.themeMode === 'dark'
     const metricTextColor = isDark ? 'var(--text-light)' : 'var(--primary)'
+    const formatYph = v => {
+        const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN)
+        return Number.isFinite(n) ? n.toFixed(2) : '--'
+    }
     return (
         <div className="summary-tabs-container">
             <div className="summary-tabs">
@@ -32,7 +36,7 @@ export function PlantManagerSubmitPlugin({
                          style={{borderColor: 'var(--divider)', flex: 1, marginRight: 0}}>
                         <div className="summary-metric-title">Yards per Man-Hour</div>
                         <div className="summary-metric-value" style={{color: metricTextColor}}>
-                            {yph !== null ? yph.toFixed(2) : '--'}
+                            {formatYph(yph)}
                         </div>
                         <div className="summary-metric-grade" style={{color: metricTextColor}}>
                             {yphLabel}
@@ -79,6 +83,10 @@ export function PlantManagerReviewPlugin({
     const {preferences} = usePreferences()
     const isDark = preferences.themeMode === 'dark'
     const metricTextColor = isDark ? 'var(--text-light)' : 'var(--primary)'
+    const formatYph = v => {
+        const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN)
+        return Number.isFinite(n) ? n.toFixed(2) : '--'
+    }
     return (
         <div className="summary-tabs-container">
             <div className="summary-tabs">
@@ -97,7 +105,7 @@ export function PlantManagerReviewPlugin({
                          style={{borderColor: 'var(--divider)', flex: 1, marginRight: 0}}>
                         <div className="summary-metric-title">Yards per Man-Hour</div>
                         <div className="summary-metric-value" style={{color: metricTextColor}}>
-                            {yph !== null ? yph.toFixed(2) : '--'}
+                            {formatYph(yph)}
                         </div>
                         <div className="summary-metric-grade" style={{color: metricTextColor}}>
                             {yphLabel}

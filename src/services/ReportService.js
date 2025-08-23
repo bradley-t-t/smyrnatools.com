@@ -1,3 +1,5 @@
+import APIUtility from '../utils/APIUtility'
+
 class ReportServiceImpl {
     getWeekRangeFromIso(weekIso) {
         const monday = new Date(weekIso)
@@ -64,60 +66,17 @@ class ReportServiceImpl {
         return row.name
     }
 
-    exportRowsToCSV(rows, operatorOptions, reportDate) {
+    async exportRowsToCSV(rows, operatorOptions, reportDate) {
         if (!Array.isArray(rows) || rows.length === 0) return
-        const dateStr = reportDate ? ` - ${reportDate}` : ''
-        const title = `Weekly Plant Efficiency Report${dateStr}`
-        const headers = Array(12).fill('')
-        headers[0] = title
-        const tableHeaders = [
-            'Operator Name',
-            'Truck Number',
-            'Start Time',
-            '1st Load',
-            'Elapsed (Start→1st)',
-            'EOD In Yard',
-            'Punch Out',
-            'Elapsed (EOD→Punch)',
-            'Total Loads',
-            'Total Hours',
-            'Loads/Hour',
-            'Comments'
-        ]
-        const csvRows = [headers, tableHeaders]
-        rows.forEach(row => {
-            const start = this.parseTimeToMinutes(row.start_time)
-            const firstLoad = this.parseTimeToMinutes(row.first_load)
-            const eod = this.parseTimeToMinutes(row.eod_in_yard)
-            const punch = this.parseTimeToMinutes(row.punch_out)
-            const elapsedStart = (start !== null && firstLoad !== null) ? firstLoad - start : ''
-            const elapsedEnd = (eod !== null && punch !== null) ? punch - eod : ''
-            const totalHours = (start !== null && punch !== null) ? ((punch - start) / 60) : ''
-            const loadsPerHour = (row.loads && totalHours && totalHours > 0) ? (row.loads / totalHours).toFixed(2) : ''
-            csvRows.push([
-                this.getOperatorName(row, operatorOptions),
-                row.truck_number || '',
-                row.start_time || '',
-                row.first_load || '',
-                elapsedStart !== '' ? `${elapsedStart} min` : '',
-                row.eod_in_yard || '',
-                row.punch_out || '',
-                elapsedEnd !== '' ? `${elapsedEnd} min` : '',
-                row.loads || '',
-                totalHours !== '' ? totalHours.toFixed(2) : '',
-                loadsPerHour,
-                row.comments || ''
-            ])
-        })
-        const csvContent = csvRows.map(r =>
-            r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-        ).join('\r\n')
+        const {res, json} = await APIUtility.post('/report-service/export-csv', {rows, operatorOptions, reportDate})
+        if (!res.ok) throw new Error(json?.error || 'Failed to export CSV')
+        const filename = json?.data?.filename || 'report.csv'
+        const csvContent = json?.data?.csv || ''
         const blob = new Blob([csvContent], {type: 'text/csv'})
         const url = URL.createObjectURL(blob)
-        const safeDate = reportDate ? reportDate.replace(/[^0-9-]/g, '') : ''
         const a = document.createElement('a')
         a.href = url
-        a.download = `Weekly Plant Efficiency Report${safeDate ? ' - ' + safeDate : ''}.csv`
+        a.download = filename
         document.body.appendChild(a)
         a.click()
         setTimeout(() => {
@@ -129,45 +88,17 @@ class ReportServiceImpl {
     exportReportFieldsToCSV(report, form) {
         if (!report || !Array.isArray(report.fields)) return
         if (report.name === 'general_manager') {
-            const plantCodes = Object.keys(form)
-                .filter(key => key.startsWith('total_yardage_'))
-                .map(key => key.replace('total_yardage_', ''))
+            const plantCodes = Object.keys(form).filter(key => key.startsWith('total_yardage_')).map(key => key.replace('total_yardage_', ''))
             if (plantCodes.length === 0) return
-            const headers = [
-                'Plant Code',
-                'Active Operators',
-                'Runnable Trucks',
-                'Down Trucks',
-                'Operators Starting',
-                'New Operators Training',
-                'Operators Leaving',
-                'Total Yardage',
-                'Total Hours',
-                'Yards/Hour',
-                'Comments'
-            ]
+            const headers = ['Plant Code', 'Active Operators', 'Runnable Trucks', 'Down Trucks', 'Operators Starting', 'New Operators Training', 'Operators Leaving', 'Total Yardage', 'Total Hours', 'Yards/Hour', 'Comments']
             const rows = plantCodes.map(pc => {
                 const yardage = Number(form[`total_yardage_${pc}`]) || 0
                 const hours = Number(form[`total_hours_${pc}`]) || 0
                 const yph = hours > 0 ? (yardage / hours).toFixed(2) : ''
-                return [
-                    pc,
-                    form[`active_operators_${pc}`] || '',
-                    form[`runnable_trucks_${pc}`] || '',
-                    form[`down_trucks_${pc}`] || '',
-                    form[`operators_starting_${pc}`] || '',
-                    form[`new_operators_training_${pc}`] || '',
-                    form[`operators_leaving_${pc}`] || '',
-                    yardage,
-                    hours,
-                    yph,
-                    form[`comments_${pc}`] || ''
-                ]
+                return [pc, form[`active_operators_${pc}`] || '', form[`runnable_trucks_${pc}`] || '', form[`down_trucks_${pc}`] || '', form[`operators_starting_${pc}`] || '', form[`new_operators_training_${pc}`] || '', form[`operators_leaving_${pc}`] || '', yardage, hours, yph, form[`comments_${pc}`] || '']
             })
             const csvRows = [headers, ...rows]
-            const csvContent = csvRows.map(r =>
-                r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-            ).join('\r\n')
+            const csvContent = csvRows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')).join('\r\n')
             const blob = new Blob([csvContent], {type: 'text/csv'})
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
@@ -187,9 +118,7 @@ class ReportServiceImpl {
             const headers = ['Description', 'Plant', 'Tag']
             const rows = issues.map(i => [i.description || '', i.plant || '', i.tag || ''])
             const csvRows = [headers, ...rows]
-            const csvContent = csvRows.map(r =>
-                r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-            ).join('\r\n')
+            const csvContent = csvRows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')).join('\r\n')
             const blob = new Blob([csvContent], {type: 'text/csv'})
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
@@ -206,9 +135,7 @@ class ReportServiceImpl {
         const headers = report.fields.map(f => f.label || f.name)
         const values = report.fields.map(f => form[f.name] || '')
         const csvRows = [headers, values]
-        const csvContent = csvRows.map(r =>
-            r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
-        ).join('\r\n')
+        const csvContent = csvRows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')).join('\r\n')
         const blob = new Blob([csvContent], {type: 'text/csv'})
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -238,30 +165,13 @@ class ReportServiceImpl {
         else if (yphGrade === 'good') yphLabel = 'Good'
         else if (yphGrade === 'average') yphLabel = 'Average'
         else if (yphGrade === 'poor') yphLabel = 'Poor'
-
         let lost = null
-        if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) {
-            lost = Number(form.total_yards_lost)
-        } else if (
-            typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))
-        ) {
-            lost = Number(form.yardage_lost)
-        } else if (
-            typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))
-        ) {
-            lost = Number(form.lost_yardage)
-        } else if (
-            typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))
-        ) {
-            lost = Number(form['Yardage Lost'])
-        } else if (
-            typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))
-        ) {
-            lost = Number(form['yardage_lost'])
-        }
-        if (lost !== null && lost < 0) {
-            lost = 0
-        }
+        if (typeof form.total_yards_lost !== 'undefined' && form.total_yards_lost !== '' && !isNaN(Number(form.total_yards_lost))) lost = Number(form.total_yards_lost)
+        else if (typeof form.yardage_lost !== 'undefined' && form.yardage_lost !== '' && !isNaN(Number(form.yardage_lost))) lost = Number(form.yardage_lost)
+        else if (typeof form.lost_yardage !== 'undefined' && form.lost_yardage !== '' && !isNaN(Number(form.lost_yardage))) lost = Number(form.lost_yardage)
+        else if (typeof form['Yardage Lost'] !== 'undefined' && form['Yardage Lost'] !== '' && !isNaN(Number(form['Yardage Lost']))) lost = Number(form['Yardage Lost'])
+        else if (typeof form['yardage_lost'] !== 'undefined' && form['yardage_lost'] !== '' && !isNaN(Number(form['yardage_lost']))) lost = Number(form['yardage_lost'])
+        if (lost !== null && lost < 0) lost = 0
         let lostGrade = ''
         if (lost !== null) {
             if (lost === 0) lostGrade = 'excellent'
@@ -274,7 +184,6 @@ class ReportServiceImpl {
         else if (lostGrade === 'good') lostLabel = 'Good'
         else if (lostGrade === 'average') lostLabel = 'Average'
         else if (lostGrade === 'poor') lostLabel = 'Poor'
-
         return {yph, yphGrade, yphLabel, lost, lostGrade, lostLabel}
     }
 
@@ -327,12 +236,10 @@ class ReportServiceImpl {
                 if (!isNaN(elapsed)) {
                     totalElapsedStart += elapsed
                     countElapsedStart++
-                    if (elapsed > 15) {
-                        warnings.push({
-                            row: rows.indexOf(row),
-                            message: `Start to 1st Load is ${elapsed} min (> 15 min)`
-                        })
-                    }
+                    if (elapsed > 15) warnings.push({
+                        row: rows.indexOf(row),
+                        message: `Start to 1st Load is ${elapsed} min (> 15 min)`
+                    })
                 }
             }
             if (eod !== null && punchOut !== null) {
@@ -340,24 +247,24 @@ class ReportServiceImpl {
                 if (!isNaN(elapsed)) {
                     totalElapsedEnd += elapsed
                     countElapsedEnd++
-                    if (elapsed > 15) {
-                        warnings.push({
-                            row: rows.indexOf(row),
-                            message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
-                        })
-                    }
+                    if (elapsed > 15) warnings.push({
+                        row: rows.indexOf(row),
+                        message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
+                    })
                 }
             }
             if (!isNaN(loads) && hours && hours > 0) {
                 loadsPerHourSum += loads / hours
                 loadsPerHourCount++
             }
-            if (!isNaN(loads) && loads < 3) {
-                warnings.push({row: rows.indexOf(row), message: `Total Loads is ${loads} (< 3)`})
-            }
-            if (hours !== null && hours > 14) {
-                warnings.push({row: rows.indexOf(row), message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`})
-            }
+            if (!isNaN(loads) && loads < 3) warnings.push({
+                row: rows.indexOf(row),
+                message: `Total Loads is ${loads} (< 3)`
+            })
+            if (hours !== null && hours > 14) warnings.push({
+                row: rows.indexOf(row),
+                message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`
+            })
         })
         const avgElapsedStart = countElapsedStart ? totalElapsedStart / countElapsedStart : null
         const avgElapsedEnd = countElapsedEnd ? totalElapsedEnd / countElapsedEnd : null
@@ -365,24 +272,12 @@ class ReportServiceImpl {
         const avgHours = includedRows.length ? totalHours / includedRows.length : null
         const avgLoadsPerHour = loadsPerHourCount ? loadsPerHourSum / loadsPerHourCount : null
         let avgWarnings = []
-        if (avgElapsedStart !== null && avgElapsedStart < 0) {
-            avgWarnings.push('Reported Start and 1st Load times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
-        }
-        if (avgElapsedEnd !== null && avgElapsedEnd < 0) {
-            avgWarnings.push('Reported Washout -> Punch Out times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
-        }
-        if (avgElapsedStart !== null && avgElapsedStart > 15) {
-            avgWarnings.push(`Avg Punch In to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`)
-        }
-        if (avgElapsedEnd !== null && avgElapsedEnd > 15) {
-            avgWarnings.push(`Washout to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`)
-        }
-        if (avgLoads !== null && avgLoads < 3) {
-            avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`)
-        }
-        if (avgHours !== null && avgHours > 14) {
-            avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`)
-        }
+        if (avgElapsedStart !== null && avgElapsedStart < 0) avgWarnings.push('Reported Start and 1st Load times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
+        if (avgElapsedEnd !== null && avgElapsedEnd < 0) avgWarnings.push('Reported Washout -> Punch Out times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
+        if (avgElapsedStart !== null && avgElapsedStart > 15) avgWarnings.push(`Avg Punch In to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`)
+        if (avgElapsedEnd !== null && avgElapsedEnd > 15) avgWarnings.push(`Washout to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`)
+        if (avgLoads !== null && avgLoads < 3) avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`)
+        if (avgHours !== null && avgHours > 14) avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`)
         return {
             totalLoads,
             totalHours,

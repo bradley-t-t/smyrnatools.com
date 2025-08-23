@@ -112,7 +112,8 @@ class UserPresenceService {
                         name,
                         lastSeen: presence.last_seen
                     });
-                } catch {}
+                } catch {
+                }
             }
             return users;
         } catch {
@@ -133,7 +134,8 @@ class UserPresenceService {
             this.listeners.forEach(listener => {
                 try {
                     listener(users);
-                } catch {}
+                } catch {
+                }
             });
         });
     }

@@ -19,7 +19,10 @@ class UserPreferencesService {
     static async saveLastViewedFilters(userId, filters) {
         if (!userId) throw new Error('User ID is required');
         if (!filters) throw new Error('Filters are required');
-        const {res, json} = await APIUtility.post('/user-preferences-service/save-last-viewed-filters', {userId, filters});
+        const {res, json} = await APIUtility.post('/user-preferences-service/save-last-viewed-filters', {
+            userId,
+            filters
+        });
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to save last viewed filters');
         return true;
     }

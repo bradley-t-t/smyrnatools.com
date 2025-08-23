@@ -107,7 +107,13 @@ class MixerServiceImpl {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
-        const {res, json} = await APIUtility.post('/mixer-service/add-history', {mixerId, fieldName, oldValue, newValue, changedBy: userId})
+        const {res, json} = await APIUtility.post('/mixer-service/add-history', {
+            mixerId,
+            fieldName,
+            oldValue,
+            newValue,
+            changedBy: userId
+        })
         if (!res.ok) throw new Error(json?.error || 'Failed to create history entry')
         return json?.data
     }
@@ -159,7 +165,11 @@ class MixerServiceImpl {
         ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim()) throw new Error('Author is required')
-        const {res, json} = await APIUtility.post('/mixer-service/add-comment', {mixerId, text: text.trim(), author: author.trim()})
+        const {res, json} = await APIUtility.post('/mixer-service/add-comment', {
+            mixerId,
+            text: text.trim(),
+            author: author.trim()
+        })
         if (!res.ok) throw new Error(json?.error || 'Failed to add comment')
         return json?.data ? MixerComment.fromRow(json.data) : null
     }
@@ -174,7 +184,9 @@ class MixerServiceImpl {
     static async _fetchHistoryDates() {
         const mixers = await this.getAllMixers()
         const map = {}
-        mixers.forEach(m => { map[m.id] = m.latestHistoryDate ?? null })
+        mixers.forEach(m => {
+            map[m.id] = m.latestHistoryDate ?? null
+        })
         return map
     }
 
@@ -206,7 +218,12 @@ class MixerServiceImpl {
             reader.readAsDataURL(file)
         })
         const contentType = file.type || 'application/octet-stream'
-        const {res, json} = await APIUtility.post('/mixer-service/upload-image', {mixerId, fileName, fileBase64, contentType})
+        const {res, json} = await APIUtility.post('/mixer-service/upload-image', {
+            mixerId,
+            fileName,
+            fileBase64,
+            contentType
+        })
         if (!res.ok) throw new Error(json?.error || 'Failed to upload mixer image')
         return MixerImage.fromRow(json?.data)
     }

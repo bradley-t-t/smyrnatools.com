@@ -46,7 +46,13 @@ class ListServiceImpl {
         const userId = user.id
         if (!userId) throw new Error('User ID is required')
         const deadlineString = deadline instanceof Date ? deadline.toISOString() : deadline
-        const {res, json} = await APIUtility.post('/list-service/create', {userId, plantCode, description, deadline: deadlineString, comments})
+        const {res, json} = await APIUtility.post('/list-service/create', {
+            userId,
+            plantCode,
+            description,
+            deadline: deadlineString,
+            comments
+        })
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to create list item')
         await this.fetchListItems()
         return true
@@ -74,7 +80,11 @@ class ListServiceImpl {
         if (!item?.id) throw new Error('Item ID is required')
         if (!currentUserId) throw new Error('No authenticated user')
         const newCompletionStatus = !item.completed
-        const {res, json} = await APIUtility.post('/list-service/toggle-completion', {id: item.id, currentUserId, completed: newCompletionStatus})
+        const {res, json} = await APIUtility.post('/list-service/toggle-completion', {
+            id: item.id,
+            currentUserId,
+            completed: newCompletionStatus
+        })
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to toggle completion')
         await this.fetchListItems()
         return true

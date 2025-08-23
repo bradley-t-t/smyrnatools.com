@@ -105,7 +105,13 @@ export class TractorService {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
-        const {res, json} = await APIUtility.post('/tractor-service/add-history', {tractorId, fieldName, oldValue, newValue, changedBy: userId})
+        const {res, json} = await APIUtility.post('/tractor-service/add-history', {
+            tractorId,
+            fieldName,
+            oldValue,
+            newValue,
+            changedBy: userId
+        })
         if (!res.ok) throw new Error(json?.error || 'Failed to create history entry')
         return json?.data
     }
@@ -157,7 +163,11 @@ export class TractorService {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim()) throw new Error('Author is required')
-        const {res, json} = await APIUtility.post('/tractor-service/add-comment', {tractorId, text: text.trim(), author: author.trim()})
+        const {res, json} = await APIUtility.post('/tractor-service/add-comment', {
+            tractorId,
+            text: text.trim(),
+            author: author.trim()
+        })
         if (!res.ok) throw new Error(json?.error || 'Failed to add comment')
         return json?.data ? TractorComment.fromRow(json.data) : null
     }
@@ -172,7 +182,9 @@ export class TractorService {
     static async _fetchHistoryDates() {
         const tractors = await this.getAllTractors()
         const map = {}
-        tractors.forEach(t => { map[t.id] = t.latestHistoryDate ?? null })
+        tractors.forEach(t => {
+            map[t.id] = t.latestHistoryDate ?? null
+        })
         return map
     }
 
@@ -188,7 +200,11 @@ export class TractorService {
         if (!issueText?.trim()) throw new Error('Issue description is required')
         const validSeverities = ['Low', 'Medium', 'High']
         const finalSeverity = validSeverities.includes(severity) ? severity : 'Medium'
-        const {res, json} = await APIUtility.post('/tractor-service/add-issue', {tractorId, issue: issueText.trim(), severity: finalSeverity})
+        const {res, json} = await APIUtility.post('/tractor-service/add-issue', {
+            tractorId,
+            issue: issueText.trim(),
+            severity: finalSeverity
+        })
         if (!res.ok) throw new Error(json?.error || 'Failed to add issue')
         return json?.data
     }
