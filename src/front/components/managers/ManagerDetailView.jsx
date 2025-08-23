@@ -181,6 +181,7 @@ function ManagerDetailView({managerId, onClose}) {
     }
 
     async function handleSave() {
+        if (isReadOnly) return;
         if (!manager?.id) {
             alert('Error: Cannot save manager with undefined ID');
             throw new Error('Cannot save manager with undefined ID');
@@ -275,7 +276,7 @@ function ManagerDetailView({managerId, onClose}) {
     }
 
     const handleBackClick = async () => {
-        if (hasUnsavedChanges) {
+        if (!isReadOnly && hasUnsavedChanges) {
             await handleSave();
         }
         onClose();
@@ -359,7 +360,7 @@ function ManagerDetailView({managerId, onClose}) {
                 {isReadOnly && (
                     <div className="message warning" style={{marginBottom: '16px'}}>
                         <i className="fas fa-lock" style={{marginRight: '8px'}}></i>
-                        View-Only Mode | You can&#39;t edit this manager.
+                        View-Only Mode | You can&apos;t edit this manager.
                     </div>
                 )}
                 <div className="manager-card-preview">
