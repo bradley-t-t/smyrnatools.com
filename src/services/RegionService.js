@@ -1,32 +1,24 @@
-import supabase from './DatabaseService'
+import APIUtility from '../utils/APIUtility'
 import Region from '../config/models/regions/Region'
-
-const REGIONS_TABLE = 'regions'
-const REGION_PLANTS_TABLE = 'regions_plants'
 
 class RegionServiceImpl {
     allRegions = []
 
     async fetchRegions() {
-        const {data, error} = await supabase
-            .from(REGIONS_TABLE)
-            .select('*')
-            .order('region_code')
-        if (error) throw error
-        this.allRegions = data ?? []
-        return data?.map(row => Region.fromRow(row)) ?? []
+        const {res, json} = await APIUtility.post('/region-service/fetch-regions')
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch regions')
+        const data = json?.data ?? []
+        this.allRegions = data
+        return data.map(row => Region.fromRow(row))
     }
 
     async fetchRegionByCode(regionCode) {
         if (!regionCode) throw new Error('Region code is required')
         const region = this.getRegionByCode(regionCode)
         if (region) return region
-        const {data, error} = await supabase
-            .from(REGIONS_TABLE)
-            .select('*')
-            .eq('region_code', regionCode)
-            .single()
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/region-service/fetch-region-by-code', {regionCode})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch region')
+        const data = json?.data ?? null
         return data ? Region.fromRow(data) : null
     }
 
@@ -41,99 +33,38 @@ class RegionServiceImpl {
 
     async createRegion(regionCode, regionName) {
         if (!regionCode?.trim() || !regionName?.trim()) throw new Error('Region code and name are required')
-        const now = new Date().toISOString()
-        const region = {
-            region_code: regionCode.trim(),
-            region_name: regionName.trim(),
-            created_at: now,
-            updated_at: now
-        }
-        const {error} = await supabase
-            .from(REGIONS_TABLE)
-            .insert(region)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/region-service/create', {regionCode, regionName})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to create region')
         await this.fetchRegions()
         return true
     }
 
     async updateRegion(regionCode, regionName, plantCodes = []) {
         if (!regionCode?.trim() || !regionName?.trim()) throw new Error('Region code and name are required')
-        const {data: regionData, error: regionError} = await supabase
-            .from(REGIONS_TABLE)
-            .select('id')
-            .eq('region_code', regionCode)
-            .single()
-        if (regionError || !regionData) throw regionError || new Error('Region not found')
-        const regionId = regionData.id
-        const {error: updateError} = await supabase
-            .from(REGIONS_TABLE)
-            .update({
-                region_name: regionName.trim(),
-                updated_at: new Date().toISOString()
-            })
-            .eq('region_code', regionCode)
-        if (updateError) throw updateError
-        const {error: deleteError} = await supabase
-            .from(REGION_PLANTS_TABLE)
-            .delete()
-            .eq('region_id', regionId)
-        if (deleteError) throw deleteError
-        if (plantCodes.length > 0) {
-            const regionPlants = plantCodes.map(plantCode => ({
-                region_id: regionId,
-                plant_code: plantCode.trim(),
-                created_at: new Date().toISOString()
-            }))
-            const {error: insertError} = await supabase
-                .from(REGION_PLANTS_TABLE)
-                .insert(regionPlants)
-            if (insertError) throw insertError
-        }
+        const payload = {regionCode, regionName, plantCodes}
+        const {res, json} = await APIUtility.post('/region-service/update', payload)
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update region')
         await this.fetchRegions()
         return true
     }
 
     async deleteRegion(regionCode) {
         if (!regionCode) throw new Error('Region code is required')
-        const {data: regionData, error: regionError} = await supabase
-            .from(REGIONS_TABLE)
-            .select('id')
-            .eq('region_code', regionCode)
-            .single()
-        if (regionError || !regionData) throw regionError || new Error('Region not found')
-        const regionId = regionData.id
-        const {error: deletePlantsError} = await supabase
-            .from(REGION_PLANTS_TABLE)
-            .delete()
-            .eq('region_id', regionId)
-        if (deletePlantsError) throw deletePlantsError
-        const {error: deleteRegionError} = await supabase
-            .from(REGIONS_TABLE)
-            .delete()
-            .eq('region_code', regionCode)
-        if (deleteRegionError) throw deleteRegionError
+        const {res, json} = await APIUtility.post('/region-service/delete', {regionCode})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete region')
         await this.fetchRegions()
         return true
     }
 
     async fetchRegionPlants(regionCode) {
         if (!regionCode) throw new Error('Region code is required')
-        const {data: regionData, error: regionError} = await supabase
-            .from(REGIONS_TABLE)
-            .select('id')
-            .eq('region_code', regionCode)
-            .single()
-        if (regionError || !regionData) throw regionError || new Error('Region not found')
-        const regionId = regionData.id
-        const {data, error} = await supabase
-            .from(REGION_PLANTS_TABLE)
-            .select('plant_code, plants!inner(plant_code, plant_name)')
-            .eq('region_id', regionId)
-        if (error) throw error
-        return data?.map(row => ({
-            plantCode: row.plants.plant_code,
-            plantName: row.plants.plant_name
-        })) ?? []
+        const {res, json} = await APIUtility.post('/region-service/fetch-region-plants', {regionCode})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch region plants')
+        const data = json?.data ?? []
+        return data.map(row => ({
+            plantCode: row.plant_code,
+            plantName: row.plant_name
+        }))
     }
 
     async getRegionWithPlants(regionCode) {

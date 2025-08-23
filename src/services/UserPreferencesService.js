@@ -1,53 +1,26 @@
-import {supabase} from './DatabaseService';
-
-const TABLE = 'users_preferences';
+import APIUtility from '../utils/APIUtility'
 
 class UserPreferencesService {
     static async getUserPreferences(userId) {
         if (!userId) throw new Error('User ID is required');
-        const {data, error} = await supabase
-            .from(TABLE)
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-        if (error) throw error;
-        return data ?? null;
+        const {res, json} = await APIUtility.post('/user-preferences-service/get', {userId});
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch user preferences');
+        return json?.data ?? null;
     }
 
     static async saveMixerFilters(userId, filters) {
         if (!userId) throw new Error('User ID is required');
         if (!filters) throw new Error('Filters are required');
-        const now = new Date().toISOString();
-        const {data, error: selectError} = await supabase
-            .from(TABLE)
-            .select('id')
-            .eq('user_id', userId);
-        if (selectError) throw selectError;
-        const {error} = data?.length
-            ? await supabase
-                .from(TABLE)
-                .update({mixer_filters: filters, updated_at: now})
-                .eq('user_id', userId)
-            : await supabase
-                .from(TABLE)
-                .insert({user_id: userId, mixer_filters: filters, created_at: now, updated_at: now});
-        if (error) throw error;
+        const {res, json} = await APIUtility.post('/user-preferences-service/save-mixer-filters', {userId, filters});
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to save mixer filters');
         return true;
     }
 
     static async saveLastViewedFilters(userId, filters) {
         if (!userId) throw new Error('User ID is required');
         if (!filters) throw new Error('Filters are required');
-        const now = new Date().toISOString();
-        const {error} = await supabase
-            .from(TABLE)
-            .upsert({
-                user_id: userId,
-                last_viewed_filters: filters,
-                updated_at: now,
-                created_at: now
-            }, {onConflict: 'user_id'});
-        if (error) throw error;
+        const {res, json} = await APIUtility.post('/user-preferences-service/save-last-viewed-filters', {userId, filters});
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to save last viewed filters');
         return true;
     }
 }

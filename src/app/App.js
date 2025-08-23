@@ -36,7 +36,7 @@ import DesktopOnly from '../front/components/desktop-only/DesktopOnly'
 function VersionPopup({version}) {
     if (!version) return null
     return (
-        <div className="version-popup-centered">Version: {version} Author: Trenton Taylor</div>
+        <div className="version-popup-centered">Version: {version}</div>
     )
 }
 

@@ -1,5 +1,6 @@
 import {supabase} from './DatabaseService';
 import {UserService} from './UserService';
+import APIUtility from '../utils/APIUtility'
 
 class UserPresenceService {
     constructor() {
@@ -41,45 +42,22 @@ class UserPresenceService {
 
     async setUserOnline(userId) {
         if (!userId) return false;
-        const now = new Date().toISOString();
-        const {error} = await supabase
-            .from('users_presence')
-            .upsert({
-                user_id: userId,
-                is_online: true,
-                last_seen: now,
-                updated_at: now
-            }, {onConflict: 'user_id'});
-        if (error) return false;
+        const {res, json} = await APIUtility.post('/user-presence-service/set-online', {userId});
+        if (!res.ok || json?.success !== true) return false;
         return true;
     }
 
     async setUserOffline(userId) {
         if (!userId) return false;
-        const now = new Date().toISOString();
-        const {error} = await supabase
-            .from('users_presence')
-            .update({
-                is_online: false,
-                last_seen: now,
-                updated_at: now
-            })
-            .eq('user_id', userId);
-        if (error) return false;
+        const {res, json} = await APIUtility.post('/user-presence-service/set-offline', {userId});
+        if (!res.ok || json?.success !== true) return false;
         return true;
     }
 
     async updateHeartbeat() {
         if (!this.currentUserId) return false;
-        const now = new Date().toISOString();
-        const {error} = await supabase
-            .from('users_presence')
-            .update({
-                last_seen: now,
-                updated_at: now
-            })
-            .eq('user_id', this.currentUserId);
-        if (error) return false;
+        const {res, json} = await APIUtility.post('/user-presence-service/heartbeat', {userId: this.currentUserId});
+        if (!res.ok || json?.success !== true) return false;
         return true;
     }
 
@@ -91,16 +69,8 @@ class UserPresenceService {
     startCleanup() {
         if (this.cleanupInterval) clearInterval(this.cleanupInterval);
         this.cleanupInterval = setInterval(async () => {
-            const staleTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-            const {error} = await supabase
-                .from('users_presence')
-                .update({
-                    is_online: false,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('is_online', true)
-                .lt('last_seen', staleTime);
-            if (!error) this.notifyListeners();
+            const {res} = await APIUtility.post('/user-presence-service/cleanup');
+            if (res.ok) this.notifyListeners();
         }, 60000);
     }
 
@@ -110,9 +80,6 @@ class UserPresenceService {
 
     handleBeforeUnload() {
         if (this.currentUserId) {
-            const data = new FormData();
-            data.append('user_id', this.currentUserId);
-            navigator.sendBeacon('/api/set-offline', data);
             this.setUserOffline(this.currentUserId);
         }
     }
@@ -133,14 +100,11 @@ class UserPresenceService {
 
     async getOnlineUsers() {
         try {
-            const {data, error} = await supabase
-                .from('users_presence')
-                .select('user_id, last_seen')
-                .eq('is_online', true)
-                .order('last_seen', {ascending: false});
-            if (error) return [];
+            const {res, json} = await APIUtility.post('/user-presence-service/fetch-online-users');
+            if (!res.ok) return [];
+            const presences = json?.data ?? [];
             const users = [];
-            for (const presence of data) {
+            for (const presence of presences) {
                 try {
                     const name = await UserService.getUserDisplayName(presence.user_id);
                     users.push({
@@ -148,8 +112,7 @@ class UserPresenceService {
                         name,
                         lastSeen: presence.last_seen
                     });
-                } catch {
-                }
+                } catch {}
             }
             return users;
         } catch {
@@ -170,8 +133,7 @@ class UserPresenceService {
             this.listeners.forEach(listener => {
                 try {
                     listener(users);
-                } catch {
-                }
+                } catch {}
             });
         });
     }

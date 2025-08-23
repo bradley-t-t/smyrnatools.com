@@ -1,7 +1,5 @@
-import supabase from './DatabaseService'
+import APIUtility from '../utils/APIUtility'
 import {UserService} from './UserService'
-
-const LIST_ITEMS_TABLE = 'list_items'
 
 class ListServiceImpl {
     listItems = []
@@ -12,20 +10,17 @@ class ListServiceImpl {
     async fetchListItems() {
         const user = await UserService.getCurrentUser()
         if (!user) throw new Error('No authenticated user')
-        const {data, error} = await supabase
-            .from(LIST_ITEMS_TABLE)
-            .select('*')
-            .order('created_at', {ascending: false})
-        if (error) throw error
-        this.listItems = data ?? []
+        const {res, json} = await APIUtility.post('/list-service/fetch-items')
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch list items')
+        this.listItems = json?.data ?? []
         await this.fetchCreatorProfiles(this.listItems)
         return this.listItems
     }
 
     async fetchPlants() {
-        const {data, error} = await supabase.from('plants').select('*').order('plant_code')
-        if (error) throw error
-        this.plants = data ?? []
+        const {res, json} = await APIUtility.post('/list-service/fetch-plants')
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch plants')
+        this.plants = json?.data ?? []
         return this.plants
     }
 
@@ -36,12 +31,10 @@ class ListServiceImpl {
             this.creatorProfiles = newProfiles
             return this.creatorProfiles
         }
-        const {data, error} = await supabase
-            .from('users_profiles')
-            .select('id, first_name, last_name')
-            .in('id', userIds)
-        if (error) throw error
-        data?.forEach(profile => newProfiles[profile.id] = profile)
+        const {res, json} = await APIUtility.post('/list-service/fetch-creator-profiles', {userIds})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch creator profiles')
+        const profiles = json?.profiles ?? []
+        profiles.forEach(profile => newProfiles[profile.id] = profile)
         this.creatorProfiles = newProfiles
         return this.creatorProfiles
     }
@@ -52,24 +45,9 @@ class ListServiceImpl {
         if (!description?.trim()) throw new Error('Description is required')
         const userId = user.id
         if (!userId) throw new Error('User ID is required')
-        const now = new Date().toISOString()
         const deadlineString = deadline instanceof Date ? deadline.toISOString() : deadline
-        const item = {
-            id: crypto.randomUUID(),
-            user_id: userId,
-            plant_code: plantCode?.trim() ?? '',
-            description: description.trim(),
-            deadline: deadlineString,
-            comments: comments?.trim() ?? '',
-            created_at: now,
-            completed: false,
-            completed_at: null,
-            completed_by: null
-        }
-        const {error} = await supabase
-            .from(LIST_ITEMS_TABLE)
-            .insert(item)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/list-service/create', {userId, plantCode, description, deadline: deadlineString, comments})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to create list item')
         await this.fetchListItems()
         return true
     }
@@ -78,6 +56,7 @@ class ListServiceImpl {
         if (!item?.id) throw new Error('Item ID is required')
         if (!item.description?.trim()) throw new Error('Description is required')
         const update = {
+            id: item.id,
             plant_code: item.plant_code?.trim() ?? '',
             description: item.description.trim(),
             deadline: item.deadline,
@@ -85,11 +64,8 @@ class ListServiceImpl {
             completed: item.completed ?? false,
             completed_at: item.completed_at
         }
-        const {error} = await supabase
-            .from(LIST_ITEMS_TABLE)
-            .update(update)
-            .eq('id', item.id)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/list-service/update', {item: update})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update list item')
         await this.fetchListItems()
         return true
     }
@@ -97,29 +73,17 @@ class ListServiceImpl {
     async toggleCompletion(item, currentUserId) {
         if (!item?.id) throw new Error('Item ID is required')
         if (!currentUserId) throw new Error('No authenticated user')
-        const now = new Date().toISOString()
         const newCompletionStatus = !item.completed
-        const update = {
-            completed: newCompletionStatus,
-            completed_at: newCompletionStatus ? now : null,
-            completed_by: newCompletionStatus ? currentUserId : null
-        }
-        const {error} = await supabase
-            .from(LIST_ITEMS_TABLE)
-            .update(update)
-            .eq('id', item.id)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/list-service/toggle-completion', {id: item.id, currentUserId, completed: newCompletionStatus})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to toggle completion')
         await this.fetchListItems()
         return true
     }
 
     async deleteListItem(id) {
         if (!id) throw new Error('Item ID is required')
-        const {error} = await supabase
-            .from(LIST_ITEMS_TABLE)
-            .delete()
-            .eq('id', id)
-        if (error) throw error
+        const {res, json} = await APIUtility.post('/list-service/delete', {id})
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete list item')
         await this.fetchListItems()
         return true
     }
