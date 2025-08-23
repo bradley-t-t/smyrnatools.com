@@ -29,7 +29,23 @@
     "cleanup:css:dry": "node scripts/cleanup-css.js --dry",
     "cleanup:css": "node scripts/cleanup-css.js",
     "mail:send": "node scripts/send-mailersend.js",
-    "password-reset:server": "node scripts/password-reset-server.js"
+    "password-reset:server": "node scripts/password-reset-server.js",
+    "supabase": "node scripts/supabase.js",
+    "supabase:version": "node scripts/supabase.js --version",
+    "supabase:login": "node scripts/supabase.js login",
+    "supabase:init": "node scripts/supabase.js init",
+    "supabase:start": "node scripts/supabase.js start",
+    "supabase:status": "node scripts/supabase.js status",
+    "supabase:stop": "node scripts/supabase.js stop",
+    "supabase:db:reset": "node scripts/supabase.js db reset",
+    "supabase:functions:list": "node scripts/supabase.js functions list",
+    "supabase:functions:new": "node scripts/supabase.js functions new",
+    "supabase:functions:serve": "node scripts/supabase.js functions serve",
+    "supabase:functions:deploy": "node scripts/supabase.js functions deploy",
+    "supabase:functions:invoke": "node scripts/supabase.js functions invoke",
+    "supabase:functions:download": "node scripts/supabase.js functions download",
+    "supabase:functions:delete": "node scripts/supabase.js functions delete",
+    "supabase:functions:delete:local": "node scripts/rm-function.js"
   },
   "eslintConfig": {
     "extends": [

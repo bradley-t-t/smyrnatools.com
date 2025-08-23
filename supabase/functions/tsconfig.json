@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "target": "ES2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["./_types/deno-shims"]
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "./_types/**/*.d.ts"
+  ],
+  "exclude": [
+    "supabase/functions"
+  ]
+}
