@@ -4,10 +4,10 @@ import './styles/ReportsReviewView.css'
 import {supabase} from '../../../services/DatabaseService'
 import {UserService} from '../../../services/UserService'
 import {ReportService} from '../../../services/ReportService'
-import {PlantManagerReviewPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
-import {DistrictManagerReviewPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
-import {EfficiencyReviewPlugin} from './plugins/WeeklyEfficiencyReportPlugin'
-import {SafetyManagerReviewPlugin} from './plugins/WeeklySafetyManagerReport'
+import {PlantManagerReviewPlugin} from './types/WeeklyPlantManagerReport'
+import {DistrictManagerReviewPlugin} from './types/WeeklyDistrictManagerReport'
+import {EfficiencyReviewPlugin} from './types/WeeklyEfficiencyReport'
+import {SafetyManagerReviewPlugin} from './types/WeeklySafetyManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,

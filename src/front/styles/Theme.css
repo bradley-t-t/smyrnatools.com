@@ -170,8 +170,9 @@ input::placeholder, select::placeholder, textarea::placeholder {
 }
 
 input:focus, select:focus, textarea:focus {
-    border-color: var(--accent);
-    outline-color: var(--accent);
+    border-color: var(--divider);
+    outline: none;
+    box-shadow: none;
 }
 
 button.primary {

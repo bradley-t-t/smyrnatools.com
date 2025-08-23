@@ -1,4 +1,5 @@
 import React from 'react'
+import '../styles/ReportTypes.css'
 
 export function DistrictManagerSubmitPlugin({maintenanceItems}) {
     if (!maintenanceItems || maintenanceItems.length === 0) return null
@@ -13,11 +14,11 @@ export function DistrictManagerSubmitPlugin({maintenanceItems}) {
     }
 
     return (
-        <div style={{marginTop: 32, marginBottom: 16}}>
-            <div style={{fontWeight: 700, fontSize: 17, marginBottom: 8}}>
+        <div className="rpt-section">
+            <div className="rpt-section-title">
                 Items Completed This Week
             </div>
-            <div className="mixers-list-table-container" style={{marginTop: 8}}>
+            <div className="mixers-list-table-container rpt-table-container">
                 <table className="mixers-list-table">
                     <thead>
                     <tr>
@@ -31,17 +32,9 @@ export function DistrictManagerSubmitPlugin({maintenanceItems}) {
                     {maintenanceItems.map(item => (
                         <tr key={item.id} className={item.completed ? 'completed' : ''}>
                             <td title={item.description}>
-                                    <span
-                                        style={{
-                                            background: item.completed ? 'var(--success)' : item.isOverdue ? 'var(--error)' : 'var(--accent)',
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: '50%',
-                                            display: 'inline-block',
-                                            marginRight: 8,
-                                            verticalAlign: 'middle'
-                                        }}
-                                    ></span>
+                                <span
+                                    className={`rpt-status-dot ${item.completed ? 'success' : item.isOverdue ? 'error' : 'accent'}`}
+                                />
                                 {truncateText(item.description, 60)}
                             </td>
                             <td title={getPlantName(item.plant_code)}>
@@ -75,11 +68,11 @@ export function DistrictManagerReviewPlugin({maintenanceItems}) {
     }
 
     return (
-        <div style={{marginTop: 32, marginBottom: 16}}>
-            <div style={{fontWeight: 700, fontSize: 17, marginBottom: 8}}>
+        <div className="rpt-section">
+            <div className="rpt-section-title">
                 Items Completed This Week
             </div>
-            <div className="mixers-list-table-container" style={{marginTop: 8}}>
+            <div className="mixers-list-table-container rpt-table-container">
                 <table className="mixers-list-table">
                     <thead>
                     <tr>
@@ -93,17 +86,9 @@ export function DistrictManagerReviewPlugin({maintenanceItems}) {
                     {maintenanceItems.map(item => (
                         <tr key={item.id} className={item.completed ? 'completed' : ''}>
                             <td title={item.description}>
-                                    <span
-                                        style={{
-                                            background: item.completed ? 'var(--success)' : item.isOverdue ? 'var(--error)' : 'var(--accent)',
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: '50%',
-                                            display: 'inline-block',
-                                            marginRight: 8,
-                                            verticalAlign: 'middle'
-                                        }}
-                                    ></span>
+                                <span
+                                    className={`rpt-status-dot ${item.completed ? 'success' : item.isOverdue ? 'error' : 'accent'}`}
+                                />
                                 {truncateText(item.description, 60)}
                             </td>
                             <td title={getPlantName(item.plant_code)}>

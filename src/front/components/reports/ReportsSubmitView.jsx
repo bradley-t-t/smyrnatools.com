@@ -2,10 +2,10 @@ import React, {useEffect, useState} from 'react'
 import './styles/ReportsSubmitView.css'
 import {supabase} from '../../../services/DatabaseService'
 import {ReportService} from '../../../services/ReportService'
-import {PlantManagerSubmitPlugin} from './plugins/WeeklyPlantManagerReportPlugin'
-import {DistrictManagerSubmitPlugin} from './plugins/WeeklyDistrictManagerReportPlugin'
-import {EfficiencySubmitPlugin} from './plugins/WeeklyEfficiencyReportPlugin'
-import {SafetyManagerSubmitPlugin} from './plugins/WeeklySafetyManagerReport'
+import {PlantManagerSubmitPlugin} from './types/WeeklyPlantManagerReport'
+import {DistrictManagerSubmitPlugin} from './types/WeeklyDistrictManagerReport'
+import {EfficiencySubmitPlugin} from './types/WeeklyEfficiencyReport'
+import {SafetyManagerSubmitPlugin} from './types/WeeklySafetyManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,

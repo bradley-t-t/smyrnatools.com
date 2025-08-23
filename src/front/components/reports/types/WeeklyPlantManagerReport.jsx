@@ -1,5 +1,6 @@
 import React from 'react'
 import {usePreferences} from '../../../../app/context/PreferencesContext';
+import '../styles/ReportTypes.css'
 
 export function PlantManagerSubmitPlugin({
                                              yph,
@@ -13,7 +14,6 @@ export function PlantManagerSubmitPlugin({
                                          }) {
     const {preferences} = usePreferences()
     const isDark = preferences.themeMode === 'dark'
-    const metricTextColor = isDark ? 'var(--text-light)' : 'var(--primary)'
     const formatYph = v => {
         const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN)
         return Number.isFinite(n) ? n.toFixed(2) : '--'
@@ -30,15 +30,13 @@ export function PlantManagerSubmitPlugin({
                 </button>
             </div>
             {summaryTab === 'summary' && (
-                <div className="summary-content"
-                     style={{flexDirection: 'row', justifyContent: 'center', gap: 12, alignItems: 'stretch'}}>
-                    <div className="summary-metric-card"
-                         style={{borderColor: 'var(--divider)', flex: 1, marginRight: 0}}>
+                <div className="summary-content rpt-summary-row">
+                    <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yards per Man-Hour</div>
-                        <div className="summary-metric-value" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {formatYph(yph)}
                         </div>
-                        <div className="summary-metric-grade" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {yphLabel}
                         </div>
                         <div className="summary-metric-scale">
@@ -48,13 +46,12 @@ export function PlantManagerSubmitPlugin({
                             <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
                         </div>
                     </div>
-                    <div className="summary-metric-card"
-                         style={{borderColor: 'var(--divider)', flex: 1, marginLeft: 0}}>
+                    <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yardage Lost</div>
-                        <div className="summary-metric-value" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lost !== null ? lost : '--'}
                         </div>
-                        <div className="summary-metric-grade" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lostLabel}
                         </div>
                         <div className="summary-metric-scale">
@@ -82,7 +79,6 @@ export function PlantManagerReviewPlugin({
                                          }) {
     const {preferences} = usePreferences()
     const isDark = preferences.themeMode === 'dark'
-    const metricTextColor = isDark ? 'var(--text-light)' : 'var(--primary)'
     const formatYph = v => {
         const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN)
         return Number.isFinite(n) ? n.toFixed(2) : '--'
@@ -99,15 +95,13 @@ export function PlantManagerReviewPlugin({
                 </button>
             </div>
             {summaryTab === 'summary' && (
-                <div className="summary-content"
-                     style={{flexDirection: 'row', justifyContent: 'center', gap: 12, alignItems: 'stretch'}}>
-                    <div className="summary-metric-card"
-                         style={{borderColor: 'var(--divider)', flex: 1, marginRight: 0}}>
+                <div className="summary-content rpt-summary-row">
+                    <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yards per Man-Hour</div>
-                        <div className="summary-metric-value" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {formatYph(yph)}
                         </div>
-                        <div className="summary-metric-grade" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {yphLabel}
                         </div>
                         <div className="summary-metric-scale">
@@ -117,13 +111,12 @@ export function PlantManagerReviewPlugin({
                             <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
                         </div>
                     </div>
-                    <div className="summary-metric-card"
-                         style={{borderColor: 'var(--divider)', flex: 1, marginLeft: 0}}>
+                    <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yardage Lost</div>
-                        <div className="summary-metric-value" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lost !== null ? lost : '--'}
                         </div>
-                        <div className="summary-metric-grade" style={{color: metricTextColor}}>
+                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lostLabel}
                         </div>
                         <div className="summary-metric-scale">
