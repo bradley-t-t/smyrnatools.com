@@ -39,7 +39,7 @@ const EquipmentOverview = ({
             let maintenanceIssues = [];
             try {
                 const {data, error} = await supabase
-                    .from('equipment_maintenance')
+                    .from('heavy_equipment_maintenance')
                     .select('id, equipment_id, time_completed');
                 if (!error) {
                     maintenanceIssues = data || [];
