@@ -8,6 +8,7 @@ export function usePresence() {
 
     useEffect(() => {
         let active = true;
+        let removeListener;
         setLoading(true);
         UserPresenceService.setup().then(success => {
             if (!active) return;
@@ -22,7 +23,7 @@ export function usePresence() {
                 setLoading(false);
             }).catch(err => {
                 if (!active) return;
-                setError(err.message || 'Failed to get online users');
+                setError(err?.message || 'Failed to get online users');
                 setLoading(false);
             });
             const handlePresenceChange = users => {
@@ -30,16 +31,15 @@ export function usePresence() {
                 setOnlineUsers(users);
             };
             UserPresenceService.addListener(handlePresenceChange);
-            return () => {
-                UserPresenceService.removeListener(handlePresenceChange);
-            };
+            removeListener = () => UserPresenceService.removeListener(handlePresenceChange);
         }).catch(err => {
             if (!active) return;
-            setError(err.message || 'Failed to initialize presence service');
+            setError(err?.message || 'Failed to initialize presence service');
             setLoading(false);
         });
         return () => {
             active = false;
+            if (typeof removeListener === 'function') removeListener();
         };
     }, []);
 

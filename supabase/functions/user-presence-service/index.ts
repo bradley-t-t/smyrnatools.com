@@ -1,13 +1,11 @@
-// @ts-ignore
-import {createClient} from "npm:@supabase/supabase-js@2.45.4";
+import {createClient} from "@supabase/supabase-js";
 
 const corsHeaders: Record<string, string> = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "*",
-    "Access-Control-Max-Age": "86400",
-    "Connection": "keep-alive"
+    "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
+    "Access-Control-Max-Age": "86400"
 };
 
 function handleOptions() {
@@ -19,10 +17,11 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url);
         const endpoint = url.pathname.split("/").pop();
-        const supabase = createClient(
+        const headerAuth = req.headers.get("Authorization") || "";
+        let supabase = createClient(
             Deno.env.get("SUPABASE_URL") ?? "",
             Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-            {global: {headers: {Authorization: req.headers.get("Authorization") || ""}}}
+            {global: {headers: {Authorization: headerAuth}}}
         );
 
         switch (endpoint) {
@@ -35,6 +34,13 @@ Deno.serve(async (req) => {
                         status: 400,
                         headers: corsHeaders
                     });
+                }
+                if ((!headerAuth || headerAuth.trim() === "") && body?.token) {
+                    supabase = createClient(
+                        Deno.env.get("SUPABASE_URL") ?? "",
+                        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+                        {global: {headers: {Authorization: `Bearer ${body.token}`}}}
+                    );
                 }
                 const {userId} = body || {};
                 if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
@@ -66,6 +72,13 @@ Deno.serve(async (req) => {
                         headers: corsHeaders
                     });
                 }
+                if ((!headerAuth || headerAuth.trim() === "") && body?.token) {
+                    supabase = createClient(
+                        Deno.env.get("SUPABASE_URL") ?? "",
+                        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+                        {global: {headers: {Authorization: `Bearer ${body.token}`}}}
+                    );
+                }
                 const {userId} = body || {};
                 if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
                     status: 400,
@@ -91,6 +104,13 @@ Deno.serve(async (req) => {
                         status: 400,
                         headers: corsHeaders
                     });
+                }
+                if ((!headerAuth || headerAuth.trim() === "") && body?.token) {
+                    supabase = createClient(
+                        Deno.env.get("SUPABASE_URL") ?? "",
+                        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+                        {global: {headers: {Authorization: `Bearer ${body.token}`}}}
+                    );
                 }
                 const {userId} = body || {};
                 if (typeof userId !== "string" || !userId) return new Response(JSON.stringify({error: "User ID is required"}), {
@@ -146,4 +166,3 @@ Deno.serve(async (req) => {
         }), {status: 500, headers: corsHeaders});
     }
 });
-
