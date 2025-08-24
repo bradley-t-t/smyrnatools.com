@@ -5,6 +5,7 @@ import {UserService} from "../../services/UserService";
 import {usePreferences} from '../../app/context/PreferencesContext';
 import './styles/MyAccountView.css';
 import SimpleLoading from "../common/SimpleLoading";
+import {RegionService} from '../../services/RegionService'
 
 function MyAccountView({userId}) {
     const {preferences} = usePreferences();
@@ -15,6 +16,8 @@ function MyAccountView({userId}) {
     const [email, setEmail] = useState('');
     const [userRole, setUserRole] = useState('');
     const [plantCode, setPlantCode] = useState('');
+    const [regionCode, setRegionCode] = useState('');
+    const [regionName, setRegionName] = useState('');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -69,7 +72,22 @@ function MyAccountView({userId}) {
                 setUser({...profileData});
                 setFirstName(profileData.first_name || '');
                 setLastName(profileData.last_name || '');
-                setPlantCode(profileData.plant_code || '');
+                const userPlant = profileData.plant_code || '';
+                setPlantCode(userPlant);
+                if (userPlant) {
+                    try {
+                        const regions = await RegionService.fetchRegionsByPlantCode(userPlant);
+                        if (Array.isArray(regions) && regions.length > 0) {
+                            const r = regions[0];
+                            setRegionCode(r.regionCode || r.region_code || '');
+                            setRegionName(r.regionName || r.region_name || '');
+                        } else {
+                            setRegionCode('');
+                            setRegionName('');
+                        }
+                    } catch (e) {
+                    }
+                }
             } else {
                 try {
                     const {data: nameData, error: nameError} = await supabase
@@ -256,6 +274,7 @@ function MyAccountView({userId}) {
                     <div className="account-badges-row">
                         {userRole && <div className="account-badge"
                                           style={{backgroundColor: 'var(--myaccount-accent)'}}>{userRole}</div>}
+                        {regionName && <div className="account-badge" style={{backgroundColor: 'var(--myaccount-accent)'}}>{regionName}</div>}
                         {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
                     </div>
                 </div>
@@ -373,6 +392,15 @@ function MyAccountView({userId}) {
                                     <div className="info-value">{userRole}</div>
                                 </div>
                             )}
+                            {regionName || regionCode ? (
+                                <div className="info-item">
+                                    <div className="info-label">
+                                        <i className="fas fa-globe" style={{color: 'var(--myaccount-accent)'}}></i>
+                                        Region
+                                    </div>
+                                    <div className="info-value">{regionName || regionCode}</div>
+                                </div>
+                            ) : null}
                             {plantCode && (
                                 <div className="info-item">
                                     <div className="info-label">
@@ -466,8 +494,8 @@ function MyAccountView({userId}) {
                                     justifyContent: 'center',
                                     flexShrink: 0,
                                     fontSize: '1.2rem',
-                                    backgroundColor: '#fee2e2',
-                                    color: '#dc2626'
+                                    backgroundColor: 'var(--error-bg)',
+                                    color: 'var(--danger)'
                                 }}>
                                     <i className="fas fa-sign-out-alt"></i>
                                 </div>
@@ -509,9 +537,9 @@ function MyAccountView({userId}) {
                                 alignItems: 'center',
                                 gap: '0.5rem',
                                 padding: '0.75rem',
-                                backgroundColor: '#feeaea',
+                                backgroundColor: 'var(--error-bg)',
                                 borderRadius: '8px',
-                                color: '#d32f2f'
+                                color: 'var(--danger)'
                             }}>
                                 <i className="fas fa-exclamation-circle"></i>
                                 <p style={{margin: 0}}>{passwordError}</p>

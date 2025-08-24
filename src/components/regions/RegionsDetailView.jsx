@@ -14,38 +14,45 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
     const [error, setError] = useState('')
     const [isDeleting, setIsDeleting] = useState(false)
 
+    const [plantQuery, setPlantQuery] = useState('')
+
     useEffect(() => {
         setLoading(true)
 
         async function fetchPlants() {
-            let all = []
-            let regionPlants = []
+            let normalizedAll = []
+            let regionPlants
             try {
                 const rawPlants = await PlantService.fetchAllPlants()
-                all = Array.isArray(rawPlants)
-                    ? rawPlants
-                        .filter(p => p.plant_code && p.plant_name && String(p.plant_code).trim() && String(p.plant_name).trim())
-                        .map(p => ({
-                            plant_code: p.plant_code,
-                            plant_name: p.plant_name
-                        }))
-                    : []
+                const arr = Array.isArray(rawPlants) ? rawPlants : []
+                const tmp = arr.map(p => {
+                    const code = String((p.plant_code ?? p.plantCode ?? '')).trim()
+                    const name = String((p.plant_name ?? p.plantName ?? '')).trim()
+                    return code && name ? {plant_code: code, plant_name: name} : null
+                }).filter(Boolean)
+                const seen = new Set()
+                normalizedAll = tmp.filter(p => {
+                    if (seen.has(p.plant_code)) return false
+                    seen.add(p.plant_code)
+                    return true
+                })
             } catch {
-                all = []
+                normalizedAll = []
             }
             try {
                 regionPlants = await RegionService.fetchRegionPlants(region.region_code || region.regionCode)
             } catch {
                 regionPlants = []
             }
-            setAllPlants(all)
+            setAllPlants(normalizedAll)
             setPlantCodes(
                 Array.isArray(regionPlants)
                     ? regionPlants
                         .map(p => p.plant_code || p.plantCode)
-                        .filter(code => !!code && all.some(ap => ap.plant_code === code))
+                        .filter(code => !!code && normalizedAll.some(ap => ap.plant_code === code))
                     : []
             )
+            setPlantQuery('')
             setLoading(false)
         }
 
@@ -83,28 +90,37 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
         }
     }
 
-    const allSelected = allPlants.length > 0 && plantCodes.length === allPlants.length
-    const handleSelectAll = () => {
-        if (allSelected) {
-            setPlantCodes([])
-        } else {
-            setPlantCodes(allPlants.map(p => p.plant_code))
-        }
-    }
-
-    const handlePlantToggle = (code) => {
-        if (plantCodes.includes(code)) {
-            setPlantCodes(plantCodes.filter(c => c !== code))
-        } else {
-            setPlantCodes([...plantCodes, code])
-        }
-    }
-
     const visiblePlants = Array.isArray(allPlants) ? allPlants : []
+
+    const filteredPlants = visiblePlants.filter(p => {
+        const q = plantQuery.trim().toLowerCase()
+        if (!q) return true
+        return p.plant_code.toLowerCase().includes(q) || (p.plant_name || '').toLowerCase().includes(q)
+    })
+
+    const togglePlant = (code) => {
+        setPlantCodes(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code])
+    }
+
+    const selectAllFiltered = () => {
+        if (!filteredPlants.length) return
+        const codes = filteredPlants.map(p => p.plant_code)
+        setPlantCodes(prev => Array.from(new Set([...prev, ...codes])))
+    }
+
+    const clearAllSelected = () => {
+        if (!plantCodes.length) return
+        setPlantCodes([])
+    }
+
+    const removeChip = (code) => {
+        setPlantCodes(prev => prev.filter(c => c !== code))
+    }
+
     const noPlantsAvailable = !loading && visiblePlants.length === 0
 
     return (
-        <div className="plant-detail-view">
+        <div className="region-detail-view">
             <div className="detail-header">
                 <button className="back-button" onClick={onClose} aria-label="Back to regions">
                     <i className="fas fa-arrow-left"></i>
@@ -112,7 +128,7 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
                 </button>
                 <h1>Region Details</h1>
             </div>
-            <div className="detail-content" style={{maxWidth: 600, margin: '0 auto', width: '100%'}}>
+            <div className="detail-content" style={{maxWidth: 900, margin: '0 auto', width: '100%'}}>
                 {message && (
                     <div className="message success">
                         {message}
@@ -147,51 +163,60 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
                     </div>
                     <div className="form-group">
                         <label>Plants</label>
-                        <div className="plants-selector-creative">
-                            <div className="plants-selector-header">
-                                <span
-                                    className={`plants-chip-select-all${allSelected ? ' selected' : ''}`}
-                                    onClick={handleSelectAll}
-                                    tabIndex={0}
-                                    onKeyDown={e => {
-                                        if (e.key === ' ' || e.key === 'Enter') handleSelectAll()
-                                    }}
-                                >
-                                    {allSelected ? 'Unselect All' : 'Select All'}
-                                </span>
-                                <span className="plants-chip-select-count">
-                                    {loading
-                                        ? 'Loading...'
-                                        : `${plantCodes.length} of ${allPlants.length} selected`}
-                                </span>
-                            </div>
-                            {loading ? (
-                                <div className="plants-loading">Loading plants...</div>
-                            ) : noPlantsAvailable ? (
-                                <div className="no-plants">
-                                    No plants available. Please add plants to the system.
+                        {loading ? (
+                            <div className="plants-loading">Loading plants...</div>
+                        ) : noPlantsAvailable ? (
+                            <div className="no-plants">No plants available. Please add plants to the system.</div>
+                        ) : (
+                            <div className="plant-picker">
+                                {plantCodes.length > 0 && (
+                                    <div className="plant-picker-chips" aria-label="Selected plants">
+                                        {plantCodes.map(code => {
+                                            const plant = visiblePlants.find(p => p.plant_code === code)
+                                            return (
+                                                <span key={code} className="plant-chip">
+                                                    <span className="plant-chip-code">{code}</span>
+                                                    <span className="plant-chip-name">{plant?.plant_name || ''}</span>
+                                                    <button type="button" className="plant-chip-remove" aria-label={`Remove ${code}`} onClick={() => removeChip(code)}>×</button>
+                                                </span>
+                                            )
+                                        })}
+                                        <button type="button" className="cancel-button chip-clear-all" onClick={clearAllSelected}>Clear All</button>
+                                    </div>
+                                )}
+                                <div className="plant-picker-actions">
+                                    <input
+                                        type="text"
+                                        className="form-control plant-picker-search"
+                                        placeholder="Search by code or name"
+                                        value={plantQuery}
+                                        onChange={e => setPlantQuery(e.target.value)}
+                                        aria-label="Search plants"
+                                    />
+                                    <div className="plant-picker-meta">
+                                        <span className="plant-picker-count">{filteredPlants.length} results</span>
+                                        <button type="button" className="primary-button" onClick={selectAllFiltered} disabled={!filteredPlants.length}>Select All Visible</button>
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="plants-selector-grid">
-                                    {visiblePlants.map(plant => (
-                                        <div
-                                            key={plant.plant_code}
-                                            className={`plant-tile${plantCodes.includes(plant.plant_code) ? ' selected' : ''}`}
-                                            tabIndex={0}
-                                            onClick={() => handlePlantToggle(plant.plant_code)}
-                                            onKeyDown={e => {
-                                                if (e.key === ' ' || e.key === 'Enter') handlePlantToggle(plant.plant_code)
-                                            }}
-                                        >
-                                            <div className="plant-tile-content">
-                                                <span className="plant-tile-code">{plant.plant_code}</span>
-                                                <span className="plant-tile-name">{plant.plant_name}</span>
-                                            </div>
-                                        </div>
+                                <div className="plant-picker-list" role="listbox" aria-label="All plants">
+                                    {filteredPlants.map(p => (
+                                        <label key={p.plant_code} className={`plant-item${plantCodes.includes(p.plant_code) ? ' selected' : ''}`}>
+                                            <input
+                                                type="checkbox"
+                                                checked={plantCodes.includes(p.plant_code)}
+                                                onChange={() => togglePlant(p.plant_code)}
+                                                aria-label={`Toggle ${p.plant_code}`}
+                                            />
+                                            <span className="plant-item-code">{p.plant_code}</span>
+                                            <span className="plant-item-name">{p.plant_name}</span>
+                                        </label>
                                     ))}
+                                    {!filteredPlants.length && (
+                                        <div className="shuttle-empty">No matches</div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                     <div className="form-actions">
                         <button className="primary-button save-button" onClick={handleSave}

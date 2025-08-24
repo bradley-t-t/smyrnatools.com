@@ -233,6 +233,35 @@ Deno.serve(async (req) => {
                 }));
                 return new Response(JSON.stringify({data: out}), {headers: corsHeaders});
             }
+            case "fetch-regions-by-plant-code": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
+                const {plantCode} = body || {};
+                if (typeof plantCode !== "string" || !plantCode) return new Response(JSON.stringify({error: "Plant code is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const {data, error} = await supabase
+                    .from("regions_plants")
+                    .select("plant_code, regions!inner(region_code, region_name)")
+                    .eq("plant_code", plantCode);
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const out = (data ?? []).map((row: any) => ({
+                    region_code: row.regions?.region_code ?? null,
+                    region_name: row.regions?.region_name ?? null
+                }));
+                return new Response(JSON.stringify({data: out}), {headers: corsHeaders});
+            }
             default:
                 return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
                     status: 404,
@@ -246,4 +275,3 @@ Deno.serve(async (req) => {
         }), {status: 500, headers: corsHeaders});
     }
 });
-

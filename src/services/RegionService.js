@@ -74,6 +74,14 @@ class RegionServiceImpl {
         const plants = await this.fetchRegionPlants(regionCode)
         return {...region, plants}
     }
+
+    async fetchRegionsByPlantCode(plantCode) {
+        if (!plantCode) throw new Error('Plant code is required')
+        const {res, json} = await APIUtility.post('/region-service/fetch-regions-by-plant-code', {plantCode})
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch regions by plant code')
+        const data = json?.data ?? []
+        return data.map(row => Region.fromRow(row))
+    }
 }
 
 export const RegionService = new RegionServiceImpl()

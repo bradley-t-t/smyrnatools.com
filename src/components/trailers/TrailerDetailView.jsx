@@ -577,17 +577,6 @@ ${openIssues.length > 0
                                                         }
                                                     }}
                                                     type="button"
-                                                    style={{
-                                                        marginLeft: '8px',
-                                                        height: '38px',
-                                                        minWidth: '140px',
-                                                        fontSize: '1rem',
-                                                        borderRadius: '4px',
-                                                        border: 'none',
-                                                        padding: '0 16px',
-                                                        cursor: 'pointer',
-                                                        boxSizing: 'border-box'
-                                                    }}
                                                 >
                                                     Undo
                                                 </button>
@@ -677,11 +666,11 @@ ${openIssues.length > 0
                         </div>
                     </div>
                 </div>
-                <div className="trailer-form-actions">
+                <div className="form-actions">
                     {canEditTrailer && (
                         <>
                             <button
-                                className="trailer-primary-button trailer-save-button"
+                                className="primary-button save-button"
                                 onClick={async () => {
                                     await handleSave();
                                     setHasUnsavedChanges(false);
@@ -690,7 +679,7 @@ ${openIssues.length > 0
                             >
                                 {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
-                            <button className="trailer-danger-button" onClick={() => setShowDeleteConfirmation(true)}
+                            <button className="danger-button" onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving}>Delete Trailer
                             </button>
                         </>
@@ -699,29 +688,16 @@ ${openIssues.length > 0
             </div>
             {showHistory && <TrailerHistoryView trailer={trailer} onClose={() => setShowHistory(false)}/>}
             {showDeleteConfirmation && (
-                <div className="trailer-confirmation-modal" style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 9999,
-                    backgroundColor: 'rgba(0,0,0,0.5)'
-                }}>
-                    <div className="trailer-confirmation-content"
-                         style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}>
+                <div className="confirmation-modal">
+                    <div className="confirmation-content">
                         <h2>Confirm Delete</h2>
                         <p>Are you sure you want to delete Trailer #{trailer.trailerNumber}? This action cannot be
                             undone.</p>
-                        <div className="trailer-confirmation-actions"
-                             style={{justifyContent: 'center', flexWrap: 'wrap', display: 'flex', gap: '12px'}}>
-                            <button className="trailer-cancel-button"
+                        <div className="confirmation-actions">
+                            <button className="cancel-button"
                                     onClick={() => setShowDeleteConfirmation(false)}>Cancel
                             </button>
-                            <button className="trailer-danger-button" onClick={handleDelete}>Delete</button>
+                            <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
                     </div>
                 </div>
