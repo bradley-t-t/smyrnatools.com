@@ -22,17 +22,13 @@ function handleOptions() {
     });
 }
 
-// Main edge function
 Deno.serve(async (req) => {
-    // Handle OPTIONS requests for CORS
     if (req.method === "OPTIONS") {
         return handleOptions();
     }
     try {
         const url = new URL(req.url);
         const endpoint = url.pathname.split("/").pop();
-        console.log(`Processing endpoint: ${endpoint}`);
-        // Initialize Supabase client with auth context from request
         const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
             global: {
                 headers: {
@@ -43,7 +39,6 @@ Deno.serve(async (req) => {
         const body = await req.json().catch(() => ({}));
         switch (endpoint) {
             case "current-user": {
-                // Get current user from session
                 const {userId} = body;
                 if (userId) {
                     try {
@@ -55,9 +50,7 @@ Deno.serve(async (req) => {
                                 headers: corsHeaders
                             });
                         }
-                    } catch (error) {
-                        console.error("Error getting user by ID:", error);
-                    }
+                    } catch (_) {}
                 }
                 try {
                     const {data} = await supabase.auth.getUser();
@@ -69,8 +62,7 @@ Deno.serve(async (req) => {
                     return new Response(JSON.stringify(data.user), {
                         headers: corsHeaders
                     });
-                } catch (error) {
-                    console.error("Error getting auth user:", error);
+                } catch (_) {
                     return new Response(JSON.stringify(null), {
                         headers: corsHeaders
                     });
@@ -229,6 +221,12 @@ Deno.serve(async (req) => {
                 const id = typeof userId === 'object' && userId.id ? userId.id : userId;
                 const {data} = await supabase.from(PERMISSIONS_TABLE).select('role_id, users_roles(id, name, permissions, weight)').eq('user_id', id);
                 const roles = data?.map((item) => item.users_roles) ?? [];
+                const elevated = roles.some((role) => (role?.weight ?? 0) > 75);
+                if (elevated) {
+                    return new Response(JSON.stringify(true), {
+                        headers: corsHeaders
+                    });
+                }
                 const permissions = new Set();
                 roles.forEach((role) => role?.permissions?.forEach((perm) => permissions.add(perm)));
                 return new Response(JSON.stringify(permissions.has(permission)), {
@@ -245,6 +243,12 @@ Deno.serve(async (req) => {
                 const id = typeof userId === 'object' && userId.id ? userId.id : userId;
                 const {data} = await supabase.from(PERMISSIONS_TABLE).select('role_id, users_roles(id, name, permissions, weight)').eq('user_id', id);
                 const roles = data?.map((item) => item.users_roles) ?? [];
+                const elevated = roles.some((role) => (role?.weight ?? 0) > 75);
+                if (elevated) {
+                    return new Response(JSON.stringify(true), {
+                        headers: corsHeaders
+                    });
+                }
                 const userPermissions = new Set();
                 roles.forEach((role) => role?.permissions?.forEach((perm) => userPermissions.add(perm)));
                 const hasAny = permissions.some((perm) => userPermissions.has(perm));
@@ -262,6 +266,12 @@ Deno.serve(async (req) => {
                 const id = typeof userId === 'object' && userId.id ? userId.id : userId;
                 const {data} = await supabase.from(PERMISSIONS_TABLE).select('role_id, users_roles(id, name, permissions, weight)').eq('user_id', id);
                 const roles = data?.map((item) => item.users_roles) ?? [];
+                const elevated = roles.some((role) => (role?.weight ?? 0) > 75);
+                if (elevated) {
+                    return new Response(JSON.stringify(true), {
+                        headers: corsHeaders
+                    });
+                }
                 const userPermissions = new Set();
                 roles.forEach((role) => role?.permissions?.forEach((perm) => userPermissions.add(perm)));
                 const hasAll = permissions.every((perm) => userPermissions.has(perm));
@@ -279,6 +289,13 @@ Deno.serve(async (req) => {
                 const id = typeof userId === 'object' && userId.id ? userId.id : userId;
                 const {data} = await supabase.from(PERMISSIONS_TABLE).select('role_id, users_roles(id, name, permissions, weight)').eq('user_id', id);
                 const roles = data?.map((item) => item.users_roles) ?? [];
+                const elevated = roles.some((role) => (role?.weight ?? 0) > 75);
+                if (elevated) {
+                    const allVisible = Object.fromEntries(Object.keys(requiredPermissions || {}).map((k) => [k, true]));
+                    return new Response(JSON.stringify(allVisible), {
+                        headers: corsHeaders
+                    });
+                }
                 const userPermissions = new Set();
                 roles.forEach((role) => role?.permissions?.forEach((perm) => userPermissions.add(perm)));
                 const visibility = Object.fromEntries(Object.entries(requiredPermissions || {}).map(([menuItem, permission]) => [
@@ -474,10 +491,9 @@ Deno.serve(async (req) => {
                 });
         }
     } catch (error) {
-        console.error("Unhandled error:", error);
         return new Response(JSON.stringify({
             error: "Internal server error",
-            message: error.message
+            message: (error as Error).message
         }), {
             status: 500,
             headers: corsHeaders

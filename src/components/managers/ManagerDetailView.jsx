@@ -67,7 +67,9 @@ function ManagerDetailView({managerId, onClose}) {
 
     useEffect(() => {
         if (!manager) return;
-        setIsReadOnly(currentUserRoleWeight <= (manager.roleWeight || 0));
+        const canEditAny = currentUserRoleWeight > 75;
+        const canEditByWeight = currentUserRoleWeight > (manager.roleWeight || 0);
+        setIsReadOnly(!(canEditAny || canEditByWeight));
     }, [manager, currentUserRoleWeight]);
 
     async function fetchCurrentUserRole() {
