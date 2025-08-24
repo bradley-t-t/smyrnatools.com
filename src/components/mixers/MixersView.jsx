@@ -12,6 +12,8 @@ import OperatorsView from '../operators/OperatorsView'
 import '../../styles/FilterStyles.css';
 import './styles/MixersView.css';
 import MixerDetailView from './MixerDetailView'
+import MixerIssueModal from './MixerIssueModal'
+import MixerCommentModal from './MixerCommentModal'
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
@@ -33,6 +35,10 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         const lastUsed = localStorage.getItem('mixers_last_view_mode')
         return lastUsed || 'grid'
     })
+    const [showIssueModal, setShowIssueModal] = useState(false)
+    const [showCommentModal, setShowCommentModal] = useState(false)
+    const [modalMixerId, setModalMixerId] = useState(null)
+    const [modalMixerNumber, setModalMixerNumber] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     useEffect(() => {
@@ -575,20 +581,51 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                                 </td>
                                                 <td>
                                                     <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                        <div style={{display: 'flex', alignItems: 'center'}}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setModalMixerId(mixer.id)
+                                                                setModalMixerNumber(mixer.truckNumber || '')
+                                                                setShowCommentModal(true)
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                padding: 0,
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                            title="View comments"
+                                                        >
                                                             <i className="fas fa-comments"
                                                                style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                             <span>{commentsCount}</span>
-                                                        </div>
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            marginLeft: 12
-                                                        }}>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setModalMixerId(mixer.id)
+                                                                setModalMixerNumber(mixer.truckNumber || '')
+                                                                setShowIssueModal(true)
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                padding: 0,
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                cursor: 'pointer',
+                                                                marginLeft: 12
+                                                            }}
+                                                            title="View issues"
+                                                        >
                                                             <i className="fas fa-tools"
                                                                style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                             <span>{issuesCount}</span>
-                                                        </div>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -635,6 +672,20 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 </div>
                             </div>
                         </div>
+                    )}
+                    {showCommentModal && (
+                        <MixerCommentModal
+                            mixerId={modalMixerId}
+                            mixerNumber={modalMixerNumber}
+                            onClose={() => setShowCommentModal(false)}
+                        />
+                    )}
+                    {showIssueModal && (
+                        <MixerIssueModal
+                            mixerId={modalMixerId}
+                            mixerNumber={modalMixerNumber}
+                            onClose={() => setShowIssueModal(false)}
+                        />
                     )}
                 </>
             )}

@@ -11,6 +11,8 @@ import {PlantService} from '../../services/PlantService';
 import {TractorService} from '../../services/TractorService';
 import TrailerAddView from './TrailerAddView';
 import TrailerDetailView from './TrailerDetailView';
+import TrailerIssueModal from './TrailerIssueModal'
+import TrailerCommentModal from './TrailerCommentModal'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const {
@@ -36,6 +38,10 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const [showOverview, setShowOverview] = useState(false)
     const [selectedTrailer, setSelectedTrailer] = useState(null)
     const [reloadTrailers, setReloadTrailers] = useState(false)
+    const [showIssueModal, setShowIssueModal] = useState(false)
+    const [showCommentModal, setShowCommentModal] = useState(false)
+    const [modalTrailerId, setModalTrailerId] = useState(null)
+    const [modalTrailerNumber, setModalTrailerNumber] = useState('')
     const filterOptions = ['All Types', 'Cement', 'End Dump', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
 
     useEffect(() => {
@@ -547,16 +553,51 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                         </td>
                                         <td>
                                             <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                <div style={{display: 'flex', alignItems: 'center'}}>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setModalTrailerId(trailer.id)
+                                                        setModalTrailerNumber(trailer.trailerNumber || '')
+                                                        setShowCommentModal(true)
+                                                    }}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        padding: 0,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    title="View comments"
+                                                >
                                                     <i className="fas fa-comments"
                                                        style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                     <span>{commentsCount}</span>
-                                                </div>
-                                                <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setModalTrailerId(trailer.id)
+                                                        setModalTrailerNumber(trailer.trailerNumber || '')
+                                                        setShowIssueModal(true)
+                                                    }}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        padding: 0,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer',
+                                                        marginLeft: 12
+                                                    }}
+                                                    title="View issues"
+                                                >
                                                     <i className="fas fa-tools"
                                                        style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                     <span>{issuesCount}</span>
-                                                </div>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -584,6 +625,20 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 />
             )}
             {showOverview && <OverviewPopup/>}
+            {showCommentModal && (
+                <TrailerCommentModal
+                    trailerId={modalTrailerId}
+                    trailerNumber={modalTrailerNumber}
+                    onClose={() => setShowCommentModal(false)}
+                />
+            )}
+            {showIssueModal && (
+                <TrailerIssueModal
+                    trailerId={modalTrailerId}
+                    trailerNumber={modalTrailerNumber}
+                    onClose={() => setShowIssueModal(false)}
+                />
+            )}
         </div>
     );
 }

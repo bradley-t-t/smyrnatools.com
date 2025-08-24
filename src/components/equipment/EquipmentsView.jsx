@@ -10,6 +10,8 @@ import EquipmentOverview from './EquipmentOverview';
 import EquipmentDetailView from './EquipmentDetailView';
 import '../../styles/FilterStyles.css';
 import './styles/EquipmentsView.css';
+import EquipmentIssueModal from './EquipmentIssueModal'
+import EquipmentCommentModal from './EquipmentCommentModal'
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
@@ -30,6 +32,10 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         const lastUsed = localStorage.getItem('equipments_last_view_mode')
         return lastUsed || 'grid'
     });
+    const [showIssueModal, setShowIssueModal] = useState(false)
+    const [showCommentModal, setShowCommentModal] = useState(false)
+    const [modalEquipmentId, setModalEquipmentId] = useState(null)
+    const [modalEquipmentNumber, setModalEquipmentNumber] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Open Issues'];
 
     useEffect(() => {
@@ -481,16 +487,50 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                                 </td>
                                                 <td>
                                                     <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                        <div style={{display: 'flex', alignItems: 'center'}}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setModalEquipmentId(equipment.id)
+                                                                setModalEquipmentNumber(equipment.identifyingNumber || '')
+                                                                setShowIssueModal(true)
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                padding: 0,
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                            title="View issues"
+                                                        >
                                                             <i className="fas fa-tools"
                                                                style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                             <span>{issuesCount}</span>
-                                                        </div>
-                                                        <div style={{display: 'flex', alignItems: 'center'}}>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setModalEquipmentId(equipment.id)
+                                                                setModalEquipmentNumber(equipment.identifyingNumber || '')
+                                                                setShowCommentModal(true)
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                padding: 0,
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                            title="View comments"
+                                                        >
                                                             <i className="fas fa-comment"
                                                                style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                             <span>{commentsCount}</span>
-                                                        </div>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -509,6 +549,20 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                         />
                     )}
                     {showOverview && <OverviewPopup/>}
+                    {showCommentModal && (
+                        <EquipmentCommentModal
+                            equipmentId={modalEquipmentId}
+                            equipmentNumber={modalEquipmentNumber}
+                            onClose={() => setShowCommentModal(false)}
+                        />
+                    )}
+                    {showIssueModal && (
+                        <EquipmentIssueModal
+                            equipmentId={modalEquipmentId}
+                            equipmentNumber={modalEquipmentNumber}
+                            onClose={() => setShowIssueModal(false)}
+                        />
+                    )}
                 </>
             )}
         </div>

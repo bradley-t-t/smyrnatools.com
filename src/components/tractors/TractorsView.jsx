@@ -12,6 +12,8 @@ import {OperatorService} from "../../services/OperatorService";
 import {PlantService} from "../../services/PlantService";
 import TractorAddView from "./TractorAddView";
 import TractorDetailView from "./TractorDetailView";
+import TractorIssueModal from './TractorIssueModal'
+import TractorCommentModal from './TractorCommentModal'
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
@@ -32,6 +34,10 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [showOverview, setShowOverview] = useState(false)
     const [selectedTractor, setSelectedTractor] = useState(null)
     const [reloadTractors, setReloadTractors] = useState(false)
+    const [showIssueModal, setShowIssueModal] = useState(false)
+    const [showCommentModal, setShowCommentModal] = useState(false)
+    const [modalTractorId, setModalTractorId] = useState(null)
+    const [modalTractorNumber, setModalTractorNumber] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
 
     useEffect(() => {
@@ -581,16 +587,51 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                     </td>
                                     <td>
                                         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setModalTractorId(tractor.id)
+                                                    setModalTractorNumber(tractor.truckNumber || '')
+                                                    setShowCommentModal(true)
+                                                }}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    cursor: 'pointer'
+                                                }}
+                                                title="View comments"
+                                            >
                                                 <i className="fas fa-comments"
                                                    style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                 <span>{commentsCount}</span>
-                                            </div>
-                                            <div style={{display: 'flex', alignItems: 'center', marginLeft: 12}}>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setModalTractorId(tractor.id)
+                                                    setModalTractorNumber(tractor.truckNumber || '')
+                                                    setShowIssueModal(true)
+                                                }}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    cursor: 'pointer',
+                                                    marginLeft: 12
+                                                }}
+                                                title="View issues"
+                                            >
                                                 <i className="fas fa-tools"
                                                    style={{color: 'var(--accent)', marginRight: 4}}></i>
                                                 <span>{issuesCount}</span>
-                                            </div>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -618,6 +659,20 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 />
             )}
             {showOverview && <OverviewPopup/>}
+            {showCommentModal && (
+                <TractorCommentModal
+                    tractorId={modalTractorId}
+                    tractorNumber={modalTractorNumber}
+                    onClose={() => setShowCommentModal(false)}
+                />
+            )}
+            {showIssueModal && (
+                <TractorIssueModal
+                    tractorId={modalTractorId}
+                    tractorNumber={modalTractorNumber}
+                    onClose={() => setShowIssueModal(false)}
+                />
+            )}
         </div>
     )
 }
