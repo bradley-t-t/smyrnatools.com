@@ -1,0 +1,56 @@
+import React, {useEffect, useState} from 'react';
+import {usePreferences} from '../../app/context/PreferencesContext';
+import {UserService} from '../../services/UserService';
+import './styles/TipBanner.css';
+
+function TipBanner() {
+    const {preferences} = usePreferences();
+    const [currentTip, setCurrentTip] = useState('');
+    const [isVisible, setIsVisible] = useState(true);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const accentColor = preferences.accentColor === 'red' ? '#b80017' : '#003896';
+
+    const tips = [
+        'Only trucks that are at a shop should be marked as "In Shop"',
+        'Be sure to keep your truck issues up to date',
+        'Verify your assets by Friday at 10am weekly',
+        'Whenever you make changes to an asset, you must re-verify it',
+        'Training operators should not be assigned to an asset until they have completed their training',
+        "You can disable these tips in your settings",
+        "Weekly reports are due by Saturday at end of day"
+    ];
+
+    useEffect(() => {
+        UserService.getCurrentUser().then(user => {
+            setIsAuthenticated(!!user);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        setCurrentTip(tips[Math.floor(Math.random() * tips.length)]);
+        const tipInterval = setInterval(() => {
+            const newTip = tips[Math.floor(Math.random() * tips.length)];
+            setCurrentTip(newTip);
+        }, 15000);
+        return () => clearInterval(tipInterval);
+    }, [isAuthenticated]);
+
+    if (!isAuthenticated || !isVisible || !preferences.showTips) return null;
+
+    return (
+        <div className="tip-banner" style={{backgroundColor: preferences.themeMode === 'dark' ? '#2a2a2a' : '#ffffff'}}>
+            <div className="tip-content">
+                <div className="tip-icon" style={{color: accentColor}}>
+                    <i className="fas fa-lightbulb"></i>
+                </div>
+                <div className="tip-text">{currentTip}</div>
+            </div>
+            <button className="tip-close" onClick={() => setIsVisible(false)}>
+                <i className="fas fa-times"></i>
+            </button>
+        </div>
+    );
+}
+
+export default TipBanner;

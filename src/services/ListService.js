@@ -1,5 +1,6 @@
 import APIUtility from '../utils/APIUtility'
 import {UserService} from './UserService'
+import GrammarUtility from '../utils/GrammarUtility'
 
 class ListServiceImpl {
     listItems = []
@@ -12,7 +13,12 @@ class ListServiceImpl {
         if (!user) throw new Error('No authenticated user')
         const {res, json} = await APIUtility.post('/list-service/fetch-items')
         if (!res.ok) throw new Error(json?.error || 'Failed to fetch list items')
-        this.listItems = json?.data ?? []
+        const data = json?.data ?? []
+        this.listItems = data.map(i => ({
+            ...i,
+            description: GrammarUtility.cleanDescription(i?.description || ''),
+            comments: GrammarUtility.cleanComments(i?.comments || '')
+        }))
         await this.fetchCreatorProfiles(this.listItems)
         return this.listItems
     }
@@ -42,16 +48,17 @@ class ListServiceImpl {
     async createListItem(plantCode, description, deadline, comments) {
         const user = await UserService.getCurrentUser()
         if (!user) throw new Error('No authenticated user')
-        if (!description?.trim()) throw new Error('Description is required')
+        const desc = GrammarUtility.cleanDescription(description || '')
+        if (!desc?.trim()) throw new Error('Description is required')
         const userId = user.id
         if (!userId) throw new Error('User ID is required')
         const deadlineString = deadline instanceof Date ? deadline.toISOString() : deadline
         const {res, json} = await APIUtility.post('/list-service/create', {
             userId,
             plantCode,
-            description,
+            description: desc,
             deadline: deadlineString,
-            comments
+            comments: GrammarUtility.cleanComments(comments || '')
         })
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to create list item')
         await this.fetchListItems()
@@ -60,13 +67,14 @@ class ListServiceImpl {
 
     async updateListItem(item) {
         if (!item?.id) throw new Error('Item ID is required')
-        if (!item.description?.trim()) throw new Error('Description is required')
+        const desc = GrammarUtility.cleanDescription(item?.description || '')
+        if (!desc.trim()) throw new Error('Description is required')
         const update = {
             id: item.id,
             plant_code: item.plant_code?.trim() ?? '',
-            description: item.description.trim(),
+            description: desc,
             deadline: item.deadline,
-            comments: item.comments?.trim() ?? '',
+            comments: GrammarUtility.cleanComments(item?.comments || ''),
             completed: item.completed ?? false,
             completed_at: item.completed_at
         }
@@ -104,8 +112,8 @@ class ListServiceImpl {
         if (searchTerm?.trim()) {
             const term = searchTerm.toLowerCase().trim()
             items = items.filter(item =>
-                item.description.toLowerCase().includes(term) ||
-                item.comments.toLowerCase().includes(term)
+                (item.description || '').toLowerCase().includes(term) ||
+                (item.comments || '').toLowerCase().includes(term)
             )
         }
         if (!showCompleted) items = items.filter(item => !item.completed)

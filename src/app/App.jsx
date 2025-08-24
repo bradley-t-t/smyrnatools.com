@@ -17,9 +17,9 @@ import MyAccountPage from './pages/account/MyAccountPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import {PreferencesProvider} from './context/PreferencesContext';
 import {AccountProvider} from './context/AccountContext';
-import ListView from '../front/components/list/ListView';
-import GuestView from '../front/components/guest/GuestView';
-import DesktopOnly from '../front/components/desktop-only/DesktopOnly';
+import ListView from '../components/list/ListView';
+import GuestView from '../components/guest/GuestView';
+import DesktopOnly from '../components/desktop-only/DesktopOnly';
 
 function App() {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
