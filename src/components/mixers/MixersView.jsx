@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import MixerAddView from './MixerAddView';
 import MixerUtility from '../../utils/MixerUtility';
 import {MixerService} from '../../services/MixerService';
@@ -40,6 +40,26 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [modalMixerId, setModalMixerId] = useState(null)
     const [modalMixerNumber, setModalMixerNumber] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
+
+    const unassignedActiveOperatorsCount = useMemo(() => {
+        const normalized = searchText.trim().toLowerCase().replace(/\s+/g, '')
+        const ops = operators.filter(op => {
+            if (op.status !== 'Active') return false
+            if (op.position !== 'Mixer Operator') return false
+            if (selectedPlant && op.plantCode !== selectedPlant) return false
+            if (!normalized) return true
+            const nameNoSpace = (op.name || '').toLowerCase().replace(/\s+/g, '')
+            const smyrna = (op.smyrnaId || '').toLowerCase()
+            return nameNoSpace.includes(normalized) || smyrna.includes(normalized)
+        })
+        const activeMixers = mixers.filter(m => m.status === 'Active' && (!selectedPlant || m.assignedPlant === selectedPlant))
+        let count = 0
+        for (const op of ops) {
+            const isAssigned = activeMixers.some(m => m.assignedOperator === op.employeeId)
+            if (!isAssigned) count++
+        }
+        return count
+    }, [operators, mixers, selectedPlant, searchText])
 
     useEffect(() => {
         async function fetchAllData() {
@@ -350,6 +370,12 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 
     return (
         <div className="dashboard-container mixers-view">
+            {unassignedActiveOperatorsCount > 0 && (
+                <div className="operators-availability-overlay">
+                    {unassignedActiveOperatorsCount} active
+                    operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned
+                </div>
+            )}
             {selectedMixer ? (
                 <MixerDetailView
                     mixerId={selectedMixer.id}

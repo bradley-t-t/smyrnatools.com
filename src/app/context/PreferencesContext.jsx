@@ -24,7 +24,12 @@ export function PreferencesProvider({children}) {
                 selectedPlant: '',
                 roleFilter: '',
                 viewMode: 'grid'
-            }
+            },
+            selectedRegion: {
+                code: '',
+                name: ''
+            },
+            regionOverlayMinimized: true
         }
     })
 
@@ -91,13 +96,32 @@ export function PreferencesProvider({children}) {
         }))
     }
 
+    const setSelectedRegion = (code, name = '') => {
+        setPreferences(prev => ({
+            ...prev,
+            selectedRegion: {
+                code: code || '',
+                name: name || ''
+            }
+        }))
+    }
+
+    const setRegionOverlayMinimized = minimized => {
+        setPreferences(prev => ({
+            ...prev,
+            regionOverlayMinimized: !!minimized
+        }))
+    }
+
     const value = {
         preferences,
         updateOperatorFilter,
         resetOperatorFilters,
         updateManagerFilter,
         resetManagerFilters,
-        updateAccentColor
+        updateAccentColor,
+        setSelectedRegion,
+        setRegionOverlayMinimized
     }
 
     return (

@@ -1040,6 +1040,7 @@
     .popup-content-split {
         flex-direction: column;
     }
+
     .detail-right {
         width: 100%;
         max-width: 100%;

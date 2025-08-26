@@ -1,6 +1,5 @@
-import supabase from './DatabaseService'
+import supabase, {getSupabaseErrorDetails, logSupabaseError} from './DatabaseService'
 import {UserService} from './UserService'
-import {getSupabaseErrorDetails, logSupabaseError} from './DatabaseService'
 import APIUtility from '../utils/APIUtility'
 
 class ChatServiceImpl {
@@ -61,12 +60,18 @@ class ChatServiceImpl {
     }
 
     subscribeToItem(listItemId, handler) {
-        if (!listItemId || typeof handler !== 'function') return () => {}
+        if (!listItemId || typeof handler !== 'function') return () => {
+        }
         const key = String(listItemId)
         if (this.channelByItem.has(key)) this.channelByItem.get(key).unsubscribe()
         const channel = supabase
             .channel(`list_item_messages:${key}`)
-            .on('postgres_changes', {event: '*', schema: 'public', table: 'list_item_messages', filter: `list_item_id=eq.${key}`}, payload => {
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'list_item_messages',
+                filter: `list_item_id=eq.${key}`
+            }, payload => {
                 handler(payload)
             })
             .subscribe()
@@ -74,7 +79,8 @@ class ChatServiceImpl {
         return () => {
             try {
                 channel.unsubscribe()
-            } catch {}
+            } catch {
+            }
             this.channelByItem.delete(key)
         }
     }

@@ -73,8 +73,13 @@ Deno.serve(async (req) => {
                         headers: corsHeaders
                     });
                 }
-                const {regionCode, regionName} = body || {};
+                const {regionCode, regionName, type} = body || {};
                 if (typeof regionCode !== "string" || !regionCode.trim() || typeof regionName !== "string" || !regionName.trim()) return new Response(JSON.stringify({error: "Region code and name are required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const allowed = new Set(["Concrete", "Aggregate", "Office"]);
+                if (typeof type !== "string" || !allowed.has(type)) return new Response(JSON.stringify({error: "Region type must be one of Concrete, Aggregate, Office"}), {
                     status: 400,
                     headers: corsHeaders
                 });
@@ -84,6 +89,7 @@ Deno.serve(async (req) => {
                     .insert({
                         region_code: regionCode.trim(),
                         region_name: regionName.trim(),
+                        type,
                         created_at: now,
                         updated_at: now
                     });
@@ -103,7 +109,7 @@ Deno.serve(async (req) => {
                         headers: corsHeaders
                     });
                 }
-                const {regionCode, regionName, plantCodes} = body || {};
+                const {regionCode, regionName, plantCodes, type} = body || {};
                 if (typeof regionCode !== "string" || !regionCode.trim() || typeof regionName !== "string" || !regionName.trim()) return new Response(JSON.stringify({error: "Region code and name are required"}), {
                     status: 400,
                     headers: corsHeaders
@@ -118,9 +124,21 @@ Deno.serve(async (req) => {
                     headers: corsHeaders
                 });
                 const regionId = regionData.id as string;
+                const updatePayload: Record<string, any> = {
+                    region_name: regionName.trim(),
+                    updated_at: new Date().toISOString()
+                };
+                const allowed = new Set(["Concrete", "Aggregate", "Office"]);
+                if (typeof type === "string") {
+                    if (!allowed.has(type)) return new Response(JSON.stringify({error: "Region type must be one of Concrete, Aggregate, Office"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                    updatePayload.type = type;
+                }
                 const {error: updateError} = await supabase
                     .from("regions")
-                    .update({region_name: regionName.trim(), updated_at: new Date().toISOString()})
+                    .update(updatePayload)
                     .eq("region_code", regionCode);
                 if (updateError) return new Response(JSON.stringify({error: updateError.message}), {
                     status: 400,
@@ -250,7 +268,7 @@ Deno.serve(async (req) => {
                 });
                 const {data, error} = await supabase
                     .from("regions_plants")
-                    .select("plant_code, regions!inner(region_code, region_name)")
+                    .select("plant_code, regions!inner(region_code, region_name, type)")
                     .eq("plant_code", plantCode);
                 if (error) return new Response(JSON.stringify({error: error.message}), {
                     status: 400,
@@ -258,7 +276,8 @@ Deno.serve(async (req) => {
                 });
                 const out = (data ?? []).map((row: any) => ({
                     region_code: row.regions?.region_code ?? null,
-                    region_name: row.regions?.region_name ?? null
+                    region_name: row.regions?.region_name ?? null,
+                    type: row.regions?.type ?? null
                 }));
                 return new Response(JSON.stringify({data: out}), {headers: corsHeaders});
             }

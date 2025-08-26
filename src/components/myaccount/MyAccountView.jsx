@@ -274,7 +274,8 @@ function MyAccountView({userId}) {
                     <div className="account-badges-row">
                         {userRole && <div className="account-badge"
                                           style={{backgroundColor: 'var(--myaccount-accent)'}}>{userRole}</div>}
-                        {regionName && <div className="account-badge" style={{backgroundColor: 'var(--myaccount-accent)'}}>{regionName}</div>}
+                        {regionName && <div className="account-badge"
+                                            style={{backgroundColor: 'var(--myaccount-accent)'}}>{regionName}</div>}
                         {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
                     </div>
                 </div>

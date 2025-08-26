@@ -50,7 +50,8 @@ Deno.serve(async (req) => {
                                 headers: corsHeaders
                             });
                         }
-                    } catch (_) {}
+                    } catch (_) {
+                    }
                 }
                 try {
                     const {data} = await supabase.auth.getUser();

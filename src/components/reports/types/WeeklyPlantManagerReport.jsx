@@ -33,10 +33,12 @@ export function PlantManagerSubmitPlugin({
                 <div className="summary-content rpt-summary-row">
                     <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yards per Man-Hour</div>
-                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {formatYph(yph)}
                         </div>
-                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {yphLabel}
                         </div>
                         <div className="summary-metric-scale">
@@ -48,10 +50,12 @@ export function PlantManagerSubmitPlugin({
                     </div>
                     <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yardage Lost</div>
-                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lost !== null ? lost : '--'}
                         </div>
-                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lostLabel}
                         </div>
                         <div className="summary-metric-scale">
@@ -98,10 +102,12 @@ export function PlantManagerReviewPlugin({
                 <div className="summary-content rpt-summary-row">
                     <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yards per Man-Hour</div>
-                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {formatYph(yph)}
                         </div>
-                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {yphLabel}
                         </div>
                         <div className="summary-metric-scale">
@@ -113,10 +119,12 @@ export function PlantManagerReviewPlugin({
                     </div>
                     <div className="summary-metric-card rpt-metric-card">
                         <div className="summary-metric-title">Yardage Lost</div>
-                        <div className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lost !== null ? lost : '--'}
                         </div>
-                        <div className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                        <div
+                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lostLabel}
                         </div>
                         <div className="summary-metric-scale">

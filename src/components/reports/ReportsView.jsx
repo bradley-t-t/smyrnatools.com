@@ -505,7 +505,7 @@ function ReportsView() {
         })
     }).slice(0, myReportsVisibleWeeks)
 
-    const filteredReviewWeeks = sortedReviewWeeks.filter(weekIso => {
+    const filteredReviewWeeks = useMemo(() => sortedReviewWeeks.filter(weekIso => {
         const weekReports = reviewReportsByWeek[weekIso] || []
         return weekReports.some(report => {
             let matchType = !filterReportType || report.name === filterReportType
@@ -516,7 +516,7 @@ function ReportsView() {
             }
             return matchType && matchPlant
         })
-    }).slice(0, reviewVisibleWeeks)
+    }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reviewReportsByWeek, filterReportType, filterPlant, reviewVisibleWeeks])
 
     return (
         <>
@@ -876,7 +876,10 @@ function ReportsView() {
                 )}
                 {showForm && (
                     <ReportsSubmitView
-                        report={reportTypeMap[showForm.name] || showForm}
+                        report={reportTypeMap[showForm.name] ? {
+                            ...reportTypeMap[showForm.name],
+                            weekIso: showForm.weekIso
+                        } : showForm}
                         initialData={submitInitialData}
                         onBack={() => {
                             setShowForm(null)

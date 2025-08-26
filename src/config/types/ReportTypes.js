@@ -101,6 +101,14 @@ const reportTypes = [
         fields: [
             {name: "issues", label: "Issues", type: "table", required: false}
         ]
+    }),
+    createReportType({
+        name: "general_manager",
+        title: "General Manager Report",
+        frequency: "weekly",
+        assignment: ["reports.assigned.general_manager"],
+        review: ["reports.review.general_manager"],
+        fields: []
     })
 ]
 

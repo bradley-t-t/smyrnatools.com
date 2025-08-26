@@ -395,6 +395,7 @@
     .shuttle-container {
         grid-template-columns: 1fr;
     }
+
     .shuttle-controls {
         flex-direction: row;
         justify-content: center;

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import PropTypes from 'prop-types';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
@@ -39,6 +39,26 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [modalTractorId, setModalTractorId] = useState(null)
     const [modalTractorNumber, setModalTractorNumber] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
+
+    const unassignedActiveOperatorsCount = useMemo(() => {
+        const normalized = searchText.trim().toLowerCase().replace(/\s+/g, '')
+        const ops = operators.filter(op => {
+            if (op.status !== 'Active') return false
+            if (op.position !== 'Tractor Operator') return false
+            if (selectedPlant && op.plantCode !== selectedPlant) return false
+            if (!normalized) return true
+            const nameNoSpace = (op.name || '').toLowerCase().replace(/\s+/g, '')
+            const smyrna = (op.smyrnaId || '').toLowerCase()
+            return nameNoSpace.includes(normalized) || smyrna.includes(normalized)
+        })
+        const activeTractors = tractors.filter(t => t.status === 'Active' && (!selectedPlant || t.assignedPlant === selectedPlant))
+        let count = 0
+        for (const op of ops) {
+            const isAssigned = activeTractors.some(t => t.assignedOperator === op.employeeId)
+            if (!isAssigned) count++
+        }
+        return count
+    }, [operators, tractors, selectedPlant, searchText])
 
     useEffect(() => {
         async function fetchAllData() {
@@ -361,6 +381,12 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
 
     return (
         <div className="dashboard-container tractors-view">
+            {unassignedActiveOperatorsCount > 0 && (
+                <div className="operators-availability-overlay">
+                    {unassignedActiveOperatorsCount} active
+                    operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned
+                </div>
+            )}
             <div className="dashboard-header">
                 <h1>{title}</h1>
                 <div className="dashboard-actions">

@@ -542,7 +542,9 @@ Deno.serve(async (req) => {
                     status: 400,
                     headers: corsHeaders
                 });
+                const id = crypto.randomUUID();
                 const {data, error} = await supabase.from("mixers_maintenance").insert({
+                    id,
                     mixer_id: mixerId,
                     issue,
                     severity,

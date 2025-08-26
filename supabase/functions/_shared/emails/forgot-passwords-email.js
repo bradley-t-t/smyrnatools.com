@@ -1,42 +1,42 @@
 export function buildForgotPasswordEmail({newPassword, loginUrl, theme, logoUrl, fromName}) {
-  const safeTheme = theme || {};
-  const t = {
-    white: safeTheme.white || "",
-    bgDark: safeTheme.bgDark || "",
-    bgLight: safeTheme.bgLight || "",
-    text: safeTheme.text || "",
-    textMuted: safeTheme.textMuted || "",
-    brand: safeTheme.brand || "",
-    border: safeTheme.border || "",
-    onBrand: safeTheme.onBrand || ""
-  };
-  const css = {
-    bg: (c) => (c ? `background-color: ${c};` : ""),
-    color: (c) => (c ? `color: ${c};` : ""),
-    border: (c) => (c ? `border: 1px solid ${c};` : "")
-  };
-  const styles = {
-    container: `max-width: 600px; ${css.bg(t.white)} font-family: Arial, Helvetica, sans-serif; margin: 0 auto;`.trim(),
-    header: `${css.bg(t.bgDark)} padding: 20px; text-align: center;`.trim(),
-    headerText: `font-size: 20px; font-weight: 700; ${css.color(t.onBrand || "#ffffff")}`.trim(),
-    section: `padding: 30px 20px; ${css.bg(t.bgLight)}`.trim(),
-    h1: `font-size: 24px; ${css.color(t.text)} margin: 0 0 20px;`.trim(),
-    p: `font-size: 16px; ${css.color(t.text)} line-height: 1.5; margin: 0 0 20px;`.trim(),
-    pwdBoxTable: `${css.bg(t.white)} ${css.border(t.border)} border-radius: 5px; padding: 15px; text-align: center;`.trim(),
-    pwd: `font-size: 18px; ${css.color(t.text)} font-weight: bold;`.trim(),
-    btnA: `display: inline-block; padding: 12px 24px; ${css.bg(t.brand)} ${css.color(t.onBrand)} text-decoration: none; font-size: 16px; border-radius: 5px;`.trim(),
-    muted: `font-size: 14px; ${css.color(t.textMuted)} line-height: 1.5; margin: 20px 0;`.trim(),
-    footer: `${css.bg(t.brand)} padding: 15px; text-align: center; ${css.color(t.onBrand)} font-size: 12px;`.trim(),
-    link: `${css.color(t.onBrand)} text-decoration: none;`.trim()
-  };
-  const subject = "Smyrna Tools - Your New Password";
-  const text = `Your new password is: ${newPassword}\nPlease log in at ${loginUrl} and change your password as soon as possible.\nFor security, do not share this password with anyone.\nIf you did not request a password reset, please contact support@smyrnatools.com.`;
-  const year = new Date().getFullYear();
-  const hasLogo = typeof logoUrl === "string" && logoUrl.startsWith("http");
-  const headerInner = hasLogo
-    ? `<img src="${logoUrl}" alt="${fromName || "Smyrna Tools"}" width="150" style="display:block;margin:0 auto;max-width:150px;height:auto;" />`
-    : `<div style="${styles.headerText}">${fromName || "Smyrna Tools"}</div>`;
-  const html = `
+    const safeTheme = theme || {};
+    const t = {
+        white: safeTheme.white || "",
+        bgDark: safeTheme.bgDark || "",
+        bgLight: safeTheme.bgLight || "",
+        text: safeTheme.text || "",
+        textMuted: safeTheme.textMuted || "",
+        brand: safeTheme.brand || "",
+        border: safeTheme.border || "",
+        onBrand: safeTheme.onBrand || ""
+    };
+    const css = {
+        bg: (c) => (c ? `background-color: ${c};` : ""),
+        color: (c) => (c ? `color: ${c};` : ""),
+        border: (c) => (c ? `border: 1px solid ${c};` : "")
+    };
+    const styles = {
+        container: `max-width: 600px; ${css.bg(t.white)} font-family: Arial, Helvetica, sans-serif; margin: 0 auto;`.trim(),
+        header: `${css.bg(t.bgDark)} padding: 20px; text-align: center;`.trim(),
+        headerText: `font-size: 20px; font-weight: 700; ${css.color(t.onBrand || "#ffffff")}`.trim(),
+        section: `padding: 30px 20px; ${css.bg(t.bgLight)}`.trim(),
+        h1: `font-size: 24px; ${css.color(t.text)} margin: 0 0 20px;`.trim(),
+        p: `font-size: 16px; ${css.color(t.text)} line-height: 1.5; margin: 0 0 20px;`.trim(),
+        pwdBoxTable: `${css.bg(t.white)} ${css.border(t.border)} border-radius: 5px; padding: 15px; text-align: center;`.trim(),
+        pwd: `font-size: 18px; ${css.color(t.text)} font-weight: bold;`.trim(),
+        btnA: `display: inline-block; padding: 12px 24px; ${css.bg(t.brand)} ${css.color(t.onBrand)} text-decoration: none; font-size: 16px; border-radius: 5px;`.trim(),
+        muted: `font-size: 14px; ${css.color(t.textMuted)} line-height: 1.5; margin: 20px 0;`.trim(),
+        footer: `${css.bg(t.brand)} padding: 15px; text-align: center; ${css.color(t.onBrand)} font-size: 12px;`.trim(),
+        link: `${css.color(t.onBrand)} text-decoration: none;`.trim()
+    };
+    const subject = "Smyrna Tools - Your New Password";
+    const text = `Your new password is: ${newPassword}\nPlease log in at ${loginUrl} and change your password as soon as possible.\nFor security, do not share this password with anyone.\nIf you did not request a password reset, please contact support@smyrnatools.com.`;
+    const year = new Date().getFullYear();
+    const hasLogo = typeof logoUrl === "string" && logoUrl.startsWith("http");
+    const headerInner = hasLogo
+        ? `<img src="${logoUrl}" alt="${fromName || "Smyrna Tools"}" width="150" style="display:block;margin:0 auto;max-width:150px;height:auto;" />`
+        : `<div style="${styles.headerText}">${fromName || "Smyrna Tools"}</div>`;
+    const html = `
 <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" style="${styles.container}">
   <tr>
     <td style="${styles.header}">
@@ -71,6 +71,6 @@ export function buildForgotPasswordEmail({newPassword, loginUrl, theme, logoUrl,
     </td>
   </tr>
 </table>`;
-  return {subject, text, html};
+    return {subject, text, html};
 }
 

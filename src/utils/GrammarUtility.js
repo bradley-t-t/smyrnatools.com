@@ -1,5 +1,5 @@
 const ACRONYMS = new Set([
-    'USA','CAT', 'KOMATSU', 'IT', 'ICS', 'OSHA','DOT','HVAC','PTO','ETA','ASAP','ID','API','CPU','GPU','SQL','KPI','QA','QC','ERP','CRM','GPS','VIN','SKU','PO','ETD','EOD','COB','FOB','RFID','HTTP','HTTPS','UPS','PPE','QAQC','OEM','OEE'
+    'USA', 'CAT', 'KOMATSU', 'IT', 'ICS', 'OSHA', 'DOT', 'HVAC', 'PTO', 'ETA', 'ASAP', 'ID', 'API', 'CPU', 'GPU', 'SQL', 'KPI', 'QA', 'QC', 'ERP', 'CRM', 'GPS', 'VIN', 'SKU', 'PO', 'ETD', 'EOD', 'COB', 'FOB', 'RFID', 'HTTP', 'HTTPS', 'UPS', 'PPE', 'QAQC', 'OEM', 'OEE'
 ])
 
 function normalizeWhitespace(text) {
@@ -87,7 +87,7 @@ function cleanComments(text) {
     return cleanedLines.join('\n').trim()
 }
 
-const GrammarUtility = { cleanDescription, cleanComments }
+const GrammarUtility = {cleanDescription, cleanComments}
 
 export default GrammarUtility
-export { GrammarUtility, cleanText }
+export {GrammarUtility, cleanText}

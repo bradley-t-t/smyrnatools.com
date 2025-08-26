@@ -49,9 +49,10 @@ function RegionsView({title = 'Regions'}) {
 
     const filteredRegions = regions.filter(region => {
         const normalizedSearch = searchText.trim().toLowerCase()
-        return !normalizedSearch ||
-            (region.region_name || region.regionName || '').toLowerCase().includes(normalizedSearch) ||
-            (region.region_code || region.regionCode || '').toLowerCase().includes(normalizedSearch)
+        const name = (region.region_name || region.regionName || '').toLowerCase()
+        const code = (region.region_code || region.regionCode || '').toLowerCase()
+        const type = (region.type || region.region_type || '').toLowerCase()
+        return !normalizedSearch || name.includes(normalizedSearch) || code.includes(normalizedSearch) || type.includes(normalizedSearch)
     })
 
     return (
@@ -82,7 +83,7 @@ function RegionsView({title = 'Regions'}) {
                             <input
                                 type="text"
                                 className="ios-search-input"
-                                placeholder="Search by region name or code..."
+                                placeholder="Search by region name, code, or type..."
                                 value={searchText}
                                 onChange={e => setSearchText(e.target.value)}
                             />
@@ -115,6 +116,7 @@ function RegionsView({title = 'Regions'}) {
                                     <tr>
                                         <th>Region Code</th>
                                         <th>Name</th>
+                                        <th>Type</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -123,6 +125,7 @@ function RegionsView({title = 'Regions'}) {
                                             onClick={() => handleSelectRegion(region.region_code || region.regionCode)}>
                                             <td>{region.region_code || region.regionCode}</td>
                                             <td>{region.region_name || region.regionName}</td>
+                                            <td>{region.type || region.region_type || ''}</td>
                                         </tr>
                                     ))}
                                     </tbody>

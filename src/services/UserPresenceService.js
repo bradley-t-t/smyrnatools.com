@@ -60,7 +60,10 @@ class UserPresenceService {
 
     async updateHeartbeat(options = {}) {
         if (!this.currentUserId) return false
-        const {res, json} = await APIUtility.post('/user-presence-service/heartbeat', {userId: this.currentUserId}, options)
+        const {
+            res,
+            json
+        } = await APIUtility.post('/user-presence-service/heartbeat', {userId: this.currentUserId}, options)
         if (!res.ok || json?.success !== true) return false
         return true
     }

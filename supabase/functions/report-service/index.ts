@@ -45,7 +45,15 @@ Deno.serve(async (req) => {
         const endpoint = url.pathname.split("/").pop();
         switch (endpoint) {
             case "compute-yardage-metrics": {
-                let body: any; try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const form = body?.form || body;
                 let yards = parseFloat(form?.total_yards_delivered ?? form?.Yardage ?? form?.yardage ?? "");
                 let hours = parseFloat(form?.total_operator_hours ?? form?.["Total Hours"] ?? form?.total_hours ?? form?.total_operator_hours ?? "");
@@ -69,23 +77,42 @@ Deno.serve(async (req) => {
                 }
                 let lostLabel = "";
                 if (lostGrade === "excellent") lostLabel = "Excellent"; else if (lostGrade === "good") lostLabel = "Good"; else if (lostGrade === "average") lostLabel = "Average"; else if (lostGrade === "poor") lostLabel = "Poor";
-                return new Response(JSON.stringify({data: {yph, yphGrade, yphLabel, lost, lostGrade, lostLabel}}), {headers: corsHeaders});
+                return new Response(JSON.stringify({
+                    data: {
+                        yph,
+                        yphGrade,
+                        yphLabel,
+                        lost,
+                        lostGrade,
+                        lostLabel
+                    }
+                }), {headers: corsHeaders});
             }
             case "plant-production-insights": {
-                let body: any; try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const rows: any[] = Array.isArray(body?.rows) ? body.rows : [];
+
                 function isExcludedRow(row: any) {
                     if (!row) return true;
                     const keys = Object.keys(row).filter(k => k !== "name" && k !== "truck_number");
                     return keys.every(k => row[k] === "" || row[k] === undefined || row[k] === null || row[k] === 0);
                 }
+
                 let totalLoads = 0;
                 let totalHours = 0;
                 let totalElapsedStart = 0;
                 let totalElapsedEnd = 0;
                 let countElapsedStart = 0;
                 let countElapsedEnd = 0;
-                let warnings: Array<{row: number; message: string}> = [];
+                let warnings: Array<{ row: number; message: string }> = [];
                 let loadsPerHourSum = 0;
                 let loadsPerHourCount = 0;
                 const includedRows = rows.filter(row => !isExcludedRow(row));
@@ -106,7 +133,10 @@ Deno.serve(async (req) => {
                         if (!isNaN(elapsed)) {
                             totalElapsedStart += elapsed;
                             countElapsedStart++;
-                            if (elapsed > 15) warnings.push({row: rows.indexOf(row), message: `Start to 1st Load is ${elapsed} min (> 15 min)`});
+                            if (elapsed > 15) warnings.push({
+                                row: rows.indexOf(row),
+                                message: `Start to 1st Load is ${elapsed} min (> 15 min)`
+                            });
                         }
                     }
                     if (eod !== null && punchOut !== null) {
@@ -114,15 +144,24 @@ Deno.serve(async (req) => {
                         if (!isNaN(elapsed)) {
                             totalElapsedEnd += elapsed;
                             countElapsedEnd++;
-                            if (elapsed > 15) warnings.push({row: rows.indexOf(row), message: `EOD to Punch Out is ${elapsed} min (> 15 min)`});
+                            if (elapsed > 15) warnings.push({
+                                row: rows.indexOf(row),
+                                message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
+                            });
                         }
                     }
                     if (!isNaN(loads) && hours && hours > 0) {
                         loadsPerHourSum += loads / hours;
                         loadsPerHourCount++;
                     }
-                    if (!isNaN(loads) && loads < 3) warnings.push({row: rows.indexOf(row), message: `Total Loads is ${loads} (< 3)`});
-                    if (hours !== null && hours > 14) warnings.push({row: rows.indexOf(row), message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`});
+                    if (!isNaN(loads) && loads < 3) warnings.push({
+                        row: rows.indexOf(row),
+                        message: `Total Loads is ${loads} (< 3)`
+                    });
+                    if (hours !== null && hours > 14) warnings.push({
+                        row: rows.indexOf(row),
+                        message: `Total Hours is ${hours.toFixed(2)} (> 14 hours)`
+                    });
                 });
                 const avgElapsedStart = countElapsedStart ? totalElapsedStart / countElapsedStart : null;
                 const avgElapsedEnd = countElapsedEnd ? totalElapsedEnd / countElapsedEnd : null;
@@ -136,12 +175,35 @@ Deno.serve(async (req) => {
                 if (avgElapsedEnd !== null && avgElapsedEnd > 15) avgWarnings.push(`Washout to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`);
                 if (avgLoads !== null && avgLoads < 3) avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`);
                 if (avgHours !== null && avgHours > 14) avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`);
-                return new Response(JSON.stringify({data: {totalLoads, totalHours, avgElapsedStart, avgElapsedEnd, avgLoads, avgHours, avgLoadsPerHour, warnings, avgWarnings}}), {headers: corsHeaders});
+                return new Response(JSON.stringify({
+                    data: {
+                        totalLoads,
+                        totalHours,
+                        avgElapsedStart,
+                        avgElapsedEnd,
+                        avgLoads,
+                        avgHours,
+                        avgLoadsPerHour,
+                        warnings,
+                        avgWarnings
+                    }
+                }), {headers: corsHeaders});
             }
             case "export-csv": {
-                let body: any; try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const rows: any[] = Array.isArray(body?.rows) ? body.rows : [];
-                const operatorOptions: Array<{value: string; label: string}> = Array.isArray(body?.operatorOptions) ? body.operatorOptions : [];
+                const operatorOptions: Array<{
+                    value: string;
+                    label: string
+                }> = Array.isArray(body?.operatorOptions) ? body.operatorOptions : [];
                 const reportDate: string | null = typeof body?.reportDate === "string" ? body.reportDate : null;
                 const dateStr = reportDate ? ` - ${reportDate}` : "";
                 const title = `Weekly Plant Efficiency Report${dateStr}`;
@@ -161,6 +223,7 @@ Deno.serve(async (req) => {
                     "Loads/Hour",
                     "Comments"
                 ];
+
                 function getOperatorName(row: any) {
                     if (!row?.name) return "";
                     if (Array.isArray(operatorOptions)) {
@@ -170,6 +233,7 @@ Deno.serve(async (req) => {
                     if (row.displayName) return row.displayName;
                     return row.name;
                 }
+
                 const csvRows: string[][] = [headerRow, tableHeaders];
                 rows.forEach(row => {
                     const start = parseTimeToMinutes(row.start_time);
@@ -200,9 +264,20 @@ Deno.serve(async (req) => {
                 return new Response(JSON.stringify({data: {filename, csv: csvContent}}), {headers: corsHeaders});
             }
             case "week-range": {
-                let body: any; try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const weekIso = typeof body?.weekIso === "string" ? body.weekIso : null;
-                if (!weekIso) return new Response(JSON.stringify({error: "weekIso is required"}), {status: 400, headers: corsHeaders});
+                if (!weekIso) return new Response(JSON.stringify({error: "weekIso is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const monday = new Date(weekIso);
                 monday.setDate(monday.getDate() + 1);
                 monday.setHours(0, 0, 0, 0);
@@ -212,7 +287,12 @@ Deno.serve(async (req) => {
                 return new Response(JSON.stringify({data: {range}}), {headers: corsHeaders});
             }
             case "monday-saturday": {
-                let body: any; try { body = await req.json(); } catch { body = {}; }
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    body = {};
+                }
                 const input = typeof body?.date === "string" ? body.date : null;
                 const d = input ? new Date(input) : new Date();
                 const day = d.getDay();
@@ -222,13 +302,24 @@ Deno.serve(async (req) => {
                 const saturday = new Date(monday);
                 saturday.setDate(monday.getDate() + 5);
                 saturday.setHours(0, 0, 0, 0);
-                return new Response(JSON.stringify({data: {monday: toISO(monday), saturday: toISO(saturday)}}), {headers: corsHeaders});
+                return new Response(JSON.stringify({
+                    data: {
+                        monday: toISO(monday),
+                        saturday: toISO(saturday)
+                    }
+                }), {headers: corsHeaders});
             }
             default:
-                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {status: 404, headers: corsHeaders});
+                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
+                    status: 404,
+                    headers: corsHeaders
+                });
         }
     } catch (error) {
-        return new Response(JSON.stringify({error: "Internal server error", message: (error as Error).message}), {status: 500, headers: corsHeaders});
+        return new Response(JSON.stringify({
+            error: "Internal server error",
+            message: (error as Error).message
+        }), {status: 500, headers: corsHeaders});
     }
 });
 

@@ -22,9 +22,18 @@ function StatsBar({insights}) {
         {label: 'Total Hours', value: insights.totalHours !== null ? insights.totalHours.toFixed(2) : '--'},
         {label: 'Avg Loads', value: insights.avgLoads !== null ? insights.avgLoads.toFixed(2) : '--'},
         {label: 'Avg Hours', value: insights.avgHours !== null ? insights.avgHours.toFixed(2) : '--'},
-        {label: 'Avg Loads/Hour', value: insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'},
-        {label: 'Avg Punch In -> 1st Load', value: insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'},
-        {label: 'Avg Washout -> Punch Out', value: insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'}
+        {
+            label: 'Avg Loads/Hour',
+            value: insights.avgLoadsPerHour !== null ? insights.avgLoadsPerHour.toFixed(2) : '--'
+        },
+        {
+            label: 'Avg Punch In -> 1st Load',
+            value: insights.avgElapsedStart !== null ? `${insights.avgElapsedStart.toFixed(1)} min` : '--'
+        },
+        {
+            label: 'Avg Washout -> Punch Out',
+            value: insights.avgElapsedEnd !== null ? `${insights.avgElapsedEnd.toFixed(1)} min` : '--'
+        }
     ]
     return (
         <div className="rpt-stats">
@@ -222,11 +231,13 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                                             </div>
                                             <div>
                                                 <div className="rpt-field-label">Total Loads</div>
-                                                <div className={`rpt-field-value emphasis ${ (r.loads !== undefined && r.loads !== '' && Number(r.loads) < 3) ? 'rpt-error-text' : '' }`}>{r.loads || '--'}</div>
+                                                <div
+                                                    className={`rpt-field-value emphasis ${(r.loads !== undefined && r.loads !== '' && Number(r.loads) < 3) ? 'rpt-error-text' : ''}`}>{r.loads || '--'}</div>
                                             </div>
                                             <div>
                                                 <div className="rpt-field-label">Total Hours</div>
-                                                <div className={`rpt-field-value emphasis ${ (hours !== null && hours > 14) ? 'rpt-error-text' : '' }`}>{hours !== null ? hours.toFixed(2) : '--'}</div>
+                                                <div
+                                                    className={`rpt-field-value emphasis ${(hours !== null && hours > 14) ? 'rpt-error-text' : ''}`}>{hours !== null ? hours.toFixed(2) : '--'}</div>
                                             </div>
                                             <div className="rpt-detail-grid-full">
                                                 <div className="rpt-field-label">Comments</div>

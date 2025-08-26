@@ -28,20 +28,23 @@ class RegionServiceImpl {
     }
 
     getRegionName(regionCode) {
-        return this.getRegionByCode(regionCode)?.region_name ?? regionCode
+        const r = this.getRegionByCode(regionCode)
+        return r?.regionName ?? regionCode
     }
 
-    async createRegion(regionCode, regionName) {
+    async createRegion(regionCode, regionName, type) {
         if (!regionCode?.trim() || !regionName?.trim()) throw new Error('Region code and name are required')
-        const {res, json} = await APIUtility.post('/region-service/create', {regionCode, regionName})
+        if (!type || !['Concrete', 'Aggregate', 'Office'].includes(type)) throw new Error('Region type is invalid')
+        const {res, json} = await APIUtility.post('/region-service/create', {regionCode, regionName, type})
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to create region')
         await this.fetchRegions()
         return true
     }
 
-    async updateRegion(regionCode, regionName, plantCodes = []) {
+    async updateRegion(regionCode, regionName, plantCodes = [], type) {
         if (!regionCode?.trim() || !regionName?.trim()) throw new Error('Region code and name are required')
         const payload = {regionCode, regionName, plantCodes}
+        if (type && ['Concrete', 'Aggregate', 'Office'].includes(type)) payload.type = type
         const {res, json} = await APIUtility.post('/region-service/update', payload)
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update region')
         await this.fetchRegions()

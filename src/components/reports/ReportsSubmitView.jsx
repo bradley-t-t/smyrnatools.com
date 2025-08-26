@@ -6,12 +6,16 @@ import {PlantManagerSubmitPlugin} from './types/WeeklyPlantManagerReport'
 import {DistrictManagerSubmitPlugin} from './types/WeeklyDistrictManagerReport'
 import {EfficiencySubmitPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerSubmitPlugin} from './types/WeeklySafetyManagerReport'
+import {GeneralManagerSubmitPlugin} from './types/WeeklyGeneralManagerReport'
+import {UserService} from '../../services/UserService'
+import {RegionService} from '../../services/RegionService'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
     district_manager: DistrictManagerSubmitPlugin,
     plant_production: EfficiencySubmitPlugin,
-    safety_manager: SafetyManagerSubmitPlugin
+    safety_manager: SafetyManagerSubmitPlugin,
+    general_manager: GeneralManagerSubmitPlugin
 }
 
 function getTruckNumberForOperator(row, mixers) {
@@ -20,6 +24,16 @@ function getTruckNumberForOperator(row, mixers) {
     const mixer = mixers.find(m => m.assigned_operator === row.name)
     if (mixer && mixer.truck_number) return mixer.truck_number
     return ''
+}
+
+function normalizeCodeUpper(code) {
+    return String(code || '').trim().toUpperCase()
+}
+
+function normalizeCodeNumeric(code) {
+    const s = String(code || '').trim()
+    const digits = s.replace(/^0+/, '')
+    return digits.length ? digits : s.toUpperCase()
 }
 
 function ReportsSubmitView({
@@ -240,7 +254,7 @@ function ReportsSubmitView({
                 .from('plants')
                 .select('plant_code,plant_name')
                 .order('plant_code', {ascending: true})
-            setPlants(!error && Array.isArray(data)
+            let basePlants = !error && Array.isArray(data)
                 ? data.filter(p => p.plant_code && p.plant_name)
                     .sort((a, b) => {
                         const aNum = parseInt(a.plant_code, 10)
@@ -249,11 +263,44 @@ function ReportsSubmitView({
                         return String(a.plant_code).localeCompare(String(b.plant_code))
                     })
                 : []
-            )
+            try {
+                const targetUserId = managerEditUser || user?.id
+                if (targetUserId) {
+                    const userPlant = await UserService.getUserPlant(targetUserId)
+                    if (userPlant) {
+                        const regions = await RegionService.fetchRegionsByPlantCode(userPlant)
+                        const regionCodes = Array.isArray(regions) ? regions.map(r => r.regionCode).filter(Boolean) : []
+                        if (regionCodes.length > 0) {
+                            const allowedUpper = new Set()
+                            const allowedNumeric = new Set()
+                            for (const rc of regionCodes) {
+                                const regionPlants = await RegionService.fetchRegionPlants(rc)
+                                regionPlants.forEach(rp => {
+                                    const c = rp.plantCode || rp.plant_code
+                                    allowedUpper.add(normalizeCodeUpper(c))
+                                    allowedNumeric.add(normalizeCodeNumeric(c))
+                                })
+                            }
+                            basePlants = basePlants.filter(p => {
+                                const u = normalizeCodeUpper(p.plant_code)
+                                const n = normalizeCodeNumeric(p.plant_code)
+                                return allowedUpper.has(u) || allowedNumeric.has(n)
+                            })
+                        } else {
+                            basePlants = []
+                        }
+                    } else {
+                        basePlants = []
+                    }
+                }
+            } catch (e) {
+                basePlants = []
+            }
+            setPlants(basePlants)
         }
 
         fetchPlants()
-    }, [])
+    }, [user, managerEditUser])
     useEffect(() => {
         async function fetchMaintenanceItems() {
             let weekStart, weekEnd

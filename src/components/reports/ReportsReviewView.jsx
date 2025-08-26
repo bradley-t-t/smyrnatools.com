@@ -8,12 +8,14 @@ import {PlantManagerReviewPlugin} from './types/WeeklyPlantManagerReport'
 import {DistrictManagerReviewPlugin} from './types/WeeklyDistrictManagerReport'
 import {EfficiencyReviewPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerReviewPlugin} from './types/WeeklySafetyManagerReport'
+import {GeneralManagerReviewPlugin} from './types/WeeklyGeneralManagerReport'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,
     district_manager: DistrictManagerReviewPlugin,
     plant_production: EfficiencyReviewPlugin,
-    safety_manager: SafetyManagerReviewPlugin
+    safety_manager: SafetyManagerReviewPlugin,
+    general_manager: GeneralManagerReviewPlugin
 }
 
 function formatDateTime(dt) {
@@ -33,7 +35,7 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     const [assignedPlant, setAssignedPlant] = useState('')
     const [hasManagerEditPermission, setHasManagerEditPermission] = useState(false)
     const [showManagerEditButton, setShowManagerEditButton] = useState(false)
-    const [, setPlants] = useState([])
+    const [plants, setPlants] = useState([])
 
     useEffect(() => {
         async function fetchOwnerName() {
@@ -319,69 +321,69 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                     )}
                 </div>
                 <div className="report-form-body-wide">
-                    {report.name === 'general_manager' ? null : (
-                        <>
-                            {report.name === 'plant_production' ? null : (
-                                <div className="report-form-fields-grid">
-                                    {report.fields.map(field => (
-                                        (report.name === 'safety_manager' && field.name === 'issues') ? null : (
-                                            <div key={field.name} className="report-form-field-wide">
-                                                <label>
-                                                    {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                                    {field.required && <span className="report-modal-required">*</span>}
-                                                </label>
-                                                {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
-                                                    <textarea
-                                                        value={form[field.name] || ''}
-                                                        readOnly
-                                                        disabled
-                                                        style={{
-                                                            minHeight: 60,
-                                                            maxHeight: 300,
-                                                            resize: 'vertical',
-                                                            width: '100%',
-                                                            fontSize: 15,
-                                                            background: 'var(--background)',
-                                                            border: '1px solid var(--divider)',
-                                                            borderRadius: 6,
-                                                            color: 'var(--text-primary)',
-                                                            padding: '7px 10px',
-                                                            overflowY: 'auto'
-                                                        }}
-                                                    />
-                                                ) : field.type === 'select' ? (
-                                                    <select value={form[field.name] || ''} readOnly disabled>
-                                                        <option value="">Select...</option>
-                                                        {field.options?.map(opt => (
-                                                            <option key={opt} value={opt}>{opt}</option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <input type={field.type} value={form[field.name] || ''} readOnly
-                                                           disabled/>
-                                                )}
-                                            </div>
-                                        )
-                                    ))}
-                                </div>
-                            )}
-                            {PluginComponent && (
-                                <PluginComponent
-                                    form={form}
-                                    yph={yph}
-                                    yphGrade={yphGrade}
-                                    yphLabel={yphLabel}
-                                    lost={lost}
-                                    lostGrade={lostGrade}
-                                    lostLabel={lostLabel}
-                                    summaryTab={summaryTab}
-                                    setSummaryTab={setSummaryTab}
-                                    maintenanceItems={maintenanceItems}
-                                    operatorOptions={operatorOptions}
-                                />
-                            )}
-                        </>
-                    )}
+                    <>
+                        {report.name === 'plant_production' || report.name === 'general_manager' ? null : (
+                            <div className="report-form-fields-grid">
+                                {report.fields.map(field => (
+                                    (report.name === 'safety_manager' && field.name === 'issues') ? null : (
+                                        <div key={field.name} className="report-form-field-wide">
+                                            <label>
+                                                {field.name === 'yardage' ? 'Total Yardage' : field.label}
+                                                {field.required && <span className="report-modal-required">*</span>}
+                                            </label>
+                                            {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
+                                                <textarea
+                                                    value={form[field.name] || ''}
+                                                    readOnly
+                                                    disabled
+                                                    style={{
+                                                        minHeight: 60,
+                                                        maxHeight: 300,
+                                                        resize: 'vertical',
+                                                        width: '100%',
+                                                        fontSize: 15,
+                                                        background: 'var(--background)',
+                                                        border: '1px solid var(--divider)',
+                                                        borderRadius: 6,
+                                                        color: 'var(--text-primary)',
+                                                        padding: '7px 10px',
+                                                        overflowY: 'auto'
+                                                    }}
+                                                />
+                                            ) : field.type === 'select' ? (
+                                                <select value={form[field.name] || ''} readOnly disabled>
+                                                    <option value="">Select...</option>
+                                                    {field.options?.map(opt => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <input type={field.type} value={form[field.name] || ''} readOnly
+                                                       disabled/>
+                                            )}
+                                        </div>
+                                    )
+                                ))}
+                            </div>
+                        )}
+                        {PluginComponent && (
+                            <PluginComponent
+                                form={form}
+                                yph={yph}
+                                yphGrade={yphGrade}
+                                yphLabel={yphLabel}
+                                lost={lost}
+                                lostGrade={lostGrade}
+                                lostLabel={lostLabel}
+                                summaryTab={summaryTab}
+                                setSummaryTab={setSummaryTab}
+                                maintenanceItems={maintenanceItems}
+                                operatorOptions={operatorOptions}
+                                plants={plants}
+                                weekIso={report.weekIso || initialData?.week}
+                            />
+                        )}
+                    </>
                 </div>
             </div>
         </div>

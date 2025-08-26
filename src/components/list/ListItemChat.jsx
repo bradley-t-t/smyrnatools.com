@@ -14,19 +14,27 @@ function ListItemChat({itemId}) {
     const listRef = useRef(null)
 
     useEffect(() => {
-        let unsub = () => {}
+        let unsub = () => {
+        }
         let mounted = true
+
         async function preloadNames(list) {
             try {
                 const ids = Array.from(new Set((list || []).map(m => m.sender_id).filter(id => id && id !== currentUserId)))
                 const missing = ids.filter(id => !userNames[id])
                 if (!missing.length) return
                 const entries = await Promise.all(missing.map(async id => {
-                    try { return [id, await UserService.getUserDisplayName(id)] } catch { return [id, id.slice(0, 8)] }
+                    try {
+                        return [id, await UserService.getUserDisplayName(id)]
+                    } catch {
+                        return [id, id.slice(0, 8)]
+                    }
                 }))
                 if (mounted && entries.length) setUserNames(prev => ({...prev, ...Object.fromEntries(entries)}))
-            } catch {}
+            } catch {
+            }
         }
+
         async function init() {
             try {
                 const user = await UserService.getCurrentUser()
@@ -39,14 +47,20 @@ function ListItemChat({itemId}) {
                         const data = await ChatService.fetchMessages(itemId)
                         if (mounted) setMessages(data)
                         await preloadNames(data)
-                    } catch (err) {}
+                    } catch (err) {
+                    }
                 })
-            } catch (err) {}
+            } catch (err) {
+            }
         }
+
         if (itemId) init()
         return () => {
             mounted = false
-            try { unsub() } catch {}
+            try {
+                unsub()
+            } catch {
+            }
         }
     }, [itemId, currentUserId, userNames])
 
@@ -63,11 +77,16 @@ function ListItemChat({itemId}) {
             const ids = Array.from(new Set((data || []).map(m => m.sender_id).filter(id => id && id !== currentUserId && !userNames[id])))
             if (ids.length) {
                 const entries = await Promise.all(ids.map(async id => {
-                    try { return [id, await UserService.getUserDisplayName(id)] } catch { return [id, id.slice(0, 8)] }
+                    try {
+                        return [id, await UserService.getUserDisplayName(id)]
+                    } catch {
+                        return [id, id.slice(0, 8)]
+                    }
                 }))
                 setUserNames(prev => ({...prev, ...Object.fromEntries(entries)}))
             }
-        } catch {}
+        } catch {
+        }
     }
 
     async function handleSend(e) {
@@ -80,7 +99,10 @@ function ListItemChat({itemId}) {
             await refresh()
         } catch (err) {
             const msg = err?.message || 'Failed to send message'
-            try { window.alert(msg) } catch {}
+            try {
+                window.alert(msg)
+            } catch {
+            }
         } finally {
             setSending(false)
         }
@@ -94,7 +116,10 @@ function ListItemChat({itemId}) {
             await refresh()
         } catch (err) {
             const msg = err?.message || 'Failed to delete message'
-            try { window.alert(msg) } catch {}
+            try {
+                window.alert(msg)
+            } catch {
+            }
         } finally {
             setDeletingId('')
         }

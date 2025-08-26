@@ -6,6 +6,7 @@ import '../mixers/styles/MixerDetailView.css'
 
 function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
     const [regionName, setRegionName] = useState(region.region_name || region.regionName || '')
+    const [regionType, setRegionType] = useState(region.type || region.region_type || '')
     const [plantCodes, setPlantCodes] = useState([])
     const [allPlants, setAllPlants] = useState([])
     const [loading, setLoading] = useState(true)
@@ -64,7 +65,7 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
         setMessage('')
         setError('')
         try {
-            await RegionService.updateRegion(region.region_code || region.regionCode, regionName, plantCodes)
+            await RegionService.updateRegion(region.region_code || region.regionCode, regionName, plantCodes, regionType)
             setMessage('Changes saved')
             if (onUpdate) onUpdate(region.region_code || region.regionCode, regionName)
             setTimeout(() => setMessage(''), 2000)
@@ -162,6 +163,19 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
                         />
                     </div>
                     <div className="form-group">
+                        <label>Type</label>
+                        <select
+                            className="form-control"
+                            value={regionType}
+                            onChange={e => setRegionType(e.target.value)}
+                        >
+                            <option value="" disabled>Select type</option>
+                            <option value="Concrete">Concrete</option>
+                            <option value="Aggregate">Aggregate</option>
+                            <option value="Office">Office</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
                         <label>Plants</label>
                         {loading ? (
                             <div className="plants-loading">Loading plants...</div>
@@ -177,11 +191,15 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
                                                 <span key={code} className="plant-chip">
                                                     <span className="plant-chip-code">{code}</span>
                                                     <span className="plant-chip-name">{plant?.plant_name || ''}</span>
-                                                    <button type="button" className="plant-chip-remove" aria-label={`Remove ${code}`} onClick={() => removeChip(code)}>×</button>
+                                                    <button type="button" className="plant-chip-remove"
+                                                            aria-label={`Remove ${code}`}
+                                                            onClick={() => removeChip(code)}>×</button>
                                                 </span>
                                             )
                                         })}
-                                        <button type="button" className="cancel-button chip-clear-all" onClick={clearAllSelected}>Clear All</button>
+                                        <button type="button" className="cancel-button chip-clear-all"
+                                                onClick={clearAllSelected}>Clear All
+                                        </button>
                                     </div>
                                 )}
                                 <div className="plant-picker-actions">
@@ -195,12 +213,15 @@ function RegionsDetailView({region, onClose, onDelete, onUpdate}) {
                                     />
                                     <div className="plant-picker-meta">
                                         <span className="plant-picker-count">{filteredPlants.length} results</span>
-                                        <button type="button" className="primary-button" onClick={selectAllFiltered} disabled={!filteredPlants.length}>Select All Visible</button>
+                                        <button type="button" className="primary-button" onClick={selectAllFiltered}
+                                                disabled={!filteredPlants.length}>Select All Visible
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="plant-picker-list" role="listbox" aria-label="All plants">
                                     {filteredPlants.map(p => (
-                                        <label key={p.plant_code} className={`plant-item${plantCodes.includes(p.plant_code) ? ' selected' : ''}`}>
+                                        <label key={p.plant_code}
+                                               className={`plant-item${plantCodes.includes(p.plant_code) ? ' selected' : ''}`}>
                                             <input
                                                 type="checkbox"
                                                 checked={plantCodes.includes(p.plant_code)}

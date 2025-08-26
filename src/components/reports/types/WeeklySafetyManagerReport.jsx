@@ -12,29 +12,36 @@ function TagPicker({value, options, disabled, placeholder, onChange}) {
             if (!ref.current) return
             if (!ref.current.contains(e.target)) setOpen(false)
         }
+
         document.addEventListener('mousedown', onDocClick)
         return () => document.removeEventListener('mousedown', onDocClick)
     }, [])
     const lower = query.toLowerCase()
     const filtered = options.filter(o => o.toLowerCase().includes(lower))
+
     function toggle(val) {
         if (disabled) return
         const has = value.includes(val)
         const next = has ? value.filter(v => v !== val) : [...value, val]
         onChange(next)
     }
+
     function selectAll() {
         if (disabled) return
         onChange(options)
     }
+
     function clearAll() {
         if (disabled) return
         onChange([])
     }
+
     return (
         <div className="rpt-tag-picker" ref={ref}>
-            <button type="button" className="rpt-tag-input-btn" disabled={disabled} aria-expanded={open} onClick={() => setOpen(o => !o)}>
-                <span className="rpt-tag-input-placeholder">{value.length ? `${value.length} selected` : (placeholder || 'Select tags')}</span>
+            <button type="button" className="rpt-tag-input-btn" disabled={disabled} aria-expanded={open}
+                    onClick={() => setOpen(o => !o)}>
+                <span
+                    className="rpt-tag-input-placeholder">{value.length ? `${value.length} selected` : (placeholder || 'Select tags')}</span>
                 <span>{open ? '▴' : '▾'}</span>
             </button>
             {open && (
@@ -43,10 +50,12 @@ function TagPicker({value, options, disabled, placeholder, onChange}) {
                         <button type="button" className="rpt-btn rpt-btn-xs" onClick={selectAll}>Select all</button>
                         <button type="button" className="rpt-btn rpt-btn-xs" onClick={clearAll}>Clear</button>
                     </div>
-                    <input className="rpt-tag-search" placeholder="Search tags..." value={query} onChange={e => setQuery(e.target.value)} />
+                    <input className="rpt-tag-search" placeholder="Search tags..." value={query}
+                           onChange={e => setQuery(e.target.value)}/>
                     {filtered.map(opt => (
-                        <div key={opt} className="rpt-tag-item" role="option" aria-selected={value.includes(opt)} onClick={() => toggle(opt)}>
-                            <input type="checkbox" readOnly checked={value.includes(opt)} />
+                        <div key={opt} className="rpt-tag-item" role="option" aria-selected={value.includes(opt)}
+                             onClick={() => toggle(opt)}>
+                            <input type="checkbox" readOnly checked={value.includes(opt)}/>
                             <span>{opt}</span>
                         </div>
                     ))}
@@ -64,7 +73,14 @@ export function SafetyManagerSubmitPlugin({form, setForm, plants, readOnly}) {
         if (typeof form.issues === 'string') {
             setForm(f => ({
                 ...f,
-                issues: f.issues ? [{id: Date.now(), description: f.issues, plant: '', tag: '', tags: [], date: ''}] : []
+                issues: f.issues ? [{
+                    id: Date.now(),
+                    description: f.issues,
+                    plant: '',
+                    tag: '',
+                    tags: [],
+                    date: ''
+                }] : []
             }))
         }
     }, [form.issues, setForm])
@@ -136,10 +152,12 @@ export function SafetyManagerSubmitPlugin({form, setForm, plants, readOnly}) {
                             <div className="rpt-card-title">Issue {idx + 1}</div>
                             <div className="rpt-card-actions">
                                 {issue.plant ? <span className="rpt-badge">Plant {issue.plant}</span> : null}
-                                {(issue.tags && issue.tags.length) ? <span className="rpt-badge">{issue.tags.length} tags</span> : null}
+                                {(issue.tags && issue.tags.length) ?
+                                    <span className="rpt-badge">{issue.tags.length} tags</span> : null}
                                 {issue.date ? <span className="rpt-badge">{issue.date}</span> : null}
                                 {!readOnly && (
-                                    <button type="button" onClick={() => removeIssue(issue.id)} className="rpt-secondary-btn">Remove</button>
+                                    <button type="button" onClick={() => removeIssue(issue.id)}
+                                            className="rpt-secondary-btn">Remove</button>
                                 )}
                             </div>
                         </div>
@@ -163,14 +181,18 @@ export function SafetyManagerSubmitPlugin({form, setForm, plants, readOnly}) {
                             </div>
                             <div className="rpt-field">
                                 <label className="rpt-label">Tags<span className="rpt-required">*</span></label>
-                                <TagPicker value={issue.tags || []} options={TAG_OPTIONS} disabled={readOnly} placeholder="Select tags" onChange={vals => updateIssueTagsArray(issue.id, vals)} />
+                                <TagPicker value={issue.tags || []} options={TAG_OPTIONS} disabled={readOnly}
+                                           placeholder="Select tags"
+                                           onChange={vals => updateIssueTagsArray(issue.id, vals)}/>
                                 {(issue.tags && issue.tags.length > 0) && (
                                     <div className="rpt-tags-list">
                                         {issue.tags.map(t => (
                                             <span key={t} className="rpt-chip">
                                                 {t}
                                                 {!readOnly && (
-                                                    <button type="button" className="rpt-chip-remove" aria-label={`Remove ${t}`} onClick={() => removeIssueTag(issue.id, t)}>×</button>
+                                                    <button type="button" className="rpt-chip-remove"
+                                                            aria-label={`Remove ${t}`}
+                                                            onClick={() => removeIssueTag(issue.id, t)}>×</button>
                                                 )}
                                             </span>
                                         ))}
@@ -215,7 +237,9 @@ export function SafetyManagerReviewPlugin({form}) {
                                 <div className="rpt-card-title">Issue {idx + 1}</div>
                                 <div className="rpt-card-actions">
                                     {issue.plant ? <span className="rpt-badge">{issue.plant}</span> : null}
-                                    {tags.length === 1 ? <span className="rpt-badge">{tags[0]}</span> : (tags.length > 1 ? <span className="rpt-badge">{tags.length} tags</span> : null)}
+                                    {tags.length === 1 ?
+                                        <span className="rpt-badge">{tags[0]}</span> : (tags.length > 1 ?
+                                            <span className="rpt-badge">{tags.length} tags</span> : null)}
                                     {issue.date ? <span className="rpt-badge">{issue.date}</span> : null}
                                 </div>
                             </div>

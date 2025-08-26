@@ -206,7 +206,10 @@ function ListDetailView({itemId, onClose}) {
                                             name="description"
                                             value={formData.description}
                                             onChange={handleChange}
-                                            onBlur={() => setFormData(prev => ({...prev, description: GrammarUtility.cleanDescription(prev.description)}))}
+                                            onBlur={() => setFormData(prev => ({
+                                                ...prev,
+                                                description: GrammarUtility.cleanDescription(prev.description)
+                                            }))}
                                             className="form-control"
                                             placeholder="What needs to be done?"
                                             required
@@ -269,7 +272,10 @@ function ListDetailView({itemId, onClose}) {
                                             name="comments"
                                             value={formData.comments}
                                             onChange={handleChange}
-                                            onBlur={() => setFormData(prev => ({...prev, comments: GrammarUtility.cleanComments(prev.comments)}))}
+                                            onBlur={() => setFormData(prev => ({
+                                                ...prev,
+                                                comments: GrammarUtility.cleanComments(prev.comments)
+                                            }))}
                                             className="form-control"
                                             rows="4"
                                             placeholder="Add any additional notes or context here..."
@@ -335,7 +341,8 @@ function ListDetailView({itemId, onClose}) {
                                             </div>
                                             <div className="meta-row">
                                                 <div className="meta-label">Created on</div>
-                                                <div className="meta-value">{ListService.formatDate(item.created_at)}</div>
+                                                <div
+                                                    className="meta-value">{ListService.formatDate(item.created_at)}</div>
                                             </div>
                                             {item.completed && (
                                                 <>

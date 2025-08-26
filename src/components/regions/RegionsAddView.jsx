@@ -5,6 +5,7 @@ import './styles/RegionsAddView.css';
 function RegionsAddView({onClose, onRegionAdded}) {
     const [regionCode, setRegionCode] = useState('');
     const [regionName, setRegionName] = useState('');
+    const [regionType, setRegionType] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -13,9 +14,10 @@ function RegionsAddView({onClose, onRegionAdded}) {
         setError('');
         if (!regionCode) return setError('Region code is required');
         if (!regionName) return setError('Region name is required');
+        if (!regionType) return setError('Region type is required');
         setIsSaving(true);
         try {
-            await RegionService.createRegion(regionCode, regionName);
+            await RegionService.createRegion(regionCode, regionName, regionType);
             const allRegions = await RegionService.fetchRegions();
             const newRegion = allRegions.find(
                 r => (r.region_code || r.regionCode) === regionCode.trim()
@@ -25,7 +27,8 @@ function RegionsAddView({onClose, onRegionAdded}) {
             } else {
                 onRegionAdded({
                     region_code: regionCode.trim(),
-                    region_name: regionName.trim()
+                    region_name: regionName.trim(),
+                    type: regionType
                 });
             }
             onClose();
@@ -77,6 +80,23 @@ function RegionsAddView({onClose, onRegionAdded}) {
                                             placeholder="Enter region name"
                                             required
                                         />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group" style={{minWidth: '200px'}}>
+                                        <label htmlFor="regionType">Type*</label>
+                                        <select
+                                            id="regionType"
+                                            className="ios-input"
+                                            value={regionType}
+                                            onChange={e => setRegionType(e.target.value)}
+                                            required
+                                        >
+                                            <option value="" disabled>Select type</option>
+                                            <option value="Concrete">Concrete</option>
+                                            <option value="Aggregate">Aggregate</option>
+                                            <option value="Office">Office</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
