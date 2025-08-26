@@ -734,6 +734,29 @@
     z-index: 1000;
 }
 
+.freight-select {
+    width: 120px;
+}
+
+.filters .filter-wrapper .freight-select {
+    max-width: 140px;
+}
+
+.filters .filter-wrapper select.ios-select.freight-select {
+    width: 110px !important;
+    min-width: 110px !important;
+    max-width: 140px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+    .freight-select {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
 @media (max-width: 1500px) {
     .tractors-grid {
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

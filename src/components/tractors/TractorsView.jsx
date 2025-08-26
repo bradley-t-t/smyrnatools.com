@@ -24,6 +24,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '')
     const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '')
     const [statusFilter, setStatusFilter] = useState(preferences.tractorFilters?.statusFilter || '')
+    const [freightFilter, setFreightFilter] = useState(preferences.tractorFilters?.freightFilter || '')
     const [viewMode, setViewMode] = useState(() => {
         if (preferences.tractorFilters?.viewMode !== undefined && preferences.tractorFilters?.viewMode !== null) return preferences.tractorFilters.viewMode
         if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
@@ -39,6 +40,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [modalTractorId, setModalTractorId] = useState(null)
     const [modalTractorNumber, setModalTractorNumber] = useState('')
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
+    const freightOptions = ['All Freight', 'Cement', 'Aggregate']
 
     const unassignedActiveOperatorsCount = useMemo(() => {
         const normalized = searchText.trim().toLowerCase().replace(/\s+/g, '')
@@ -77,6 +79,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             setSearchText(preferences.tractorFilters.searchText || '')
             setSelectedPlant(preferences.tractorFilters.selectedPlant || '')
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
+            setFreightFilter(preferences.tractorFilters.freightFilter || '')
             setViewMode(preferences.tractorFilters.viewMode !== undefined && preferences.tractorFilters.viewMode !== null ? preferences.tractorFilters.viewMode : preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null ? preferences.defaultViewMode : localStorage.getItem('tractors_last_view_mode') || 'grid')
         }
         if (preferences?.autoOverview) {
@@ -110,59 +113,27 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     async function fetchTractors() {
         try {
             const data = await TractorService.fetchTractors();
-            const processedData = await Promise.all(data.map(async tractor => {
-                let latestHistoryDate = null;
-                try {
-                    const history = await TractorService.getTractorHistory(tractor.id, 1);
-                    latestHistoryDate = history[0]?.changedAt || null;
-                } catch {
-                }
-                try {
-                    const issues = await TractorService.fetchIssues(tractor.id);
-                    tractor.issues = issues || [];
-                } catch {
-                    tractor.issues = [];
-                }
-                if (TractorService.fetchComments) {
-                    try {
-                        const comments = await TractorService.fetchComments(tractor.id);
-                        tractor.comments = comments || [];
-                    } catch {
-                        tractor.comments = [];
-                    }
-                }
-                tractor.isVerified = () => TractorUtility.isVerified(tractor.updatedLast, tractor.updatedAt, tractor.updatedBy, latestHistoryDate);
-                tractor.latestHistoryDate = latestHistoryDate;
-                return tractor;
-            }));
-
-            for (const tractor of processedData) {
-                if (tractor.status === 'Active' && (!tractor.assignedOperator || tractor.assignedOperator === '0' || tractor.assignedOperator === '' || tractor.assignedOperator === null)) {
-                    let cleanlinessRating = tractor.cleanlinessRating;
-                    if (!cleanlinessRating || isNaN(cleanlinessRating) || cleanlinessRating < 1) {
-                        cleanlinessRating = 1;
-                    }
-                    let updatedTractor = {...tractor, status: 'Spare', cleanlinessRating};
-                    if (!updatedTractor.truckNumber) updatedTractor.truckNumber = tractor.truckNumber || '';
-                    if (!updatedTractor.assignedPlant) updatedTractor.assignedPlant = tractor.assignedPlant || '';
-                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'hasBlower')) updatedTractor.hasBlower = !!tractor.hasBlower;
-                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'vin')) updatedTractor.vin = tractor.vin || '';
-                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'make')) updatedTractor.make = tractor.make || '';
-                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'model')) updatedTractor.model = tractor.model || '';
-                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'year')) updatedTractor.year = tractor.year || '';
-                    if (!Object.prototype.hasOwnProperty.call(updatedTractor, 'lastServiceDate')) updatedTractor.lastServiceDate = tractor.lastServiceDate || null;
-                    try {
-                        await TractorService.updateTractor(tractor.id, updatedTractor, undefined, tractor);
-                        tractor.status = 'Spare';
-                        tractor.cleanlinessRating = cleanlinessRating;
-                    } catch (e) {
-                    }
-                }
-            }
-
-            setTractors(processedData);
+            const processedData = data.map(tractor => {
+                const t = {...tractor}
+                t.isVerified = () => TractorUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy, t.latestHistoryDate)
+                return t
+            })
+            setTractors(processedData)
+            setTimeout(() => {
+                fixActiveTractorsWithoutOperator(processedData).catch(() => {})
+            }, 0)
         } catch (error) {
-            console.error('Error fetching tractors:', error);
+            console.error('Error fetching tractors:', error)
+        }
+    }
+
+    async function fixActiveTractorsWithoutOperator(list) {
+        const updates = list.filter(t => t.status === 'Active' && (!t.assignedOperator || t.assignedOperator === '0' || t.assignedOperator === '' || t.assignedOperator === null))
+        for (const tractor of updates) {
+            try {
+                await TractorService.updateTractor(tractor.id, {...tractor, status: 'Spare'}, undefined, tractor)
+                tractor.status = 'Spare'
+            } catch (e) {}
         }
     }
 
@@ -257,6 +228,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             const plant = plants.find(p => p.plantCode === selectedPlant);
             filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`);
         }
+        if (freightFilter) filters.push(`Freight: ${freightFilter}`)
         if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
         return filters.length ? filters.join(', ') : 'No Filters';
     }
@@ -280,6 +252,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             'Assigned Operator',
             'Operator Smyrna ID',
             'Assigned Plant',
+            'Freight',
             'Last Service Date',
             'Cleanliness Rating',
             'Open Issues'
@@ -290,9 +263,10 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             getOperatorName(tractor.assignedOperator),
             getOperatorSmyrnaId(tractor.assignedOperator),
             getPlantName(tractor.assignedPlant),
+            tractor.freight || '',
             formatDate(tractor.lastServiceDate),
             tractor.cleanlinessRating || '',
-            Array.isArray(tractor.issues) ? tractor.issues.filter(issue => !issue.time_completed).length : 0
+            Number(tractor.openIssuesCount || 0)
         ]);
         const csvContent = [
             `"${topHeader}"`,
@@ -316,15 +290,16 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 tractor.truckNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
                 (tractor.assignedOperator && operators.find(op => op.employeeId === tractor.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
             const matchesPlant = !selectedPlant || tractor.assignedPlant === selectedPlant;
+            const matchesFreight = !freightFilter || tractor.freight === freightFilter;
             let matchesStatus = true;
             if (statusFilter && statusFilter !== 'All Statuses') {
                 matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? tractor.status === statusFilter :
                     statusFilter === 'Past Due Service' ? TractorUtility.isServiceOverdue(tractor.lastServiceDate) :
                         statusFilter === 'Verified' ? tractor.isVerified() :
                             statusFilter === 'Not Verified' ? !tractor.isVerified() :
-                                statusFilter === 'Open Issues' ? tractor.issues?.some(issue => !issue.time_completed) : false;
+                                statusFilter === 'Open Issues' ? (Number(tractor.openIssuesCount || 0) > 0) : false;
             }
-            return matchesSearch && matchesPlant && matchesStatus;
+            return matchesSearch && matchesPlant && matchesFreight && matchesStatus;
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
@@ -490,16 +465,37 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             ))}
                         </select>
                     </div>
-                    {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                    <div className="filter-wrapper freight-filter">
+                        <select
+                            className="ios-select freight-select"
+                            value={freightFilter}
+                            onChange={e => {
+                                setFreightFilter(e.target.value)
+                                updatePreferences('tractorFilters', {
+                                    ...preferences.tractorFilters,
+                                    freightFilter: e.target.value
+                                })
+                            }}
+                            aria-label="Filter by freight"
+                            style={{width: 110, minWidth: 110}}
+                        >
+                            {freightOptions.map(opt => (
+                                <option key={opt} value={opt === 'All Freight' ? '' : opt}>{opt}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {(searchText || selectedPlant || freightFilter || (statusFilter && statusFilter !== 'All Statuses')) && (
                         <button className="filter-reset-button" onClick={() => {
                             setSearchText('')
                             setSelectedPlant('')
                             setStatusFilter('')
+                            setFreightFilter('')
                             updatePreferences('tractorFilters', {
                                 ...preferences.tractorFilters,
                                 searchText: '',
                                 selectedPlant: '',
-                                statusFilter: ''
+                                statusFilter: '',
+                                freightFilter: ''
                             })
                             setViewMode(viewMode)
                         }}>
@@ -547,6 +543,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             <th>Status</th>
                             <th>Operator</th>
                             <th>Cleanliness</th>
+                            <th>Freight</th>
                             <th>VIN</th>
                             <th>Verified</th>
                             <th>More</th>
@@ -554,8 +551,8 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                         </thead>
                         <tbody>
                         {filteredTractors.map(tractor => {
-                            const commentsCount = Array.isArray(tractor.comments) ? tractor.comments.length : 0
-                            const issuesCount = Array.isArray(tractor.issues) ? tractor.issues.filter(issue => !issue.time_completed).length : 0
+                            const commentsCount = Number(tractor.commentsCount || 0)
+                            const issuesCount = Number(tractor.openIssuesCount || 0)
                             return (
                                 <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)}
                                     style={{cursor: 'pointer'}}>
@@ -595,6 +592,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                             ))
                                         })()}
                                     </td>
+                                    <td>{tractor.freight ? tractor.freight : "---"}</td>
                                     <td>{tractor.vin ? tractor.vin : "---"}</td>
                                     <td>
                                         {tractor.isVerified() ? (

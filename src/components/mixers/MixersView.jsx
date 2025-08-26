@@ -93,32 +93,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     async function fetchMixers() {
         try {
             const data = await MixerService.fetchMixers();
-            const processedData = await Promise.all(data.map(async mixer => {
-                let latestHistoryDate = null;
-                try {
-                    const history = await MixerService.getMixerHistory(mixer.id, 1);
-                    latestHistoryDate = history[0]?.changedAt || null;
-                } catch {
-                }
-                try {
-                    const issues = await MixerService.fetchIssues(mixer.id);
-                    mixer.issues = issues || [];
-                } catch {
-                    mixer.issues = [];
-                }
-                let comments = [];
-                try {
-                    comments = await MixerService.fetchComments(mixer.id);
-                } catch {
-                    comments = [];
-                }
-                mixer.comments = comments;
-                mixer.isVerified = () => MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, latestHistoryDate);
-                mixer.latestHistoryDate = latestHistoryDate;
-                return mixer;
-            }));
-            await fixActiveMixersWithoutOperator(processedData);
+            const processedData = data.map(mixer => {
+                mixer.isVerified = () => MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate)
+                return mixer
+            })
             setMixers(processedData);
+            setTimeout(() => {
+                fixActiveMixersWithoutOperator(processedData).catch(() => {})
+            }, 0)
         } catch (error) {
         }
     }
@@ -217,7 +199,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 setIsLoading(true);
                 try {
                     const vinMixers = await MixerService.searchMixersByVin(normalizedSearch);
-                    setMixers(vinMixers);
+                    const processed = vinMixers.map(m => {
+                        m.isVerified = () => MixerUtility.isVerified(m.updatedLast, m.updatedAt, m.updatedBy, m.latestHistoryDate)
+                        return m
+                    })
+                    setMixers(processed);
                 } catch {
                 }
                 setIsLoading(false);
@@ -247,7 +233,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     statusFilter === 'Past Due Service' ? MixerUtility.isServiceOverdue(mixer.lastServiceDate) :
                         statusFilter === 'Verified' ? mixer.isVerified() :
                             statusFilter === 'Not Verified' ? !mixer.isVerified() :
-                                statusFilter === 'Open Issues' ? mixer.issues?.some(issue => !issue.time_completed) : false
+                                statusFilter === 'Open Issues' ? (Number(mixer.openIssuesCount || 0) > 0) : false
             }
             return matchesSearch && matchesPlant && matchesStatus
         })

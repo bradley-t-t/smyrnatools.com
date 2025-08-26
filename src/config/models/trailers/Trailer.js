@@ -1,17 +1,20 @@
 class Trailer {
     constructor({
-                    id = null,
-                    trailer_number = '',
-                    assigned_plant = '',
-                    trailer_type = 'Cement',
-                    assigned_tractor = null,
-                    cleanliness_rating = 1,
-                    created_at = new Date().toISOString(),
-                    updated_at = new Date().toISOString(),
-                    updated_last = null,
-                    updated_by = null,
-                    status = 'Active'
-                } = {}) {
+        id = null,
+        trailer_number = '',
+        assigned_plant = '',
+        trailer_type = 'Cement',
+        assigned_tractor = null,
+        cleanliness_rating = 1,
+        created_at = new Date().toISOString(),
+        updated_at = new Date().toISOString(),
+        updated_last = null,
+        updated_by = null,
+        status = 'Active',
+        latestHistoryDate = null,
+        openIssuesCount = 0,
+        commentsCount = 0
+    } = {}) {
         this.id = id || crypto.randomUUID();
         this.trailerNumber = trailer_number;
         this.assignedPlant = assigned_plant;
@@ -23,6 +26,9 @@ class Trailer {
         this.updatedLast = updated_last;
         this.updatedBy = updated_by;
         this.status = status;
+        this.latestHistoryDate = latestHistoryDate;
+        this.openIssuesCount = openIssuesCount;
+        this.commentsCount = commentsCount;
     }
 
     static fromApiFormat(apiData) {
@@ -37,7 +43,10 @@ class Trailer {
             updated_at: apiData.updated_at,
             updated_last: apiData.updated_last,
             updated_by: apiData.updated_by,
-            status: apiData.status
+            status: apiData.status,
+            latestHistoryDate: apiData.latestHistoryDate,
+            openIssuesCount: apiData.openIssuesCount,
+            commentsCount: apiData.commentsCount
         });
     }
 

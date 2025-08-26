@@ -19,6 +19,9 @@ export class Mixer {
         this.make = data.make ?? ''
         this.model = data.model ?? ''
         this.year = data.year ?? ''
+        this.latestHistoryDate = data.latestHistoryDate ?? null
+        this.openIssuesCount = data.openIssuesCount ?? 0
+        this.commentsCount = data.commentsCount ?? 0
     }
 
     static fromApiFormat(data) {

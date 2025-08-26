@@ -1,7 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import MixerUtility from '../../utils/MixerUtility';
 import {usePreferences} from '../../app/context/PreferencesContext';
-import {MixerService} from '../../services/MixerService';
 import './styles/MixerCard.css';
 
 function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelect}) {
@@ -11,34 +10,8 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
         ? mixer.isVerified(mixer.latestHistoryDate)
         : MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate);
     const {preferences} = usePreferences();
-    const [openIssuesCount, setOpenIssuesCount] = useState(0);
-    const [commentsCount, setCommentsCount] = useState(0);
-
-    useEffect(() => {
-        const fetchOpenIssues = async () => {
-            try {
-                const issues = await MixerService.fetchIssues(mixer.id);
-                const openIssues = issues.filter(issue => !issue.time_completed);
-                setOpenIssuesCount(openIssues.length);
-            } catch (error) {
-                setOpenIssuesCount(0);
-            }
-        };
-
-        const fetchComments = async () => {
-            try {
-                const comments = await MixerService.fetchComments(mixer.id);
-                setCommentsCount(comments.length);
-            } catch (error) {
-                setCommentsCount(0);
-            }
-        };
-
-        if (mixer?.id) {
-            fetchOpenIssues();
-            fetchComments();
-        }
-    }, [mixer?.id]);
+    const openIssuesCount = Number(mixer.openIssuesCount || 0);
+    const commentsCount = Number(mixer.commentsCount || 0);
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {
@@ -57,11 +30,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
     };
     getDaysSince(mixer.lastServiceDate);
     getDaysSince(mixer.lastChipDate);
-    const accentColor = preferences.accentColor === 'red'
-        ? 'var(--accent)'
-        : preferences.accentColor === 'darkgrey'
-            ? 'var(--accent)'
-            : 'var(--accent)';
+    const accentColor = 'var(--accent)';
 
     let statusColor = 'var(--accent)';
     if (mixer.status === 'Active') statusColor = 'var(--status-active)';
@@ -118,13 +87,13 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         position: 'absolute',
                         top: '12px',
                         right: '12px',
-                        color: '#10b981',
+                        color: 'var(--success)',
                         fontSize: '1.2rem',
                         zIndex: 5
                     }}
                     title="Verified"
                 >
-                    <i className="fas fa-check-circle" style={{color: '#10b981'}}></i>
+                    <i className="fas fa-check-circle" style={{color: 'var(--success)'}}></i>
                 </div>
             ) : (
                 <div
@@ -133,7 +102,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         position: 'absolute',
                         top: '12px',
                         right: '12px',
-                        color: '#dc2626',
+                        color: 'var(--error)',
                         fontSize: '1.2rem',
                         zIndex: 5
                     }}
@@ -141,7 +110,7 @@ function MixerCard({mixer, operatorName, plantName, showOperatorWarning, onSelec
                         mixer.latestHistoryDate && new Date(mixer.latestHistoryDate) > new Date(mixer.updatedLast) ? 'Changes recorded in history since last verification' :
                             'Mixer not verified since last Sunday'}
                 >
-                    <i className="fas fa-flag" style={{color: '#e74c3c'}}></i>
+                    <i className="fas fa-flag" style={{color: 'var(--error)'}}></i>
                 </div>
             )}
             <div className="card-content">

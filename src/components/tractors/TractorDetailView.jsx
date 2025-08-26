@@ -45,6 +45,7 @@ function TractorDetailView({tractorId, onClose}) {
     const [make, setMake] = useState('');
     const [model, setModel] = useState('');
     const [year, setYear] = useState('');
+    const [freight, setFreight] = useState('');
     const [operatorModalOperators, setOperatorModalOperators] = useState([]);
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null);
     const [comments, setComments] = useState([]);
@@ -78,6 +79,7 @@ function TractorDetailView({tractorId, onClose}) {
                 setMake(tractorData.make || '');
                 setModel(tractorData.model || '');
                 setYear(tractorData.year || '');
+                setFreight(tractorData.freight || '');
 
                 setOriginalValues({
                     truckNumber: tractorData.truckNumber || '',
@@ -90,7 +92,8 @@ function TractorDetailView({tractorId, onClose}) {
                     vin: tractorData.vin || '',
                     make: tractorData.make || '',
                     model: tractorData.model || '',
-                    year: tractorData.year || ''
+                    year: tractorData.year || '',
+                    freight: tractorData.freight || ''
                 });
 
                 document.documentElement.style.setProperty('--rating-value', tractorData.cleanlinessRating || 0);
@@ -158,10 +161,11 @@ function TractorDetailView({tractorId, onClose}) {
             vin !== originalValues.vin ||
             make !== originalValues.make ||
             model !== originalValues.model ||
-            year !== originalValues.year;
+            year !== originalValues.year ||
+            freight !== originalValues.freight;
 
         setHasUnsavedChanges(hasChanges);
-    }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, hasBlower, vin, make, model, year, originalValues, isLoading]);
+    }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, hasBlower, vin, make, model, year, freight, originalValues, isLoading]);
 
     useEffect(() => {
         const handleBeforeUnload = e => {
@@ -236,6 +240,7 @@ function TractorDetailView({tractorId, onClose}) {
                 make: overrideValues.make ?? make,
                 model: overrideValues.model ?? model,
                 year: overrideValues.year ?? year,
+                freight: overrideValues.freight ?? freight,
                 updatedAt: new Date().toISOString(),
                 updatedBy: userId,
                 updatedLast: tractor.updatedLast
@@ -263,7 +268,8 @@ function TractorDetailView({tractorId, onClose}) {
                 vin: updatedTractor.vin,
                 make: updatedTractor.make,
                 model: updatedTractor.model,
-                year: updatedTractor.year
+                year: updatedTractor.year,
+                freight: updatedTractor.freight || ''
             });
 
             setHasUnsavedChanges(false);
@@ -420,6 +426,7 @@ Basic Information
 Status: ${tractor.status || ''}
 Assigned Plant: ${getPlantName(tractor.assignedPlant)}
 Assigned Operator: ${getOperatorName(tractor.assignedOperator)}
+Freight: ${tractor.freight || ''}
 Cleanliness Rating: ${tractor.cleanlinessRating || 'N/A'}
 Last Service Date: ${tractor.lastServiceDate ? new Date(tractor.lastServiceDate).toLocaleDateString() : 'N/A'}
 Has Blower: ${tractor.hasBlower ? 'Yes' : 'No'}
@@ -827,6 +834,19 @@ ${openIssues.length > 0
                                         }}
                                     />
                                 )}
+                            </div>
+                            <div className="form-group">
+                                <label>Freight</label>
+                                <select
+                                    value={freight}
+                                    onChange={e => setFreight(e.target.value)}
+                                    disabled={!canEditTractor}
+                                    className="form-control"
+                                >
+                                    <option value="">Select Freight</option>
+                                    <option value="Cement">Cement</option>
+                                    <option value="Aggregate">Aggregate</option>
+                                </select>
                             </div>
                         </div>
                         <div className="form-section maintenance-info">

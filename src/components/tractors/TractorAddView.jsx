@@ -9,6 +9,7 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('Active');
     const [hasBlower, setHasBlower] = useState(false);
+    const [freight, setFreight] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     useEffect(() => {
@@ -28,6 +29,7 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
         setError('');
         if (!truckNumber) return setError('Truck number is required');
         if (!assignedPlant) return setError('Plant is required');
+        if (!freight) return setError('Freight is required');
 
         setIsSaving(true);
         try {
@@ -49,6 +51,7 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
                 cleanliness_rating: 1,
                 status,
                 has_blower: hasBlower,
+                freight,
                 created_at: now,
                 updated_at: now,
                 updated_by: userId,
@@ -142,6 +145,20 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
                                         >
                                             <option value="No">No</option>
                                             <option value="Yes">Yes</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label htmlFor="freight">Freight*</label>
+                                        <select
+                                            id="freight"
+                                            className="ios-select"
+                                            value={freight}
+                                            onChange={e => setFreight(e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select Freight</option>
+                                            <option value="Cement">Cement</option>
+                                            <option value="Aggregate">Aggregate</option>
                                         </select>
                                     </div>
                                 </div>

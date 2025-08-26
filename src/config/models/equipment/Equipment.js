@@ -15,6 +15,9 @@ export class Equipment {
         this.createdAt = data.created_at ?? data.createdAt ?? new Date().toISOString()
         this.updatedAt = data.updated_at ?? data.updatedAt ?? new Date().toISOString()
         this.updatedBy = data.updated_by ?? data.updatedBy ?? null
+        this.latestHistoryDate = data.latestHistoryDate ?? null
+        this.openIssuesCount = data.openIssuesCount ?? 0
+        this.commentsCount = data.commentsCount ?? 0
         this.issues = data.issues ?? []
         this.comments = data.comments ?? []
         if (Object.keys(data).length) this.#heuristicFill(data)

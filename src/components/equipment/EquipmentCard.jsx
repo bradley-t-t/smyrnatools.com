@@ -1,38 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import EquipmentUtility from '../../utils/EquipmentUtility';
-import {EquipmentService} from '../../services/EquipmentService';
 import './styles/EquipmentCard.css';
 
 function EquipmentCard({equipment, plantName, onSelect}) {
     const isServiceOverdue = EquipmentUtility.isServiceOverdue(equipment.lastServiceDate);
-    const [openIssuesCount, setOpenIssuesCount] = useState(0);
-    const [commentsCount, setCommentsCount] = useState(0);
-
-    useEffect(() => {
-        const fetchOpenIssues = async () => {
-            try {
-                const issues = await EquipmentService.fetchIssues(equipment.id);
-                const openIssues = issues.filter(issue => !issue.time_completed);
-                setOpenIssuesCount(openIssues.length);
-            } catch (error) {
-                setOpenIssuesCount(0);
-            }
-        };
-
-        const fetchComments = async () => {
-            try {
-                const comments = await EquipmentService.fetchComments(equipment.id);
-                setCommentsCount(comments.length);
-            } catch (error) {
-                setCommentsCount(0);
-            }
-        };
-
-        if (equipment?.id) {
-            fetchOpenIssues();
-            fetchComments();
-        }
-    }, [equipment?.id]);
+    const openIssuesCount = Number(equipment.openIssuesCount || 0);
+    const commentsCount = Number(equipment.commentsCount || 0);
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {

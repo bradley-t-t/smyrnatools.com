@@ -15,12 +15,7 @@ import TrailerIssueModal from './TrailerIssueModal'
 import TrailerCommentModal from './TrailerCommentModal'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
-    const {
-        preferences,
-        saveLastViewedFilters,
-        updateTrailerFilter,
-        updatePreferences
-    } = usePreferences()
+    const { preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
     const [trailers, setTrailers] = useState([])
     const [tractors, setTractors] = useState([])
     const [plants, setPlants] = useState([])
@@ -53,7 +48,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 setIsLoading(false)
             }
         }
-
         fetchAllData()
         if (preferences?.trailerFilters) {
             setSearchText(preferences.trailerFilters.searchText || '')
@@ -61,9 +55,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             setTypeFilter(preferences.trailerFilters.typeFilter || '')
             setViewMode(preferences.trailerFilters.viewMode || preferences.defaultViewMode || 'grid')
         }
-        if (preferences?.autoOverview) {
-            setShowOverview(true)
-        }
+        if (preferences?.autoOverview) setShowOverview(true)
     }, [preferences, reloadTrailers])
 
     useEffect(() => {
@@ -91,34 +83,14 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
 
     async function fetchTrailers() {
         try {
-            const data = await TrailerService.fetchTrailers();
-            const processedData = await Promise.all(data.map(async trailer => {
-                let latestHistoryDate = null;
-                try {
-                    const history = await TrailerService.getTrailerHistory(trailer.id, 1);
-                    latestHistoryDate = history[0]?.changedAt || null;
-                } catch {
-                }
-                try {
-                    const issues = await TrailerService.fetchIssues(trailer.id);
-                    trailer.issues = issues || [];
-                } catch {
-                    trailer.issues = [];
-                }
-                if (TrailerService.fetchComments) {
-                    try {
-                        const comments = await TrailerService.fetchComments(trailer.id);
-                        trailer.comments = comments || [];
-                    } catch {
-                        trailer.comments = [];
-                    }
-                }
-                trailer.isVerified = () => TrailerUtility.isVerified(trailer.updatedLast, trailer.updatedAt, trailer.updatedBy, latestHistoryDate);
-                trailer.latestHistoryDate = latestHistoryDate;
-                return trailer;
-            }));
-            setTrailers(processedData);
-        } catch (error) {
+            const data = await TrailerService.fetchTrailers()
+            const processed = data.map(t => {
+                const trailer = {...t}
+                trailer.isVerified = () => TrailerUtility.isVerified(trailer.updatedLast, trailer.updatedAt, trailer.updatedBy, trailer.latestHistoryDate)
+                return trailer
+            })
+            setTrailers(processed)
+        } catch {
         }
     }
 
@@ -126,7 +98,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         try {
             const data = await TractorService.fetchTractors();
             setTractors(Array.isArray(data) ? data : []);
-        } catch (error) {
+        } catch {
             setTractors([]);
         }
     }
@@ -135,7 +107,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         try {
             const data = await PlantService.fetchPlants();
             setPlants(data);
-        } catch (error) {
+        } catch {
         }
     }
 
@@ -163,69 +135,69 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
 
     function handleTypeClick(type) {
         if (type === 'All Types') {
-            setTypeFilter('');
+            setTypeFilter('')
             updatePreferences(prev => ({
                 ...prev,
                 trailerFilters: {
                     ...prev.trailerFilters,
                     typeFilter: ''
                 }
-            }));
+            }))
         } else {
-            setTypeFilter(type);
+            setTypeFilter(type)
             updatePreferences(prev => ({
                 ...prev,
                 trailerFilters: {
                     ...prev.trailerFilters,
                     typeFilter: type
                 }
-            }));
+            }))
         }
-        setShowOverview(false);
+        setShowOverview(false)
     }
 
     function handleBackFromDetail() {
-        setSelectedTrailer(null);
-        setReloadTrailers(r => !r);
+        setSelectedTrailer(null)
+        setReloadTrailers(r => !r)
     }
 
     function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return '';
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = date.getFullYear();
-        const mm = pad(date.getMonth() + 1);
-        const dd = pad(date.getDate());
-        const hh = pad(date.getHours());
-        const min = pad(date.getMinutes());
-        return `${mm}/${dd}/${yyyy} ${hh}:${min}`;
+        if (!dateStr) return ''
+        const date = new Date(dateStr)
+        if (isNaN(date.getTime())) return ''
+        const pad = n => n.toString().padStart(2, '0')
+        const yyyy = date.getFullYear()
+        const mm = pad(date.getMonth() + 1)
+        const dd = pad(date.getDate())
+        const hh = pad(date.getHours())
+        const min = pad(date.getMinutes())
+        return `${mm}/${dd}/${yyyy} ${hh}:${min}`
     }
 
     function getFiltersAppliedString() {
-        const filters = [];
-        if (searchText) filters.push(`Search: ${searchText}`);
+        const filters = []
+        if (searchText) filters.push(`Search: ${searchText}`)
         if (selectedPlant) {
-            const plant = plants.find(p => p.plantCode === selectedPlant);
-            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`);
+            const plant = plants.find(p => p.plantCode === selectedPlant)
+            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`)
         }
-        if (typeFilter && typeFilter !== 'All Types') filters.push(`Type: ${typeFilter}`);
-        return filters.length ? filters.join(', ') : 'No Filters';
+        if (typeFilter && typeFilter !== 'All Types') filters.push(`Type: ${typeFilter}`)
+        return filters.length ? filters.join(', ') : 'No Filters'
     }
 
     function exportTrailersToCSV(trailersToExport) {
-        if (!trailersToExport || trailersToExport.length === 0) return;
-        const now = new Date();
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = now.getFullYear();
-        const mm = pad(now.getMonth() + 1);
-        const dd = pad(now.getDate());
-        const hh = pad(now.getHours());
-        const min = pad(now.getMinutes());
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
-        const filtersApplied = getFiltersAppliedString();
-        const fileName = `Trailer Export - ${formattedNow} - ${filtersApplied}.csv`;
-        const topHeader = `Trailer Export - ${formattedNow} - ${filtersApplied}`;
+        if (!trailersToExport || trailersToExport.length === 0) return
+        const now = new Date()
+        const pad = n => n.toString().padStart(2, '0')
+        const yyyy = now.getFullYear()
+        const mm = pad(now.getMonth() + 1)
+        const dd = pad(now.getDate())
+        const hh = pad(now.getHours())
+        const min = pad(now.getMinutes())
+        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`
+        const filtersApplied = getFiltersAppliedString()
+        const fileName = `Trailer Export - ${formattedNow} - ${filtersApplied}.csv`
+        const topHeader = `Trailer Export - ${formattedNow} - ${filtersApplied}`
         const headers = [
             'Trailer Number',
             'Status',
@@ -235,7 +207,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             'Last Service Date',
             'Cleanliness Rating',
             'Open Issues'
-        ];
+        ]
         const rows = trailersToExport.map(trailer => [
             trailer.trailerNumber || '',
             trailer.status || '',
@@ -244,64 +216,57 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             getPlantName(trailer.assignedPlant),
             formatDate(trailer.lastServiceDate),
             trailer.cleanlinessRating || '',
-            Array.isArray(trailer.issues) ? trailer.issues.filter(issue => !issue.time_completed).length : 0
-        ]);
+            Number(trailer.openIssuesCount || 0)
+        ])
         const csvContent = [
             `"${topHeader}"`,
             headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
             ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
-        const blob = new Blob([csvContent], {type: 'text/csv'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        ].join('\n')
+        const blob = new Blob([csvContent], {type: 'text/csv'})
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
     }
 
-    const statusOrder = {
-        'Active': 1,
-        'Spare': 2,
-        'In Shop': 3,
-        'Retired': 4
-    };
+    const statusOrder = { 'Active': 1, 'Spare': 2, 'In Shop': 3, 'Retired': 4 }
 
     const filteredTrailers = trailers
         .filter(trailer => {
             const matchesSearch = !searchText.trim() ||
                 trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()));
-            const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant;
-            let matchesType = true;
+                (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
+            const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
+            let matchesType = true
             if (typeFilter && typeFilter !== 'All Types') {
                 matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter :
                     typeFilter === 'Past Due Service' ? TrailerUtility.isServiceOverdue(trailer.lastServiceDate) :
                         typeFilter === 'Verified' ? trailer.isVerified() :
                             typeFilter === 'Not Verified' ? !trailer.isVerified() :
-                                typeFilter === 'Open Issues' ? trailer.issues?.some(issue => !issue.time_completed) : false;
+                                typeFilter === 'Open Issues' ? (Number(trailer.openIssuesCount || 0) > 0) : false
             }
-            return matchesSearch && matchesPlant && matchesType;
+            return matchesSearch && matchesPlant && matchesType
         })
         .sort((a, b) => {
-            const statusA = statusOrder[a.status] || 99;
-            const statusB = statusOrder[b.status] || 99;
-            if (statusA !== statusB) return statusA - statusB;
-            const aNum = parseInt(a.trailerNumber?.replace(/\D/g, '') || '0');
-            const bNum = parseInt(b.trailerNumber?.replace(/\D/g, '') || '0');
-            if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-            return (a.trailerNumber || '').localeCompare(b.trailerNumber || '');
-        });
-    ['Cement', 'End Dump'].map(type => ({
-        type,
-        count: trailers.filter(t => t.trailerType === type).length
-    }));
-    trailers.filter(t => TrailerUtility.isServiceOverdue(t.lastServiceDate)).length;
-    trailers.filter(t => t.isVerified()).length;
-    trailers.filter(t => !t.updatedLast || !t.updatedBy).length;
-    trailers.filter(t => t.issues?.some(issue => !issue.time_completed)).length;
+            const statusA = statusOrder[a.status] || 99
+            const statusB = statusOrder[b.status] || 99
+            if (statusA !== statusB) return statusA - statusB
+            const aNum = parseInt(a.trailerNumber?.replace(/\D/g, '') || '0')
+            const bNum = parseInt(b.trailerNumber?.replace(/\D/g, '') || '0')
+            if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+            return (a.trailerNumber || '').localeCompare(b.trailerNumber || '')
+        })
+    ;['Cement', 'End Dump'].map(type => ({ type, count: trailers.filter(t => t.trailerType === type).length }))
+    trailers.filter(t => TrailerUtility.isServiceOverdue(t.lastServiceDate)).length
+    trailers.filter(t => t.isVerified()).length
+    trailers.filter(t => !t.updatedLast || !t.updatedBy).length
+    trailers.filter(t => Number(t.openIssuesCount || 0) > 0).length
+
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -323,7 +288,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 </div>
             </div>
         </div>
-    );
+    )
 
     if (selectedTrailer) {
         return (
@@ -331,7 +296,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 trailer={selectedTrailer}
                 onClose={handleBackFromDetail}
             />
-        );
+        )
     }
 
     return (
@@ -363,26 +328,26 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                         placeholder="Search by trailer or tractor..."
                         value={searchText}
                         onChange={e => {
-                            setSearchText(e.target.value);
+                            setSearchText(e.target.value)
                             updatePreferences(prev => ({
                                 ...prev,
                                 trailerFilters: {
                                     ...prev.trailerFilters,
                                     searchText: e.target.value
                                 }
-                            }));
+                            }))
                         }}
                     />
                     {searchText && (
                         <button className="clear" onClick={() => {
-                            setSearchText('');
+                            setSearchText('')
                             updatePreferences(prev => ({
                                 ...prev,
                                 trailerFilters: {
                                     ...prev.trailerFilters,
                                     searchText: ''
                                 }
-                            }));
+                            }))
                         }}>
                             <i className="fas fa-times"></i>
                         </button>
@@ -508,8 +473,8 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             </thead>
                             <tbody>
                             {filteredTrailers.map(trailer => {
-                                const commentsCount = Array.isArray(trailer.comments) ? trailer.comments.length : 0
-                                const issuesCount = Array.isArray(trailer.issues) ? trailer.issues.filter(issue => !issue.time_completed).length : 0
+                                const commentsCount = Number(trailer.commentsCount || 0)
+                                const issuesCount = Number(trailer.openIssuesCount || 0)
                                 return (
                                     <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)}
                                         style={{cursor: 'pointer'}}>
@@ -640,7 +605,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 />
             )}
         </div>
-    );
+    )
 }
 
-export default TrailersView;
+export default TrailersView

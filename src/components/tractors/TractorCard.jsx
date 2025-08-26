@@ -1,7 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {TractorUtility} from '../../utils/TractorUtility';
 import {usePreferences} from '../../app/context/PreferencesContext';
-import {TractorService} from '../../services/TractorService';
 import './styles/TractorCard.css';
 
 function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onSelect}) {
@@ -10,34 +9,8 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
         ? tractor.isVerified(tractor.latestHistoryDate)
         : TractorUtility.isVerified(tractor.updatedLast, tractor.updatedAt, tractor.updatedBy, tractor.latestHistoryDate);
     const {preferences} = usePreferences();
-    const [openIssuesCount, setOpenIssuesCount] = useState(0);
-    const [commentsCount, setCommentsCount] = useState(0);
-
-    useEffect(() => {
-        const fetchOpenIssues = async () => {
-            try {
-                const issues = await TractorService.fetchIssues(tractor.id);
-                const openIssues = issues.filter(issue => !issue.time_completed);
-                setOpenIssuesCount(openIssues.length);
-            } catch (error) {
-                setOpenIssuesCount(0);
-            }
-        };
-
-        const fetchComments = async () => {
-            try {
-                const comments = await TractorService.fetchComments(tractor.id);
-                setCommentsCount(comments.length);
-            } catch (error) {
-                setCommentsCount(0);
-            }
-        };
-
-        if (tractor?.id) {
-            fetchOpenIssues();
-            fetchComments();
-        }
-    }, [tractor?.id]);
+    const openIssuesCount = Number(tractor.openIssuesCount || 0);
+    const commentsCount = Number(tractor.commentsCount || 0);
 
     const handleCardClick = () => {
         if (onSelect && typeof onSelect === 'function') {
@@ -108,13 +81,13 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
                         position: 'absolute',
                         top: '12px',
                         right: '12px',
-                        color: '#10b981',
+                        color: 'var(--success)',
                         fontSize: '1.2rem',
                         zIndex: 5
                     }}
                     title="Verified"
                 >
-                    <i className="fas fa-check-circle" style={{color: '#10b981'}}></i>
+                    <i className="fas fa-check-circle" style={{color: 'var(--success)'}}></i>
                 </div>
             ) : (
                 <div
@@ -123,7 +96,7 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
                         position: 'absolute',
                         top: '12px',
                         right: '12px',
-                        color: '#dc2626',
+                        color: 'var(--error)',
                         fontSize: '1.2rem',
                         zIndex: 5
                     }}
@@ -131,7 +104,7 @@ function TractorCard({tractor, operatorName, plantName, showOperatorWarning, onS
                         tractor.latestHistoryDate && new Date(tractor.latestHistoryDate) > new Date(tractor.updatedLast) ? 'Changes recorded in history since last verification' :
                             'Tractor not verified since last Sunday'}
                 >
-                    <i className="fas fa-flag" style={{color: '#e74c3c'}}></i>
+                    <i className="fas fa-flag" style={{color: 'var(--error)'}}></i>
                 </div>
             )}
             <div className="card-content">

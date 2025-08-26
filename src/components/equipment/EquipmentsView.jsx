@@ -15,8 +15,7 @@ import EquipmentCommentModal from './EquipmentCommentModal'
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
-    const safeUpdateEquipmentFilter = typeof updateEquipmentFilter === 'function' ? updateEquipmentFilter : () => {
-    };
+    const safeUpdateEquipmentFilter = typeof updateEquipmentFilter === 'function' ? updateEquipmentFilter : () => {};
     const [equipments, setEquipments] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -43,12 +42,10 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             setIsLoading(true);
             try {
                 await Promise.all([fetchEquipments(), fetchPlants()]);
-            } catch (error) {
             } finally {
                 setIsLoading(false);
             }
         }
-
         fetchAllData();
         if (preferences?.equipmentFilters) {
             setSearchText(preferences.equipmentFilters.searchText || '');
@@ -56,34 +53,14 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             setStatusFilter(preferences.equipmentFilters.statusFilter || '');
             setViewMode(preferences.equipmentFilters.viewMode || preferences.defaultViewMode || 'grid');
         }
-        if (preferences?.autoOverview) {
-            setShowOverview(true);
-        }
+        if (preferences?.autoOverview) setShowOverview(true);
     }, [preferences]);
 
     async function fetchEquipments() {
         try {
             const data = await EquipmentService.fetchEquipments();
-            const processedData = await Promise.all(data.map(async equipment => {
-                try {
-                    const issues = await EquipmentService.fetchIssues(equipment.id);
-                    equipment.issues = issues || [];
-                } catch {
-                    equipment.issues = [];
-                }
-                if (EquipmentService.fetchComments) {
-                    try {
-                        const comments = await EquipmentService.fetchComments(equipment.id);
-                        equipment.comments = comments || [];
-                    } catch {
-                        equipment.comments = [];
-                    }
-                }
-                return equipment;
-            }));
-            setEquipments(processedData);
-        } catch (error) {
-            console.error('Failed to fetch equipment:', error);
+            setEquipments(Array.isArray(data) ? data : []);
+        } catch {
             setEquipments([]);
         }
     }
@@ -92,8 +69,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         try {
             const data = await PlantService.fetchPlants();
             setPlants(data);
-        } catch (error) {
-        }
+        } catch {}
     }
 
     function getPlantName(plantCode) {
@@ -173,7 +149,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             getPlantName(equipment.assignedPlant),
             formatDate(equipment.lastServiceDate),
             equipment.cleanlinessRating || '',
-            Array.isArray(equipment.issues) ? equipment.issues.filter(issue => !issue.time_completed).length : 0
+            Number(equipment.openIssuesCount || 0)
         ]);
         const csvContent = [
             `"${topHeader}"`,
@@ -204,7 +180,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                     : statusFilter === 'Past Due Service'
                         ? EquipmentUtility.isServiceOverdue(equipment.lastServiceDate)
                         : statusFilter === 'Open Issues'
-                            ? equipment.issues?.some(issue => !issue.time_completed)
+                            ? Number(equipment.openIssuesCount || 0) > 0
                             : false;
             }
             return matchesSearch && matchesPlant && matchesStatus;
@@ -228,7 +204,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         count: equipments.filter(e => e.status === status).length
     }));
     equipments.filter(e => EquipmentUtility.isServiceOverdue(e.lastServiceDate)).length;
-    equipments.filter(e => e.issues?.some(issue => !issue.time_completed)).length;
+    equipments.filter(e => Number(e.openIssuesCount || 0) > 0).length;
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -440,8 +416,8 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                     </thead>
                                     <tbody>
                                     {filteredEquipments.map(equipment => {
-                                        const issuesCount = Array.isArray(equipment.issues) ? equipment.issues.filter(issue => !issue.time_completed).length : 0
-                                        const commentsCount = Array.isArray(equipment.comments) ? equipment.comments.length : 0
+                                        const issuesCount = Number(equipment.openIssuesCount || 0)
+                                        const commentsCount = Number(equipment.commentsCount || 0)
                                         return (
                                             <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)}
                                                 style={{cursor: 'pointer'}}>

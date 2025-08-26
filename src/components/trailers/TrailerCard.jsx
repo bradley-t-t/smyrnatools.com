@@ -1,55 +1,17 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {TrailerUtility} from '../../utils/TrailerUtility';
-import {TrailerService} from '../../services/TrailerService';
 import './styles/TrailerCard.css';
 
 function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSelect}) {
     const isServiceOverdue = TrailerUtility.isServiceOverdue(trailer.lastServiceDate);
-    const [openIssuesCount, setOpenIssuesCount] = useState(0);
-    const [commentsCount, setCommentsCount] = useState(0);
-
-    useEffect(() => {
-        const fetchOpenIssues = async () => {
-            try {
-                const issues = await TrailerService.fetchIssues(trailer.id);
-                const openIssues = issues.filter(issue => !issue.time_completed);
-                setOpenIssuesCount(openIssues.length);
-            } catch (error) {
-                setOpenIssuesCount(0);
-            }
-        };
-
-        const fetchComments = async () => {
-            try {
-                const comments = await TrailerService.fetchComments(trailer.id);
-                setCommentsCount(comments.length);
-            } catch (error) {
-                setCommentsCount(0);
-            }
-        };
-
-        if (trailer?.id) {
-            fetchOpenIssues();
-            fetchComments();
-        }
-    }, [trailer?.id]);
+    const openIssuesCount = Number(trailer.openIssuesCount || 0);
+    const commentsCount = Number(trailer.commentsCount || 0);
 
     const handleCardClick = () => {
-        if (onSelect && typeof onSelect === 'function') {
-            onSelect(trailer.id);
-        }
+        if (onSelect && typeof onSelect === 'function') onSelect(trailer.id);
     };
 
     const cardProps = onSelect ? {onClick: handleCardClick} : {};
-
-    const getDaysSince = (dateStr) => {
-        if (!dateStr) return null;
-        const date = new Date(dateStr);
-        const today = new Date();
-        const diffTime = Math.abs(today - date);
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-    getDaysSince(trailer.lastServiceDate);
     const accentColor = 'var(--accent)';
 
     let statusColor = 'var(--accent)';
@@ -61,49 +23,22 @@ function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSel
 
     return (
         <div className="tractor-card" {...cardProps}>
-            <div style={{
-                height: 4,
-                width: '100%',
-                background: statusColor,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 10
-            }}/>
+            <div style={{height: 4, width: '100%', background: statusColor, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10}}/>
             {openIssuesCount > 0 && (
-                <div
-                    className="trailer-issues-badge"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        zIndex: 4,
-                    }}
-                    title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
+                <div className="trailer-issues-badge" style={{position: 'absolute', top: '12px', zIndex: 4}} title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-tools" style={{marginRight: '4px', fontSize: '0.9rem'}}></i>
                     <span>{openIssuesCount}</span>
                 </div>
             )}
             {commentsCount > 0 && (
-                <div
-                    className="trailer-comments-badge"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: openIssuesCount > 0 ? '72px' : '20px',
-                        zIndex: 4
-                    }}
-                    title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}
-                >
+                <div className="trailer-comments-badge" style={{position: 'absolute', top: '12px', right: openIssuesCount > 0 ? '72px' : '20px', zIndex: 4}} title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-comments trailer-comment-icon"></i>
                     <span>{commentsCount}</span>
                 </div>
             )}
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="tractor-name" style={{color: accentColor}}>
-                        Trailer #{trailer.trailerNumber || 'Not Assigned'}
-                    </h3>
+                    <h3 className="tractor-name" style={{color: accentColor}}>Trailer #{trailer.trailerNumber || 'Not Assigned'}</h3>
                 </div>
                 <div className="card-details">
                     <div className="detail-row">
@@ -132,13 +67,7 @@ function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSel
                     <div className="detail-row">
                         <div className="detail-label">Last Service</div>
                         <div className={`detail-value ${trailer.lastServiceDate && isServiceOverdue ? 'overdue' : ''}`}>
-                            {trailer.lastServiceDate ? (
-                                <>
-                                    {new Date(trailer.lastServiceDate).toLocaleDateString()}
-                                </>
-                            ) : (
-                                'Unknown'
-                            )}
+                            {trailer.lastServiceDate ? new Date(trailer.lastServiceDate).toLocaleDateString() : 'Unknown'}
                         </div>
                     </div>
                     <div className="detail-row">
@@ -147,12 +76,7 @@ function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSel
                             {trailer.cleanlinessRating ? (
                                 <div className="stars-container">
                                     {[...Array(5)].map((_, i) => (
-                                        <i
-                                            key={i}
-                                            className={`fas fa-star ${i < trailer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
-                                            style={i < trailer.cleanlinessRating ? {color: accentColor} : {}}
-                                            aria-hidden="true"
-                                        ></i>
+                                        <i key={i} className={`fas fa-star ${i < trailer.cleanlinessRating ? 'filled-star' : 'empty-star'}`} style={i < trailer.cleanlinessRating ? {color: accentColor} : {}} aria-hidden="true"></i>
                                     ))}
                                 </div>
                             ) : 'Not Rated'}
