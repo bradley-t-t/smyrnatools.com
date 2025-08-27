@@ -65,26 +65,31 @@ export const PreferencesProvider = ({children}) => {
     const [userId, setUserId] = useState(null)
 
     useEffect(() => {
+        let themeTimeout
         const applyThemeFromStorage = () => {
             try {
                 const savedPrefs = localStorage.getItem('userPreferences')
                 if (savedPrefs) {
                     const parsedPrefs = JSON.parse(savedPrefs)
                     const merged = {...defaultPreferences, ...parsedPrefs}
-                    setPreferences(merged)
-                    document.documentElement.classList.toggle('dark-mode', merged.themeMode === 'dark')
-                    document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
-                    document.documentElement.classList.add(`accent-${merged.accentColor}`)
+                    themeTimeout = setTimeout(() => {
+                        setPreferences(merged)
+                        document.documentElement.classList.toggle('dark-mode', merged.themeMode === 'dark')
+                        document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
+                        document.documentElement.classList.add(`accent-${merged.accentColor}`)
+                    }, 1000)
                 }
-            } catch {
-            }
+            } catch {}
         }
         applyThemeFromStorage()
         const handleStorageChange = e => {
             if (e.key === 'userPreferences') applyThemeFromStorage()
         }
         window.addEventListener('storage', handleStorageChange)
-        return () => window.removeEventListener('storage', handleStorageChange)
+        return () => {
+            window.removeEventListener('storage', handleStorageChange)
+            if (themeTimeout) clearTimeout(themeTimeout)
+        }
     }, [])
 
     useEffect(() => {
@@ -123,8 +128,7 @@ export const PreferencesProvider = ({children}) => {
         document.documentElement.classList.add(`accent-${preferences.accentColor}`)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(preferences))
-        } catch {
-        }
+        } catch {}
     }, [preferences])
 
     const fetchUserPreferences = async uid => {
@@ -136,11 +140,11 @@ export const PreferencesProvider = ({children}) => {
                 .eq('user_id', uid)
                 .single()
             if (error && error.code === 'PGRST116') {
-                setPreferences(defaultPreferences)
+                setTimeout(() => setPreferences(defaultPreferences), 1000)
             } else if (error) {
                 throw error
             } else {
-                setPreferencesFromData(data)
+                setTimeout(() => setPreferencesFromData(data), 1000)
             }
         } catch (error) {
             logSupabaseError('fetching preferences', error)
@@ -196,8 +200,7 @@ export const PreferencesProvider = ({children}) => {
         setPreferences(newPreferences)
         try {
             localStorage.setItem('userPreferences', JSON.stringify(newPreferences))
-        } catch {
-        }
+        } catch {}
     }
 
     const updatePreferences = async (keyOrObject, value) => {
