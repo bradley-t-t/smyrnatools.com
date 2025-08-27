@@ -1,14 +1,11 @@
 import React, {useEffect, useState} from 'react'
 import './styles/ReportsSubmitView.css'
-import {supabase} from '../../services/DatabaseService'
 import {ReportService} from '../../services/ReportService'
 import {PlantManagerSubmitPlugin} from './types/WeeklyPlantManagerReport'
 import {DistrictManagerSubmitPlugin} from './types/WeeklyDistrictManagerReport'
 import {EfficiencySubmitPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerSubmitPlugin} from './types/WeeklySafetyManagerReport'
 import {GeneralManagerSubmitPlugin} from './types/WeeklyGeneralManagerReport'
-import {UserService} from '../../services/UserService'
-import {RegionService} from '../../services/RegionService'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
@@ -24,16 +21,6 @@ function getTruckNumberForOperator(row, mixers) {
     const mixer = mixers.find(m => m.assigned_operator === row.name)
     if (mixer && mixer.truck_number) return mixer.truck_number
     return ''
-}
-
-function normalizeCodeUpper(code) {
-    return String(code || '').trim().toUpperCase()
-}
-
-function normalizeCodeNumeric(code) {
-    const s = String(code || '').trim()
-    const digits = s.replace(/^0+/, '')
-    return digits.length ? digits : s.toUpperCase()
 }
 
 function ReportsSubmitView({
@@ -64,11 +51,9 @@ function ReportsSubmitView({
     const [summaryTab, setSummaryTab] = useState('summary')
     const [yph, setYph] = useState(null)
     const [yphGrade, setYphGrade] = useState('')
-    const [, setYphColor] = useState('')
     const [yphLabel, setYphLabel] = useState('')
     const [lost, setLost] = useState(null)
     const [lostGrade, setLostGrade] = useState('')
-    const [, setLostColor] = useState('')
     const [lostLabel, setLostLabel] = useState('')
     const [carouselIndex, setCarouselIndex] = useState(0)
     const [operatorOptions, setOperatorOptions] = useState([])
@@ -217,7 +202,6 @@ function ReportsSubmitView({
 
     function handleReincludeOperator(operatorId) {
         if (!operatorId) return
-        operatorOptions.find(opt => opt.value === operatorId);
         const mixer = mixers.find(m => m.assigned_operator === operatorId)
         const newRow = {
             name: operatorId,
@@ -239,8 +223,7 @@ function ReportsSubmitView({
     function handleBackClick() {
         if (hasUnsavedChanges) {
             handleSaveDraft({
-                preventDefault: () => {
-                }
+                preventDefault: () => {}
             })
             setTimeout(() => onBack(), 800)
         } else {
@@ -250,78 +233,24 @@ function ReportsSubmitView({
 
     useEffect(() => {
         async function fetchPlants() {
-            const {data, error} = await supabase
-                .from('plants')
-                .select('plant_code,plant_name')
-                .order('plant_code', {ascending: true})
-            let basePlants = !error && Array.isArray(data)
-                ? data.filter(p => p.plant_code && p.plant_name)
-                    .sort((a, b) => {
-                        const aNum = parseInt(a.plant_code, 10)
-                        const bNum = parseInt(b.plant_code, 10)
-                        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
-                        return String(a.plant_code).localeCompare(String(b.plant_code))
-                    })
-                : []
-            try {
-                const targetUserId = managerEditUser || user?.id
-                if (targetUserId) {
-                    const userPlant = await UserService.getUserPlant(targetUserId)
-                    if (userPlant) {
-                        const regions = await RegionService.fetchRegionsByPlantCode(userPlant)
-                        const regionCodes = Array.isArray(regions) ? regions.map(r => r.regionCode).filter(Boolean) : []
-                        if (regionCodes.length > 0) {
-                            const allowedUpper = new Set()
-                            const allowedNumeric = new Set()
-                            for (const rc of regionCodes) {
-                                const regionPlants = await RegionService.fetchRegionPlants(rc)
-                                regionPlants.forEach(rp => {
-                                    const c = rp.plantCode || rp.plant_code
-                                    allowedUpper.add(normalizeCodeUpper(c))
-                                    allowedNumeric.add(normalizeCodeNumeric(c))
-                                })
-                            }
-                            basePlants = basePlants.filter(p => {
-                                const u = normalizeCodeUpper(p.plant_code)
-                                const n = normalizeCodeNumeric(p.plant_code)
-                                return allowedUpper.has(u) || allowedNumeric.has(n)
-                            })
-                        } else {
-                            basePlants = []
-                        }
-                    } else {
-                        basePlants = []
-                    }
-                }
-            } catch (e) {
-                basePlants = []
+            const targetUserId = managerEditUser || user?.id
+            if (targetUserId) {
+                const list = await ReportService.fetchPlantsForUser(targetUserId)
+                setPlants(list)
+            } else {
+                const list = await ReportService.fetchPlantsSorted()
+                setPlants(list)
             }
-            setPlants(basePlants)
         }
 
         fetchPlants()
     }, [user, managerEditUser])
+
     useEffect(() => {
         async function fetchMaintenanceItems() {
-            let weekStart, weekEnd
-            if (report.weekIso) {
-                const monday = new Date(report.weekIso)
-                monday.setDate(monday.getDate() + 1)
-                monday.setHours(0, 0, 0, 0)
-                const saturday = new Date(monday)
-                saturday.setDate(monday.getDate() + 5)
-                weekStart = monday
-                weekEnd = saturday
-            } else {
-                return
-            }
-            const {data, error} = await supabase
-                .from('list_items')
-                .select('*')
-                .eq('completed', true)
-                .gte('completed_at', weekStart.toISOString())
-                .lte('completed_at', weekEnd.toISOString())
-            setMaintenanceItems(!error && Array.isArray(data) ? data : [])
+            if (!report.weekIso) return
+            const items = await ReportService.fetchMaintenanceItems(report.weekIso)
+            setMaintenanceItems(items)
         }
 
         fetchMaintenanceItems()
@@ -341,40 +270,14 @@ function ReportsSubmitView({
                 setForm(f => ({...f, rows: []}))
                 return
             }
-            const {data: operatorsData, error: opError} = await supabase
-                .from('operators')
-                .select('employee_id, name, status, plant_code, position')
-                .eq('plant_code', plantCode)
-                .eq('status', 'Active')
-                .eq('position', 'Mixer Operator')
-            let activeOperators = []
-            if (!opError && Array.isArray(operatorsData)) {
-                activeOperators = operatorsData
-                setOperatorOptions(
-                    operatorsData.map(u => ({
-                        value: u.employee_id,
-                        label: u.name
-                    }))
-                )
-            } else {
-                setOperatorOptions([])
-            }
-            const {data: mixersData, error: mixError} = await supabase
-                .from('mixers')
-                .select('assigned_operator, truck_number')
-                .eq('assigned_plant', plantCode)
-            let assignedMixers = []
-            if (!mixError && Array.isArray(mixersData)) {
-                assignedMixers = mixersData
-                setMixers(mixersData)
-            } else {
-                setMixers([])
-            }
+            const {operatorOptions, mixers, activeOperators} = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
+            setOperatorOptions(operatorOptions)
+            setMixers(mixers)
             if (report.name === 'plant_production' && !readOnly) {
                 if ((!initialData || !initialData.rows || initialData.rows.length === 0) && (!form.rows || form.rows.length === 0)) {
                     const rows = []
                     activeOperators.forEach(op => {
-                        const mixer = assignedMixers.find(m => m.assigned_operator === op.employee_id)
+                        const mixer = mixers.find(m => m.assigned_operator === op.employee_id)
                         rows.push({
                             name: op.employee_id,
                             truck_number: mixer && mixer.truck_number ? mixer.truck_number : '',
@@ -393,7 +296,7 @@ function ReportsSubmitView({
         }
 
         if (report.name === 'plant_production') {
-            let plantCode = form.plant
+            const plantCode = form.plant
             if (!plantCode) {
                 setForm(f => ({...f, rows: []}))
                 return
@@ -427,10 +330,6 @@ function ReportsSubmitView({
         setLost(lost)
         setLostGrade(lostGrade)
         setLostLabel(lostLabel)
-        let color = ReportService.getYphColor(yphGrade)
-        setYphColor(color)
-        let lostColorVal = ReportService.getYphColor(lostGrade)
-        setLostColor(lostColorVal)
     }, [form, report.name])
 
     useEffect(() => {

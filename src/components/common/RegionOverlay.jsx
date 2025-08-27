@@ -18,7 +18,7 @@ function RegionOverlay() {
     const currentRegionDisplay = useMemo(() => {
         if (!currentRegionCode && !currentRegionName) return 'Select Region'
         if (currentRegionCode && currentRegionName) return `${currentRegionCode} • ${currentRegionName}`
-        return currentRegionCode || currentRegionName
+        return currentRegionName || currentRegionCode
     }, [currentRegionCode, currentRegionName])
 
     useEffect(() => {
@@ -92,7 +92,7 @@ function RegionOverlay() {
             {isMinimized ? (
                 <div className="region-minimized-pill" onClick={toggleMinimize} title={currentRegionDisplay}>
                     <i className="fas fa-globe"/>
-                    <span className="region-label">{currentRegionCode || 'Region'}</span>
+                    <span className="region-label">{currentRegionName || currentRegionCode || 'Region'}</span>
                 </div>
             ) : (
                 <div className="region-panel">
@@ -120,7 +120,7 @@ function RegionOverlay() {
                             })}
                         </select>
                         {!canSelectRegion && (
-                            <div className="region-note">Locked to your plant's region</div>
+                            <div className="region-note">Locked to your plant region</div>
                         )}
                     </div>
                 </div>
@@ -130,4 +130,3 @@ function RegionOverlay() {
 }
 
 export default RegionOverlay
-

@@ -1,7 +1,6 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import './styles/ReportsSubmitView.css'
 import './styles/ReportsReviewView.css'
-import {supabase} from '../../services/DatabaseService'
 import {UserService} from '../../services/UserService'
 import {ReportService} from '../../services/ReportService'
 import {PlantManagerReviewPlugin} from './types/WeeklyPlantManagerReport'
@@ -64,20 +63,13 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
 
     useEffect(() => {
         async function fetchMaintenanceItems() {
-            let weekIso = report.weekIso || initialData?.week
-            if (!weekIso) return
-            const monday = new Date(weekIso)
-            monday.setDate(monday.getDate() + 1)
-            monday.setHours(0, 0, 0, 0)
-            const saturday = new Date(monday)
-            saturday.setDate(monday.getDate() + 5)
-            const {data, error} = await supabase
-                .from('list_items')
-                .select('*')
-                .eq('completed', true)
-                .gte('completed_at', monday.toISOString())
-                .lte('completed_at', saturday.toISOString())
-            setMaintenanceItems(!error && Array.isArray(data) ? data : [])
+            const weekIso = report.weekIso || initialData?.week
+            if (!weekIso) {
+                setMaintenanceItems([])
+                return
+            }
+            const items = await ReportService.fetchMaintenanceItems(weekIso)
+            setMaintenanceItems(items)
         }
 
         fetchMaintenanceItems()
@@ -95,35 +87,28 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
         }
     }, [initialData])
 
+    const plantCode = useMemo(() => {
+        if (form.plant) return form.plant
+        if (Array.isArray(form.rows) && form.rows.length > 0) return form.rows[0].plant_code || ''
+        return ''
+    }, [form.plant, form.rows])
+
     useEffect(() => {
         async function fetchOperatorOptions() {
             if (report.name !== 'plant_production') {
                 setOperatorOptions([])
                 return
             }
-            let plantCode = form.plant
-            if (!plantCode && Array.isArray(form.rows) && form.rows.length > 0) {
-                plantCode = form.rows[0].plant_code
-            }
             if (!plantCode) {
                 setOperatorOptions([])
                 return
             }
-            const {data: operatorsData, error: opError} = await supabase
-                .from('operators')
-                .select('employee_id, name')
-                .eq('plant_code', plantCode)
-            setOperatorOptions(!opError && Array.isArray(operatorsData)
-                ? operatorsData.map(u => ({
-                    value: u.employee_id,
-                    label: u.name
-                }))
-                : []
-            )
+            const options = await ReportService.fetchOperatorOptions(plantCode)
+            setOperatorOptions(options)
         }
 
         fetchOperatorOptions()
-    }, [report.name, form.plant, form.rows])
+    }, [report.name, plantCode])
 
     useEffect(() => {
         async function fetchAssignedPlant() {
@@ -164,20 +149,8 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
 
     useEffect(() => {
         async function fetchPlants() {
-            const {data, error} = await supabase
-                .from('plants')
-                .select('plant_code,plant_name')
-                .order('plant_code', {ascending: true})
-            setPlants(!error && Array.isArray(data)
-                ? data.filter(p => p.plant_code && p.plant_name)
-                    .sort((a, b) => {
-                        const aNum = parseInt(a.plant_code, 10)
-                        const bNum = parseInt(b.plant_code, 10)
-                        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
-                        return String(a.plant_code).localeCompare(String(b.plant_code))
-                    })
-                : []
-            )
+            const list = await ReportService.fetchPlantsSorted()
+            setPlants(list)
         }
 
         fetchPlants()

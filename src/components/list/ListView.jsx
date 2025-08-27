@@ -9,9 +9,10 @@ import {usePreferences} from '../../app/context/PreferencesContext'
 import ListAddView from './ListAddView'
 import ListDetailView from './ListDetailView'
 import {supabase} from '../../services/DatabaseService'
+import {RegionService} from '../../services/RegionService'
 
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
-    const {updateListFilter, resetListFilters} = usePreferences()
+    const {updateListFilter, resetListFilters, preferences} = usePreferences()
     const [, setListItems] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -24,6 +25,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const [selectedItem, setSelectedItem] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState(null)
     const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false)
+    const [regionPlantCodes, setRegionPlantCodes] = useState([])
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -56,25 +58,65 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         fetchAllData()
     }, [])
 
+    useEffect(() => {
+        const code = preferences?.selectedRegion?.code || ''
+        let mounted = true
+        async function loadRegionPlants() {
+            if (!code) {
+                if (mounted) setRegionPlantCodes([])
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                const codes = Array.isArray(regionPlants) ? regionPlants.map(p => p.plantCode).filter(Boolean) : []
+                if (mounted) setRegionPlantCodes(codes)
+            } catch {
+                if (mounted) setRegionPlantCodes([])
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            mounted = false
+        }
+    }, [preferences?.selectedRegion?.code])
+
+    useEffect(() => {
+        if (!selectedPlant) return
+        const code = preferences?.selectedRegion?.code || ''
+        if (!code) return
+        const allowed = new Set(regionPlantCodes)
+        if (selectedPlant && !allowed.has(selectedPlant)) {
+            setSelectedPlant('')
+            updateListFilter?.('selectedPlant', '')
+        }
+    }, [regionPlantCodes, preferences?.selectedRegion?.code, selectedPlant, updateListFilter])
+
     async function fetchAllData() {
         setIsLoading(true)
         try {
-            const items = await ListService.fetchListItems()
+            const [items, plantsData] = await Promise.all([
+                ListService.fetchListItems(),
+                ListService.fetchPlants()
+            ])
             setListItems(items)
-            const plantsData = await ListService.fetchPlants()
             setPlants(plantsData)
         } finally {
             setIsLoading(false)
         }
     }
 
-    const filteredItems = ListService.getFilteredItems({
+    const regionCode = preferences?.selectedRegion?.code || ''
+    const regionCodeSet = new Set(regionPlantCodes)
+
+    const baseFilteredItems = ListService.getFilteredItems({
         filterType: '',
         plantCode: selectedPlant,
         searchTerm: searchText,
         showCompleted: statusFilter === 'completed',
         statusFilter
     })
+
+    const filteredItems = regionCode ? baseFilteredItems.filter(item => regionCodeSet.has(item.plant_code)) : baseFilteredItems
 
     const getPlantName = plantCode => ListService.getPlantName(plantCode)
     const truncateText = (text, maxLength, byWords = false) => ListService.truncateText(text, maxLength, byWords)
@@ -103,6 +145,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     function getFiltersAppliedString() {
         const filters = []
         if (searchText) filters.push(`Search: ${searchText}`)
+        if (regionCode) filters.push(`Region: ${preferences?.selectedRegion?.name || regionCode}`)
         if (selectedPlant) {
             const plant = plants.find(p => p.plant_code === selectedPlant)
             filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`)
@@ -187,6 +230,8 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         </div>
     )
 
+    const visiblePlants = regionCode ? plants.filter(p => regionCodeSet.has(p.plant_code)) : plants
+
     return (
         <div className="dashboard-container list-view">
             <div className="dashboard-header">
@@ -245,7 +290,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                             }}
                         >
                             <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants</option>
-                            {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
+                            {visiblePlants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
                                 <option
                                     key={plant.plant_code}
                                     value={plant.plant_code}
@@ -414,7 +459,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 <ListAddView
                     onClose={() => setShowAddSheet(false)}
                     onItemAdded={() => fetchAllData()}
-                    plants={plants}
+                    plants={visiblePlants}
                 />
             )}
 

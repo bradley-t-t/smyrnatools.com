@@ -7,6 +7,8 @@ import {supabase} from '../../services/DatabaseService'
 import {UserService} from '../../services/UserService'
 import {ReportService} from '../../services/ReportService'
 import LoadingScreen from '../common/LoadingScreen'
+import {usePreferences} from '../../app/context/PreferencesContext'
+import {RegionService} from '../../services/RegionService'
 
 const HARDCODED_TODAY = new Date()
 const REPORTS_START_DATE = new Date('2025-07-20')
@@ -37,6 +39,26 @@ function ReportsView() {
     const [isLoadingPermissions, setIsLoadingPermissions] = useState(true)
     const [myLoadedWeeks, setMyLoadedWeeks] = useState(new Set())
     const [reviewLoadedWeeks, setReviewLoadedWeeks] = useState(new Set())
+
+    const {preferences} = usePreferences()
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
+    const [reporterPlantMap, setReporterPlantMap] = useState({})
+    const [loadingReporterPlants, setLoadingReporterPlants] = useState(false)
+
+    // Build a map to normalize any plant identifier (code or name) to a plant_code
+    const plantCodeMap = useMemo(() => {
+        const m = new Map()
+        plants.forEach(p => {
+            if (p.plant_name) m.set(String(p.plant_name), String(p.plant_code))
+            if (p.plant_code) m.set(String(p.plant_code), String(p.plant_code))
+        })
+        return m
+    }, [plants])
+    const toPlantCode = value => {
+        if (!value) return ''
+        const key = String(value)
+        return plantCodeMap.get(key) || key
+    }
 
     function getLastNWeekIsos(n) {
         const weeks = []
@@ -228,6 +250,60 @@ function ReportsView() {
             cancelled = true
         }
     }, [myReportsVisibleWeeks, user, isLoadingPermissions])
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const list = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(list.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (filterPlant && !codes.has(filterPlant)) setFilterPlant('')
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code])
+
+    useEffect(() => {
+        const ids = Array.from(new Set(localReports.filter(r => r.completed && r.userId && r.userId !== user?.id).map(r => r.userId)))
+        const missing = ids.filter(id => !(id in reporterPlantMap))
+        if (missing.length === 0) return
+        let cancelled = false
+        async function loadReporterPlants() {
+            try {
+                setLoadingReporterPlants(true)
+                const entries = await Promise.all(missing.map(async id => {
+                    try {
+                        const plantCode = await UserService.getUserPlant(id)
+                        return [id, plantCode || '']
+                    } catch {
+                        return [id, '']
+                    }
+                }))
+                if (cancelled) return
+                setReporterPlantMap(prev => {
+                    const next = {...prev}
+                    entries.forEach(([id, code]) => { next[id] = code || '' })
+                    return next
+                })
+            } finally {
+                if (!cancelled) setLoadingReporterPlants(false)
+            }
+        }
+        loadReporterPlants()
+        return () => { cancelled = true }
+    }, [localReports, user])
 
     const totalMyWeeks = getTotalWeeksSinceStart()
     const weeksToShow = useMemo(() => getLastNWeekIsos(Math.min(myReportsVisibleWeeks, totalMyWeeks)), [myReportsVisibleWeeks, totalMyWeeks])
@@ -495,28 +571,21 @@ function ReportsView() {
     const filteredMyWeeks = sortedMyWeeks.filter(weekIso => {
         const weekItems = myReportsByWeek[weekIso] || []
         return weekItems.some(item => {
-            let matchType = !filterReportType || item.name === filterReportType
-            let matchPlant = true
-            if (filterPlant) {
-                const plant = ReportService.getPlantNameFromWeekItem(item)
-                matchPlant = plant === filterPlant
-            }
-            return matchType && matchPlant
+            const matchType = !filterReportType || item.name === filterReportType
+            return matchType
         })
     }).slice(0, myReportsVisibleWeeks)
 
     const filteredReviewWeeks = useMemo(() => sortedReviewWeeks.filter(weekIso => {
         const weekReports = reviewReportsByWeek[weekIso] || []
         return weekReports.some(report => {
-            let matchType = !filterReportType || report.name === filterReportType
-            let matchPlant = true
-            if (filterPlant) {
-                const plant = ReportService.getPlantNameFromReport(report)
-                matchPlant = plant === filterPlant
-            }
-            return matchType && matchPlant
+            const reporterPlant = reporterPlantMap[report.userId] || ''
+            const matchType = !filterReportType || report.name === filterReportType
+            const matchPlant = !filterPlant || reporterPlant === filterPlant
+            const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
+            return matchType && matchPlant && matchRegion
         })
-    }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reviewReportsByWeek, filterReportType, filterPlant, reviewVisibleWeeks])
+    }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reviewReportsByWeek, filterReportType, filterPlant, reviewVisibleWeeks, preferences.selectedRegion?.code, regionPlantCodes, reporterPlantMap])
 
     return (
         <>
@@ -596,9 +665,11 @@ function ReportsView() {
                                 }}
                             >
                                 <option value="">All Plants</option>
-                                {plants.map(p => (
-                                    <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
-                                ))}
+                                {plants
+                                    .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                    .map(p => (
+                                        <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
+                                    ))}
                             </select>
                         </div>
                         <div className="reports-content">
@@ -618,14 +689,9 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {filteredMyWeeks.map(weekIso => {
-                                                        const weekItems = myReportsByWeek[weekIso].filter(item => {
-                                                            let matchType = !filterReportType || item.name === filterReportType
-                                                            let matchPlant = true
-                                                            if (filterPlant) {
-                                                                const plant = ReportService.getPlantNameFromWeekItem(item)
-                                                                matchPlant = plant === filterPlant
-                                                            }
-                                                            return matchType && matchPlant
+                                                        const weekItems = (myReportsByWeek[weekIso] || []).filter(item => {
+                                                            const matchType = !filterReportType || item.name === filterReportType
+                                                            return matchType
                                                         })
                                                         if (weekItems.length === 0) return null
                                                         const weekStart = new Date(weekIso)
@@ -654,8 +720,8 @@ function ReportsView() {
                                                                     const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
                                                                     let statusText
                                                                     let statusColor
-                                                                    let hasSavedData = !!(item.report && item.report.data)
-                                                                    let buttonLabel = item.completed ? 'View' : (hasSavedData ? 'Edit' : 'Submit')
+                                                                    const hasSavedData = !!(item.report && item.report.data)
+                                                                    const buttonLabel = item.completed ? 'View' : (hasSavedData ? 'Edit' : 'Submit')
                                                                     if (item.completed) {
                                                                         statusText = 'Completed'
                                                                         statusColor = 'var(--success)'
@@ -753,7 +819,7 @@ function ReportsView() {
                             )}
                             {tab === 'review' && (
                                 <div className="reports-list">
-                                    {(isLoadingUser || isLoadingPermissions || (isLoadingReview && filteredReviewWeeks.length === 0)) ? (
+                                    {(isLoadingUser || isLoadingPermissions || loadingReporterPlants || (isLoadingReview && filteredReviewWeeks.length === 0)) ? (
                                         <div style={{padding: 24}}>
                                             <LoadingScreen message="Loading reports to review..." inline/>
                                         </div>
@@ -767,14 +833,12 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {filteredReviewWeeks.map(weekIso => {
-                                                        const weekReports = reviewReportsByWeek[weekIso].filter(report => {
-                                                            let matchType = !filterReportType || report.name === filterReportType
-                                                            let matchPlant = true
-                                                            if (filterPlant) {
-                                                                const plant = ReportService.getPlantNameFromReport(report)
-                                                                matchPlant = plant === filterPlant
-                                                            }
-                                                            return matchType && matchPlant
+                                                        const weekReports = (reviewReportsByWeek[weekIso] || []).filter(report => {
+                                                            const reporterPlant = reporterPlantMap[report.userId] || ''
+                                                            const matchType = !filterReportType || report.name === filterReportType
+                                                            const matchPlant = !filterPlant || reporterPlant === filterPlant
+                                                            const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
+                                                            return matchType && matchPlant && matchRegion
                                                         })
                                                         if (weekReports.length === 0) return null
                                                         const weekStart = new Date(weekIso)

@@ -54,7 +54,9 @@ const defaultPreferences = {
         statusFilter: '',
         viewMode: 'grid'
     },
-    lastViewedFilters: null
+    lastViewedFilters: null,
+    selectedRegion: {code: '', name: ''},
+    regionOverlayMinimized: true
 }
 
 export const PreferencesProvider = ({children}) => {
@@ -68,10 +70,11 @@ export const PreferencesProvider = ({children}) => {
                 const savedPrefs = localStorage.getItem('userPreferences')
                 if (savedPrefs) {
                     const parsedPrefs = JSON.parse(savedPrefs)
-                    setPreferences(parsedPrefs)
-                    document.documentElement.classList.toggle('dark-mode', parsedPrefs.themeMode === 'dark')
+                    const merged = {...defaultPreferences, ...parsedPrefs}
+                    setPreferences(merged)
+                    document.documentElement.classList.toggle('dark-mode', merged.themeMode === 'dark')
                     document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
-                    document.documentElement.classList.add(`accent-${parsedPrefs.accentColor}`)
+                    document.documentElement.classList.add(`accent-${merged.accentColor}`)
                 }
             } catch {
             }
@@ -180,6 +183,15 @@ export const PreferencesProvider = ({children}) => {
                 viewMode: data.equipment_filters.viewMode || 'grid'
             } : {...defaultPreferences.equipmentFilters},
             lastViewedFilters: data.last_viewed_filters
+        }
+        try {
+            const savedPrefs = localStorage.getItem('userPreferences')
+            const saved = savedPrefs ? JSON.parse(savedPrefs) : {}
+            newPreferences.selectedRegion = saved.selectedRegion || defaultPreferences.selectedRegion
+            newPreferences.regionOverlayMinimized = typeof saved.regionOverlayMinimized === 'boolean' ? saved.regionOverlayMinimized : defaultPreferences.regionOverlayMinimized
+        } catch {
+            newPreferences.selectedRegion = defaultPreferences.selectedRegion
+            newPreferences.regionOverlayMinimized = defaultPreferences.regionOverlayMinimized
         }
         setPreferences(newPreferences)
         try {
@@ -298,6 +310,14 @@ export const PreferencesProvider = ({children}) => {
         updatePreferences('operatorFilters', newFilters)
     }
 
+    const setSelectedRegion = (code, name = '') => {
+        updatePreferences('selectedRegion', {code: code || '', name: name || ''})
+    }
+
+    const setRegionOverlayMinimized = minimized => {
+        updatePreferences('regionOverlayMinimized', !!minimized)
+    }
+
     const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized)
     const toggleShowTips = () => updatePreferences('showTips', !preferences.showTips)
     const toggleShowOnlineOverlay = () => updatePreferences('showOnlineOverlay', !preferences.showOnlineOverlay)
@@ -347,7 +367,9 @@ export const PreferencesProvider = ({children}) => {
                 resetMixerFilters,
                 updateOperatorFilter,
                 resetOperatorFilters,
-                saveLastViewedFilters
+                saveLastViewedFilters,
+                setSelectedRegion,
+                setRegionOverlayMinimized
             }}
         >
             {children}

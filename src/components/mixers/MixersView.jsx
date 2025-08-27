@@ -14,6 +14,7 @@ import './styles/MixersView.css';
 import MixerDetailView from './MixerDetailView'
 import MixerIssueModal from './MixerIssueModal'
 import MixerCommentModal from './MixerCommentModal'
+import {RegionService} from '../../services/RegionService'
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
@@ -39,6 +40,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalMixerId, setModalMixerId] = useState(null)
     const [modalMixerNumber, setModalMixerNumber] = useState('')
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     const unassignedActiveOperatorsCount = useMemo(() => {
@@ -89,6 +91,33 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setShowOverview(true);
         }
     }, [preferences]);
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('')
+                    updateMixerFilter('selectedPlant', '')
+                }
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code])
 
     async function fetchMixers() {
         try {
@@ -227,6 +256,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const vinMatch = vinRaw.includes(searchText.trim().toLowerCase()) || vinNoSpaces.includes(normalizedSearch)
             const matchesSearch = !normalizedSearch || truckMatch || operatorMatch || vinMatch
             const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
+            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(mixer.assignedPlant)
             let matchesStatus = true
             if (statusFilter && statusFilter !== 'All Statuses') {
                 matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? mixer.status === statusFilter :
@@ -235,7 +265,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             statusFilter === 'Not Verified' ? !mixer.isVerified() :
                                 statusFilter === 'Open Issues' ? (Number(mixer.openIssuesCount || 0) > 0) : false
             }
-            return matchesSearch && matchesPlant && matchesStatus
+            return matchesSearch && matchesPlant && matchesRegion && matchesStatus
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1
@@ -444,11 +474,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     aria-label="Filter by plant"
                                 >
                                     <option value="">All Plants</option>
-                                    {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
-                                        <option key={plant.plantCode} value={plant.plantCode}>
-                                            ({plant.plantCode}) {plant.plantName}
-                                        </option>
-                                    ))}
+                                    {plants
+                                        .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plantCode))
+                                        .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
+                                        .map(plant => (
+                                            <option key={plant.plantCode} value={plant.plantCode}>
+                                                ({plant.plantCode}) {plant.plantName}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             <div className="filter-wrapper">

@@ -37,6 +37,35 @@ Deno.serve(async (req) => {
                 });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
+            case "fetch-items-with-profiles": {
+                const {data: items, error: itemsError} = await supabase
+                    .from("list_items")
+                    .select("*")
+                    .order("created_at", {ascending: false});
+                if (itemsError) return new Response(JSON.stringify({error: itemsError.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const idsSet = new Set<string>();
+                (items ?? []).forEach((i: any) => {
+                    if (i?.user_id) idsSet.add(i.user_id);
+                    if (i?.completed_by) idsSet.add(i.completed_by);
+                });
+                let profiles: any[] = [];
+                if (idsSet.size > 0) {
+                    const ids = Array.from(idsSet);
+                    const {data: profs, error: profsError} = await supabase
+                        .from("users_profiles")
+                        .select("id, first_name, last_name")
+                        .in("id", ids);
+                    if (profsError) return new Response(JSON.stringify({error: profsError.message}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                    profiles = profs ?? [];
+                }
+                return new Response(JSON.stringify({data: items ?? [], profiles}), {headers: corsHeaders});
+            }
             case "fetch-plants": {
                 const {data, error} = await supabase
                     .from("plants")

@@ -1,4 +1,30 @@
 import APIUtility from '../utils/APIUtility'
+import {supabase} from './DatabaseService'
+import CacheUtility from '../utils/CacheUtility'
+import {UserService} from './UserService'
+import {RegionService} from './RegionService'
+
+const TTL_SHORT = 5 * 60 * 1000
+const TTL_MED = 10 * 60 * 1000
+
+function sortPlants(plants) {
+    return (plants || []).filter(p => p.plant_code && p.plant_name).sort((a, b) => {
+        const aNum = parseInt(a.plant_code, 10)
+        const bNum = parseInt(b.plant_code, 10)
+        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+        return String(a.plant_code).localeCompare(String(b.plant_code))
+    })
+}
+
+function getWeekRangeDates(weekIso) {
+    if (!weekIso) return null
+    const monday = new Date(weekIso)
+    monday.setDate(monday.getDate() + 1)
+    monday.setHours(0, 0, 0, 0)
+    const saturday = new Date(monday)
+    saturday.setDate(monday.getDate() + 5)
+    return {monday, saturday}
+}
 
 class ReportServiceImpl {
     getWeekRangeFromIso(weekIso) {
@@ -289,6 +315,108 @@ class ReportServiceImpl {
             warnings,
             avgWarnings
         }
+    }
+
+    async fetchPlantsSorted() {
+        const cacheKey = 'plants:all'
+        const cached = CacheUtility.get(cacheKey)
+        if (cached) return cached
+        const {data, error} = await supabase
+            .from('plants')
+            .select('plant_code,plant_name')
+            .order('plant_code', {ascending: true})
+        const plants = !error && Array.isArray(data) ? sortPlants(data) : []
+        CacheUtility.set(cacheKey, plants, TTL_MED)
+        return plants
+    }
+
+    async fetchPlantsForUser(userId) {
+        if (!userId) return []
+        const cacheKey = `plants:user:${userId}`
+        const cached = CacheUtility.get(cacheKey)
+        if (cached) return cached
+        const basePlants = await this.fetchPlantsSorted()
+        try {
+            const userPlant = await UserService.getUserPlant(userId)
+            if (!userPlant) {
+                CacheUtility.set(cacheKey, [], TTL_SHORT)
+                return []
+            }
+            const regions = await RegionService.fetchRegionsByPlantCode(userPlant)
+            const regionCodes = Array.isArray(regions) ? regions.map(r => r.regionCode).filter(Boolean) : []
+            if (regionCodes.length === 0) {
+                CacheUtility.set(cacheKey, [], TTL_SHORT)
+                return []
+            }
+            const results = await Promise.all(regionCodes.map(rc => RegionService.fetchRegionPlants(rc)))
+            const allowedCodes = new Set()
+            results.forEach(list => {
+                (list || []).forEach(rp => {
+                    const c = rp.plantCode || rp.plant_code
+                    if (c) allowedCodes.add(String(c).trim())
+                })
+            })
+            const filtered = basePlants.filter(p => allowedCodes.has(String(p.plant_code).trim()))
+            CacheUtility.set(cacheKey, filtered, TTL_SHORT)
+            return filtered
+        } catch (e) {
+            CacheUtility.set(cacheKey, [], TTL_SHORT)
+            return []
+        }
+    }
+
+    async fetchOperatorOptions(plantCode) {
+        if (!plantCode) return []
+        const key = `operators:${plantCode}`
+        const cached = CacheUtility.get(key)
+        if (cached) return cached
+        const {data, error} = await supabase
+            .from('operators')
+            .select('employee_id, name')
+            .eq('plant_code', plantCode)
+        const options = !error && Array.isArray(data) ? data.map(u => ({value: u.employee_id, label: u.name})) : []
+        CacheUtility.set(key, options, TTL_SHORT)
+        return options
+    }
+
+    async fetchActiveOperatorsAndMixers(plantCode) {
+        if (!plantCode) return {operatorOptions: [], mixers: []}
+        const [opsRes, mixRes] = await Promise.all([
+            supabase
+                .from('operators')
+                .select('employee_id, name, status, plant_code, position')
+                .eq('plant_code', plantCode)
+                .eq('status', 'Active')
+                .eq('position', 'Mixer Operator'),
+            supabase
+                .from('mixers')
+                .select('assigned_operator, truck_number')
+                .eq('assigned_plant', plantCode)
+        ])
+        const operatorOptions = !opsRes.error && Array.isArray(opsRes.data)
+            ? opsRes.data.map(u => ({value: u.employee_id, label: u.name}))
+            : []
+        const mixers = !mixRes.error && Array.isArray(mixRes.data) ? mixRes.data : []
+        return {operatorOptions, mixers, activeOperators: (opsRes.data || [])}
+    }
+
+    async fetchMaintenanceItems(weekIso) {
+        if (!weekIso) return []
+        const key = `maintenance:${weekIso}`
+        const cached = CacheUtility.get(key)
+        if (cached) return cached
+        const range = getWeekRangeDates(weekIso)
+        if (!range) return []
+        const {monday, saturday} = range
+        const {data, error} = await supabase
+            .from('list_items')
+            .select('*')
+            .eq('completed', true)
+            .gte('completed_at', monday.toISOString())
+            .lte('completed_at', saturday.toISOString())
+        const items = !error && Array.isArray(data) ? data : []
+        CacheUtility.set(key, items, TTL_SHORT)
+        return items
     }
 }
 

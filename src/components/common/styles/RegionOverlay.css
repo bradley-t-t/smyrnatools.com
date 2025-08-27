@@ -1,0 +1,131 @@
+.region-overlay {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 320px;
+    max-width: 90vw;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    overflow: hidden;
+    transition: all .3s ease;
+    opacity: 1;
+    border: 1px solid var(--accent);
+    background-color: var(--card-bg)
+}
+
+.region-overlay.minimized {
+    width: auto;
+    height: auto;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50px;
+    box-shadow: var(--shadow-md);
+    overflow: visible;
+    border: none;
+    background: none;
+    padding: 0
+}
+
+.region-minimized-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 12px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: var(--accent);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-light)
+}
+
+.region-minimized-pill .region-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-light);
+    padding: 0 4px
+}
+
+.region-panel {
+    display: flex;
+    flex-direction: column
+}
+
+.region-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--accent)
+}
+
+.region-header .header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px
+}
+
+.region-header .header-title i {
+    color: var(--accent)
+}
+
+.header-actions {
+    display: flex;
+    gap: 6px
+}
+
+.action-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background .2s, color .2s, box-shadow .2s;
+    padding: 0;
+    line-height: 0;
+    color: var(--accent)
+}
+
+.action-button.circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    background: none
+}
+
+.action-button:hover, .action-button.circle:hover {
+    background-color: var(--card-bg);
+    color: var(--accent);
+    box-shadow: var(--shadow-xs)
+}
+
+.region-body {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px
+}
+
+.region-select {
+    width: 100%
+}
+
+.region-note {
+    font-size: 12px;
+    color: var(--text-secondary)
+}

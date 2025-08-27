@@ -1,6 +1,7 @@
 import APIUtility from '../utils/APIUtility'
 import {UserService} from './UserService'
 import GrammarUtility from '../utils/GrammarUtility'
+import CacheUtility from '../utils/CacheUtility'
 
 class ListServiceImpl {
     listItems = []
@@ -8,25 +9,50 @@ class ListServiceImpl {
     plants = []
     plantDistribution = {}
 
-    async fetchListItems() {
+    async fetchListItems(opts = {}) {
+        const {force = false} = opts || {}
         const user = await UserService.getCurrentUser()
         if (!user) throw new Error('No authenticated user')
-        const {res, json} = await APIUtility.post('/list-service/fetch-items')
+        if (!force) {
+            const cached = CacheUtility.get('list:items-with-profiles')
+            if (cached && Array.isArray(cached.items)) {
+                this.listItems = cached.items
+                this.creatorProfiles = cached.profiles || {}
+                return this.listItems
+            }
+        }
+        const {res, json} = await APIUtility.post('/list-service/fetch-items-with-profiles')
         if (!res.ok) throw new Error(json?.error || 'Failed to fetch list items')
         const data = json?.data ?? []
-        this.listItems = data.map(i => ({
+        const profilesArr = json?.profiles ?? []
+        const profiles = {}
+        for (const p of profilesArr) {
+            if (p?.id) profiles[p.id] = p
+        }
+        const cleaned = data.map(i => ({
             ...i,
             description: GrammarUtility.cleanDescription(i?.description || ''),
             comments: GrammarUtility.cleanComments(i?.comments || '')
         }))
-        await this.fetchCreatorProfiles(this.listItems)
+        this.listItems = cleaned
+        this.creatorProfiles = profiles
+        CacheUtility.set('list:items-with-profiles', {items: cleaned, profiles}, 60_000)
         return this.listItems
     }
 
-    async fetchPlants() {
+    async fetchPlants(opts = {}) {
+        const {force = false} = opts || {}
+        if (!force) {
+            const cached = CacheUtility.get('list:plants')
+            if (cached && Array.isArray(cached)) {
+                this.plants = cached
+                return this.plants
+            }
+        }
         const {res, json} = await APIUtility.post('/list-service/fetch-plants')
         if (!res.ok) throw new Error(json?.error || 'Failed to fetch plants')
         this.plants = json?.data ?? []
+        CacheUtility.set('list:plants', this.plants, 10 * 60_000)
         return this.plants
     }
 
@@ -61,7 +87,8 @@ class ListServiceImpl {
             comments: GrammarUtility.cleanComments(comments || '')
         })
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to create list item')
-        await this.fetchListItems()
+        CacheUtility.delete('list:items-with-profiles')
+        await this.fetchListItems({force: true})
         return true
     }
 
@@ -80,7 +107,8 @@ class ListServiceImpl {
         }
         const {res, json} = await APIUtility.post('/list-service/update', {item: update})
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update list item')
-        await this.fetchListItems()
+        CacheUtility.delete('list:items-with-profiles')
+        await this.fetchListItems({force: true})
         return true
     }
 
@@ -94,7 +122,8 @@ class ListServiceImpl {
             completed: newCompletionStatus
         })
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to toggle completion')
-        await this.fetchListItems()
+        CacheUtility.delete('list:items-with-profiles')
+        await this.fetchListItems({force: true})
         return true
     }
 
@@ -102,7 +131,8 @@ class ListServiceImpl {
         if (!id) throw new Error('Item ID is required')
         const {res, json} = await APIUtility.post('/list-service/delete', {id})
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete list item')
-        await this.fetchListItems()
+        CacheUtility.delete('list:items-with-profiles')
+        await this.fetchListItems({force: true})
         return true
     }
 

@@ -358,3 +358,11 @@
 .online-users-overlay[data-theme="dark"] .more-users:hover {
     color: var(--text-primary);
 }
+
+.overlay-region-controls {
+    padding: 8px 16px 0 16px;
+}
+
+.overlay-region-controls .region-select {
+    width: 100%;
+}

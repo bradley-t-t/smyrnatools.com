@@ -14,6 +14,7 @@ import TractorAddView from "./TractorAddView";
 import TractorDetailView from "./TractorDetailView";
 import TractorIssueModal from './TractorIssueModal'
 import TractorCommentModal from './TractorCommentModal'
+import {RegionService} from '../../services/RegionService'
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
@@ -39,6 +40,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalTractorId, setModalTractorId] = useState(null)
     const [modalTractorNumber, setModalTractorNumber] = useState('')
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
     const freightOptions = ['All Freight', 'Cement', 'Aggregate']
 
@@ -97,6 +99,33 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             if (lastUsed) setViewMode(lastUsed)
         }
     }, [preferences.tractorFilters?.viewMode, preferences.defaultViewMode])
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('')
+                    updateTractorFilter('selectedPlant', '')
+                }
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code])
 
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
@@ -291,6 +320,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 (tractor.assignedOperator && operators.find(op => op.employeeId === tractor.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
             const matchesPlant = !selectedPlant || tractor.assignedPlant === selectedPlant;
             const matchesFreight = !freightFilter || tractor.freight === freightFilter;
+            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(tractor.assignedPlant);
             let matchesStatus = true;
             if (statusFilter && statusFilter !== 'All Statuses') {
                 matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? tractor.status === statusFilter :
@@ -299,7 +329,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             statusFilter === 'Not Verified' ? !tractor.isVerified() :
                                 statusFilter === 'Open Issues' ? (Number(tractor.openIssuesCount || 0) > 0) : false;
             }
-            return matchesSearch && matchesPlant && matchesFreight && matchesStatus;
+            return matchesSearch && matchesPlant && matchesFreight && matchesRegion && matchesStatus;
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
@@ -441,7 +471,9 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             aria-label="Filter by plant"
                         >
                             <option value="">All Plants</option>
-                            {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
+                            {plants
+                                .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plantCode))
+                                .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
                                 <option key={plant.plantCode} value={plant.plantCode}>
                                     ({plant.plantCode}) {plant.plantName}
                                 </option>

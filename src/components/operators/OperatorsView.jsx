@@ -10,6 +10,7 @@ import OperatorsOverview from './OperatorsOverview'
 import OperatorAddView from './OperatorAddView'
 import {usePreferences} from '../../app/context/PreferencesContext'
 import FormatUtility from '../../utils/FormatUtility'
+import {RegionService} from '../../services/RegionService'
 
 function OperatorsView({
                            title = 'Operator Roster',
@@ -42,6 +43,7 @@ function OperatorsView({
         'All Statuses', 'Active', 'Light Duty', 'Pending Start', 'Training', 'Terminated', 'No Hire',
         'Trainer', 'Not Trainer'
     ]
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
@@ -71,6 +73,33 @@ function OperatorsView({
             setStatusFilter(initialStatusFilter)
         }
     }, [initialStatusFilter])
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('')
+                    updateOperatorFilter('selectedPlant', '')
+                }
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code])
 
     const fetchAllData = async () => {
         setIsLoading(true)
@@ -173,6 +202,7 @@ function OperatorsView({
                 operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
                 operator.employeeId.toLowerCase().includes(searchText.toLowerCase())
             const matchesPlant = selectedPlant === '' || operator.plantCode === selectedPlant
+            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(operator.plantCode)
             let matchesStatus = true
             if (statusFilter && statusFilter !== 'All Statuses') {
                 if (statuses.includes(statusFilter)) {
@@ -183,7 +213,7 @@ function OperatorsView({
                     matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true'
                 }
             }
-            return matchesSearch && matchesPlant && matchesStatus
+            return matchesSearch && matchesPlant && matchesRegion && matchesStatus
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1
@@ -434,11 +464,13 @@ function OperatorsView({
                                     }}
                                 >
                                     <option value="">All Plants</option>
-                                    {plants.sort((a, b) => {
-                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
-                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
-                                        return aCode - bCode
-                                    }).map(plant => (
+                                    {plants
+                                        .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                        .sort((a, b) => {
+                                            const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
+                                            const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
+                                            return aCode - bCode
+                                        }).map(plant => (
                                         <option key={plant.plant_code} value={plant.plant_code}>
                                             ({plant.plant_code}) {plant.plant_name}
                                         </option>

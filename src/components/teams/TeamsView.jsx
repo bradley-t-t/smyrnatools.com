@@ -7,6 +7,8 @@ import '../../styles/FilterStyles.css';
 import './styles/TeamsView.css';
 import LoadingScreen from '../common/LoadingScreen';
 import TeamsOverview from './TeamsOverview';
+import {usePreferences} from '../../app/context/PreferencesContext';
+import {RegionService} from '../../services/RegionService';
 
 const PLANTS_TABLE = 'plants';
 const OPERATORS_TABLE = 'operators';
@@ -45,6 +47,7 @@ function getTeamWorkingThisSaturday() {
 }
 
 function TeamsView() {
+    const {preferences} = usePreferences();
     const [plants, setPlants] = useState([]);
     const [selectedPlant, setSelectedPlant] = useState('');
     const [userPlant, setUserPlant] = useState('');
@@ -63,6 +66,7 @@ function TeamsView() {
         const lastUsed = localStorage.getItem('teams_last_view_mode');
         return lastUsed || 'grid';
     });
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null);
 
     useEffect(() => {
         async function fetchCurrentUserAndPlant() {
@@ -101,6 +105,32 @@ function TeamsView() {
     }, [currentUserId]);
 
     useEffect(() => {
+        const code = preferences.selectedRegion?.code || '';
+        let cancelled = false;
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null);
+                return;
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code);
+                if (cancelled) return;
+                const codes = new Set(regionPlants.map(p => p.plantCode));
+                setRegionPlantCodes(codes);
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('');
+                }
+            } catch {
+                setRegionPlantCodes(new Set());
+            }
+        }
+        loadRegionPlants();
+        return () => {
+            cancelled = true;
+        }
+    }, [preferences.selectedRegion?.code]);
+
+    useEffect(() => {
         setLoading(true);
 
         async function fetchOperatorsAndTeams() {
@@ -117,10 +147,11 @@ function TeamsView() {
                     .eq('plant_code', selectedPlant);
                 ops = data || [];
             }
+            if (preferences.selectedRegion?.code && regionPlantCodes && regionPlantCodes.size > 0) {
+                ops = ops.filter(op => regionPlantCodes.has(op.plant_code));
+            }
             const filteredOps = ops
-                .filter(op =>
-                    (!statusFilter || op.status === statusFilter)
-                )
+                .filter(op => (!statusFilter || op.status === statusFilter))
                 .filter(op => op.position && op.position.toLowerCase().includes('mixer'));
             const {data: teamData} = await supabase
                 .from(OPERATORS_TEAMS_TABLE)
@@ -160,7 +191,7 @@ function TeamsView() {
         }
 
         fetchOperatorsAndTeams();
-    }, [selectedPlant, statusFilter]);
+    }, [selectedPlant, statusFilter, preferences.selectedRegion?.code, regionPlantCodes]);
 
     useEffect(() => {
         async function fetchScheduledOff() {
@@ -213,10 +244,11 @@ function TeamsView() {
                 .eq('plant_code', selectedPlant);
             ops = data || [];
         }
+        if (preferences.selectedRegion?.code && regionPlantCodes && regionPlantCodes.size > 0) {
+            ops = ops.filter(op => regionPlantCodes.has(op.plant_code));
+        }
         const filteredOps = ops
-            .filter(op =>
-                (!statusFilter || op.status === statusFilter)
-            )
+            .filter(op => (!statusFilter || op.status === statusFilter))
             .filter(op => op.position && op.position.toLowerCase().includes('mixer'));
         const {data: teamData} = await supabase
             .from(TEAMS_TABLE)
@@ -325,6 +357,7 @@ function TeamsView() {
                         >
                             <option value="">All Plants</option>
                             {plants
+                                .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
                                 .sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'))
                                 .map(plant => (
                                     <option key={plant.plant_code} value={plant.plant_code}>

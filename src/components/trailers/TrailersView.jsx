@@ -13,6 +13,7 @@ import TrailerAddView from './TrailerAddView';
 import TrailerDetailView from './TrailerDetailView';
 import TrailerIssueModal from './TrailerIssueModal'
 import TrailerCommentModal from './TrailerCommentModal'
+import {RegionService} from '../../services/RegionService'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const { preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
@@ -37,6 +38,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalTrailerId, setModalTrailerId] = useState(null)
     const [modalTrailerNumber, setModalTrailerNumber] = useState('')
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const filterOptions = ['All Types', 'Cement', 'End Dump', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
 
     useEffect(() => {
@@ -68,6 +70,36 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             if (lastUsed) setViewMode(lastUsed)
         }
     }, [preferences.trailerFilters?.viewMode, preferences.defaultViewMode])
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('')
+                    updatePreferences('trailerFilters', {
+                        ...preferences.trailerFilters,
+                        selectedPlant: ''
+                    })
+                }
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code])
 
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
@@ -242,6 +274,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
                 (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
             const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
+            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(trailer.assignedPlant)
             let matchesType = true
             if (typeFilter && typeFilter !== 'All Types') {
                 matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter :
@@ -250,7 +283,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             typeFilter === 'Not Verified' ? !trailer.isVerified() :
                                 typeFilter === 'Open Issues' ? (Number(trailer.openIssuesCount || 0) > 0) : false
             }
-            return matchesSearch && matchesPlant && matchesType
+            return matchesSearch && matchesPlant && matchesRegion && matchesType
         })
         .sort((a, b) => {
             const statusA = statusOrder[a.status] || 99
@@ -386,7 +419,9 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             aria-label="Filter by plant"
                         >
                             <option value="">All Plants</option>
-                            {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
+                            {plants
+                                .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plantCode))
+                                .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
                                 <option key={plant.plantCode} value={plant.plantCode}>
                                     ({plant.plantCode}) {plant.plantName}
                                 </option>

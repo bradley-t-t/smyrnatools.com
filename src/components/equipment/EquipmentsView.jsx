@@ -12,6 +12,7 @@ import '../../styles/FilterStyles.css';
 import './styles/EquipmentsView.css';
 import EquipmentIssueModal from './EquipmentIssueModal'
 import EquipmentCommentModal from './EquipmentCommentModal'
+import {RegionService} from '../../services/RegionService'
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
@@ -35,6 +36,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalEquipmentId, setModalEquipmentId] = useState(null)
     const [modalEquipmentNumber, setModalEquipmentNumber] = useState('')
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Open Issues'];
 
     useEffect(() => {
@@ -55,6 +57,33 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         }
         if (preferences?.autoOverview) setShowOverview(true);
     }, [preferences]);
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('')
+                    safeUpdateEquipmentFilter('selectedPlant', '')
+                }
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code])
 
     async function fetchEquipments() {
         try {
@@ -173,6 +202,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 equipment.identifyingNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
                 equipment.equipmentType?.toLowerCase().includes(searchText.toLowerCase());
             const matchesPlant = !selectedPlant || equipment.assignedPlant === selectedPlant;
+            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(equipment.assignedPlant);
             let matchesStatus = true;
             if (statusFilter && statusFilter !== 'All Statuses') {
                 matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter)
@@ -183,7 +213,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                             ? Number(equipment.openIssuesCount || 0) > 0
                             : false;
             }
-            return matchesSearch && matchesPlant && matchesStatus;
+            return matchesSearch && matchesPlant && matchesRegion && matchesStatus;
         })
         .sort((a, b) => {
             if (a.status === 'Active' && b.status !== 'Active') return -1;
@@ -334,7 +364,9 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                     }}
                                 >
                                     <option value="">All Plants</option>
-                                    {plants.sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
+                                    {plants
+                                        .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plantCode))
+                                        .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>
                                             ({plant.plantCode}) {plant.plantName}
                                         </option>
