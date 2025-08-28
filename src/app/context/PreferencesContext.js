@@ -67,19 +67,6 @@ export const PreferencesProvider = ({children}) => {
 
     useEffect(() => {
         let themeTimeout
-        const applyThemeFromStorage = () => {
-            try {
-                const savedPrefs = localStorage.getItem('userPreferences')
-                if (savedPrefs) {
-                    const parsedPrefs = JSON.parse(savedPrefs)
-                    const merged = {...defaultPreferences, ...parsedPrefs}
-                    setPreferences(merged)
-                    document.documentElement.classList.toggle('dark-mode', merged.themeMode === 'dark')
-                    document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
-                    document.documentElement.classList.add(`accent-${merged.accentColor}`)
-                }
-            } catch {}
-        }
         const initialize = async () => {
             setLoading(true)
             const user = await UserService.getCurrentUser()
@@ -97,17 +84,12 @@ export const PreferencesProvider = ({children}) => {
                 }
             } else {
                 setUserId(null)
-                applyThemeFromStorage()
+                setPreferences(defaultPreferences)
             }
             setLoading(false)
         }
         initialize()
-        const handleStorageChange = e => {
-            if (e.key === 'userPreferences' && !userId) applyThemeFromStorage()
-        }
-        window.addEventListener('storage', handleStorageChange)
         return () => {
-            window.removeEventListener('storage', handleStorageChange)
             if (themeTimeout) clearTimeout(themeTimeout)
         }
     }, [userId])
@@ -116,9 +98,6 @@ export const PreferencesProvider = ({children}) => {
         document.documentElement.classList.toggle('dark-mode', preferences.themeMode === 'dark')
         document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
         document.documentElement.classList.add(`accent-${preferences.accentColor}`)
-        try {
-            localStorage.setItem('userPreferences', JSON.stringify(preferences))
-        } catch {}
     }, [preferences])
 
     const fetchUserPreferences = async uid => {
@@ -178,19 +157,9 @@ export const PreferencesProvider = ({children}) => {
             } : {...defaultPreferences.equipmentFilters},
             lastViewedFilters: data.last_viewed_filters
         }
-        try {
-            const savedPrefs = localStorage.getItem('userPreferences')
-            const saved = savedPrefs ? JSON.parse(savedPrefs) : {}
-            newPreferences.selectedRegion = saved.selectedRegion || defaultPreferences.selectedRegion
-            newPreferences.regionOverlayMinimized = typeof saved.regionOverlayMinimized === 'boolean' ? saved.regionOverlayMinimized : defaultPreferences.regionOverlayMinimized
-        } catch {
-            newPreferences.selectedRegion = defaultPreferences.selectedRegion
-            newPreferences.regionOverlayMinimized = defaultPreferences.regionOverlayMinimized
-        }
+        newPreferences.selectedRegion = defaultPreferences.selectedRegion
+        newPreferences.regionOverlayMinimized = defaultPreferences.regionOverlayMinimized
         setPreferences(newPreferences)
-        try {
-            localStorage.setItem('userPreferences', JSON.stringify(newPreferences))
-        } catch {}
     }
 
     const updatePreferences = async (keyOrObject, value) => {
@@ -201,7 +170,6 @@ export const PreferencesProvider = ({children}) => {
             updatedPreferences = {...preferences, ...keyOrObject}
         }
         setPreferences(updatedPreferences)
-        localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences))
         if (userId) {
             const now = new Date().toISOString()
             const upsertData = {
@@ -365,7 +333,7 @@ export const PreferencesProvider = ({children}) => {
                 setRegionOverlayMinimized
             }}
         >
-            {children}
+            {!loading && children}
         </PreferencesContext.Provider>
     )
 }
