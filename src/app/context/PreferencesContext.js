@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useEffect, useState} from 'react'
 import {logSupabaseError, supabase} from '../../services/DatabaseService'
 import {UserPreferencesService} from '../../services/UserPreferencesService'
+import {UserService} from '../../services/UserService'
 
 const PreferencesContext = createContext()
 
@@ -72,55 +73,44 @@ export const PreferencesProvider = ({children}) => {
                 if (savedPrefs) {
                     const parsedPrefs = JSON.parse(savedPrefs)
                     const merged = {...defaultPreferences, ...parsedPrefs}
-                    themeTimeout = setTimeout(() => {
-                        setPreferences(merged)
-                        document.documentElement.classList.toggle('dark-mode', merged.themeMode === 'dark')
-                        document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
-                        document.documentElement.classList.add(`accent-${merged.accentColor}`)
-                    }, 1000)
+                    setPreferences(merged)
+                    document.documentElement.classList.toggle('dark-mode', merged.themeMode === 'dark')
+                    document.documentElement.classList.remove('accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
+                    document.documentElement.classList.add(`accent-${merged.accentColor}`)
                 }
             } catch {}
         }
-        applyThemeFromStorage()
+        const initialize = async () => {
+            setLoading(true)
+            const user = await UserService.getCurrentUser()
+            if (user && user.id) {
+                setUserId(user.id)
+                try {
+                    const data = await UserPreferencesService.getUserPreferences(user.id)
+                    if (data) {
+                        setPreferencesFromData(data)
+                    } else {
+                        setPreferences(defaultPreferences)
+                    }
+                } catch {
+                    setPreferences(defaultPreferences)
+                }
+            } else {
+                setUserId(null)
+                applyThemeFromStorage()
+            }
+            setLoading(false)
+        }
+        initialize()
         const handleStorageChange = e => {
-            if (e.key === 'userPreferences') applyThemeFromStorage()
+            if (e.key === 'userPreferences' && !userId) applyThemeFromStorage()
         }
         window.addEventListener('storage', handleStorageChange)
         return () => {
             window.removeEventListener('storage', handleStorageChange)
             if (themeTimeout) clearTimeout(themeTimeout)
         }
-    }, [])
-
-    useEffect(() => {
-        const initializeUser = async () => {
-            try {
-                const {data: {session}} = await supabase.auth.getSession()
-                const sessionUserId = session?.user?.id || sessionStorage.getItem('userId')
-                if (sessionUserId) {
-                    setUserId(sessionUserId)
-                    await fetchUserPreferences(sessionUserId)
-                } else {
-                    setLoading(false)
-                }
-            } catch {
-                setLoading(false)
-            }
-        }
-        initializeUser()
-        const {data: authListener} = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user?.id) {
-                setUserId(session.user.id)
-                setTimeout(() => fetchUserPreferences(session.user.id), 500)
-            } else if (event === 'SIGNED_OUT') {
-                setUserId(null)
-                setPreferences(defaultPreferences)
-                localStorage.removeItem('userPreferences')
-                document.documentElement.classList.remove('dark-mode', 'accent-blue', 'accent-red', 'accent-orange', 'accent-green', 'accent-darkgrey')
-            }
-        })
-        return () => authListener.subscription?.unsubscribe()
-    }, [])
+    }, [userId])
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark-mode', preferences.themeMode === 'dark')
