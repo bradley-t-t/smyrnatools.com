@@ -67,7 +67,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         async function fetchAllData() {
             setIsLoading(true);
             try {
-                await Promise.all([fetchMixers(), fetchOperators(), fetchPlants()]);
+                await Promise.all([fetchMixersWithDetails(), fetchOperators(), fetchPlants()]);
             } finally {
                 setIsLoading(false);
             }
@@ -159,6 +159,33 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         try {
             const data = await PlantService.fetchPlants();
             setPlants(data);
+        } catch (error) {
+        }
+    }
+
+    async function fetchMixersWithDetails() {
+        try {
+            const data = await MixerService.fetchMixers();
+            const processedData = data.map(mixer => {
+                mixer.isVerified = () => MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate)
+                return mixer
+            })
+            // Fetch comments and issues for each mixer in parallel
+            const mixersWithDetails = await Promise.all(processedData.map(async mixer => {
+                try {
+                    const [comments, issues] = await Promise.all([
+                        MixerService.fetchComments(mixer.id),
+                        MixerService.fetchIssues(mixer.id)
+                    ])
+                    return {...mixer, comments, issues}
+                } catch {
+                    return {...mixer, comments: [], issues: []}
+                }
+            }))
+            setMixers(mixersWithDetails);
+            setTimeout(() => {
+                fixActiveMixersWithoutOperator(mixersWithDetails).catch(() => {})
+            }, 0)
         } catch (error) {
         }
     }
@@ -535,7 +562,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                         key={mixer.id}
                                         mixer={{
                                             ...mixer,
-                                            operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator)
+                                            operatorSmyrnaId: getOperatorSmyrnaId(mixer.assignedOperator),
+                                            openIssuesCount: Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0,
+                                            commentsCount: Array.isArray(mixer.comments) ? mixer.comments.length : 0
                                         }}
                                         operatorName={getOperatorName(mixer.assignedOperator)}
                                         plantName={getPlantName(mixer.assignedPlant)}

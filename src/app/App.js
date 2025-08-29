@@ -32,6 +32,7 @@ import RegionsView from '../components/regions/RegionsView'
 import SmyrnaLogo from '../assets/images/SmyrnaLogo.png'
 import GuestView from '../components/guest/GuestView'
 import DesktopOnly from '../components/desktop-only/DesktopOnly'
+import RegionSelectorOverlay from '../components/regions/RegionSelectorOverlay'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -385,13 +386,14 @@ function App() {
         document.documentElement.style.overflowX = 'hidden'
         document.body.style.overflowX = 'hidden'
         return () => {
-            document.documentElement.style.overflowX = '';
+            document.documentElement.style.overflowX = ''
             document.body.style.overflowX = ''
         }
     }, [])
     return (
         <AuthProvider>
             <PreferencesProvider>
+                <RegionSelectorOverlay/>
                 <AppContent/>
                 <div style={{position: 'relative', zIndex: 9999}}><OnlineUsersOverlay/><TipBanner/></div>
             </PreferencesProvider>

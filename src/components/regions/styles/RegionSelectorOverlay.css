@@ -1,0 +1,122 @@
+.region-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  width: max-content;
+  padding: 8px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+.region-selector-overlay.minimized {
+  padding-top: 4px;
+}
+.region-minimized-compact {
+  display: flex;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 1px 4px 0 var(--shadow-color);
+  padding: 0 10px 0 6px;
+  cursor: pointer;
+  min-width: 60px;
+  height: 24px;
+  max-width: 180px;
+  transition: box-shadow 0.2s;
+  overflow: hidden;
+}
+.region-minimized-compact:hover {
+  box-shadow: 0 2px 8px 0 var(--shadow-color);
+}
+.region-icon {
+  margin-right: 4px;
+  color: var(--accent);
+  font-size: 0.95em;
+  display: flex;
+  align-items: center;
+  height: 18px;
+}
+.region-label {
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: 0.97em;
+  margin-right: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  line-height: 1;
+  padding-top: 0;
+}
+.region-minimized-compact .action-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1em;
+  margin-left: 0;
+  padding: 0 0 0 2px;
+  cursor: pointer;
+  height: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.region-expanded {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px 0 var(--shadow-color);
+  padding: 14px 18px 14px 18px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0;
+}
+.region-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  justify-content: space-between;
+}
+.region-title {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 1em;
+  margin-left: 6px;
+  flex: 1;
+}
+.region-header .action-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1em;
+  margin-left: 6px;
+  cursor: pointer;
+  padding: 0;
+  height: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.region-select {
+  font-size: 0.97rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  outline: none;
+  width: 100%;
+  margin-top: 2px;
+}
+.region-select:focus {
+  border-color: var(--accent);
+}

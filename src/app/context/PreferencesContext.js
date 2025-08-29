@@ -155,10 +155,10 @@ export const PreferencesProvider = ({children}) => {
                 ...data.equipment_filters,
                 viewMode: data.equipment_filters.viewMode || 'grid'
             } : {...defaultPreferences.equipmentFilters},
-            lastViewedFilters: data.last_viewed_filters
+            lastViewedFilters: data.last_viewed_filters,
+            selectedRegion: data.selected_region || defaultPreferences.selectedRegion,
+            regionOverlayMinimized: data.region_overlay_minimized === undefined ? defaultPreferences.regionOverlayMinimized : data.region_overlay_minimized
         }
-        newPreferences.selectedRegion = defaultPreferences.selectedRegion
-        newPreferences.regionOverlayMinimized = defaultPreferences.regionOverlayMinimized
         setPreferences(newPreferences)
     }
 

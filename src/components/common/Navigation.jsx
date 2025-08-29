@@ -71,16 +71,18 @@ const menuItems = [
 ]
 
 export default function Navigation({
-                                       selectedView,
-                                       onSelectView,
-                                       children,
-                                       userName = '',
-                                       userId = null,
-                                       listStatusFilter = ''
-                                   }) {
+    selectedView,
+    onSelectView,
+    children,
+    userName = '',
+    userId = null,
+    listStatusFilter = ''
+}) {
     const {preferences, toggleNavbarMinimized} = usePreferences()
     const [collapsed, setCollapsed] = useState(preferences.navbarMinimized)
     const [visibleMenuItems, setVisibleMenuItems] = useState([])
+    const regionType = preferences.selectedRegion?.type
+    const regionCode = preferences.selectedRegion?.code
 
     useEffect(() => {
         ensureFontAwesome()
@@ -96,7 +98,6 @@ export default function Navigation({
         }
     }, [listStatusFilter, visibleMenuItems])
 
-
     useEffect(() => {
         async function filterMenuItems() {
             if (!userId) {
@@ -105,29 +106,33 @@ export default function Navigation({
             }
             try {
                 const permissions = await UserService.getUserPermissions(userId)
-                const filtered = menuItems.filter(item => {
+                let filtered = menuItems.filter(item => {
                     if (item.permission) {
                         return permissions.includes(item.permission)
                     }
                     return item.permission === null
                 })
+                if (regionType === 'Office') {
+                    filtered = filtered.filter(item => item.id === 'Reports')
+                } else if (regionType === 'Aggregate') {
+                    filtered = filtered.filter(item => !['Mixers', 'Teams', 'List', 'Tractors', 'Trailers'].includes(item.id))
+                }
                 setVisibleMenuItems(filtered)
             } catch (error) {
                 setVisibleMenuItems([])
             }
         }
-
         filterMenuItems()
-    }, [userId])
+    }, [userId, regionType, regionCode])
+
+    useEffect(() => {
+        setCollapsed(preferences.navbarMinimized)
+    }, [preferences.navbarMinimized])
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed)
         toggleNavbarMinimized()
     }
-
-    useEffect(() => {
-        setCollapsed(preferences.navbarMinimized)
-    }, [preferences.navbarMinimized])
 
     return (
         <div className="app-container">
@@ -169,12 +174,7 @@ export default function Navigation({
                 <nav className="navbar-menu">
                     <ul style={!collapsed ? {padding: 0, margin: 0, gap: 0, rowGap: 0} : {}}>
                         {visibleMenuItems.map((item) => {
-                            let isActive = false
-                            if (item.id === 'List') {
-                                isActive = selectedView === 'List'
-                            } else {
-                                isActive = selectedView === item.id
-                            }
+                            const isActive = item.id === 'List' ? selectedView === 'List' : selectedView === item.id
                             return (
                                 <li
                                     key={item.id}
@@ -200,11 +200,7 @@ export default function Navigation({
                                     >
                                         {getIconForMenuItem(item.id)}
                                     </span>
-                                    {!collapsed && <span className="menu-text" style={{
-                                        fontSize: 17,
-                                        padding: 0,
-                                        margin: 0
-                                    }}>{item.text}</span>}
+                                    {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>{item.text}</span>}
                                 </li>
                             )
                         })}
@@ -225,8 +221,7 @@ export default function Navigation({
                             >
                                 {getIconForMenuItem('Settings')}
                             </span>
-                            {!collapsed && <span className="menu-text"
-                                                 style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
+                            {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
                         </li>
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
@@ -247,8 +242,7 @@ export default function Navigation({
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text"
-                                          style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
+                                    <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
                                     {userName && <span className="user-name" style={{paddingLeft: 0}}>{userName}</span>}
                                 </div>
                             )}
@@ -256,10 +250,7 @@ export default function Navigation({
                     </ul>
                 </nav>
             </div>
-
-            <div className={`content-area ${collapsed ? 'expanded' : ''}`}>
-                {children}
-            </div>
+            <div className={`content-area ${collapsed ? 'expanded' : ''}`}>{children}</div>
         </div>
     )
 }
