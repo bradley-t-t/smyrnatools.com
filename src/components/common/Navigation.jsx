@@ -131,7 +131,9 @@ export default function Navigation({
     useEffect(() => {
         if (
             visibleMenuItems.length > 0 &&
-            !visibleMenuItems.some(item => item.id === selectedView)
+            !visibleMenuItems.some(item => item.id === selectedView) &&
+            selectedView !== 'Settings' &&
+            selectedView !== 'MyAccount'
         ) {
             onSelectView(visibleMenuItems[0].id)
         }
@@ -218,7 +220,13 @@ export default function Navigation({
                         })}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
-                            onClick={() => onSelectView('Settings')}
+                            onClick={() => {
+                                if (window.appSwitchView) {
+                                    window.appSwitchView('Settings')
+                                } else {
+                                    onSelectView('Settings')
+                                }
+                            }}
                             style={collapsed ? {} : {
                                 padding: '13px 18px',
                                 minHeight: 0,
@@ -237,7 +245,13 @@ export default function Navigation({
                         </li>
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
-                            onClick={() => onSelectView('MyAccount')}
+                            onClick={() => {
+                                if (window.appSwitchView) {
+                                    window.appSwitchView('MyAccount')
+                                } else {
+                                    onSelectView('MyAccount')
+                                }
+                            }}
                             style={collapsed ? {} : {
                                 padding: '13px 18px',
                                 minHeight: 0,

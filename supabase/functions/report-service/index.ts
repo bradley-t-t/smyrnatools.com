@@ -1,3 +1,6 @@
+// @ts-ignore
+import {createClient} from "npm:@supabase/supabase-js@2.45.4";
+
 const corsHeaders: Record<string, string> = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -44,6 +47,36 @@ Deno.serve(async (req) => {
         const url = new URL(req.url);
         const endpoint = url.pathname.split("/").pop();
         switch (endpoint) {
+            case "user-past-due-reports": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    body = {};
+                }
+                const userId: string | null = typeof body?.userId === "string" ? body.userId : null;
+                const beforeDateInput: string | null = typeof body?.beforeDate === "string" ? body.beforeDate : null;
+                if (!userId) return new Response(JSON.stringify({error: "userId is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const beforeIso = beforeDateInput ? new Date(beforeDateInput).toISOString() : today.toISOString();
+                const {data, error} = await supabase
+                    .from("reports")
+                    .select("id, report_name, user_id, report_date_range_end, completed, week")
+                    .eq("user_id", userId)
+                    .eq("completed", false)
+                    .lt("report_date_range_end", beforeIso)
+                    .order("report_date_range_end", {ascending: true});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 500,
+                    headers: corsHeaders
+                });
+                return new Response(JSON.stringify({data: Array.isArray(data) ? data : []}), {headers: corsHeaders});
+            }
             case "compute-yardage-metrics": {
                 let body: any;
                 try {
@@ -322,4 +355,3 @@ Deno.serve(async (req) => {
         }), {status: 500, headers: corsHeaders});
     }
 });
-
