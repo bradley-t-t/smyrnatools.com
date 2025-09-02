@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, useRef} from 'react'
 import './styles/Navigation.css'
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png'
 import FlagSmyrnaLogo from '../../assets/images/FlagSmyrnaLogo.png'
@@ -83,6 +83,7 @@ export default function Navigation({
     const [visibleMenuItems, setVisibleMenuItems] = useState([])
     const regionType = preferences.selectedRegion?.type
     const regionCode = preferences.selectedRegion?.code
+    const lastMenuItemsRef = useRef([])
 
     useEffect(() => {
         ensureFontAwesome()
@@ -118,12 +119,23 @@ export default function Navigation({
                     filtered = filtered.filter(item => !['Mixers', 'Teams', 'List', 'Tractors', 'Trailers'].includes(item.id))
                 }
                 setVisibleMenuItems(filtered)
+                lastMenuItemsRef.current = filtered
             } catch (error) {
                 setVisibleMenuItems([])
+                lastMenuItemsRef.current = []
             }
         }
         filterMenuItems()
     }, [userId, regionType, regionCode])
+
+    useEffect(() => {
+        if (
+            visibleMenuItems.length > 0 &&
+            !visibleMenuItems.some(item => item.id === selectedView)
+        ) {
+            onSelectView(visibleMenuItems[0].id)
+        }
+    }, [visibleMenuItems, selectedView, onSelectView])
 
     useEffect(() => {
         setCollapsed(preferences.navbarMinimized)

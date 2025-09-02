@@ -83,7 +83,7 @@ const reportTypes = [
             {name: "stabilized_crushed_concrete", label: "Stabilized Crushed Concrete", type: "number", required: true},
             {name: "beach_quality_sand", label: "Beach Quality Sand", type: "number", required: true},
             {name: "limestone_one_inch", label: "Limestone - 1\"", type: "number", required: true},
-            {name: "stabilized_cc", label: "Stabilized CC", type: "number", required: true},
+            {name: "white_screened_sand", label: "White Screened Sand", type: "number", required: true},
             {name: "pea_gravel_three_eighths", label: "3/8\" Pea Gravel", type: "number", required: true},
             {name: "crushed_asphalt", label: "Crushed Asphalt", type: "number", required: true},
             {name: "screened_sand", label: "Screened Sand", type: "number", required: true},

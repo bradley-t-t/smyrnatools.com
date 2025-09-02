@@ -38,7 +38,7 @@ function RegionSelectorOverlay() {
                     const hasPerm = await UserService.hasPermission(uid, 'region.select')
                     if (mounted) setCanSelectRegion(!!hasPerm)
                 } catch {}
-                let defaultRegion = {code: '', name: ''}
+                let defaultRegion = {code: '', name: '', type: ''}
                 try {
                     const plantCode = await UserService.getUserPlant(uid)
                     if (plantCode) {
@@ -48,7 +48,8 @@ function RegionSelectorOverlay() {
                                 const r = regionsByPlant[0]
                                 defaultRegion = {
                                     code: r.regionCode || r.region_code || '',
-                                    name: r.regionName || r.region_name || ''
+                                    name: r.regionName || r.region_name || '',
+                                    type: r.type || r.region_type || ''
                                 }
                             }
                         } catch {}
