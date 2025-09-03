@@ -45,21 +45,6 @@ function ReportsView() {
     const [reporterPlantMap, setReporterPlantMap] = useState({})
     const [loadingReporterPlants, setLoadingReporterPlants] = useState(false)
 
-    // Build a map to normalize any plant identifier (code or name) to a plant_code
-    const plantCodeMap = useMemo(() => {
-        const m = new Map()
-        plants.forEach(p => {
-            if (p.plant_name) m.set(String(p.plant_name), String(p.plant_code))
-            if (p.plant_code) m.set(String(p.plant_code), String(p.plant_code))
-        })
-        return m
-    }, [plants])
-    const toPlantCode = value => {
-        if (!value) return ''
-        const key = String(value)
-        return plantCodeMap.get(key) || key
-    }
-
     function getLastNWeekIsos(n) {
         const weeks = []
         const currentMonday = ReportService.getMondayAndSaturday(HARDCODED_TODAY).monday
@@ -570,20 +555,16 @@ function ReportsView() {
 
     const filteredMyWeeks = sortedMyWeeks.filter(weekIso => {
         const weekItems = myReportsByWeek[weekIso] || []
-        return weekItems.some(item => {
-            const matchType = !filterReportType || item.name === filterReportType
-            return matchType
-        })
+        return weekItems.some(item => !filterReportType || item.name === filterReportType)
     }).slice(0, myReportsVisibleWeeks)
 
     const filteredReviewWeeks = useMemo(() => sortedReviewWeeks.filter(weekIso => {
         const weekReports = reviewReportsByWeek[weekIso] || []
         return weekReports.some(report => {
             const reporterPlant = reporterPlantMap[report.userId] || ''
-            const matchType = !filterReportType || report.name === filterReportType
             const matchPlant = !filterPlant || reporterPlant === filterPlant
             const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
-            return matchType && matchPlant && matchRegion
+            return (!filterReportType || report.name === filterReportType) && matchPlant && matchRegion
         })
     }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reviewReportsByWeek, filterReportType, filterPlant, reviewVisibleWeeks, preferences.selectedRegion?.code, regionPlantCodes, reporterPlantMap])
 
@@ -615,28 +596,11 @@ function ReportsView() {
                                 </button>
                             </div>
                         </div>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: 16,
-                            alignItems: 'center',
-                            margin: '16px 24px 8px 0'
-                        }}>
+                        <div className="reports-filters">
                             <select
                                 value={filterReportType}
                                 onChange={e => setFilterReportType(e.target.value)}
-                                style={{
-                                    background: 'var(--background)',
-                                    border: '1.5px solid var(--divider)',
-                                    borderRadius: 8,
-                                    fontSize: 15,
-                                    padding: '6px 14px',
-                                    color: 'var(--text-primary)',
-                                    minWidth: 180,
-                                    boxShadow: '0 1px 4px var(--shadow-xs)',
-                                    outline: 'none',
-                                    appearance: 'none'
-                                }}
+                                className="select-control"
                             >
                                 <option value="">All Report Types</option>
                                 {reportTypes
@@ -651,18 +615,7 @@ function ReportsView() {
                             <select
                                 value={filterPlant}
                                 onChange={e => setFilterPlant(e.target.value)}
-                                style={{
-                                    background: 'var(--background)',
-                                    border: '1.5px solid var(--divider)',
-                                    borderRadius: 8,
-                                    fontSize: 15,
-                                    padding: '6px 14px',
-                                    color: 'var(--text-primary)',
-                                    minWidth: 180,
-                                    boxShadow: '0 1px 4px var(--shadow-xs)',
-                                    outline: 'none',
-                                    appearance: 'none'
-                                }}
+                                className="select-control"
                             >
                                 <option value="">All Plants</option>
                                 {plants
@@ -689,10 +642,7 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {filteredMyWeeks.map(weekIso => {
-                                                        const weekItems = (myReportsByWeek[weekIso] || []).filter(item => {
-                                                            const matchType = !filterReportType || item.name === filterReportType
-                                                            return matchType
-                                                        })
+                                                        const weekItems = (myReportsByWeek[weekIso] || []).filter(item => !filterReportType || item.name === filterReportType)
                                                         if (weekItems.length === 0) return null
                                                         const weekStart = new Date(weekIso)
                                                         weekStart.setDate(weekStart.getDate() + 1)
@@ -701,16 +651,7 @@ function ReportsView() {
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
                                                             <div key={weekIso} style={{marginBottom: 32}}>
-                                                                <div
-                                                                    style={{
-                                                                        fontWeight: 700,
-                                                                        fontSize: '1.08rem',
-                                                                        color: 'var(--accent)',
-                                                                        margin: '18px 0 8px 0',
-                                                                        letterSpacing: '0.01em',
-                                                                        paddingLeft: 24
-                                                                    }}
-                                                                >
+                                                                <div className="reports-week-header">
                                                                     {weekRange}
                                                                 </div>
                                                                 {weekItems.map(item => {
@@ -719,32 +660,28 @@ function ReportsView() {
                                                                     const [mm, dd, yy] = endDateStr.split('-')
                                                                     const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
                                                                     let statusText
-                                                                    let statusColor
+                                                                    let statusClass
                                                                     const hasSavedData = !!(item.report && item.report.data)
                                                                     const buttonLabel = item.completed ? 'View' : (hasSavedData ? 'Edit' : 'Submit')
                                                                     if (item.completed) {
                                                                         statusText = 'Completed'
-                                                                        statusColor = 'var(--success)'
+                                                                        statusClass = 'success'
                                                                     } else if (hasSavedData) {
                                                                         statusText = 'Continue Editing'
-                                                                        statusColor = 'var(--blue)'
+                                                                        statusClass = 'info'
                                                                     } else if (endDate >= today) {
                                                                         statusText = 'Current Week'
-                                                                        statusColor = 'var(--accent)'
+                                                                        statusClass = 'info'
                                                                     } else {
                                                                         statusText = 'Past Due'
-                                                                        statusColor = 'var(--error)'
+                                                                        statusClass = 'error'
                                                                     }
                                                                     return (
                                                                         <div className="reports-list-item"
                                                                              key={item.name + item.weekIso}>
                                                                             <div className="reports-list-title">
                                                                                 {item.title}
-                                                                                <span style={{
-                                                                                    marginLeft: 12,
-                                                                                    color: statusColor,
-                                                                                    fontWeight: 600
-                                                                                }}>
+                                                                                <span className={`reports-status ${statusClass}`}>
                                                                                     {statusText}
                                                                                 </span>
                                                                             </div>
@@ -759,31 +696,11 @@ function ReportsView() {
                                                         )
                                                     })}
                                                     {(myReportsVisibleWeeks < totalMyWeeks || myReportsVisibleWeeks > 2) && (
-                                                        <div style={{
-                                                            textAlign: 'center',
-                                                            marginTop: 16,
-                                                            paddingBottom: 32,
-                                                            display: 'flex',
-                                                            flexDirection: 'row',
-                                                            justifyContent: 'center',
-                                                            alignItems: 'center',
-                                                            gap: 16
-                                                        }}>
+                                                        <div className="reports-cta-row">
                                                             {myReportsVisibleWeeks < totalMyWeeks && (
                                                                 <button
                                                                     type="button"
-                                                                    style={{
-                                                                        background: 'var(--accent)',
-                                                                        color: 'var(--text-light)',
-                                                                        border: 'none',
-                                                                        borderRadius: 8,
-                                                                        padding: '8px 22px',
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15,
-                                                                        cursor: 'pointer',
-                                                                        marginTop: 8,
-                                                                        marginBottom: 8
-                                                                    }}
+                                                                    className="reports-cta-primary"
                                                                     onClick={() => setMyReportsVisibleWeeks(w => w + 2)}
                                                                 >
                                                                     Show More
@@ -792,18 +709,7 @@ function ReportsView() {
                                                             {myReportsVisibleWeeks > 2 && (
                                                                 <button
                                                                     type="button"
-                                                                    style={{
-                                                                        background: 'var(--divider)',
-                                                                        color: 'var(--text-primary)',
-                                                                        border: 'none',
-                                                                        borderRadius: 8,
-                                                                        padding: '8px 22px',
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15,
-                                                                        cursor: 'pointer',
-                                                                        marginTop: 8,
-                                                                        marginBottom: 8
-                                                                    }}
+                                                                    className="reports-cta-secondary"
                                                                     onClick={() => setMyReportsVisibleWeeks(2)}
                                                                 >
                                                                     Show Less
@@ -835,10 +741,9 @@ function ReportsView() {
                                                     {filteredReviewWeeks.map(weekIso => {
                                                         const weekReports = (reviewReportsByWeek[weekIso] || []).filter(report => {
                                                             const reporterPlant = reporterPlantMap[report.userId] || ''
-                                                            const matchType = !filterReportType || report.name === filterReportType
                                                             const matchPlant = !filterPlant || reporterPlant === filterPlant
                                                             const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
-                                                            return matchType && matchPlant && matchRegion
+                                                            return (!filterReportType || report.name === filterReportType) && matchPlant && matchRegion
                                                         })
                                                         if (weekReports.length === 0) return null
                                                         const weekStart = new Date(weekIso)
@@ -848,16 +753,7 @@ function ReportsView() {
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
                                                             <div key={weekIso} style={{marginBottom: 32}}>
-                                                                <div
-                                                                    style={{
-                                                                        fontWeight: 700,
-                                                                        fontSize: '1.08rem',
-                                                                        color: 'var(--accent)',
-                                                                        margin: '18px 0 8px 0',
-                                                                        letterSpacing: '0.01em',
-                                                                        paddingLeft: 24
-                                                                    }}
-                                                                >
+                                                                <div className="reports-week-header">
                                                                     {weekRange}
                                                                 </div>
                                                                 {weekReports.map(report => (
@@ -877,31 +773,11 @@ function ReportsView() {
                                                         )
                                                     })}
                                                     {(reviewVisibleWeeks < totalMyWeeks || reviewVisibleWeeks > 2) && (
-                                                        <div style={{
-                                                            textAlign: 'center',
-                                                            marginTop: 16,
-                                                            paddingBottom: 32,
-                                                            display: 'flex',
-                                                            flexDirection: 'row',
-                                                            justifyContent: 'center',
-                                                            alignItems: 'center',
-                                                            gap: 16
-                                                        }}>
+                                                        <div className="reports-cta-row">
                                                             {reviewVisibleWeeks < totalMyWeeks && (
                                                                 <button
                                                                     type="button"
-                                                                    style={{
-                                                                        background: 'var(--accent)',
-                                                                        color: 'var(--text-light)',
-                                                                        border: 'none',
-                                                                        borderRadius: 8,
-                                                                        padding: '8px 22px',
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15,
-                                                                        cursor: 'pointer',
-                                                                        marginTop: 8,
-                                                                        marginBottom: 8
-                                                                    }}
+                                                                    className="reports-cta-primary"
                                                                     onClick={() => setReviewVisibleWeeks(w => w + 2)}
                                                                 >
                                                                     Show More
@@ -910,18 +786,7 @@ function ReportsView() {
                                                             {reviewVisibleWeeks > 2 && (
                                                                 <button
                                                                     type="button"
-                                                                    style={{
-                                                                        background: 'var(--divider)',
-                                                                        color: 'var(--text-primary)',
-                                                                        border: 'none',
-                                                                        borderRadius: 8,
-                                                                        padding: '8px 22px',
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15,
-                                                                        cursor: 'pointer',
-                                                                        marginTop: 8,
-                                                                        marginBottom: 8
-                                                                    }}
+                                                                    className="reports-cta-secondary"
                                                                     onClick={() => setReviewVisibleWeeks(2)}
                                                                 >
                                                                     Show Less

@@ -91,3 +91,101 @@
     color: var(--primary);
     border-color: var(--accent);
 }
+
+.reports-review-view {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--background);
+}
+
+.reports-review-container {
+    max-width: 900px;
+    margin: 56px auto 0 auto;
+    padding: 0 0 32px 0;
+}
+
+.reports-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.reports-review-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.manager-edit-button {
+    background: var(--accent);
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.export-button {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.export-button.active {
+    background: var(--accent);
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.export-button.disabled {
+    background: var(--divider);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.reports-review-status {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+
+.status-text {
+    font-weight: 700;
+    font-size: 17px;
+}
+
+.owner-info {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.owner-name {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.assigned-plant {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.submitted-at {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.week-range-header {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--accent);
+}

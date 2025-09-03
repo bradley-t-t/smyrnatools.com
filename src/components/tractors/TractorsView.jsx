@@ -237,82 +237,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         setReloadTractors(r => !r)
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return '';
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = date.getFullYear();
-        const mm = pad(date.getMonth() + 1);
-        const dd = pad(date.getDate());
-        const hh = pad(date.getHours());
-        const min = pad(date.getMinutes());
-        return `${mm}/${dd}/${yyyy} ${hh}:${min}`;
-    }
-
-    function getFiltersAppliedString() {
-        const filters = [];
-        if (searchText) filters.push(`Search: ${searchText}`);
-        if (selectedPlant) {
-            const plant = plants.find(p => p.plantCode === selectedPlant);
-            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`);
-        }
-        if (freightFilter) filters.push(`Freight: ${freightFilter}`)
-        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
-        return filters.length ? filters.join(', ') : 'No Filters';
-    }
-
-    function exportTractorsToCSV(tractorsToExport) {
-        if (!tractorsToExport || tractorsToExport.length === 0) return;
-        const now = new Date();
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = now.getFullYear();
-        const mm = pad(now.getMonth() + 1);
-        const dd = pad(now.getDate());
-        const hh = pad(now.getHours());
-        const min = pad(now.getMinutes());
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
-        const filtersApplied = getFiltersAppliedString();
-        const fileName = `Tractor Export - ${formattedNow} - ${filtersApplied}.csv`;
-        const topHeader = `Tractor Export - ${formattedNow} - ${filtersApplied}`;
-        const headers = [
-            'Truck Number',
-            'Status',
-            'Assigned Operator',
-            'Operator Smyrna ID',
-            'Assigned Plant',
-            'Freight',
-            'Last Service Date',
-            'Cleanliness Rating',
-            'Open Issues'
-        ];
-        const rows = tractorsToExport.map(tractor => [
-            tractor.truckNumber || '',
-            tractor.status || '',
-            getOperatorName(tractor.assignedOperator),
-            getOperatorSmyrnaId(tractor.assignedOperator),
-            getPlantName(tractor.assignedPlant),
-            tractor.freight || '',
-            formatDate(tractor.lastServiceDate),
-            tractor.cleanlinessRating || '',
-            Number(tractor.openIssuesCount || 0)
-        ]);
-        const csvContent = [
-            `"${topHeader}"`,
-            headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
-            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
-        const blob = new Blob([csvContent], {type: 'text/csv'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
     const filteredTractors = tractors
         .filter(tractor => {
             const matchesSearch = !searchText.trim() ||
@@ -395,13 +319,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             <div className="dashboard-header">
                 <h1>{title}</h1>
                 <div className="dashboard-actions">
-                    <button
-                        className="action-button primary rectangular-button"
-                        style={{marginRight: 8, minWidth: 210}}
-                        onClick={() => exportTractorsToCSV(filteredTractors)}
-                    >
-                        <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
-                    </button>
+
                     <button
                         className="action-button primary rectangular-button"
                         onClick={() => setShowAddSheet(true)}

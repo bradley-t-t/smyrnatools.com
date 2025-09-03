@@ -303,55 +303,6 @@ function OperatorsView({
         return filters.length ? filters.join(', ') : 'No Filters'
     }
 
-    function exportOperatorsToCSV(operatorsToExport) {
-        if (!operatorsToExport || operatorsToExport.length === 0) return
-        const now = new Date()
-        const pad = n => n.toString().padStart(2, '0')
-        const yyyy = now.getFullYear()
-        const mm = pad(now.getMonth() + 1)
-        const dd = pad(now.getDate())
-        const hh = pad(now.getHours())
-        const min = pad(now.getMinutes())
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`
-        const filtersApplied = getFiltersAppliedString()
-        const fileName = `Operator Export - ${formattedNow} - ${filtersApplied}.csv`
-        const topHeader = `Operator Export - ${formattedNow} - ${filtersApplied}`
-        const headers = [
-            'Smyrna ID',
-            'Name',
-            'Plant',
-            'Status',
-            'Position',
-            'Trainer',
-            'Pending Start Date',
-            'Rating'
-        ]
-        const rows = operatorsToExport.map(op => [
-            op.smyrnaId || '',
-            op.name || '',
-            getPlantName(op.plantCode),
-            op.status || '',
-            op.position || '',
-            op.isTrainer ? 'Yes' : 'No',
-            op.pendingStartDate ? formatDate(op.pendingStartDate) : '',
-            typeof op.rating === 'number' ? op.rating : ''
-        ])
-        const csvContent = [
-            `"${topHeader}"`,
-            headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
-            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        ].join('\n')
-        const blob = new Blob([csvContent], {type: 'text/csv'})
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = fileName
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }
-
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
             setViewMode(null)
@@ -391,13 +342,6 @@ function OperatorsView({
                             {title}
                         </h1>
                         <div className="dashboard-actions">
-                            <button
-                                className="action-button primary rectangular-button"
-                                style={{marginRight: 8, minWidth: 210}}
-                                onClick={() => exportOperatorsToCSV(filteredOperators)}
-                            >
-                                <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
-                            </button>
                             <button
                                 className="action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}

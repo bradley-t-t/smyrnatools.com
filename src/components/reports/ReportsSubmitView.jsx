@@ -389,51 +389,6 @@ function ReportsSubmitView({
                     <button className="report-form-back" onClick={handleBackClick} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
-                    {Array.isArray(form.rows) && form.rows.length > 0 && report.name === 'plant_production' && (
-                        <button
-                            type="button"
-                            style={{
-                                background: submitted ? 'var(--accent)' : 'var(--divider)',
-                                color: submitted ? 'var(--text-light)' : 'var(--text-secondary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: submitted ? 'pointer' : 'not-allowed',
-                                opacity: submitted ? 1 : 0.6
-                            }}
-                            onClick={() => {
-                                if (submitted) ReportService.exportRowsToCSV(form.rows, operatorOptions, form.report_date)
-                            }}
-                            disabled={!submitted || readOnly}
-                        >
-                            Export to Spreadsheet
-                        </button>
-                    )}
-                    {report.name !== 'plant_production' && (
-                        <button
-                            type="button"
-                            style={{
-                                background: submitted ? 'var(--accent)' : 'var(--divider)',
-                                color: submitted ? 'var(--text-light)' : 'var(--text-secondary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: submitted ? 'pointer' : 'not-allowed',
-                                opacity: submitted ? 1 : 0.6,
-                                marginLeft: 12
-                            }}
-                            onClick={() => {
-                                if (submitted) ReportService.exportReportFieldsToCSV(report, form)
-                            }}
-                            disabled={!submitted || readOnly}
-                        >
-                            Export to Spreadsheet
-                        </button>
-                    )}
                 </div>
                 <div className="report-form-header-row" style={{marginTop: 0}}>
                     <div className="report-form-title">

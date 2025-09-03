@@ -43,12 +43,6 @@ const reportTypes = [
             {name: "total_hours", label: "Total Hours", type: "number", required: true},
             {name: "total_yards_lost", label: "Total Yards Lost", type: "number", required: true},
             {name: "yards_resold", label: "Yards Resold", type: "number", required: true},
-            {name: "monday_recap", label: "Monday Recap", type: "textarea", required: true},
-            {name: "tuesday_recap", label: "Tuesday Recap", type: "textarea", required: true},
-            {name: "wednesday_recap", label: "Wednesday Recap", type: "textarea", required: true},
-            {name: "thursday_recap", label: "Thursday Recap", type: "textarea", required: true},
-            {name: "friday_recap", label: "Friday Recap", type: "textarea", required: true},
-            {name: "saturday_recap", label: "Saturday Recap", type: "textarea", required: true}
         ]
     }),
     createReportType({
@@ -77,7 +71,7 @@ const reportTypes = [
             {name: "fill_dirt", label: "Fill Dirt", type: "number", required: true},
             {name: "black_dirt", label: "Black Dirt", type: "number", required: true},
             {name: "select_fill", label: "Select Fill", type: "number", required: true},
-            {name: "crushed_concrete_freeport", label: "Crushed Concrete - Freeport", type: "number", required: true},
+            {name: "crushed_concrete", label: "Crushed Concrete", type: "number", required: true},
             {name: "three_by_five_crushed", label: "3 x 5 Crushed", type: "number", required: true},
             {name: "stabilized_sand", label: "Stabilized Sand", type: "number", required: true},
             {name: "stabilized_crushed_concrete", label: "Stabilized Crushed Concrete", type: "number", required: true},

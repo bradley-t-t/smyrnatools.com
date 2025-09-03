@@ -154,55 +154,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         return filters.length ? filters.join(', ') : 'No Filters'
     }
 
-    function exportListToCSV(itemsToExport) {
-        if (!itemsToExport || itemsToExport.length === 0) return
-        const now = new Date()
-        const pad = n => n.toString().padStart(2, '0')
-        const yyyy = now.getFullYear()
-        const mm = pad(now.getMonth() + 1)
-        const dd = pad(now.getDate())
-        const hh = pad(now.getHours())
-        const min = pad(now.getMinutes())
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`
-        const filtersApplied = getFiltersAppliedString()
-        const fileName = `List Export - ${formattedNow} - ${filtersApplied}.csv`
-        const topHeader = `List Export - ${formattedNow} - ${filtersApplied}`
-        const headers = [
-            'Description',
-            'Plant',
-            'Deadline',
-            'Completed',
-            'Completed Date',
-            'Created By',
-            'Status',
-            'Comments'
-        ]
-        const rows = itemsToExport.map(item => [
-            item.description || '',
-            getPlantName(item.plant_code),
-            formatDate(item.deadline),
-            item.completed ? 'Yes' : 'No',
-            item.completed_at ? formatDate(item.completed_at) : '',
-            ListService.getCreatorName(item.user_id),
-            item.completed ? 'Completed' : ListService.isOverdue(item) ? 'Overdue' : 'Pending',
-            item.comments || ''
-        ])
-        const csvContent = [
-            `"${topHeader}"`,
-            headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
-            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        ].join('\n')
-        const blob = new Blob([csvContent], {type: 'text/csv'})
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = fileName
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }
-
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -237,13 +188,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
             <div className="dashboard-header">
                 <h1>{title}</h1>
                 <div className="dashboard-actions">
-                    <button
-                        className="action-button primary rectangular-button"
-                        style={{marginRight: 8, minWidth: 210}}
-                        onClick={() => exportListToCSV(filteredItems)}
-                    >
-                        <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
-                    </button>
                     <button
                         className="action-button primary rectangular-button"
                         onClick={() => setShowAddSheet(true)}
