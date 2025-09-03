@@ -2,10 +2,10 @@
     display: flex;
     align-items: center;
     gap: 22px;
-    background: linear-gradient(90deg, var(--card-bg, #f7fafc) 60%, var(--accent-light-theme, #e9f5ff) 100%);
+    background: linear-gradient(90deg, var(--card-bg) 60%, var(--accent-light-theme) 100%);
     border-radius: 16px;
     padding: 22px 32px 22px 22px;
-    box-shadow: 0 4px 18px var(--shadow, rgba(49, 130, 206, 0.09));
+    box-shadow: var(--shadow-md);
     margin-bottom: 32px;
     border: 1.5px solid var(--divider);
 }
@@ -21,7 +21,7 @@
     font-size: 2.1rem;
     font-weight: 700;
     color: var(--text-light);
-    box-shadow: 0 2px 8px var(--shadow-sm, rgba(49, 130, 206, 0.13));
+    box-shadow: var(--shadow-sm);
     flex-shrink: 0;
 }
 
@@ -40,15 +40,15 @@
 
 .review-user-week-badge {
     display: inline-block;
-    background: var(--accent-light-theme, #f4faff);
-    color: var(--accent, #003896);
+    background: var(--accent-light-theme);
+    color: var(--accent);
     font-size: 1rem;
     font-weight: 600;
     border-radius: 8px;
     padding: 4px 14px;
     letter-spacing: 0.01em;
     margin-top: 2px;
-    box-shadow: 0 1px 4px var(--shadow-sm, rgba(49, 130, 206, 0.06));
+    box-shadow: var(--shadow-sm);
 }
 
 .review-user-submitted {
@@ -61,7 +61,7 @@
 
 .review-divider {
     height: 2px;
-    background: linear-gradient(90deg, var(--divider) 60%, var(--accent-light-theme, #bde0fe) 100%);
+    background: linear-gradient(90deg, var(--divider) 60%, var(--accent-light-theme) 100%);
     border-radius: 2px;
     margin: 18px 0 32px 0;
     width: 100%;

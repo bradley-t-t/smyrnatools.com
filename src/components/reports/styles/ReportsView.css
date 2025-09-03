@@ -18,7 +18,7 @@
     flex: 1 1 0;
     background: var(--card-bg);
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(49, 130, 206, 0.10);
+    box-shadow: var(--shadow-lg);
     padding: 24px 24px 32px 24px;
     min-width: 340px;
     max-width: 600px;
@@ -52,7 +52,7 @@
 .report-card {
     background: var(--card-bg);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(49, 130, 206, 0.07);
+    box-shadow: var(--shadow-md);
     padding: 18px 18px 16px 18px;
     margin-bottom: 8px;
     border: 1px solid var(--divider);
@@ -82,7 +82,7 @@
     margin: 40px auto 0 auto;
     background: var(--card-bg);
     border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(49, 130, 206, 0.10);
+    box-shadow: var(--shadow-lg);
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -96,7 +96,7 @@
     margin: 40px auto 0 auto;
     background: var(--card-bg);
     border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(49, 130, 206, 0.10);
+    box-shadow: var(--shadow-lg);
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -131,21 +131,21 @@
     font-size: 1.13rem;
     font-weight: 600;
     background: var(--background);
-    color: #222;
+    color: var(--text-primary);
     transition: border 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 12px rgba(49, 130, 206, 0.07);
+    box-shadow: var(--shadow-md);
     outline: none;
 }
 
 .reports-search::placeholder {
-    color: #555;
+    color: var(--text-secondary);
     opacity: 1;
 }
 
 .reports-search:focus {
     border-color: var(--divider);
-    box-shadow: 0 4px 18px rgba(49, 130, 206, 0.13);
-    background: #fff;
+    box-shadow: var(--shadow-lg);
+    background: var(--card-bg);
 }
 
 .reports-tabs {
@@ -168,7 +168,7 @@
 
 .reports-tabs button.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--text-light);
 }
 
 .reports-content {
@@ -178,10 +178,40 @@
     padding: 0;
 }
 
+.reports-filters {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    align-items: center;
+    margin: 16px 24px 8px 0;
+}
+
+.select-control {
+    background: var(--background);
+    border: 1.5px solid var(--divider);
+    border-radius: 8px;
+    font-size: 15px;
+    padding: 6px 14px;
+    color: var(--text-primary);
+    min-width: 180px;
+    box-shadow: var(--shadow-sm);
+    outline: none;
+    appearance: none;
+}
+
 .reports-list {
     width: 100%;
     padding: 0;
     margin: 0;
+}
+
+.reports-week-header {
+    font-weight: 700;
+    font-size: 1.08rem;
+    color: var(--accent);
+    margin: 18px 0 8px 0;
+    letter-spacing: 0.01em;
+    padding-left: 24px;
 }
 
 .reports-list-item {
@@ -210,6 +240,27 @@
     white-space: nowrap;
 }
 
+.reports-status {
+    margin-left: 12px;
+    font-weight: 600;
+}
+
+.reports-status.success {
+    color: var(--success);
+}
+
+.reports-status.warning {
+    color: var(--warning);
+}
+
+.reports-status.error {
+    color: var(--error);
+}
+
+.reports-status.info {
+    color: var(--info);
+}
+
 .reports-list-date {
     color: var(--text-secondary);
     font-size: 0.97rem;
@@ -220,7 +271,7 @@
 
 .reports-list-action {
     background: var(--accent);
-    color: #fff;
+    color: var(--text-light);
     border: none;
     border-radius: 8px;
     padding: 7px 18px;
@@ -252,13 +303,46 @@
     opacity: 0.7;
 }
 
+.reports-cta-row {
+    text-align: center;
+    margin-top: 16px;
+    padding-bottom: 32px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+}
+
+.reports-cta-primary {
+    background: var(--accent);
+    color: var(--text-light);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.reports-cta-secondary {
+    background: var(--divider);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+}
+
 .report-modal-bg {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(26, 32, 44, 0.35);
+    background: var(--modal-bg);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -268,7 +352,7 @@
 .report-modal {
     background: var(--card-bg);
     border-radius: 14px;
-    box-shadow: 0 8px 32px rgba(49, 130, 206, 0.18);
+    box-shadow: var(--shadow-lg);
     width: 98%;
     max-width: 480px;
     padding: 0;
@@ -388,7 +472,7 @@
 
 .report-modal-submit {
     background: var(--accent);
-    color: #fff;
+    color: var(--text-light);
     border: none;
     border-radius: 8px;
     padding: 7px 18px;

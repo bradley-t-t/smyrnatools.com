@@ -32,7 +32,6 @@ import RegionsView from '../components/regions/RegionsView'
 import SmyrnaLogo from '../assets/images/SmyrnaLogo.png'
 import GuestView from '../components/guest/GuestView'
 import DesktopOnly from '../components/desktop-only/DesktopOnly'
-import RegionSelectorOverlay from '../components/regions/RegionSelectorOverlay'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -393,7 +392,6 @@ function App() {
     return (
         <AuthProvider>
             <PreferencesProvider>
-                <RegionSelectorOverlay/>
                 <AppContent/>
                 <div style={{position: 'relative', zIndex: 9999}}><OnlineUsersOverlay/><TipBanner/></div>
             </PreferencesProvider>

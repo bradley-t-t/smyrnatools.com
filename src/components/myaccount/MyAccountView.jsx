@@ -8,7 +8,7 @@ import SimpleLoading from "../common/SimpleLoading";
 import {RegionService} from '../../services/RegionService'
 
 function MyAccountView({userId}) {
-    const {preferences} = usePreferences();
+    const {preferences, updatePreferences} = usePreferences();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [firstName, setFirstName] = useState('');
@@ -28,9 +28,54 @@ function MyAccountView({userId}) {
 
     const [activeTab, setActiveTab] = useState('profile');
 
+    const [canSelectRegion, setCanSelectRegion] = useState(false)
+    const [allRegions, setAllRegions] = useState([])
+    const [regionsLoaded, setRegionsLoaded] = useState(false)
+
     useEffect(() => {
         fetchUserProfile();
     }, []);
+
+    useEffect(() => {
+        let mounted = true
+        async function initRegion() {
+            try {
+                const uid = userId || sessionStorage.getItem('userId')
+                if (!uid) return
+                try {
+                    const hasPerm = await UserService.hasPermission(uid, 'region.select')
+                    if (mounted) setCanSelectRegion(!!hasPerm)
+                } catch {}
+                try {
+                    const regions = await RegionService.fetchRegions()
+                    if (mounted) setAllRegions(Array.isArray(regions) ? regions : [])
+                } catch {}
+                try {
+                    if (!preferences.selectedRegion?.code) {
+                        const userPlant = plantCode || (await UserService.getUserPlant(uid)) || ''
+                        if (userPlant) {
+                            try {
+                                const regionsByPlant = await RegionService.fetchRegionsByPlantCode(userPlant)
+                                if (Array.isArray(regionsByPlant) && regionsByPlant.length > 0) {
+                                    const r = regionsByPlant[0]
+                                    const def = {
+                                        code: r.regionCode || r.region_code || '',
+                                        name: r.regionName || r.region_name || '',
+                                        type: r.type || r.region_type || ''
+                                    }
+                                    if (def.code) updatePreferences('selectedRegion', def)
+                                }
+                            } catch {}
+                        }
+                    }
+                } catch {}
+            } finally {
+                if (mounted) setRegionsLoaded(true)
+            }
+        }
+        initRegion()
+        return () => { mounted = false }
+    }, [userId, plantCode])
 
     const fetchUserProfile = async () => {
         setLoading(true);
@@ -254,6 +299,22 @@ function MyAccountView({userId}) {
         }
     }, [preferences.accentColor]);
 
+    const handleChangeRegion = (e) => {
+        const code = e.target.value
+        if (!code) {
+            updatePreferences('selectedRegion', {code: '', name: '', type: ''})
+            setRegionCode('')
+            setRegionName('')
+            return
+        }
+        const r = allRegions.find(x => (x.region_code || x.regionCode) === code)
+        const name = r ? (r.region_name || r.regionName || '') : ''
+        const type = r ? (r.type || r.region_type || '') : ''
+        updatePreferences('selectedRegion', {code, name, type})
+        setRegionCode(code)
+        setRegionName(name)
+    }
+
     return (
         <div className="my-account-container">
             {loading && <SimpleLoading/>}
@@ -274,8 +335,8 @@ function MyAccountView({userId}) {
                     <div className="account-badges-row">
                         {userRole && <div className="account-badge"
                                           style={{backgroundColor: 'var(--myaccount-accent)'}}>{userRole}</div>}
-                        {regionName && <div className="account-badge"
-                                            style={{backgroundColor: 'var(--myaccount-accent)'}}>{regionName}</div>}
+                        {(preferences.selectedRegion?.name || regionName) && <div className="account-badge"
+                                            style={{backgroundColor: 'var(--myaccount-accent)'}}>{preferences.selectedRegion?.name || regionName}</div>}
                         {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
                     </div>
                 </div>
@@ -393,15 +454,40 @@ function MyAccountView({userId}) {
                                     <div className="info-value">{userRole}</div>
                                 </div>
                             )}
-                            {regionName || regionCode ? (
+                            {canSelectRegion ? (
                                 <div className="info-item">
                                     <div className="info-label">
                                         <i className="fas fa-globe" style={{color: 'var(--myaccount-accent)'}}></i>
                                         Region
                                     </div>
-                                    <div className="info-value">{regionName || regionCode}</div>
+                                    <div className="info-value" style={{width: '100%'}}>
+                                        <select
+                                            className="region-select"
+                                            value={preferences.selectedRegion?.code || ''}
+                                            onChange={handleChangeRegion}
+                                            disabled={!regionsLoaded}
+                                            style={{width: '100%', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-secondary)', color: 'var(--text-primary)'}}
+                                        >
+                                            <option value="">Select a region</option>
+                                            {allRegions.map(r => (
+                                                <option key={r.region_code || r.regionCode} value={r.region_code || r.regionCode}>
+                                                    {r.region_name || r.regionName || ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                            ) : null}
+                            ) : (
+                                (regionName || regionCode) ? (
+                                    <div className="info-item">
+                                        <div className="info-label">
+                                            <i className="fas fa-globe" style={{color: 'var(--myaccount-accent)'}}></i>
+                                            Region
+                                        </div>
+                                        <div className="info-value">{regionName || regionCode}</div>
+                                    </div>
+                                ) : null
+                            )}
                             {plantCode && (
                                 <div className="info-item">
                                     <div className="info-label">
