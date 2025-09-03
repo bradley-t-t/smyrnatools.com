@@ -199,53 +199,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
         return filters.length ? filters.join(', ') : 'No Filters';
     }
 
-    function exportManagersToCSV(managersToExport) {
-        if (!managersToExport || managersToExport.length === 0) return;
-        const now = new Date();
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = now.getFullYear();
-        const mm = pad(now.getMonth() + 1);
-        const dd = pad(now.getDate());
-        const hh = pad(now.getHours());
-        const min = pad(now.getMinutes());
-        const formattedNow = `${mm}-${dd}-${yyyy} ${hh}-${min}`;
-        const filtersApplied = getFiltersAppliedString();
-        const fileName = `Manager Export - ${formattedNow} - ${filtersApplied}.csv`;
-        const topHeader = `Manager Export - ${formattedNow} - ${filtersApplied}`;
-        const headers = [
-            'Email',
-            'First Name',
-            'Last Name',
-            'Plant',
-            'Role',
-            'Created At',
-            'Updated At'
-        ];
-        const rows = managersToExport.map(m => [
-            m.email || '',
-            m.firstName || '',
-            m.lastName || '',
-            getPlantName(m.plantCode),
-            m.roleName || '',
-            formatDate(m.createdAt),
-            formatDate(m.updatedAt)
-        ]);
-        const csvContent = [
-            `"${topHeader}"`,
-            headers.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','),
-            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
-        const blob = new Blob([csvContent], {type: 'text/csv'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div
@@ -304,20 +257,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
             {!showDetailView && (
                 <>
                     <div className="dashboard-header">
-                        <h1>
-                            {title}
-                            {(searchText || selectedPlant || roleFilter) && (
-                                <span className="filtered-indicator">(Filtered)</span>
-                            )}
-                        </h1>
                         <div className="dashboard-actions">
-                            <button
-                                className="action-button primary rectangular-button"
-                                style={{marginRight: 8, minWidth: 210}}
-                                onClick={() => exportManagersToCSV(filteredManagers)}
-                            >
-                                <i className="fas fa-file-export" style={{marginRight: 8}}></i> Export
-                            </button>
                         </div>
                     </div>
                     <div className="search-filters">
