@@ -65,6 +65,9 @@
     --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.05);
     --badge-bg: var(--bg-secondary);
     --badge-bg-hover: #e9edf3;
+    --bg-content: var(--background);
+    --bg-navbar-hover: var(--badge-bg-hover);
+    --status-badge-text: #000000;
 }
 
 .dark-mode {
@@ -129,6 +132,9 @@
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
     --badge-bg: var(--bg-tertiary);
     --badge-bg-hover: #2a2e36;
+    --bg-content: var(--background);
+    --bg-navbar-hover: var(--bg-secondary);
+    --status-badge-text: #ffffff;
 }
 
 .accent-red {
@@ -162,7 +168,7 @@
     --accent-primary: #23272a;
     --accent-secondary: #36393f;
     --accent-hover: #181a20;
-    --accent-light-theme: #e3e5e8;
+    --accent-light-theme: #000000;
     --accent-border: #b9bbbe;
     --accent-primary-rgb: 35, 39, 42;
     --status-active: #38a169;

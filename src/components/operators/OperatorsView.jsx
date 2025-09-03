@@ -337,119 +337,134 @@ function OperatorsView({
             )}
             {!showDetailView && (
                 <>
-                    <div className="dashboard-header">
-                        <h1>
-                            {title}
-                        </h1>
-                        <div className="dashboard-actions">
-                            <button
-                                className="action-button primary rectangular-button"
-                                onClick={() => setShowAddSheet(true)}
-                                style={{height: '44px', lineHeight: '1'}}
-                            >
-                                <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Operator
-                            </button>
-                        </div>
-                    </div>
-                    <div className="search-filters">
-                        <div className="search-bar">
-                            <input
-                                type="text"
-                                className="ios-search-input"
-                                placeholder="Search by name or ID..."
-                                value={searchText}
-                                onChange={(e) => {
-                                    const value = e.target.value
-                                    setSearchText(value)
-                                    updateOperatorFilter('searchText', value)
-                                }}
-                            />
-                            {searchText && (
-                                <button className="clear" onClick={() => {
-                                    setSearchText('')
-                                    updateOperatorFilter('searchText', '')
-                                }}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            )}
-                        </div>
-                        <div className="filters">
-                            <div className="view-toggle-icons">
+                    <div className="operators-sticky-header">
+                        <div className="dashboard-header">
+                            <h1>
+                                {title}
+                            </h1>
+                            <div className="dashboard-actions">
                                 <button
-                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('grid')}
-                                    aria-label="Grid view"
-                                    type="button"
+                                    className="action-button primary rectangular-button"
+                                    onClick={() => setShowAddSheet(true)}
+                                    style={{height: '44px', lineHeight: '1'}}
                                 >
-                                    <i className="fas fa-th-large"></i>
-                                </button>
-                                <button
-                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('list')}
-                                    aria-label="List view"
-                                    type="button"
-                                >
-                                    <i className="fas fa-list"></i>
+                                    <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Operator
                                 </button>
                             </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={selectedPlant}
+                        </div>
+                        <div className="search-filters">
+                            <div className="search-bar">
+                                <input
+                                    type="text"
+                                    className="ios-search-input"
+                                    placeholder="Search by name or ID..."
+                                    value={searchText}
                                     onChange={(e) => {
                                         const value = e.target.value
-                                        setSelectedPlant(value)
-                                        updateOperatorFilter('selectedPlant', value)
+                                        setSearchText(value)
+                                        updateOperatorFilter('searchText', value)
                                     }}
-                                    aria-label="Filter by plant"
-                                    style={{
-                                        '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
-                                        '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
-                                    }}
-                                >
-                                    <option value="">All Plants</option>
-                                    {plants
-                                        .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
-                                        .sort((a, b) => {
-                                            const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
-                                            const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
-                                            return aCode - bCode
-                                        }).map(plant => (
-                                        <option key={plant.plant_code} value={plant.plant_code}>
-                                            ({plant.plant_code}) {plant.plant_name}
-                                        </option>
-                                    ))}
-                                </select>
+                                />
+                                {searchText && (
+                                    <button className="clear" onClick={() => {
+                                        setSearchText('')
+                                        updateOperatorFilter('searchText', '')
+                                    }}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                )}
                             </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={statusFilter}
-                                    onChange={(e) => {
-                                        const value = e.target.value
-                                        setStatusFilter(value)
-                                        updateOperatorFilter('statusFilter', value)
-                                    }}
-                                    style={{
-                                        '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
-                                        '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
-                                    }}
-                                >
-                                    {filterOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
-                                <button className="filter-reset-button" onClick={handleResetFilters}>
-                                    <i className="fas fa-undo"></i>
+                            <div className="filters">
+                                <div className="view-toggle-icons">
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('grid')}
+                                        aria-label="Grid view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-th-large"></i>
+                                    </button>
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('list')}
+                                        aria-label="List view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-list"></i>
+                                    </button>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={selectedPlant}
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            setSelectedPlant(value)
+                                            updateOperatorFilter('selectedPlant', value)
+                                        }}
+                                        aria-label="Filter by plant"
+                                        style={{
+                                            '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
+                                            '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
+                                        }}
+                                    >
+                                        <option value="">All Plants</option>
+                                        {plants
+                                            .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                            .sort((a, b) => {
+                                                const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
+                                                const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
+                                                return aCode - bCode
+                                            }).map(plant => (
+                                            <option key={plant.plant_code} value={plant.plant_code}>
+                                                ({plant.plant_code}) {plant.plant_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={statusFilter}
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            setStatusFilter(value)
+                                            updateOperatorFilter('statusFilter', value)
+                                        }}
+                                        style={{
+                                            '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
+                                            '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
+                                        }}
+                                    >
+                                        {filterOptions.map(option => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                                    <button className="filter-reset-button" onClick={handleResetFilters}>
+                                        <i className="fas fa-undo"></i>
+                                    </button>
+                                )}
+                                <button className="ios-button" onClick={() => setShowOverview(true)}>
+                                    <i className="fas fa-chart-bar"></i>
+                                    Overview
                                 </button>
-                            )}
-                            <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                <i className="fas fa-chart-bar"></i>
-                                Overview
-                            </button>
+                            </div>
                         </div>
+                        {viewMode === 'list' && (
+                            <div className={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}>
+                                <div>Plant</div>
+                                <div>Name</div>
+                                <div>Status</div>
+                                {statusFilter === 'Pending Start' && (
+                                    <div>Pending Start</div>
+                                )}
+                                <div>Position</div>
+                                <div>Trainer</div>
+                                <div>Rating</div>
+                            </div>
+                        )}
                     </div>
                     <div className="content-container">
                         {isLoading ? (
@@ -490,19 +505,6 @@ function OperatorsView({
                         ) : (
                             <div className="operators-list-table-container">
                                 <table className="operators-list-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Name</th>
-                                        <th>Status</th>
-                                        {statusFilter === 'Pending Start' && (
-                                            <th>Pending Start</th>
-                                        )}
-                                        <th>Position</th>
-                                        <th>Trainer</th>
-                                        <th>Rating</th>
-                                    </tr>
-                                    </thead>
                                     <tbody>
                                     {filteredOperators.map(operator => (
                                         <tr key={operator.employeeId} style={{cursor: 'pointer'}}

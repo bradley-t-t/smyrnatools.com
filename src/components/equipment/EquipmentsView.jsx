@@ -125,29 +125,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         setShowOverview(false);
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return '';
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = date.getFullYear();
-        const mm = pad(date.getMonth() + 1);
-        const dd = pad(date.getDate());
-        const hh = pad(date.getHours());
-        const min = pad(date.getMinutes());
-        return `${mm}/${dd}/${yyyy} ${hh}:${min}`;
-    }
-
-    function getFiltersAppliedString() {
-        const filters = [];
-        if (searchText) filters.push(`Search: ${searchText}`);
-        if (selectedPlant) {
-            const plant = plants.find(p => p.plantCode === selectedPlant);
-            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`);
-        }
-        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`);
-        return filters.length ? filters.join(', ') : 'No Filters';
-    }
 
     const filteredEquipments = equipments
         .filter(equipment => {
@@ -243,114 +220,127 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 />
             ) : (
                 <>
-                    <div className="dashboard-header">
-                        <h1>{title}</h1>
-                        <div className="dashboard-actions">
-                            <button
-                                className="action-button primary rectangular-button"
-                                onClick={() => setShowAddSheet(true)}
-                                style={{height: '44px', lineHeight: '1'}}
-                            >
-                                <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Equipment
-                            </button>
-                        </div>
-                    </div>
-                    <div className="search-filters">
-                        <div className="search-bar">
-                            <input
-                                type="text"
-                                className="ios-search-input"
-                                placeholder="Search by identifying number or equipment type..."
-                                value={searchText}
-                                onChange={e => {
-                                    setSearchText(e.target.value);
-                                    safeUpdateEquipmentFilter('searchText', e.target.value);
-                                }}
-                            />
-                            {searchText && (
-                                <button className="clear" onClick={() => {
-                                    setSearchText('');
-                                    safeUpdateEquipmentFilter('searchText', '');
-                                }}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            )}
-                        </div>
-                        <div className="filters">
-                            <div className="view-toggle-icons">
+                    <div className="equipments-sticky-header">
+                        <div className="dashboard-header">
+                            <h1>{title}</h1>
+                            <div className="dashboard-actions">
                                 <button
-                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('grid')}
-                                    aria-label="Grid view"
-                                    type="button"
+                                    className="action-button primary rectangular-button"
+                                    onClick={() => setShowAddSheet(true)}
+                                    style={{height: '44px', lineHeight: '1'}}
                                 >
-                                    <i className="fas fa-th-large"></i>
-                                </button>
-                                <button
-                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('list')}
-                                    aria-label="List view"
-                                    type="button"
-                                >
-                                    <i className="fas fa-list"></i>
+                                    <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Equipment
                                 </button>
                             </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={selectedPlant}
-                                    onChange={e => {
-                                        setSelectedPlant(e.target.value);
-                                        safeUpdateEquipmentFilter('selectedPlant', e.target.value);
-                                    }}
-                                    aria-label="Filter by plant"
-                                    style={{
-                                        '--select-active-border': 'var(--accent)',
-                                        '--select-focus-border': 'var(--accent)'
-                                    }}
-                                >
-                                    <option value="">All Plants</option>
-                                    {plants
-                                        .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
-                                        .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
-                                        <option key={plant.plantCode} value={plant.plantCode}>
-                                            ({plant.plantCode}) {plant.plantName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={statusFilter}
-                                    onChange={e => {
-                                        setStatusFilter(e.target.value);
-                                        safeUpdateEquipmentFilter('statusFilter', e.target.value);
-                                    }}
-                                    style={{
-                                        '--select-active-border': 'var(--accent)',
-                                        '--select-focus-border': 'var(--accent)'
-                                    }}
-                                >
-                                    {filterOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
-                                <button className="filter-reset-button" onClick={() => {
-                                    setSearchText('')
-                                    setSelectedPlant('')
-                                    setStatusFilter('')
-                                    resetEquipmentFilters({keepViewMode: true, currentViewMode: viewMode})
-                                }}>
-                                    <i className="fas fa-undo"></i>
-                                </button>
-                            )}
-                            <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                <i className="fas fa-chart-bar"></i> Overview
-                            </button>
                         </div>
+                        <div className="search-filters">
+                            <div className="search-bar">
+                                <input
+                                    type="text"
+                                    className="ios-search-input"
+                                    placeholder="Search by identifying number or equipment type..."
+                                    value={searchText}
+                                    onChange={e => {
+                                        setSearchText(e.target.value);
+                                        safeUpdateEquipmentFilter('searchText', e.target.value);
+                                    }}
+                                />
+                                {searchText && (
+                                    <button className="clear" onClick={() => {
+                                        setSearchText('');
+                                        safeUpdateEquipmentFilter('searchText', '');
+                                    }}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                )}
+                            </div>
+                            <div className="filters">
+                                <div className="view-toggle-icons">
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('grid')}
+                                        aria-label="Grid view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-th-large"></i>
+                                    </button>
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('list')}
+                                        aria-label="List view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-list"></i>
+                                    </button>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={selectedPlant}
+                                        onChange={e => {
+                                            setSelectedPlant(e.target.value);
+                                            safeUpdateEquipmentFilter('selectedPlant', e.target.value);
+                                        }}
+                                        aria-label="Filter by plant"
+                                        style={{
+                                            '--select-active-border': 'var(--accent)',
+                                            '--select-focus-border': 'var(--accent)'
+                                        }}
+                                    >
+                                        <option value="">All Plants</option>
+                                        {plants
+                                            .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
+                                            .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
+                                            <option key={plant.plantCode} value={plant.plantCode}>
+                                                ({plant.plantCode}) {plant.plantName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={statusFilter}
+                                        onChange={e => {
+                                            setStatusFilter(e.target.value);
+                                            safeUpdateEquipmentFilter('statusFilter', e.target.value);
+                                        }}
+                                        style={{
+                                            '--select-active-border': 'var(--accent)',
+                                            '--select-focus-border': 'var(--accent)'
+                                        }}
+                                    >
+                                        {filterOptions.map(option => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                                    <button className="filter-reset-button" onClick={() => {
+                                        setSearchText('')
+                                        setSelectedPlant('')
+                                        setStatusFilter('')
+                                        resetEquipmentFilters({keepViewMode: true, currentViewMode: viewMode})
+                                    }}>
+                                        <i className="fas fa-undo"></i>
+                                    </button>
+                                )}
+                                <button className="ios-button" onClick={() => setShowOverview(true)}>
+                                    <i className="fas fa-chart-bar"></i> Overview
+                                </button>
+                            </div>
+                        </div>
+                        {viewMode === 'list' && (
+                            <div className="equipments-list-header-row">
+                                <div>Plant</div>
+                                <div>Identifying #</div>
+                                <div>Status</div>
+                                <div>Type</div>
+                                <div>Cleanliness</div>
+                                <div>Condition</div>
+                                <div>More</div>
+                            </div>
+                        )}
                     </div>
                     <div className="content-container">
                         {isLoading ? (
@@ -381,17 +371,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                         ) : (
                             <div className="equipments-list-table-container">
                                 <table className="equipments-list-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Identifying #</th>
-                                        <th>Status</th>
-                                        <th>Type</th>
-                                        <th>Cleanliness</th>
-                                        <th>Condition</th>
-                                        <th>More</th>
-                                    </tr>
-                                    </thead>
                                     <tbody>
                                     {filteredEquipments.map(equipment => {
                                         const issuesCount = Number(equipment.openIssuesCount || 0)

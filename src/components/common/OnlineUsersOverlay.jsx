@@ -19,20 +19,17 @@ function OnlineUsersOverlay() {
         }
     }, [onlineUsers.length, loading]);
 
-    const getRelativeTime = () => {
-        return 'Online';
-    };
     const toggleExpand = () => setIsExpanded(!isExpanded);
     const toggleMinimize = () => setIsMinimized(!isMinimized);
 
     if (!isLoggedIn || loading || error || onlineUsers.length === 0) return null;
 
     return (
-        <div className={`online-users-overlay ${isExpanded ? 'expanded' : ''} ${isMinimized ? 'minimized' : ''}`}>
+        <div className={`online-users-overlay${isExpanded ? ' expanded' : ''}${isMinimized ? ' minimized' : ''}`}>
             {isMinimized ? (
-                <div className="online-users-minimized-compact" onClick={toggleMinimize}>
+                <div className="online-users-minimized-compact" onClick={toggleMinimize} tabIndex={0} aria-label="Show online users" role="button">
                     <span className="user-count">{onlineUsers.length}</span>
-                    <button className="action-button icon-only">
+                    <button className="action-button icon-only" tabIndex={-1} aria-hidden="true">
                         <i className="fas fa-user"></i>
                     </button>
                 </div>
@@ -42,16 +39,13 @@ function OnlineUsersOverlay() {
                         <div className="header-title">
                             <i className="fas fa-users"></i>
                             <span>Online Users</span>
-                            <div className={`user-count ${animateCount ? 'pulse' : ''}`}>
-                                {onlineUsers.length}
-                            </div>
+                            <div className={`user-count${animateCount ? ' pulse' : ''}`}>{onlineUsers.length}</div>
                         </div>
                         <div className="header-actions">
-                            <button className="action-button circle" onClick={toggleExpand}
-                                    title={isExpanded ? 'Show less' : 'Show more'}>
+                            <button className="action-button circle" onClick={toggleExpand} title={isExpanded ? 'Show less' : 'Show more'} aria-label={isExpanded ? 'Show less users' : 'Show more users'}>
                                 <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                             </button>
-                            <button className="action-button circle" onClick={toggleMinimize} title="Minimize">
+                            <button className="action-button circle" onClick={toggleMinimize} title="Minimize" aria-label="Minimize online users overlay">
                                 <i className="fas fa-xmark"></i>
                             </button>
                         </div>
@@ -59,23 +53,19 @@ function OnlineUsersOverlay() {
                     <div className="online-users-list">
                         {onlineUsers.slice(0, isExpanded ? onlineUsers.length : 3).map(user => (
                             <div key={user.id} className="online-user">
-                                <div className="user-avatar">
-                                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                                </div>
+                                <div className="user-avatar">{user.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
                                 <div className="user-info">
-                                    <div className="user-name">{user.name || 'Unknown User'}</div>
                                     <div className="user-status">
                                         <span className="status-indicator"></span>
-                                        <span className="status-text">{getRelativeTime()}</span>
                                     </div>
+                                    <div className="user-name">{user.name || 'Unknown User'}</div>
                                 </div>
                             </div>
                         ))}
                         {!isExpanded && onlineUsers.length > 3 && (
                             <div className="more-users">
                                 <span>+{onlineUsers.length - 3} more</span>
-                                <button className="action-button circle icon-only" title="Show more"
-                                        onClick={toggleExpand}>
+                                <button className="action-button circle icon-only" title="Show more" aria-label="Show more users" onClick={toggleExpand}>
                                     <i className="fas fa-chevron-down"></i>
                                 </button>
                             </div>

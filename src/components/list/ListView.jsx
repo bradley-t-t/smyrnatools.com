@@ -129,31 +129,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const totalItems = filteredItems.length
     const overdueItems = filteredItems.filter(item => ListService.isOverdue(item) && !item.completed).length
 
-    function formatDate(dateStr) {
-        if (!dateStr) return ''
-        const date = new Date(dateStr)
-        if (isNaN(date.getTime())) return ''
-        const pad = n => n.toString().padStart(2, '0')
-        const yyyy = date.getFullYear()
-        const mm = pad(date.getMonth() + 1)
-        const dd = pad(date.getDate())
-        const hh = pad(date.getHours())
-        const min = pad(date.getMinutes())
-        return `${mm}/${dd}/${yyyy} ${hh}:${min}`
-    }
-
-    function getFiltersAppliedString() {
-        const filters = []
-        if (searchText) filters.push(`Search: ${searchText}`)
-        if (regionCode) filters.push(`Region: ${preferences?.selectedRegion?.name || regionCode}`)
-        if (selectedPlant) {
-            const plant = plants.find(p => p.plant_code === selectedPlant)
-            filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`)
-        }
-        if (statusFilter) filters.push(`Status: ${statusFilter}`)
-        return filters.length ? filters.join(', ') : 'No Filters'
-    }
-
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -185,123 +160,135 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 
     return (
         <div className="dashboard-container list-view">
-            <div className="dashboard-header">
-                <h1>{title}</h1>
-                <div className="dashboard-actions">
-                    <button
-                        className="action-button primary rectangular-button"
-                        onClick={() => setShowAddSheet(true)}
-                        style={{height: '44px', lineHeight: '1'}}
-                    >
-                        <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Item
-                    </button>
-                </div>
-            </div>
-            <div className="search-filters">
-                <div className="search-bar">
-                    <input
-                        type="text"
-                        className="ios-search-input"
-                        placeholder="Search by description or comments..."
-                        value={searchText}
-                        onChange={e => {
-                            setSearchText(e.target.value)
-                            updateListFilter?.('searchText', e.target.value)
-                        }}
-                    />
-                    {searchText && (
-                        <button className="clear" onClick={() => {
-                            setSearchText('')
-                            updateListFilter?.('searchText', '')
-                        }}>
-                            <i className="fas fa-times"></i>
-                        </button>
-                    )}
-                </div>
-                <div className="filters">
-                    <div className="filter-wrapper">
-                        <select
-                            className="ios-select"
-                            value={selectedPlant}
-                            onChange={e => {
-                                setSelectedPlant(e.target.value)
-                                updateListFilter?.('selectedPlant', e.target.value)
-                            }}
-                            aria-label="Filter by plant"
-                            style={{
-                                '--select-active-border': 'var(--accent)',
-                                '--select-focus-border': 'var(--accent)'
-                            }}
-                        >
-                            <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants</option>
-                            {visiblePlants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
-                                <option
-                                    key={plant.plant_code}
-                                    value={plant.plant_code}
-                                    disabled={!canBypassPlantRestriction && userPlantCode && plant.plant_code !== userPlantCode}
-                                >
-                                    ({plant.plant_code}) {plant.plant_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="filter-wrapper">
-                        <select
-                            className="ios-select"
-                            value={statusFilter}
-                            onChange={e => {
-                                const newValue = e.target.value
-                                setStatusFilter(newValue)
-                                updateListFilter?.('statusFilter', newValue)
-                                window.dispatchEvent(new CustomEvent('list-status-filter-change', {
-                                    detail: {statusFilter: newValue}
-                                }))
-                                if (newValue === 'completed' && window.updateActiveMenuHighlight) {
-                                    window.updateActiveMenuHighlight('Archive')
-                                } else if (newValue !== 'completed' && window.updateActiveMenuHighlight) {
-                                    window.updateActiveMenuHighlight('List')
-                                }
-                                if (onStatusFilterChange) {
-                                    onStatusFilterChange(newValue)
-                                }
-                            }}
-                            aria-label="Filter by status"
-                            style={{
-                                '--select-active-border': 'var(--accent)',
-                                '--select-focus-border': 'var(--accent)'
-                            }}
-                        >
-                            <option value="">All Status</option>
-                            <option value="overdue">Overdue</option>
-                            <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-                    {(searchText || selectedPlant || statusFilter) && (
+            <div className="list-sticky-header">
+                <div className="dashboard-header">
+                    <h1>{title}</h1>
+                    <div className="dashboard-actions">
                         <button
-                            className="filter-reset-button"
-                            onClick={() => {
-                                setSearchText('')
-                                if (canBypassPlantRestriction) setSelectedPlant('')
-                                else if (userPlantCode) setSelectedPlant(userPlantCode)
-                                setStatusFilter('')
-                                resetListFilters?.()
-                                if (!canBypassPlantRestriction && userPlantCode) updateListFilter?.('selectedPlant', userPlantCode)
-                                if (window.updateActiveMenuHighlight) {
-                                    window.updateActiveMenuHighlight('List')
-                                }
-                                if (onStatusFilterChange) {
-                                    onStatusFilterChange('')
-                                }
-                            }}
+                            className="action-button primary rectangular-button"
+                            onClick={() => setShowAddSheet(true)}
+                            style={{height: '44px', lineHeight: '1'}}
                         >
-                            <i className="fas fa-undo"></i>
+                            <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Item
                         </button>
-                    )}
-                    <button className="ios-button" onClick={() => setShowOverview(true)}>
-                        <i className="fas fa-chart-bar"></i> Overview
-                    </button>
+                    </div>
                 </div>
+                <div className="search-filters">
+                    <div className="search-bar">
+                        <input
+                            type="text"
+                            className="ios-search-input"
+                            placeholder="Search by description or comments..."
+                            value={searchText}
+                            onChange={e => {
+                                setSearchText(e.target.value)
+                                updateListFilter?.('searchText', e.target.value)
+                            }}
+                        />
+                        {searchText && (
+                            <button className="clear" onClick={() => {
+                                setSearchText('')
+                                updateListFilter?.('searchText', '')
+                            }}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        )}
+                    </div>
+                    <div className="filters">
+                        <div className="filter-wrapper">
+                            <select
+                                className="ios-select"
+                                value={selectedPlant}
+                                onChange={e => {
+                                    setSelectedPlant(e.target.value)
+                                    updateListFilter?.('selectedPlant', e.target.value)
+                                }}
+                                aria-label="Filter by plant"
+                                style={{
+                                    '--select-active-border': 'var(--accent)',
+                                    '--select-focus-border': 'var(--accent)'
+                                }}
+                            >
+                                <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants</option>
+                                {visiblePlants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
+                                    <option
+                                        key={plant.plant_code}
+                                        value={plant.plant_code}
+                                        disabled={!canBypassPlantRestriction && userPlantCode && plant.plant_code !== userPlantCode}
+                                    >
+                                        ({plant.plant_code}) {plant.plant_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="filter-wrapper">
+                            <select
+                                className="ios-select"
+                                value={statusFilter}
+                                onChange={e => {
+                                    const newValue = e.target.value
+                                    setStatusFilter(newValue)
+                                    updateListFilter?.('statusFilter', newValue)
+                                    window.dispatchEvent(new CustomEvent('list-status-filter-change', {
+                                        detail: {statusFilter: newValue}
+                                    }))
+                                    if (newValue === 'completed' && window.updateActiveMenuHighlight) {
+                                        window.updateActiveMenuHighlight('Archive')
+                                    } else if (newValue !== 'completed' && window.updateActiveMenuHighlight) {
+                                        window.updateActiveMenuHighlight('List')
+                                    }
+                                    if (onStatusFilterChange) {
+                                        onStatusFilterChange(newValue)
+                                    }
+                                }}
+                                aria-label="Filter by status"
+                                style={{
+                                    '--select-active-border': 'var(--accent)',
+                                    '--select-focus-border': 'var(--accent)'
+                                }}
+                            >
+                                <option value="">All Status</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        {(searchText || selectedPlant || statusFilter) && (
+                            <button
+                                className="filter-reset-button"
+                                onClick={() => {
+                                    setSearchText('')
+                                    if (canBypassPlantRestriction) setSelectedPlant('')
+                                    else if (userPlantCode) setSelectedPlant(userPlantCode)
+                                    setStatusFilter('')
+                                    resetListFilters?.()
+                                    if (!canBypassPlantRestriction && userPlantCode) updateListFilter?.('selectedPlant', userPlantCode)
+                                    if (window.updateActiveMenuHighlight) {
+                                        window.updateActiveMenuHighlight('List')
+                                    }
+                                    if (onStatusFilterChange) {
+                                        onStatusFilterChange('')
+                                    }
+                                }}
+                            >
+                                <i className="fas fa-undo"></i>
+                            </button>
+                        )}
+                        <button className="ios-button" onClick={() => setShowOverview(true)}>
+                            <i className="fas fa-chart-bar"></i> Overview
+                        </button>
+                    </div>
+                </div>
+                {filteredItems.length > 0 && (
+                    <div className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}`}>
+                        <div>Description</div>
+                        <div>Plant</div>
+                        <div>Deadline</div>
+                        {statusFilter === 'completed' && <div>Completed</div>}
+                        <div>Created By</div>
+                        <div>Status</div>
+                    </div>
+                )}
             </div>
             <div className="content-container">
                 {isLoading ? (
@@ -326,18 +313,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 ) : (
                     <div className="mixers-list-table-container">
                         <table className="mixers-list-table">
-                            <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th>Plant</th>
-                                <th>Deadline</th>
-                                {statusFilter === 'completed' && (
-                                    <th>Completed</th>
-                                )}
-                                <th>Created By</th>
-                                <th>Status</th>
-                            </tr>
-                            </thead>
                             <tbody>
                             {filteredItems.map(item => (
                                 <tr

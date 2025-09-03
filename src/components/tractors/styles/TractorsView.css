@@ -14,6 +14,22 @@
     letter-spacing: 0.01em;
 }
 
+.dashboard-container.tractors-view {
+    padding-top: 0 !important;
+    padding-right: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    padding-left: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .dashboard-container.tractors-view {
+        padding-top: 0 !important;
+        padding-right: var(--spacing-md);
+        padding-bottom: var(--spacing-md);
+        padding-left: var(--spacing-md);
+    }
+}
+
 .stats-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -149,6 +165,10 @@
     transition: all 0.3s ease;
 }
 
+.tractors-content {
+    padding-top: 10px;
+}
+
 .tractors-grid.search.results {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     border-radius: var(--border-radius);
@@ -180,6 +200,7 @@
 
 .content-container {
     flex: 1;
+    overscroll-behavior: contain;
 }
 
 .tractor-card {
@@ -773,10 +794,6 @@
     }
 }
 
-.tractors-content {
-    padding-top: 10px;
-}
-
 @media (max-width: 900px) {
     .tractors-grid {
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -854,4 +871,75 @@
         max-width: 100%;
         width: 100%;
     }
+}
+
+.tractors-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--background);
+    border-bottom: 1px solid var(--divider);
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+.tractors-view {
+    overscroll-behavior-y: none;
+    padding-top: 0;
+    --sticky-cover-height: 18px;
+}
+
+.tractors-view::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--sticky-cover-height, 18px);
+    background: var(--background);
+    z-index: 150;
+    pointer-events: none;
+}
+
+.tractors-list-header-row {
+    display: grid;
+    grid-template-columns: 10% 12% 12% 18% 12% 18% 10% 8%;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 8px;
+    background: var(--accent-header-bg);
+    color: var(--accent-header-text);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 15px;
+    position: relative;
+    border: 1px solid var(--divider);
+    border-bottom: none;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.tractors-list-header-row > div {
+    padding: 4px 10px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .tractors-list-header-row {
+        grid-template-columns: 16% 14% 14% 22% 0 20% 14% 0;
+    }
+}
+
+.tractors-view .tractors-list-table-container {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+}
+
+.tractors-list-table {
+    table-layout: fixed;
+    width: 100%;
 }

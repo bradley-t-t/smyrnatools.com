@@ -175,74 +175,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
         onSelectManager ? onSelectManager(manager.id) : setShowDetailView(true);
     };
 
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return '';
-        const pad = n => n.toString().padStart(2, '0');
-        const yyyy = date.getFullYear();
-        const mm = pad(date.getMonth() + 1);
-        const dd = pad(date.getDate());
-        const hh = pad(date.getHours());
-        const min = pad(date.getMinutes());
-        return `${mm}/${dd}/${yyyy} ${hh}:${min}`;
-    }
-
-    function getFiltersAppliedString() {
-        const filters = [];
-        if (searchText) filters.push(`Search: ${searchText}`);
-        if (selectedPlant) {
-            const plant = plants.find(p => p.plant_code === selectedPlant);
-            filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`);
-        }
-        if (roleFilter) filters.push(`Role: ${roleFilter}`);
-        return filters.length ? filters.join(', ') : 'No Filters';
-    }
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div
-                className="modal-content overview-modal managers-overview-modal"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="modal-header">
-                    <h2>Managers Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="overview-grid">
-                    <div className="overview-card plant-card">
-                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
-                        <div className="plant-distribution-table">
-                            <table className="distribution-table">
-                                <thead>
-                                <tr>
-                                    <th>Plant</th>
-                                    <th>Managers</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {plants.map(plant => (
-                                    <tr key={plant.plant_code}>
-                                        <td className="plant-name">{plant.plant_name}</td>
-                                        <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div className="modal-footer" style={{marginTop: 24, textAlign: 'right'}}>
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-
     return (
         <div className="dashboard-container managers-view">
             {showDetailView && selectedManager && (
@@ -256,98 +188,114 @@ function ManagersView({title = 'Managers', onSelectManager}) {
             )}
             {!showDetailView && (
                 <>
-                    <div className="dashboard-header">
-                        <div className="dashboard-actions">
-                        </div>
-                    </div>
-                    <div className="search-filters">
-                        <div className="search-bar">
-                            <input
-                                type="text"
-                                className="ios-search-input"
-                                placeholder="Search by name or email..."
-                                value={searchText}
-                                onChange={e => {
-                                    setSearchText(e.target.value);
-                                    updateManagerFilter('searchText', e.target.value);
-                                }}
-                            />
-                            {searchText && (
-                                <button className="clear" onClick={() => {
-                                    setSearchText('');
-                                    updateManagerFilter('searchText', '');
-                                }}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            )}
-                        </div>
-                        <div className="filters">
-                            <div className="view-toggle-icons">
+                    <div className="managers-sticky-header">
+                        <div className="dashboard-header">
+                            <h1>{title}</h1>
+                            <div className="dashboard-actions">
                                 <button
-                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('grid')}
-                                    aria-label="Grid view"
-                                    type="button"
+                                    className="action-button primary rectangular-button"
+                                    onClick={() => setShowOverview(true)}
+                                    style={{height: '44px', lineHeight: '1'}}
                                 >
-                                    <i className="fas fa-th-large"></i>
-                                </button>
-                                <button
-                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('list')}
-                                    aria-label="List view"
-                                    type="button"
-                                >
-                                    <i className="fas fa-list"></i>
+                                    <i className="fas fa-chart-bar" style={{marginRight: '8px'}}></i> Overview
                                 </button>
                             </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={selectedPlant}
-                                    onChange={e => {
-                                        setSelectedPlant(e.target.value);
-                                        updateManagerFilter('selectedPlant', e.target.value);
-                                    }}
-                                    aria-label="Filter by plant"
-                                >
-                                    <option value="">All Plants</option>
-                                    {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
-                                        <option key={plant.plant_code} value={plant.plant_code}>
-                                            ({plant.plant_code}) {plant.plant_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={roleFilter}
-                                    onChange={e => {
-                                        setRoleFilter(e.target.value);
-                                        updateManagerFilter('roleFilter', e.target.value);
-                                    }}
-                                >
-                                    <option value="">All Roles</option>
-                                    {availableRoles.map(role => (
-                                        <option key={role.id} value={role.name}>{role.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            {(searchText || selectedPlant || roleFilter) && (
-                                <button className="filter-reset-button" onClick={() => {
-                                    const currentViewMode = viewMode
-                                    setSearchText('')
-                                    setSelectedPlant('')
-                                    setRoleFilter('')
-                                    resetManagerFilters?.({keepViewMode: true, currentViewMode})
-                                }}>
-                                    <i className="fas fa-undo"></i>
-                                </button>
-                            )}
-                            <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                <i className="fas fa-chart-bar"></i> Overview
-                            </button>
                         </div>
+                        <div className="search-filters">
+                            <div className="search-bar">
+                                <input
+                                    type="text"
+                                    className="ios-search-input"
+                                    placeholder="Search by name or email..."
+                                    value={searchText}
+                                    onChange={e => {
+                                        setSearchText(e.target.value);
+                                        updateManagerFilter('searchText', e.target.value);
+                                    }}
+                                />
+                                {searchText && (
+                                    <button className="clear" onClick={() => {
+                                        setSearchText('');
+                                        updateManagerFilter('searchText', '');
+                                    }}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                )}
+                            </div>
+                            <div className="filters">
+                                <div className="view-toggle-icons">
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('grid')}
+                                        aria-label="Grid view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-th-large"></i>
+                                    </button>
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('list')}
+                                        aria-label="List view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-list"></i>
+                                    </button>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={selectedPlant}
+                                        onChange={e => {
+                                            setSelectedPlant(e.target.value);
+                                            updateManagerFilter('selectedPlant', e.target.value);
+                                        }}
+                                        aria-label="Filter by plant"
+                                    >
+                                        <option value="">All Plants</option>
+                                        {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
+                                            <option key={plant.plant_code} value={plant.plant_code}>
+                                                ({plant.plant_code}) {plant.plant_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={roleFilter}
+                                        onChange={e => {
+                                            setRoleFilter(e.target.value);
+                                            updateManagerFilter('roleFilter', e.target.value);
+                                        }}
+                                    >
+                                        <option value="">All Roles</option>
+                                        {availableRoles.map(role => (
+                                            <option key={role.id} value={role.name}>{role.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {(searchText || selectedPlant || roleFilter) && (
+                                    <button className="filter-reset-button" onClick={() => {
+                                        const currentViewMode = viewMode
+                                        setSearchText('')
+                                        setSelectedPlant('')
+                                        setRoleFilter('')
+                                        resetManagerFilters?.({keepViewMode: true, currentViewMode})
+                                    }}>
+                                        <i className="fas fa-undo"></i>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {viewMode === 'list' && (
+                            <div className="managers-list-header-row">
+                                <div>Plant</div>
+                                <div>Email</div>
+                                <div>First Name</div>
+                                <div>Last Name</div>
+                                <div>Role</div>
+                            </div>
+                        )}
                     </div>
                     <div className="content-container">
                         {isLoading ? (
@@ -373,15 +321,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                         ) : viewMode === 'list' ? (
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Email</th>
-                                        <th>First Name</th>
-                                        <th>Last Name</th>
-                                        <th>Role</th>
-                                    </tr>
-                                    </thead>
                                     <tbody>
                                     {filteredManagers.map(manager => (
                                         <tr key={manager.id} onClick={() => handleSelectManager(manager)}
@@ -399,15 +338,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                         ) : (
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Email</th>
-                                        <th>First Name</th>
-                                        <th>Last Name</th>
-                                        <th>Role</th>
-                                    </tr>
-                                    </thead>
                                     <tbody>
                                     {filteredManagers.map(manager => (
                                         <tr key={manager.id} onClick={() => handleSelectManager(manager)}
@@ -424,7 +354,49 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                             </div>
                         )}
                     </div>
-                    {showOverview && <OverviewPopup/>}
+                    {showOverview && (
+                        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
+                            <div
+                                className="modal-content overview-modal managers-overview-modal"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                <div className="modal-header">
+                                    <h2>Managers Overview</h2>
+                                    <button className="close-button" onClick={() => setShowOverview(false)}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div className="overview-grid">
+                                    <div className="overview-card plant-card">
+                                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
+                                        <div className="plant-distribution-table">
+                                            <table className="distribution-table">
+                                                <thead>
+                                                <tr>
+                                                    <th>Plant</th>
+                                                    <th>Managers</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {plants.map(plant => (
+                                                    <tr key={plant.plant_code}>
+                                                        <td className="plant-name">{plant.plant_name}</td>
+                                                        <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
+                                                    </tr>
+                                                ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="modal-footer" style={{marginTop: 24, textAlign: 'right'}}>
+                                    <button className="primary-button" onClick={() => setShowOverview(false)}>
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </div>

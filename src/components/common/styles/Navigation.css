@@ -18,6 +18,8 @@
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-light);
+    position: relative;
+    z-index: 1200;
 }
 
 .vertical-navbar.collapsed {

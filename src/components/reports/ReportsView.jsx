@@ -571,7 +571,7 @@ function ReportsView() {
     return (
         <>
             <div className="reports-root">
-                {loadError && <div style={{color: 'var(--error)', padding: 16}}>{loadError}</div>}
+                {loadError && <div className="reports-load-error">{loadError}</div>}
                 {!showForm && !showReview && (
                     <>
                         <div className="reports-toolbar">
@@ -629,7 +629,7 @@ function ReportsView() {
                             {tab === 'all' && (
                                 <div className="reports-list">
                                     {(isLoadingUser || isLoadingMy || isLoadingPermissions) && filteredMyWeeks.length === 0 ? (
-                                        <div style={{padding: 24}}>
+                                        <div className="reports-loading">
                                             <LoadingScreen message="Loading your reports..." inline/>
                                         </div>
                                     ) : (
@@ -650,7 +650,7 @@ function ReportsView() {
                                                         weekEnd.setDate(weekStart.getDate() + 5)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
-                                                            <div key={weekIso} style={{marginBottom: 32}}>
+                                                            <div key={weekIso} className="reports-week-group">
                                                                 <div className="reports-week-header">
                                                                     {weekRange}
                                                                 </div>
@@ -726,7 +726,7 @@ function ReportsView() {
                             {tab === 'review' && (
                                 <div className="reports-list">
                                     {(isLoadingUser || isLoadingPermissions || loadingReporterPlants || (isLoadingReview && filteredReviewWeeks.length === 0)) ? (
-                                        <div style={{padding: 24}}>
+                                        <div className="reports-loading">
                                             <LoadingScreen message="Loading reports to review..." inline/>
                                         </div>
                                     ) : (
@@ -752,7 +752,7 @@ function ReportsView() {
                                                         weekEnd.setDate(weekStart.getDate() + 5)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
-                                                            <div key={weekIso} style={{marginBottom: 32}}>
+                                                            <div key={weekIso} className="reports-week-group">
                                                                 <div className="reports-week-header">
                                                                     {weekRange}
                                                                 </div>
@@ -841,15 +841,7 @@ function ReportsView() {
                     />
                 )}
             </div>
-            <div style={{
-                width: '100%',
-                textAlign: 'center',
-                marginTop: 48,
-                marginBottom: 32,
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                paddingBottom: 32
-            }}>
+            <div className="reports-footer">
                 Weekly Reports are due Saturday by end of day.
             </div>
         </>

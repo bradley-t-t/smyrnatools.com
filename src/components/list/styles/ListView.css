@@ -125,7 +125,7 @@
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.status-badge {
+.list-view .status-badge {
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 0.85rem;
@@ -141,8 +141,8 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-.status-badge.completed {
-    background: rgba(56, 161, 105, 0.15);
+.list-view .status-badge.completed {
+    background: var(--card-bg);
     color: var(--success);
     justify-content: center;
     align-items: center;
@@ -151,8 +151,8 @@
     top: 10px;
 }
 
-.status-badge.pending {
-    background: rgba(49, 130, 206, 0.15);
+.list-view .status-badge.pending {
+    background: var(--card-bg);
     color: var(--info);
     justify-content: center;
     align-items: center;
@@ -161,9 +161,9 @@
     top: 10px;
 }
 
-.status-badge.overdue {
-    background: rgba(229, 62, 62, 0.15);
-    color: var(--error);
+.list-view .status-badge.overdue {
+    background: var(--card-bg);
+    color: var(--accent-light);
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -194,72 +194,71 @@
     border-bottom-right-radius: 10px;
 }
 
+.list-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--background);
+    border-bottom: 1px solid var(--divider);
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+.list-view {
+    overscroll-behavior-y: none;
+    padding-top: 0;
+    --sticky-cover-height: 18px;
+}
+
+.list-view::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--sticky-cover-height, 18px);
+    background: var(--background);
+    z-index: 150;
+    pointer-events: none;
+}
+
+.list-list-header-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 8px;
+    background: var(--accent-header-bg);
+    color: var(--accent-header-text);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 15px;
+    position: relative;
+    border: 1px solid var(--divider);
+    border-bottom: none;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.list-list-header-row>div {
+    padding: 4px 10px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.list-list-header-row.completed {
+    grid-template-columns: repeat(6, 1fr);
+}
+
 @media (max-width: 768px) {
-    .list-view-header {
-        padding: 10px 8px;
-    }
-
-    .list-view-row {
-        padding: 12px 8px;
-    }
-
-    .list-column.creator {
+    .list-list-header-row {
         display: none;
     }
+}
 
-    .list-column.plant {
-        flex: 0.8;
-    }
-
-    .list-view-header {
-        display: none;
-    }
-
-    .list-view-row {
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px;
-    }
-
-    .list-column {
-        padding: 2px 0;
-    }
-
-    .list-column.description {
-        font-size: 1rem;
-        font-weight: 600;
-    }
-
-    .list-column.deadline,
-    .list-column.plant,
-    .list-column.completed-date,
-    .list-column.status {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.85rem;
-    }
-
-    .list-column.deadline::before {
-        content: 'Deadline:';
-        font-weight: 500;
-        color: var(--text-secondary);
-    }
-
-    .list-column.plant::before {
-        content: 'Plant:';
-        font-weight: 500;
-        color: var(--text-secondary);
-    }
-
-    .list-column.completed-date::before {
-        content: 'Completed:';
-        font-weight: 500;
-        color: var(--text-secondary);
-    }
-
-    .list-column.status {
-        text-align: right;
-        justify-content: flex-end;
-        gap: 8px;
-    }
+.content-container {
+    flex: 1;
+    overscroll-behavior: contain;
 }

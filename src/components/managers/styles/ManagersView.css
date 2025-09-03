@@ -430,7 +430,6 @@
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%233182ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>');
     background-repeat: no-repeat;
     background-position: right 12px center;
-    padding-right: 36px;
     transition: all 0.25s ease;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     min-width: 160px;
@@ -462,6 +461,7 @@
     border-radius: 8px;
     box-shadow: var(--shadow-sm);
     font-size: 15px;
+    table-layout: fixed;
 }
 
 .managers-list-table th,
@@ -486,6 +486,70 @@
 
 .managers-list-table tbody tr:hover {
     background: var(--accent-light-theme);
+}
+
+.managers-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--background);
+    border-bottom: 1px solid var(--divider);
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+.managers-view {
+    overscroll-behavior-y: none;
+    padding-top: 0;
+    --sticky-cover-height: 18px;
+}
+
+.managers-view::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--sticky-cover-height, 18px);
+    background: var(--background);
+    z-index: 150;
+    pointer-events: none;
+}
+
+.managers-list-header-row {
+    display: grid;
+    grid-template-columns: 12% 28% 18% 18% 24%;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 8px;
+    background: var(--accent-header-bg);
+    color: var(--accent-header-text);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 15px;
+    position: relative;
+    border: 1px solid var(--divider);
+    border-bottom: none;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.managers-list-header-row>div {
+    padding: 4px 10px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.managers-view .managers-list-table-container {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+}
+
+.content-container {
+    overscroll-behavior: contain;
 }
 
 @media (max-width: 800px) {

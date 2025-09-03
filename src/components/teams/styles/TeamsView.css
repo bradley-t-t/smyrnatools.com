@@ -524,6 +524,34 @@
     display: block;
 }
 
+.teams-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--background);
+    border-bottom: 1px solid var(--divider);
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+.teams-view {
+    overscroll-behavior-y: none;
+    padding-top: 0;
+    --sticky-cover-height: 18px;
+}
+
+.teams-view::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--sticky-cover-height, 18px);
+    background: var(--background);
+    z-index: 150;
+    pointer-events: none;
+}
+
 @media (max-width: 900px) {
     .teams-list-table-container {
         border-radius: 8px;

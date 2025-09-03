@@ -486,6 +486,29 @@
     background: var(--accent-dark);
 }
 
+.reports-load-error {
+    color: var(--error);
+    padding: 16px;
+}
+
+.reports-loading {
+    padding: 24px;
+}
+
+.reports-week-group {
+    margin-bottom: 32px;
+}
+
+.reports-footer {
+    width: 100%;
+    text-align: center;
+    margin-top: 48px;
+    margin-bottom: 32px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-bottom: 32px;
+}
+
 @media (max-width: 1200px) {
     .reports-main-content {
         flex-direction: column;

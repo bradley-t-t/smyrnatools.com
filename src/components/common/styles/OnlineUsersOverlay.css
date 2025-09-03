@@ -1,19 +1,19 @@
 .online-users-overlay {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    transform: none;
+    bottom: 18px;
+    right: 18px;
     width: 300px;
-    max-width: 90vw;
-    max-height: 400px;
+    max-width: 98vw;
+    max-height: 500px;
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.10);
     z-index: 9999;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.22s cubic-bezier(.4,0,.2,1);
     opacity: 1;
     border: 1px solid var(--accent);
-    background-color: var(--card-bg);
+    background: rgba(var(--card-bg-rgb), 0.80);
+    backdrop-filter: blur(8px) saturate(1.1);
 }
 
 .online-users-overlay:hover {
@@ -21,20 +21,23 @@
 }
 
 .online-users-overlay.expanded {
-    max-height: 600px;
+    max-height: 500px;
+    width: 300px;
+    max-width: 98vw;
 }
 
 .online-users-overlay.minimized {
     width: auto;
     height: auto;
-    bottom: 20px;
-    right: 20px;
-    border-radius: 50px;
-    box-shadow: var(--shadow-md);
+    bottom: 18px;
+    right: 18px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
     overflow: visible;
     border: none;
     background: none;
     padding: 0;
+    opacity: 0.92;
 }
 
 .online-users-minimized {
@@ -58,7 +61,6 @@
 
 .online-users-minimized .user-count {
     font-size: 14px;
-    font-weight: bold;
 }
 
 .online-users-minimized-compact {
@@ -68,39 +70,46 @@
     gap: 6px;
     padding: 0 10px;
     min-width: 0;
-    height: 40px;
-    border-radius: 20px;
-    background-color: var(--accent);
-    box-shadow: var(--shadow-md);
+    height: 32px;
+    border-radius: 16px;
+    background: linear-gradient(90deg, var(--accent) 60%, var(--accent-secondary, var(--accent)) 100%);
+    box-shadow: 0 1px 4px 0 rgba(0,0,0,0.08);
     cursor: pointer;
-    font-weight: 600;
+    transition: background 0.14s, box-shadow 0.14s, transform 0.14s;
+}
+
+.online-users-minimized-compact:hover {
+    transform: scale(1.04);
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
 }
 
 .online-users-minimized-compact .user-count {
     color: white;
-    font-size: 15px;
-    font-weight: bold;
-    padding: 0 8px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 6px;
+    letter-spacing: 0.2px;
 }
 
 .online-users-minimized-compact .action-button.icon-only {
-    margin-left: 2px;
+    margin-left: 1px;
     background: none;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: none;
     padding: 0;
     line-height: 0;
-    min-width: 32px;
-    min-height: 32px;
-    max-width: 32px;
-    max-height: 32px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
     color: white;
     border: none;
     border-radius: 0;
+    font-size: 14px;
 }
 
 .online-users-minimized-compact .action-button.icon-only:hover {
@@ -108,101 +117,76 @@
     color: white;
 }
 
-.online-users-minimized-compact .action-button.circle,
-.online-users-minimized-compact .action-button,
-.header-actions .action-button.circle,
-.header-actions .action-button {
-    margin-left: 2px;
-    background: none;
-    color: var(--accent);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: none;
-    padding: 0;
-    line-height: 0;
-    min-width: 32px;
-    min-height: 32px;
-    max-width: 32px;
-    max-height: 32px;
-}
-
-.online-users-minimized-compact .action-button.circle.icon-only:hover {
-    background-color: var(--card-bg);
-    color: var(--accent);
-}
-
 .online-users-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    border-bottom: 2px solid var(--accent);
+    padding: 10px 14px 6px 14px;
+    border-bottom: 1px solid var(--accent);
+    background: transparent;
 }
 
 .header-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    font-size: 14px;
+    gap: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.1px;
 }
 
 .header-title .user-count {
-    background-color: var(--accent);
+    background: var(--accent);
     color: white;
-    font-size: 12px;
-    font-weight: bold;
-    padding: 2px 8px;
-    border-radius: 10px;
-    min-width: 24px;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    min-width: 18px;
     text-align: center;
-    transition: transform 0.3s ease;
+    transition: transform 0.2s cubic-bezier(.4,0,.2,1);
+    font-weight: 500;
+    margin-left: 4px;
 }
 
 .header-title .user-count.pulse {
-    animation: pulse 0.5s ease-in-out;
+    animation: pulse 0.4s cubic-bezier(.4,0,.2,1);
 }
 
 @keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
 }
 
 .header-actions {
     display: flex;
-    gap: 6px;
+    gap: 4px;
 }
 
 .action-button {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+    border-radius: 50%;
     background: none;
     border: none;
     cursor: pointer;
-    width: 32px;
-    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    transition: background 0.14s, color 0.14s, box-shadow 0.14s;
     padding: 0;
     line-height: 0;
     color: var(--accent);
+    font-size: 15px;
 }
 
 .action-button.circle {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -213,9 +197,9 @@
 
 .action-button:hover,
 .action-button.circle:hover {
-    background-color: var(--card-bg);
+    background: rgba(var(--accent-rgb), 0.10);
     color: var(--accent);
-    box-shadow: var(--shadow-xs);
+    box-shadow: 0 1px 4px 0 rgba(0,0,0,0.06);
 }
 
 .online-users-minimized .action-button.circle {
@@ -224,80 +208,99 @@
 
 .online-users-list {
     overflow-y: auto;
-    max-height: 300px;
-    padding: 8px 0;
+    max-height: 220px;
+    padding: 6px 0 6px 0;
+    background: transparent;
 }
 
 .online-user {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
-    transition: background-color 0.2s ease;
+    padding: 6px 14px;
+    border-radius: 8px;
+    margin: 0 4px 4px 4px;
+    transition: background 0.14s;
+    background: rgba(var(--card-bg-rgb), 0.50);
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
 }
 
 .online-user:hover {
-    background-color: rgba(0, 0, 0, 0.03);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background-color: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 60%, var(--accent-secondary, var(--accent)) 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    margin-right: 12px;
-    font-size: 14px;
+    margin-right: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.06);
+    letter-spacing: 0.2px;
 }
 
 .user-info {
-    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .user-name {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 2px;
+    font-size: 13px;
+    font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text-primary);
+    line-height: 1;
+    display: flex;
+    align-items: center;
 }
 
 .user-status {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #666;
+    gap: 0;
+    font-size: 0;
+    color: var(--text-secondary);
+    font-weight: 400;
+    letter-spacing: 0;
+    height: 13px;
 }
 
 .status-indicator {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background-color: #10b981;
+    background: #10b981;
     display: inline-block;
+    box-shadow: 0 0 2px #10b98199;
+    vertical-align: middle;
+    margin-left: 2px;
 }
 
 .more-users {
     text-align: center;
-    padding: 8px;
-    font-size: 13px;
+    padding: 6px 0 0 0;
+    font-size: 12px;
     color: var(--accent);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.14s, background 0.14s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    font-weight: 500;
 }
 
 .more-users button {
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: none;
     color: var(--accent);
@@ -308,10 +311,11 @@
     cursor: pointer;
     padding: 0;
     line-height: 0;
-    min-width: 32px;
-    min-height: 32px;
-    max-width: 32px;
-    max-height: 32px;
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    font-size: 12px;
 }
 
 .more-users button.icon-only {
@@ -319,13 +323,13 @@
 }
 
 .more-users button:hover {
-    background-color: var(--card-bg);
+    background: rgba(var(--accent-rgb), 0.08);
     color: var(--accent);
-    box-shadow: var(--shadow-xs);
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.06);
 }
 
 .online-users-overlay[data-theme="dark"] {
-    background-color: var(--bg-primary);
+    background: rgba(var(--bg-primary-rgb), 0.90);
     border-color: var(--accent);
 }
 
@@ -342,13 +346,13 @@
 }
 
 .online-users-overlay[data-theme="dark"] .action-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255,255,255,0.08);
     color: var(--text-primary);
 }
 
 .online-users-overlay[data-theme="dark"] .online-user:hover,
 .online-users-overlay[data-theme="dark"] .more-users:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background: rgba(255,255,255,0.03);
 }
 
 .online-users-overlay[data-theme="dark"] .more-users {
@@ -360,7 +364,7 @@
 }
 
 .overlay-region-controls {
-    padding: 8px 16px 0 16px;
+    padding: 6px 10px 0 10px;
 }
 
 .overlay-region-controls .region-select {

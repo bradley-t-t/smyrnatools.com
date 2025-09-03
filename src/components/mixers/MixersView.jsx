@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState, useRef} from 'react';
 import MixerAddView from './MixerAddView';
 import MixerUtility from '../../utils/MixerUtility';
 import {MixerService} from '../../services/MixerService';
@@ -18,6 +18,7 @@ import {RegionService} from '../../services/RegionService'
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
+    const headerRef = useRef(null)
     const [mixers, setMixers] = useState([]);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -338,6 +339,18 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         </div>
     );
 
+    useEffect(() => {
+        function updateStickyCoverHeight() {
+            const el = headerRef.current
+            const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
+            const root = document.querySelector('.dashboard-container.mixers-view')
+            if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
+        }
+        updateStickyCoverHeight()
+        window.addEventListener('resize', updateStickyCoverHeight)
+        return () => window.removeEventListener('resize', updateStickyCoverHeight)
+    }, [viewMode, selectedPlant, statusFilter, searchText])
+
     return (
         <div className="dashboard-container mixers-view">
             {unassignedActiveOperatorsCount > 0 && (
@@ -353,114 +366,128 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 />
             ) : (
                 <>
-                    <div className="dashboard-header">
-                        <h1>{title}</h1>
-                        <div className="dashboard-actions">
-                            {setShowSidebar && (
-                                <button className="action-button" onClick={() => setShowSidebar(!showSidebar)}>
-                                    <i className="fas fa-bars"></i> Menu
-                                </button>
-                            )}
-                            <button
-                                className="action-button primary rectangular-button"
-                                onClick={() => setShowAddSheet(true)}
-                                style={{height: '44px', lineHeight: '1'}}
-                            >
-                                <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Mixer
-                            </button>
-                        </div>
-                    </div>
-                    <div className="search-filters">
-                        <div className="search-bar">
-                            <input
-                                type="text"
-                                className="ios-search-input"
-                                placeholder="Search by truck, operator, or VIN..."
-                                value={searchText}
-                                onChange={e => {
-                                    setSearchText(e.target.value);
-                                    updateMixerFilter('searchText', e.target.value);
-                                }}
-                            />
-                            {searchText && (
-                                <button className="clear" onClick={() => {
-                                    setSearchText('');
-                                    updateMixerFilter('searchText', '');
-                                }}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            )}
-                        </div>
-                        <div className="filters">
-                            <div className="view-toggle-icons">
+                    <div className="mixers-sticky-header" ref={headerRef}>
+                        <div className="dashboard-header">
+                            <h1>{title}</h1>
+                            <div className="dashboard-actions">
+                                {setShowSidebar && (
+                                    <button className="action-button" onClick={() => setShowSidebar(!showSidebar)}>
+                                        <i className="fas fa-bars"></i> Menu
+                                    </button>
+                                )}
                                 <button
-                                    className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('grid')}
-                                    aria-label="Grid view"
-                                    type="button"
+                                    className="action-button primary rectangular-button"
+                                    onClick={() => setShowAddSheet(true)}
+                                    style={{height: '44px', lineHeight: '1'}}
                                 >
-                                    <i className="fas fa-th-large"></i>
-                                </button>
-                                <button
-                                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                                    onClick={() => handleViewModeChange('list')}
-                                    aria-label="List view"
-                                    type="button"
-                                >
-                                    <i className="fas fa-list"></i>
+                                    <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Mixer
                                 </button>
                             </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={selectedPlant}
+                        </div>
+                        <div className="search-filters">
+                            <div className="search-bar">
+                                <input
+                                    type="text"
+                                    className="ios-search-input"
+                                    placeholder="Search by truck, operator, or VIN..."
+                                    value={searchText}
                                     onChange={e => {
-                                        setSelectedPlant(e.target.value);
-                                        updateMixerFilter('selectedPlant', e.target.value);
+                                        setSearchText(e.target.value);
+                                        updateMixerFilter('searchText', e.target.value);
                                     }}
-                                    aria-label="Filter by plant"
-                                >
-                                    <option value="">All Plants</option>
-                                    {plants
-                                        .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
-                                        .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
-                                        .map(plant => (
-                                            <option key={plant.plantCode} value={plant.plantCode}>
-                                                ({plant.plantCode}) {plant.plantName}
-                                            </option>
+                                />
+                                {searchText && (
+                                    <button className="clear" onClick={() => {
+                                        setSearchText('');
+                                        updateMixerFilter('searchText', '');
+                                    }}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                )}
+                            </div>
+                            <div className="filters">
+                                <div className="view-toggle-icons">
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('grid')}
+                                        aria-label="Grid view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-th-large"></i>
+                                    </button>
+                                    <button
+                                        className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+                                        onClick={() => handleViewModeChange('list')}
+                                        aria-label="List view"
+                                        type="button"
+                                    >
+                                        <i className="fas fa-list"></i>
+                                    </button>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={selectedPlant}
+                                        onChange={e => {
+                                            setSelectedPlant(e.target.value);
+                                            updateMixerFilter('selectedPlant', e.target.value);
+                                        }}
+                                        aria-label="Filter by plant"
+                                    >
+                                        <option value="">All Plants</option>
+                                        {plants
+                                            .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
+                                            .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
+                                            .map(plant => (
+                                                <option key={plant.plantCode} value={plant.plantCode}>
+                                                    ({plant.plantCode}) {plant.plantName}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </div>
+                                <div className="filter-wrapper">
+                                    <select
+                                        className="ios-select"
+                                        value={statusFilter}
+                                        onChange={e => {
+                                            setStatusFilter(e.target.value);
+                                            updateMixerFilter('statusFilter', e.target.value);
+                                        }}
+                                    >
+                                        {filterOptions.map(option => (
+                                            <option key={option} value={option}>{option}</option>
                                         ))}
-                                </select>
-                            </div>
-                            <div className="filter-wrapper">
-                                <select
-                                    className="ios-select"
-                                    value={statusFilter}
-                                    onChange={e => {
-                                        setStatusFilter(e.target.value);
-                                        updateMixerFilter('statusFilter', e.target.value);
-                                    }}
-                                >
-                                    {filterOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
-                                <button className="filter-reset-button" onClick={() => {
-                                    setSearchText('')
-                                    setSelectedPlant('')
-                                    setStatusFilter('')
-                                    resetMixerFilters({keepViewMode: true, currentViewMode: viewMode})
-                                }}>
-                                    <i className="fas fa-undo"></i>
+                                    </select>
+                                </div>
+                                {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
+                                    <button className="filter-reset-button" onClick={() => {
+                                        setSearchText('')
+                                        setSelectedPlant('')
+                                        setStatusFilter('')
+                                        resetMixerFilters({keepViewMode: true, currentViewMode: viewMode})
+                                    }}>
+                                        <i className="fas fa-undo"></i>
+                                    </button>
+                                )}
+                                <button className="ios-button" onClick={() => setShowOverview(true)}>
+                                    <i className="fas fa-chart-bar"></i> Overview
                                 </button>
-                            )}
-                            <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                <i className="fas fa-chart-bar"></i> Overview
-                            </button>
+                            </div>
                         </div>
-                    </div>
-                    <div className="content-container">
+                        {viewMode !== 'grid' && (
+                             <div className="mixers-list-header-row">
+                                 <div>Plant</div>
+                                 <div>Truck #</div>
+                                 <div>Status</div>
+                                 <div>Operator</div>
+                                 <div>Cleanliness</div>
+                                 <div>VIN</div>
+                                 <div>Verified</div>
+                                 <div>More</div>
+                             </div>
+                         )}
+                     </div>
+                     <div className="content-container">
                         {isLoading ? (
                             <div className="loading-container">
                                 <LoadingScreen message="Loading mixers..." inline={true}/>
@@ -496,18 +523,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         ) : (
                             <div className="mixers-list-table-container">
                                 <table className="mixers-list-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Plant</th>
-                                        <th>Truck #</th>
-                                        <th>Status</th>
-                                        <th>Operator</th>
-                                        <th>Cleanliness</th>
-                                        <th>VIN</th>
-                                        <th>Verified</th>
-                                        <th>More</th>
-                                    </tr>
-                                    </thead>
                                     <tbody>
                                     {filteredMixers.map(mixer => {
                                         const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
