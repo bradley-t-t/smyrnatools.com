@@ -212,6 +212,7 @@ input, select, textarea {
 
 .action-button.primary.rectangular-button {
     min-width: 120px !important;
+    min-height: 60px !important;
 }
 
 .search-bar::before {

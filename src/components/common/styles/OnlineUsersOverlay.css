@@ -2,7 +2,7 @@
     position: fixed;
     bottom: 18px;
     right: 18px;
-    width: 300px;
+    width: 280px;
     max-width: 98vw;
     max-height: 500px;
     border-radius: 12px;
@@ -22,7 +22,7 @@
 
 .online-users-overlay.expanded {
     max-height: 500px;
-    width: 300px;
+    width: 280px;
     max-width: 98vw;
 }
 
