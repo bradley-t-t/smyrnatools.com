@@ -422,7 +422,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 >
                                     <option value="">All Plants</option>
                                     {plants
-                                        .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plantCode))
+                                        .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
                                         .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
                                         .map(plant => (
                                             <option key={plant.plantCode} value={plant.plantCode}>

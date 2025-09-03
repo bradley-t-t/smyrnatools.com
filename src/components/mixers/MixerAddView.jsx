@@ -1,27 +1,59 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {MixerService} from '../../services/MixerService';
 import {Mixer} from '../../config/models/mixers/Mixer';
 import {AuthService} from '../../services/AuthService';
 import './styles/MixerAddView.css';
+import {usePreferences} from '../../app/context/PreferencesContext'
+import {RegionService} from '../../services/RegionService'
 
 function MixerAddView({plants, onClose, onMixerAdded}) {
+    const {preferences} = usePreferences()
     const [truckNumber, setTruckNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('Active');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
 
     useEffect(() => {
         async function loadMixers() {
             try {
                 await MixerService.fetchMixers();
             } catch (error) {
-                console.error('Error loading mixers:', error);
             }
         }
-
         loadMixers();
     }, []);
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (assignedPlant && !codes.has(assignedPlant)) setAssignedPlant('')
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [preferences.selectedRegion?.code, assignedPlant])
+
+    const visiblePlants = useMemo(() => {
+        const list = Array.isArray(plants) ? plants : []
+        const filtered = !preferences.selectedRegion?.code || !regionPlantCodes ? list : list.filter(p => regionPlantCodes.has(p.plantCode))
+        return filtered.slice().sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
+    }, [plants, regionPlantCodes, preferences.selectedRegion?.code])
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -106,9 +138,9 @@ function MixerAddView({plants, onClose, onMixerAdded}) {
                                             required
                                         >
                                             <option value="">Select Plant</option>
-                                            {plants?.length ? plants.map(plant => (
-                                                <option key={plant.plant_code} value={plant.plant_code}>
-                                                    ({plant.plant_code}) {plant.plant_name}
+                                            {visiblePlants?.length ? visiblePlants.map(plant => (
+                                                <option key={plant.plantCode} value={plant.plantCode}>
+                                                    ({plant.plantCode}) {plant.plantName}
                                                 </option>
                                             )) : <option disabled>Loading plants...</option>}
                                         </select>

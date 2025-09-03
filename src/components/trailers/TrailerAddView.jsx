@@ -1,28 +1,58 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {TrailerService} from '../../services/TrailerService';
 import Trailer from '../../config/models/trailers/Trailer';
 import {AuthService} from '../../services/AuthService';
 import './styles/TrailerAddView.css';
+import {usePreferences} from '../../app/context/PreferencesContext'
+import {RegionService} from '../../services/RegionService'
 
 function TrailerAddView({plants, onClose, onTrailerAdded}) {
+    const {preferences} = usePreferences()
     const [trailerNumber, setTrailerNumber] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [trailerType, setTrailerType] = useState('Cement');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [cleanlinessRating, setCleanlinessRating] = useState(1);
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
 
     useEffect(() => {
         async function loadTrailers() {
             try {
                 await TrailerService.fetchTrailers();
             } catch (error) {
-                console.error('Error loading trailers:', error);
             }
         }
-
         loadTrailers();
     }, []);
+
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (assignedPlant && !codes.has(assignedPlant)) setAssignedPlant('')
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => { cancelled = true }
+    }, [preferences.selectedRegion?.code, assignedPlant])
+
+    const visiblePlants = useMemo(() => {
+        const list = Array.isArray(plants) ? plants : []
+        const filtered = !preferences.selectedRegion?.code || !regionPlantCodes ? list : list.filter(p => regionPlantCodes.has(p.plantCode))
+        return filtered.slice().sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
+    }, [plants, regionPlantCodes, preferences.selectedRegion?.code])
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -107,7 +137,7 @@ function TrailerAddView({plants, onClose, onTrailerAdded}) {
                                             required
                                         >
                                             <option value="">Select Plant</option>
-                                            {plants?.length ? plants.map(plant => (
+                                            {visiblePlants?.length ? visiblePlants.map(plant => (
                                                 <option key={plant.plantCode} value={plant.plantCode}>
                                                     ({plant.plantCode}) {plant.plantName}
                                                 </option>
@@ -160,3 +190,4 @@ function TrailerAddView({plants, onClose, onTrailerAdded}) {
 }
 
 export default TrailerAddView;
+
