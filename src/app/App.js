@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import './index.css'
 import './App.css'
 import {supabase} from '../services/DatabaseService'
-import MobileNavigation from '../components/common/MobileNavigation'
 import MixersView from '../components/mixers/MixersView'
 import ManagersView from '../components/managers/ManagersView'
 import SettingsView from '../components/settings/SettingsView'
@@ -365,7 +364,6 @@ function AppContent() {
 
     return (
         <div className="App">
-            {isMobile && <MobileNavigation/>}
             <Navigation
                 selectedView={selectedView}
                 onSelectView={handleViewSelection}
