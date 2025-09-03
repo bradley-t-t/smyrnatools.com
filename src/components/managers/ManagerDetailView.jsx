@@ -365,9 +365,6 @@ function ManagerDetailView({managerId, onClose}) {
                         View-Only Mode | You can&apos;t edit this manager.
                     </div>
                 )}
-                <div className="manager-card-preview">
-                    <ManagerCard manager={manager} plantName={getPlantName(manager.plantCode)}/>
-                </div>
                 <div className="detail-card">
                     <div className="card-header">
                         <h2>Edit Information</h2>

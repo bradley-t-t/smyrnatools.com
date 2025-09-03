@@ -394,11 +394,6 @@ ${openIssues.length > 0
                         {message}
                     </div>
                 )}
-                <div className="equipment-card-preview" style={{position: 'relative', zIndex: 0}}>
-                    <div ref={equipmentCardRef}>
-                        <EquipmentCard equipment={equipment} plantName={getPlantName(equipment.assignedPlant)}/>
-                    </div>
-                </div>
                 <div className="detail-card">
                     <div className="card-header">
                         <h2>Equipment Information</h2>

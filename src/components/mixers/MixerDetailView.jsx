@@ -489,12 +489,6 @@ ${openIssues.length > 0
                         {message}
                     </div>
                 )}
-                <div className="mixer-card-preview" style={{position: 'relative', zIndex: 0}}>
-                    <div ref={mixerCardRef}>
-                        <MixerCard mixer={mixer} operatorName={getOperatorName(mixer.assignedOperator)}
-                                   plantName={getPlantName(mixer.assignedPlant)} showOperatorWarning={false}/>
-                    </div>
-                </div>
                 <div className="detail-card">
                     <div className="card-header">
                         <h2>Verification Status</h2>

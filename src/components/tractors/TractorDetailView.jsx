@@ -548,12 +548,6 @@ ${openIssues.length > 0
                         {message}
                     </div>
                 )}
-                <div className="tractor-card-preview" style={{position: 'relative', zIndex: 0}}>
-                    <div ref={tractorCardRef}>
-                        <TractorCard tractor={tractor} operatorName={getOperatorName(tractor.assignedOperator)}
-                                     plantName={getPlantName(tractor.assignedPlant)} showOperatorWarning={false}/>
-                    </div>
-                </div>
                 <div className="detail-card">
                     <div className="card-header">
                         <h2>Verification Status</h2>

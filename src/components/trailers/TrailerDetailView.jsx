@@ -415,12 +415,6 @@ ${openIssues.length > 0
                         {message}
                     </div>
                 )}
-                <div className="trailer-card-preview">
-                    <div ref={trailerCardRef}>
-                        <TrailerCard trailer={trailer} tractorName={getTractorName(trailer.assignedTractor)}
-                                     plantName={getPlantName(trailer.assignedPlant)} showTractorWarning={false}/>
-                    </div>
-                </div>
                 <div className="trailer-detail-card">
                     <div className="trailer-detail-card-header">
                         <h2>Trailer Information</h2>

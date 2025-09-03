@@ -182,14 +182,6 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                         {message}
                     </div>
                 )}
-                <div className="operator-card-preview">
-                    <OperatorCard
-                        operator={operator}
-                        plantName={getPlantName(operator && operator.plantCode)}
-                        showOperatorWarning={false}
-                        rating={rating}
-                    />
-                </div>
                 <div className="detail-card">
                     <div className="card-header">
                         <h2>Edit Information</h2>
