@@ -26,3 +26,12 @@ export function isIdAssignedToMultiple(items, field, id) {
     const list = Array.isArray(items) ? items : [];
     return list.filter(it => it && it[field] === id).length > 1;
 }
+
+const LookupUtility = {
+    getOperatorName,
+    getOperatorSmyrnaId,
+    getPlantName,
+    getTractorTruckNumber,
+    isIdAssignedToMultiple
+};
+export default LookupUtility;

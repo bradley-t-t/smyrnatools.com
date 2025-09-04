@@ -6,3 +6,5 @@ export function debounce(fn, delay) {
     };
 }
 
+const AsyncUtility = { debounce };
+export default AsyncUtility;

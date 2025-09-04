@@ -17,7 +17,7 @@ import TractorCommentModal from './TractorCommentModal'
 import {RegionService} from '../../services/RegionService'
 import {debounce} from '../../utils/AsyncUtility'
 import {getOperatorName as lookupGetOperatorName, getOperatorSmyrnaId as lookupGetOperatorSmyrnaId, getPlantName as lookupGetPlantName, isIdAssignedToMultiple} from '../../utils/LookupUtility'
-import {compareByStatusThenNumber, countUnassignedActiveOperators} from '../../utils/FleetUtility'
+import FleetUtility from '../../utils/FleetUtility'
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
@@ -50,7 +50,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const freightOptions = ['All Freight', 'Cement', 'Aggregate']
     const headerRef = useRef(null)
 
-    const unassignedActiveOperatorsCount = useMemo(() => countUnassignedActiveOperators(tractors, operators, searchText, {
+    const unassignedActiveOperatorsCount = useMemo(() => FleetUtility.countUnassignedActiveOperators(tractors, operators, searchText, {
         position: 'Tractor Operator',
         selectedPlant,
         operatorIdField: 'employeeId',
@@ -231,7 +231,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 }
                 return matchesSearch && matchesPlant && matchesFreight && matchesRegion && matchesStatus;
             })
-            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'truckNumber'));
+            .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'truckNumber'));
     }, [tractors, operators, selectedPlant, searchText, statusFilter, freightFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const verifiedCount = tractors.filter(m => m.isVerified()).length;

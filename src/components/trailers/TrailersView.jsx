@@ -14,9 +14,9 @@ import TrailerDetailView from './TrailerDetailView';
 import TrailerIssueModal from './TrailerIssueModal'
 import TrailerCommentModal from './TrailerCommentModal'
 import {RegionService} from '../../services/RegionService'
-import {debounce} from '../../utils/AsyncUtility'
-import {getTractorTruckNumber as lookupGetTractorTruckNumber, getPlantName as lookupGetPlantName, isIdAssignedToMultiple} from '../../utils/LookupUtility'
-import {compareByStatusThenNumber} from '../../utils/FleetUtility'
+import AsyncUtility from '../../utils/AsyncUtility'
+import LookupUtility from '../../utils/LookupUtility'
+import FleetUtility from '../../utils/FleetUtility'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const { preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
@@ -182,7 +182,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     }
 
 
-    const debouncedSetSearchText = useCallback(debounce((value) => {
+    const debouncedSetSearchText = useCallback(AsyncUtility.debounce((value) => {
         setSearchText(value)
         updatePreferences(prev => ({
             ...prev,
@@ -211,7 +211,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 }
                 return matchesSearch && matchesPlant && matchesRegion && matchesType
             })
-            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'trailerNumber'))
+            .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'trailerNumber'))
     }, [trailers, tractors, selectedPlant, searchText, typeFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const OverviewPopup = () => (
@@ -387,9 +387,9 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             <TrailerCard
                                 key={trailer.id}
                                 trailer={trailer}
-                                tractorName={lookupGetTractorTruckNumber(tractors, trailer.assignedTractor)}
-                                plantName={lookupGetPlantName(plants, trailer.assignedPlant)}
-                                showTractorWarning={isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor)}
+                                tractorName={LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor)}
+                                plantName={LookupUtility.getPlantName(plants, trailer.assignedPlant)}
+                                showTractorWarning={LookupUtility.isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor)}
                                 onSelect={() => handleSelectTrailer(trailer.id)}
                             />
                         ))}
@@ -444,8 +444,8 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                             })()}
                                         </td>
                                         <td>
-                                            {lookupGetTractorTruckNumber(tractors, trailer.assignedTractor) ? lookupGetTractorTruckNumber(tractors, trailer.assignedTractor) : "---"}
-                                            {isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor) && (
+                                            {LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor) ? LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor) : "---"}
+                                            {LookupUtility.isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor) && (
                                                 <span className="warning-badge">
                                                         <i className="fas fa-exclamation-triangle"></i>
                                                     </span>

@@ -15,9 +15,9 @@ import MixerDetailView from './MixerDetailView'
 import MixerIssueModal from './MixerIssueModal'
 import MixerCommentModal from './MixerCommentModal'
 import {RegionService} from '../../services/RegionService'
-import {debounce} from '../../utils/AsyncUtility'
-import {getOperatorName as lookupGetOperatorName, getOperatorSmyrnaId as lookupGetOperatorSmyrnaId, getPlantName as lookupGetPlantName, isIdAssignedToMultiple} from '../../utils/LookupUtility'
-import {compareByStatusThenNumber, countUnassignedActiveOperators} from '../../utils/FleetUtility'
+import AsyncUtility from '../../utils/AsyncUtility'
+import LookupUtility from '../../utils/LookupUtility'
+import FleetUtility from '../../utils/FleetUtility'
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
@@ -49,7 +49,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [operatorsLoaded, setOperatorsLoaded] = useState(false)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
-    const unassignedActiveOperatorsCount = useMemo(() => countUnassignedActiveOperators(mixers, operators, searchText, {
+    const unassignedActiveOperatorsCount = useMemo(() => FleetUtility.countUnassignedActiveOperators(mixers, operators, searchText, {
         position: 'Mixer Operator',
         selectedPlant,
         operatorIdField: 'employeeId',
@@ -272,7 +272,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 }
                 return matchesSearch && matchesPlant && matchesRegion && matchesStatus
             })
-            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'truckNumber'))
+            .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'truckNumber'))
     }, [mixers, operators, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const unverifiedCount = mixers.filter(m => !m.isVerified()).length
@@ -316,7 +316,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
     }, [viewMode, selectedPlant, statusFilter, searchText])
 
-    const debouncedSetSearchText = useCallback(debounce((value) => {
+    const debouncedSetSearchText = useCallback(AsyncUtility.debounce((value) => {
         setSearchText(value);
         updateMixerFilter('searchText', value);
     }, 300), []);
@@ -475,13 +475,13 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                         key={mixer.id}
                                         mixer={{
                                             ...mixer,
-                                            operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, mixer.assignedOperator),
+                                            operatorSmyrnaId: LookupUtility.getOperatorSmyrnaId(operators, mixer.assignedOperator),
                                             openIssuesCount: Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0,
                                             commentsCount: Array.isArray(mixer.comments) ? mixer.comments.length : 0
                                         }}
-                                        operatorName={lookupGetOperatorName(operators, mixer.assignedOperator)}
-                                        plantName={lookupGetPlantName(plants, mixer.assignedPlant)}
-                                        showOperatorWarning={isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator)}
+                                        operatorName={LookupUtility.getOperatorName(operators, mixer.assignedOperator)}
+                                        plantName={LookupUtility.getPlantName(plants, mixer.assignedPlant)}
+                                        showOperatorWarning={LookupUtility.isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator)}
                                         onSelect={() => handleSelectMixer(mixer.id)}
                                     />
                                 ))}
@@ -529,8 +529,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                                     {mixer.status ? mixer.status : "---"}
                                                 </td>
                                                 <td>
-                                                    {lookupGetOperatorName(operators, mixer.assignedOperator) ? lookupGetOperatorName(operators, mixer.assignedOperator) : "---"}
-                                                    {isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator) && (
+                                                    {LookupUtility.getOperatorName(operators, mixer.assignedOperator) ? LookupUtility.getOperatorName(operators, mixer.assignedOperator) : "---"}
+                                                    {LookupUtility.isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator) && (
                                                         <span className="warning-badge">
                                                                 <i className="fas fa-exclamation-triangle"></i>
                                                             </span>

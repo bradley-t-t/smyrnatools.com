@@ -15,7 +15,7 @@ import EquipmentCommentModal from './EquipmentCommentModal'
 import {RegionService} from '../../services/RegionService'
 import {debounce} from '../../utils/AsyncUtility'
 import {getPlantName as lookupGetPlantName} from '../../utils/LookupUtility'
-import {compareByStatusThenNumber} from '../../utils/FleetUtility'
+import FleetUtility from '../../utils/FleetUtility'
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
@@ -148,7 +148,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 }
                 return matchesSearch && matchesPlant && matchesRegion && matchesStatus;
             })
-            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'identifyingNumber'));
+            .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'identifyingNumber'));
     }, [equipments, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes]);
 
     const OverviewPopup = () => (

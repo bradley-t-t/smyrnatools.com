@@ -35,3 +35,5 @@ export function countUnassignedActiveOperators(items, operators, searchText, {
     return count;
 }
 
+const FleetUtility = { compareByStatusThenNumber, countUnassignedActiveOperators };
+export default FleetUtility;
