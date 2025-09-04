@@ -310,6 +310,8 @@ function TeamsView() {
         }
     }
 
+    const headerColumns = ['12%', '58%', '30%']
+
     return (
         <div className="dashboard-container teams-view">
             {!canEditPlant && selectedPlant !== '' && (
@@ -406,6 +408,16 @@ function TeamsView() {
                         </button>
                     </div>
                 </div>
+                {viewMode === 'list' && (
+                    <div
+                        className="teams-list-header-row"
+                        style={{gridTemplateColumns: headerColumns.join(' ')}}
+                    >
+                        <div>Team</div>
+                        <div>Name</div>
+                        <div>Status</div>
+                    </div>
+                )}
             </div>
             <div className="content-container teams-split-table">
                 {loading ? (
@@ -548,13 +560,11 @@ function TeamsView() {
                         ) : (
                             <div className="teams-list-table-container">
                                 <table className="teams-list-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Team</th>
-                                        <th>Name</th>
-                                        <th>Status</th>
-                                    </tr>
-                                    </thead>
+                                    <colgroup>
+                                        {headerColumns.map((w, i) => (
+                                            <col key={i} style={{width: w}} />
+                                        ))}
+                                    </colgroup>
                                     <tbody>
                                     {['A', 'B'].map(teamKey =>
                                         filteredTeams[teamKey].filter(op =>

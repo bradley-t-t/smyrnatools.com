@@ -1365,7 +1365,7 @@
     gap: 0;
     width: 100%;
     box-sizing: border-box;
-    padding: 14px 8px;
+    padding: 0;
     background: var(--accent-header-bg);
     color: var(--accent-header-text);
     font-weight: 700;
@@ -1380,7 +1380,7 @@
 }
 
 .mixers-list-header-row > div {
-    padding: 4px 10px;
+    padding: 10px 8px;
     box-sizing: border-box;
     white-space: nowrap;
 }

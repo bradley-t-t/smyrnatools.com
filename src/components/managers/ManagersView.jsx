@@ -321,6 +321,13 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                         ) : viewMode === 'list' ? (
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
+                                    <colgroup>
+                                        <col style={{width: '12%'}} />
+                                        <col style={{width: '28%'}} />
+                                        <col style={{width: '18%'}} />
+                                        <col style={{width: '18%'}} />
+                                        <col style={{width: '24%'}} />
+                                    </colgroup>
                                     <tbody>
                                     {filteredManagers.map(manager => (
                                         <tr key={manager.id} onClick={() => handleSelectManager(manager)}
@@ -338,6 +345,13 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                         ) : (
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
+                                    <colgroup>
+                                        <col style={{width: '12%'}} />
+                                        <col style={{width: '28%'}} />
+                                        <col style={{width: '18%'}} />
+                                        <col style={{width: '18%'}} />
+                                        <col style={{width: '24%'}} />
+                                    </colgroup>
                                     <tbody>
                                     {filteredManagers.map(manager => (
                                         <tr key={manager.id} onClick={() => handleSelectManager(manager)}

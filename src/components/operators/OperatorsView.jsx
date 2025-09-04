@@ -292,16 +292,6 @@ function OperatorsView({
         return FormatUtility.formatDate(dateStr)
     }
 
-    function getFiltersAppliedString() {
-        const filters = []
-        if (searchText) filters.push(`Search: ${searchText}`)
-        if (selectedPlant) {
-            const plant = plants.find(p => p.plant_code === selectedPlant)
-            filters.push(`Plant: ${plant ? plant.plant_name : selectedPlant}`)
-        }
-        if (statusFilter && statusFilter !== 'All Statuses') filters.push(`Status: ${statusFilter}`)
-        return filters.length ? filters.join(', ') : 'No Filters'
-    }
 
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
@@ -505,6 +495,28 @@ function OperatorsView({
                         ) : (
                             <div className="operators-list-table-container">
                                 <table className="operators-list-table">
+                                    <colgroup>
+                                        {statusFilter === 'Pending Start' ? (
+                                            <>
+                                                <col style={{width: '10%'}} />
+                                                <col style={{width: '24%'}} />
+                                                <col style={{width: '14%'}} />
+                                                <col style={{width: '16%'}} />
+                                                <col style={{width: '18%'}} />
+                                                <col style={{width: '10%'}} />
+                                                <col style={{width: '8%'}} />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <col style={{width: '12%'}} />
+                                                <col style={{width: '28%'}} />
+                                                <col style={{width: '16%'}} />
+                                                <col style={{width: '22%'}} />
+                                                <col style={{width: '12%'}} />
+                                                <col style={{width: '10%'}} />
+                                            </>
+                                        )}
+                                    </colgroup>
                                     <tbody>
                                     {filteredOperators.map(operator => (
                                         <tr key={operator.employeeId} style={{cursor: 'pointer'}}

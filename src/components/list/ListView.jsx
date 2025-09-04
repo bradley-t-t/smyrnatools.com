@@ -158,6 +158,10 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 
     const visiblePlants = regionCode ? plants.filter(p => regionCodeSet.has(p.plant_code)) : plants
 
+    const headerColumns = statusFilter === 'completed'
+        ? ['38%', '14%', '12%', '12%', '16%', '8%']
+        : ['44%', '16%', '14%', '16%', '10%']
+
     return (
         <div className="dashboard-container list-view">
             <div className="list-sticky-header">
@@ -280,7 +284,10 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                     </div>
                 </div>
                 {filteredItems.length > 0 && (
-                    <div className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}`}>
+                    <div
+                        className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}`}
+                        style={{gridTemplateColumns: headerColumns.join(' ')}}
+                    >
                         <div>Description</div>
                         <div>Plant</div>
                         <div>Deadline</div>
@@ -313,6 +320,11 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 ) : (
                     <div className="mixers-list-table-container">
                         <table className="mixers-list-table">
+                            <colgroup>
+                                {headerColumns.map((w, i) => (
+                                    <col key={i} style={{width: w}} />
+                                ))}
+                            </colgroup>
                             <tbody>
                             {filteredItems.map(item => (
                                 <tr

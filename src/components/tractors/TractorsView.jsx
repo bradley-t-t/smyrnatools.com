@@ -15,14 +15,9 @@ import TractorDetailView from "./TractorDetailView";
 import TractorIssueModal from './TractorIssueModal'
 import TractorCommentModal from './TractorCommentModal'
 import {RegionService} from '../../services/RegionService'
-
-function debounce(fn, delay) {
-    let timer = null;
-    return (...args) => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-    };
-}
+import {debounce} from '../../utils/AsyncUtility'
+import {getOperatorName as lookupGetOperatorName, getOperatorSmyrnaId as lookupGetOperatorSmyrnaId, getPlantName as lookupGetPlantName, isIdAssignedToMultiple} from '../../utils/LookupUtility'
+import {compareByStatusThenNumber, countUnassignedActiveOperators} from '../../utils/FleetUtility'
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
@@ -55,25 +50,13 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const freightOptions = ['All Freight', 'Cement', 'Aggregate']
     const headerRef = useRef(null)
 
-    const unassignedActiveOperatorsCount = useMemo(() => {
-        const normalized = searchText.trim().toLowerCase().replace(/\s+/g, '')
-        const ops = operators.filter(op => {
-            if (op.status !== 'Active') return false
-            if (op.position !== 'Tractor Operator') return false
-            if (selectedPlant && op.plantCode !== selectedPlant) return false
-            if (!normalized) return true
-            const nameNoSpace = (op.name || '').toLowerCase().replace(/\s+/g, '')
-            const smyrna = (op.smyrnaId || '').toLowerCase()
-            return nameNoSpace.includes(normalized) || smyrna.includes(normalized)
-        })
-        const activeTractors = tractors.filter(t => t.status === 'Active' && (!selectedPlant || t.assignedPlant === selectedPlant))
-        let count = 0
-        for (const op of ops) {
-            const isAssigned = activeTractors.some(t => t.assignedOperator === op.employeeId)
-            if (!isAssigned) count++
-        }
-        return count
-    }, [operators, tractors, selectedPlant, searchText])
+    const unassignedActiveOperatorsCount = useMemo(() => countUnassignedActiveOperators(tractors, operators, searchText, {
+        position: 'Tractor Operator',
+        selectedPlant,
+        operatorIdField: 'employeeId',
+        assignedOperatorField: 'assignedOperator',
+        assignedPlantField: 'assignedPlant'
+    }), [operators, tractors, selectedPlant, searchText])
 
     useEffect(() => {
         async function fetchAllData() {
@@ -198,27 +181,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         }
     }
 
-    function getOperatorSmyrnaId(operatorId) {
-        if (!operatorId || operatorId === '0') return '';
-        const operator = operators.find(op => op.employeeId === operatorId);
-        return operator?.smyrnaId || '';
-    }
-
-    function getOperatorName(operatorId) {
-        if (!operatorId || operatorId === '0') return 'None';
-        const operator = operators.find(op => op.employeeId === operatorId);
-        return operator ? operator.name : 'Unknown';
-    }
-
-    function getPlantName(plantCode) {
-        const plant = plants.find(p => p.plantCode === plantCode);
-        return plant ? plant.plantName : plantCode || 'No Plant';
-    }
-
-    function isOperatorAssignedToMultipleTractors(operatorId) {
-        return operatorId && operatorId !== '0' && tractors.filter(m => m.assignedOperator === operatorId).length > 1;
-    }
-
     function handleSelectTractor(tractorId) {
         const tractor = tractors.find(m => m.id === tractorId);
         if (tractor) {
@@ -269,20 +231,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 }
                 return matchesSearch && matchesPlant && matchesFreight && matchesRegion && matchesStatus;
             })
-            .sort((a, b) => {
-                if (a.status === 'Active' && b.status !== 'Active') return -1;
-                if (a.status !== 'Active' && b.status === 'Active') return 1;
-                if (a.status === 'Spare' && b.status !== 'Spare') return -1;
-                if (a.status !== 'Spare' && b.status === 'Spare') return 1;
-                if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
-                if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
-                if (a.status === 'Retired' && b.status !== 'Retired') return 1;
-                if (a.status !== 'Retired' && b.status === 'Retired') return -1;
-                if (a.status !== b.status) return a.status.localeCompare(b.status);
-                const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0');
-                const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0');
-                return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '');
-            });
+            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'truckNumber'));
     }, [tractors, operators, selectedPlant, searchText, statusFilter, freightFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const verifiedCount = tractors.filter(m => m.isVerified()).length;
@@ -514,10 +463,10 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                         {filteredTractors.map(tractor => (
                             <TractorCard
                                 key={tractor.id}
-                                tractor={{...tractor, operatorSmyrnaId: getOperatorSmyrnaId(tractor.assignedOperator)}}
-                                operatorName={getOperatorName(tractor.assignedOperator)}
-                                plantName={getPlantName(tractor.assignedPlant)}
-                                showOperatorWarning={isOperatorAssignedToMultipleTractors(tractor.assignedOperator)}
+                                tractor={{...tractor, operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator)}}
+                                operatorName={lookupGetOperatorName(operators, tractor.assignedOperator)}
+                                plantName={lookupGetPlantName(plants, tractor.assignedPlant)}
+                                showOperatorWarning={isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator)}
                                 onSelect={() => handleSelectTractor(tractor.id)}
                             />
                         ))}
@@ -525,6 +474,16 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 ) : viewMode === 'list' ? (
                     <div className="tractors-list-table-container">
                         <table className="tractors-list-table">
+                            <colgroup>
+                                <col style={{width: '10%'}} />
+                                <col style={{width: '12%'}} />
+                                <col style={{width: '12%'}} />
+                                <col style={{width: '18%'}} />
+                                <col style={{width: '12%'}} />
+                                <col style={{width: '18%'}} />
+                                <col style={{width: '10%'}} />
+                                <col style={{width: '8%'}} />
+                            </colgroup>
                             <tbody>
                             {filteredTractors.map(tractor => {
                                 const commentsCount = Number(tractor.commentsCount || 0)
@@ -552,8 +511,8 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                             {tractor.status ? tractor.status : "---"}
                                         </td>
                                         <td>
-                                            {getOperatorName(tractor.assignedOperator) ? getOperatorName(tractor.assignedOperator) : "---"}
-                                            {isOperatorAssignedToMultipleTractors(tractor.assignedOperator) && (
+                                            {lookupGetOperatorName(operators, tractor.assignedOperator) ? lookupGetOperatorName(operators, tractor.assignedOperator) : "---"}
+                                            {isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator) && (
                                                 <span className="warning-badge">
                                                     <i className="fas fa-exclamation-triangle"></i>
                                                 </span>

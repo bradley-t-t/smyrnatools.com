@@ -13,14 +13,9 @@ import './styles/EquipmentsView.css';
 import EquipmentIssueModal from './EquipmentIssueModal'
 import EquipmentCommentModal from './EquipmentCommentModal'
 import {RegionService} from '../../services/RegionService'
-
-function debounce(fn, delay) {
-    let timer = null;
-    return (...args) => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-    };
-}
+import {debounce} from '../../utils/AsyncUtility'
+import {getPlantName as lookupGetPlantName} from '../../utils/LookupUtility'
+import {compareByStatusThenNumber} from '../../utils/FleetUtility'
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
@@ -109,11 +104,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         } catch {}
     }
 
-    function getPlantName(plantCode) {
-        const plant = plants.find(p => p.plantCode === plantCode);
-        return plant ? plant.plantName : plantCode || 'No Plant';
-    }
-
     function handleSelectEquipment(equipmentId) {
         const equipment = equipments.find(e => e.id === equipmentId);
         if (!equipment || !equipment.id) return;
@@ -158,20 +148,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 }
                 return matchesSearch && matchesPlant && matchesRegion && matchesStatus;
             })
-            .sort((a, b) => {
-                if (a.status === 'Active' && b.status !== 'Active') return -1;
-                if (a.status !== 'Active' && b.status === 'Active') return 1;
-                if (a.status === 'Spare' && b.status !== 'Spare') return -1;
-                if (a.status !== 'Spare' && b.status === 'Spare') return 1;
-                if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
-                if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
-                if (a.status === 'Retired' && b.status !== 'Retired') return 1;
-                if (a.status !== 'Retired' && b.status === 'Retired') return -1;
-                if (a.status !== b.status) return a.status.localeCompare(b.status);
-                const aNum = parseInt(a.identifyingNumber?.replace(/\D/g, '') || '0');
-                const bNum = parseInt(b.identifyingNumber?.replace(/\D/g, '') || '0');
-                return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.identifyingNumber || '').localeCompare(b.identifyingNumber || '');
-            });
+            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'identifyingNumber'));
     }, [equipments, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes]);
 
     const OverviewPopup = () => (
@@ -366,7 +343,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                     <EquipmentCard
                                         key={equipment.id}
                                         equipment={equipment}
-                                        plantName={getPlantName(equipment.assignedPlant)}
+                                        plantName={lookupGetPlantName(plants, equipment.assignedPlant)}
                                         onSelect={() => handleSelectEquipment(equipment.id)}
                                     />
                                 ))}
@@ -374,6 +351,15 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                         ) : (
                             <div className="equipments-list-table-container">
                                 <table className="equipments-list-table">
+                                    <colgroup>
+                                        <col style={{width: '12%'}} />
+                                        <col style={{width: '14%'}} />
+                                        <col style={{width: '12%'}} />
+                                        <col style={{width: '24%'}} />
+                                        <col style={{width: '14%'}} />
+                                        <col style={{width: '16%'}} />
+                                        <col style={{width: '8%'}} />
+                                    </colgroup>
                                     <tbody>
                                     {filteredEquipments.map(equipment => {
                                         const issuesCount = Number(equipment.openIssuesCount || 0)

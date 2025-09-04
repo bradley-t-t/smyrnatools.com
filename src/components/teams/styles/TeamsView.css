@@ -448,7 +448,7 @@
     color: var(--accent-header-text);
     font-weight: 700;
     font-size: 15px;
-    padding: 14px 8px;
+    padding: 10px 8px;
     border-bottom: 2px solid var(--divider);
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -628,4 +628,35 @@
 .dark-mode .team-card-header {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+}
+
+.teams-list-header-row {
+    display: grid;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    background: var(--accent-header-bg);
+    color: var(--accent-header-text);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 15px;
+    position: relative;
+    border: 1px solid var(--divider);
+    border-bottom: none;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.teams-list-header-row > div {
+    padding: 10px 8px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.teams-view .teams-list-table-container {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
 }

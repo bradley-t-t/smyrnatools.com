@@ -14,14 +14,9 @@ import TrailerDetailView from './TrailerDetailView';
 import TrailerIssueModal from './TrailerIssueModal'
 import TrailerCommentModal from './TrailerCommentModal'
 import {RegionService} from '../../services/RegionService'
-
-function debounce(fn, delay) {
-    let timer = null;
-    return (...args) => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-    };
-}
+import {debounce} from '../../utils/AsyncUtility'
+import {getTractorTruckNumber as lookupGetTractorTruckNumber, getPlantName as lookupGetPlantName, isIdAssignedToMultiple} from '../../utils/LookupUtility'
+import {compareByStatusThenNumber} from '../../utils/FleetUtility'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const { preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
@@ -151,21 +146,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         }
     }
 
-    function getTractorNumber(tractorId) {
-        if (!tractorId) return 'None';
-        const tractor = tractors.find(t => t.id === tractorId);
-        return tractor ? tractor.truckNumber : 'Unknown';
-    }
-
-    function getPlantName(plantCode) {
-        const plant = plants.find(p => p.plantCode === plantCode);
-        return plant ? plant.plantName : plantCode || 'No Plant';
-    }
-
-    function isTractorAssignedToMultipleTrailers(tractorId) {
-        return tractorId && trailers.filter(t => t.assignedTractor === tractorId).length > 1;
-    }
-
     function handleSelectTrailer(trailerId) {
         saveLastViewedFilters();
         const trailerObj = trailers.find(t => t.id === trailerId);
@@ -201,29 +181,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         setReloadTrailers(r => !r)
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr) return ''
-        const date = new Date(dateStr)
-        if (isNaN(date.getTime())) return ''
-        const pad = n => n.toString().padStart(2, '0')
-        const yyyy = date.getFullYear()
-        const mm = pad(date.getMonth() + 1)
-        const dd = pad(date.getDate())
-        const hh = pad(date.getHours())
-        const min = pad(date.getMinutes())
-        return `${mm}/${dd}/${yyyy} ${hh}:${min}`
-    }
-
-    function getFiltersAppliedString() {
-        const filters = []
-        if (searchText) filters.push(`Search: ${searchText}`)
-        if (selectedPlant) {
-            const plant = plants.find(p => p.plantCode === selectedPlant)
-            filters.push(`Plant: ${plant ? plant.plantName : selectedPlant}`)
-        }
-        if (typeFilter && typeFilter !== 'All Types') filters.push(`Type: ${typeFilter}`)
-        return filters.length ? filters.join(', ') : 'No Filters'
-    }
 
     const debouncedSetSearchText = useCallback(debounce((value) => {
         setSearchText(value)
@@ -254,16 +211,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 }
                 return matchesSearch && matchesPlant && matchesRegion && matchesType
             })
-            .sort((a, b) => {
-                const statusOrder = { 'Active': 1, 'Spare': 2, 'In Shop': 3, 'Retired': 4 }
-                const statusA = statusOrder[a.status] || 99
-                const statusB = statusOrder[b.status] || 99
-                if (statusA !== statusB) return statusA - statusB
-                const aNum = parseInt(a.trailerNumber?.replace(/\D/g, '') || '0')
-                const bNum = parseInt(b.trailerNumber?.replace(/\D/g, '') || '0')
-                if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
-                return (a.trailerNumber || '').localeCompare(b.trailerNumber || '')
-            })
+            .sort((a, b) => compareByStatusThenNumber(a, b, 'status', 'trailerNumber'))
     }, [trailers, tractors, selectedPlant, searchText, typeFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const OverviewPopup = () => (
@@ -439,9 +387,9 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             <TrailerCard
                                 key={trailer.id}
                                 trailer={trailer}
-                                tractorName={getTractorNumber(trailer.assignedTractor)}
-                                plantName={getPlantName(trailer.assignedPlant)}
-                                showTractorWarning={isTractorAssignedToMultipleTrailers(trailer.assignedTractor)}
+                                tractorName={lookupGetTractorTruckNumber(tractors, trailer.assignedTractor)}
+                                plantName={lookupGetPlantName(plants, trailer.assignedPlant)}
+                                showTractorWarning={isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor)}
                                 onSelect={() => handleSelectTrailer(trailer.id)}
                             />
                         ))}
@@ -449,6 +397,15 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 ) : viewMode === 'list' ? (
                     <div className="trailers-list-table-container">
                         <table className="trailers-list-table">
+                            <colgroup>
+                                <col style={{width: '12%'}} />
+                                <col style={{width: '14%'}} />
+                                <col style={{width: '12%'}} />
+                                <col style={{width: '18%'}} />
+                                <col style={{width: '14%'}} />
+                                <col style={{width: '22%'}} />
+                                <col style={{width: '8%'}} />
+                            </colgroup>
                             <tbody>
                             {filteredTrailers.map(trailer => {
                                 const commentsCount = Number(trailer.commentsCount || 0)
@@ -487,8 +444,8 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                             })()}
                                         </td>
                                         <td>
-                                            {getTractorNumber(trailer.assignedTractor) ? getTractorNumber(trailer.assignedTractor) : "---"}
-                                            {isTractorAssignedToMultipleTrailers(trailer.assignedTractor) && (
+                                            {lookupGetTractorTruckNumber(tractors, trailer.assignedTractor) ? lookupGetTractorTruckNumber(tractors, trailer.assignedTractor) : "---"}
+                                            {isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor) && (
                                                 <span className="warning-badge">
                                                         <i className="fas fa-exclamation-triangle"></i>
                                                     </span>
