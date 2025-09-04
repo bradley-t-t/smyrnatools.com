@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, useRef} from 'react';
+import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
 import MixerAddView from './MixerAddView';
 import MixerUtility from '../../utils/MixerUtility';
 import {MixerService} from '../../services/MixerService';
@@ -15,6 +15,14 @@ import MixerDetailView from './MixerDetailView'
 import MixerIssueModal from './MixerIssueModal'
 import MixerCommentModal from './MixerCommentModal'
 import {RegionService} from '../../services/RegionService'
+
+function debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
 
 function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelectMixer}) {
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
@@ -274,41 +282,43 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         }
     }, [searchText]);
 
-    const filteredMixers = mixers
-        .filter(mixer => {
-            const normalizedSearch = searchText.trim().toLowerCase().replace(/\s+/g, '')
-            const truckMatch = (mixer.truckNumber || '').toLowerCase().includes(normalizedSearch)
-            const operatorMatch = mixer.assignedOperator && operators.find(op => op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(normalizedSearch)
-            const vinRaw = (mixer.vinNumber || mixer.vin || '').toLowerCase()
-            const vinNoSpaces = vinRaw.replace(/\s+/g, '')
-            const vinMatch = vinRaw.includes(searchText.trim().toLowerCase()) || vinNoSpaces.includes(normalizedSearch)
-            const matchesSearch = !normalizedSearch || truckMatch || operatorMatch || vinMatch
-            const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
-            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(mixer.assignedPlant)
-            let matchesStatus = true
-            if (statusFilter && statusFilter !== 'All Statuses') {
-                matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? mixer.status === statusFilter :
-                    statusFilter === 'Past Due Service' ? MixerUtility.isServiceOverdue(mixer.lastServiceDate) :
-                        statusFilter === 'Verified' ? mixer.isVerified() :
-                            statusFilter === 'Not Verified' ? !mixer.isVerified() :
-                                statusFilter === 'Open Issues' ? (Number(mixer.openIssuesCount || 0) > 0) : false
-            }
-            return matchesSearch && matchesPlant && matchesRegion && matchesStatus
-        })
-        .sort((a, b) => {
-            if (a.status === 'Active' && b.status !== 'Active') return -1
-            if (a.status !== 'Active' && b.status === 'Active') return 1
-            if (a.status === 'Spare' && b.status !== 'Spare') return -1
-            if (a.status !== 'Spare' && b.status === 'Spare') return 1
-            if (a.status === 'In Shop' && b.status !== 'In Shop') return -1
-            if (a.status !== 'In Shop' && b.status === 'In Shop') return 1
-            if (a.status === 'Retired' && b.status !== 'Retired') return 1
-            if (a.status !== 'Retired' && b.status === 'Retired') return -1
-            if (a.status !== b.status) return a.status.localeCompare(b.status)
-            const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0')
-            const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0')
-            return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '')
-        })
+    const filteredMixers = useMemo(() => {
+        return mixers
+            .filter(mixer => {
+                const normalizedSearch = searchText.trim().toLowerCase().replace(/\s+/g, '')
+                const truckMatch = (mixer.truckNumber || '').toLowerCase().includes(normalizedSearch)
+                const operatorMatch = mixer.assignedOperator && operators.find(op => op.employeeId === mixer.assignedOperator)?.name.toLowerCase().includes(normalizedSearch)
+                const vinRaw = (mixer.vinNumber || mixer.vin || '').toLowerCase()
+                const vinNoSpaces = vinRaw.replace(/\s+/g, '')
+                const vinMatch = vinRaw.includes(searchText.trim().toLowerCase()) || vinNoSpaces.includes(normalizedSearch)
+                const matchesSearch = !normalizedSearch || truckMatch || operatorMatch || vinMatch
+                const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
+                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(mixer.assignedPlant)
+                let matchesStatus = true
+                if (statusFilter && statusFilter !== 'All Statuses') {
+                    matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? mixer.status === statusFilter :
+                        statusFilter === 'Past Due Service' ? MixerUtility.isServiceOverdue(mixer.lastServiceDate) :
+                            statusFilter === 'Verified' ? mixer.isVerified() :
+                                statusFilter === 'Not Verified' ? !mixer.isVerified() :
+                                    statusFilter === 'Open Issues' ? (Number(mixer.openIssuesCount || 0) > 0) : false
+                }
+                return matchesSearch && matchesPlant && matchesRegion && matchesStatus
+            })
+            .sort((a, b) => {
+                if (a.status === 'Active' && b.status !== 'Active') return -1
+                if (a.status !== 'Active' && b.status === 'Active') return 1
+                if (a.status === 'Spare' && b.status !== 'Spare') return -1
+                if (a.status !== 'Spare' && b.status === 'Spare') return 1
+                if (a.status === 'In Shop' && b.status !== 'In Shop') return -1
+                if (a.status !== 'In Shop' && b.status === 'In Shop') return 1
+                if (a.status === 'Retired' && b.status !== 'Retired') return 1
+                if (a.status !== 'Retired' && b.status === 'Retired') return -1
+                if (a.status !== b.status) return a.status.localeCompare(b.status)
+                const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0')
+                const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0')
+                return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '')
+            })
+    }, [mixers, operators, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const unverifiedCount = mixers.filter(m => !m.isVerified()).length
     const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length
@@ -351,6 +361,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
     }, [viewMode, selectedPlant, statusFilter, searchText])
 
+    const debouncedSetSearchText = useCallback(debounce((value) => {
+        setSearchText(value);
+        updateMixerFilter('searchText', value);
+    }, 300), []);
+
     return (
         <div className="dashboard-container mixers-view">
             {unassignedActiveOperatorsCount > 0 && (
@@ -391,16 +406,10 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     className="ios-search-input"
                                     placeholder="Search by truck, operator, or VIN..."
                                     value={searchText}
-                                    onChange={e => {
-                                        setSearchText(e.target.value);
-                                        updateMixerFilter('searchText', e.target.value);
-                                    }}
+                                    onChange={e => debouncedSetSearchText(e.target.value)}
                                 />
                                 {searchText && (
-                                    <button className="clear" onClick={() => {
-                                        setSearchText('');
-                                        updateMixerFilter('searchText', '');
-                                    }}>
+                                    <button className="clear" onClick={() => debouncedSetSearchText('')}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}

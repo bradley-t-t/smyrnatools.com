@@ -51,17 +51,21 @@ function OnlineUsersOverlay() {
                         </div>
                     </div>
                     <div className="online-users-list">
-                        {onlineUsers.slice(0, isExpanded ? onlineUsers.length : 3).map(user => (
-                            <div key={user.id} className="online-user">
-                                <div className="user-avatar">{user.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
-                                <div className="user-info">
-                                    <div className="user-status">
-                                        <span className="status-indicator"></span>
+                        {onlineUsers.slice(0, isExpanded ? onlineUsers.length : 3).map(user => {
+                            let displayName = typeof user.name === 'string' ? user.name : '';
+                            let avatarChar = displayName.length > 0 ? displayName.charAt(0).toUpperCase() : 'U';
+                            return (
+                                <div key={user.id} className="online-user">
+                                    <div className="user-avatar">{avatarChar}</div>
+                                    <div className="user-info">
+                                        <div className="user-status">
+                                            <span className="status-indicator"></span>
+                                        </div>
+                                        <div className="user-name">{displayName || 'Unknown User'}</div>
                                     </div>
-                                    <div className="user-name">{user.name || 'Unknown User'}</div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {!isExpanded && onlineUsers.length > 3 && (
                             <div className="more-users">
                                 <span>+{onlineUsers.length - 3} more</span>

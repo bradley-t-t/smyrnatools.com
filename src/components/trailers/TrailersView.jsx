@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo, useCallback} from 'react';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TrailerCard from './TrailerCard';
@@ -14,6 +14,14 @@ import TrailerDetailView from './TrailerDetailView';
 import TrailerIssueModal from './TrailerIssueModal'
 import TrailerCommentModal from './TrailerCommentModal'
 import {RegionService} from '../../services/RegionService'
+
+function debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const { preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
@@ -217,39 +225,46 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         return filters.length ? filters.join(', ') : 'No Filters'
     }
 
-    const statusOrder = { 'Active': 1, 'Spare': 2, 'In Shop': 3, 'Retired': 4 }
-
-    const filteredTrailers = trailers
-        .filter(trailer => {
-            const matchesSearch = !searchText.trim() ||
-                trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
-            const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
-            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(trailer.assignedPlant)
-            let matchesType = true
-            if (typeFilter && typeFilter !== 'All Types') {
-                matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter :
-                    typeFilter === 'Past Due Service' ? TrailerUtility.isServiceOverdue(trailer.lastServiceDate) :
-                        typeFilter === 'Verified' ? trailer.isVerified() :
-                            typeFilter === 'Not Verified' ? !trailer.isVerified() :
-                                typeFilter === 'Open Issues' ? (Number(trailer.openIssuesCount || 0) > 0) : false
+    const debouncedSetSearchText = useCallback(debounce((value) => {
+        setSearchText(value)
+        updatePreferences(prev => ({
+            ...prev,
+            trailerFilters: {
+                ...prev.trailerFilters,
+                searchText: value
             }
-            return matchesSearch && matchesPlant && matchesRegion && matchesType
-        })
-        .sort((a, b) => {
-            const statusA = statusOrder[a.status] || 99
-            const statusB = statusOrder[b.status] || 99
-            if (statusA !== statusB) return statusA - statusB
-            const aNum = parseInt(a.trailerNumber?.replace(/\D/g, '') || '0')
-            const bNum = parseInt(b.trailerNumber?.replace(/\D/g, '') || '0')
-            if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
-            return (a.trailerNumber || '').localeCompare(b.trailerNumber || '')
-        })
-    ;['Cement', 'End Dump'].map(type => ({ type, count: trailers.filter(t => t.trailerType === type).length }))
-    trailers.filter(t => TrailerUtility.isServiceOverdue(t.lastServiceDate)).length
-    trailers.filter(t => t.isVerified()).length
-    trailers.filter(t => !t.updatedLast || !t.updatedBy).length
-    trailers.filter(t => Number(t.openIssuesCount || 0) > 0).length
+        }))
+    }, 300), [updatePreferences])
+
+    const filteredTrailers = useMemo(() => {
+        return trailers
+            .filter(trailer => {
+                const matchesSearch = !searchText.trim() ||
+                    trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+                    (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
+                const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
+                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(trailer.assignedPlant)
+                let matchesType = true
+                if (typeFilter && typeFilter !== 'All Types') {
+                    matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter :
+                        typeFilter === 'Past Due Service' ? TrailerUtility.isServiceOverdue(trailer.lastServiceDate) :
+                            typeFilter === 'Verified' ? trailer.isVerified() :
+                                typeFilter === 'Not Verified' ? !trailer.isVerified() :
+                                    typeFilter === 'Open Issues' ? (Number(trailer.openIssuesCount || 0) > 0) : false
+                }
+                return matchesSearch && matchesPlant && matchesRegion && matchesType
+            })
+            .sort((a, b) => {
+                const statusOrder = { 'Active': 1, 'Spare': 2, 'In Shop': 3, 'Retired': 4 }
+                const statusA = statusOrder[a.status] || 99
+                const statusB = statusOrder[b.status] || 99
+                if (statusA !== statusB) return statusA - statusB
+                const aNum = parseInt(a.trailerNumber?.replace(/\D/g, '') || '0')
+                const bNum = parseInt(b.trailerNumber?.replace(/\D/g, '') || '0')
+                if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+                return (a.trailerNumber || '').localeCompare(b.trailerNumber || '')
+            })
+    }, [trailers, tractors, selectedPlant, searchText, typeFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
@@ -305,28 +320,10 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             className="ios-search-input"
                             placeholder="Search by trailer or tractor..."
                             value={searchText}
-                            onChange={e => {
-                                setSearchText(e.target.value)
-                                updatePreferences(prev => ({
-                                    ...prev,
-                                    trailerFilters: {
-                                        ...prev.trailerFilters,
-                                        searchText: e.target.value
-                                    }
-                                }))
-                            }}
+                            onChange={e => debouncedSetSearchText(e.target.value)}
                         />
                         {searchText && (
-                            <button className="clear" onClick={() => {
-                                setSearchText('')
-                                updatePreferences(prev => ({
-                                    ...prev,
-                                    trailerFilters: {
-                                        ...prev.trailerFilters,
-                                        searchText: ''
-                                    }
-                                }))
-                            }}>
+                            <button className="clear" onClick={() => debouncedSetSearchText('')}>
                                 <i className="fas fa-times"></i>
                             </button>
                         )}

@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, useRef} from 'react';
+import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
 import PropTypes from 'prop-types';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
@@ -15,6 +15,14 @@ import TractorDetailView from "./TractorDetailView";
 import TractorIssueModal from './TractorIssueModal'
 import TractorCommentModal from './TractorCommentModal'
 import {RegionService} from '../../services/RegionService'
+
+function debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
@@ -238,38 +246,40 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         setReloadTractors(r => !r)
     }
 
-    const filteredTractors = tractors
-        .filter(tractor => {
-            const matchesSearch = !searchText.trim() ||
-                tractor.truckNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                (tractor.assignedOperator && operators.find(op => op.employeeId === tractor.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
-            const matchesPlant = !selectedPlant || tractor.assignedPlant === selectedPlant;
-            const matchesFreight = !freightFilter || tractor.freight === freightFilter;
-            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(tractor.assignedPlant);
-            let matchesStatus = true;
-            if (statusFilter && statusFilter !== 'All Statuses') {
-                matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? tractor.status === statusFilter :
-                    statusFilter === 'Past Due Service' ? TractorUtility.isServiceOverdue(tractor.lastServiceDate) :
-                        statusFilter === 'Verified' ? tractor.isVerified() :
-                            statusFilter === 'Not Verified' ? !tractor.isVerified() :
-                                statusFilter === 'Open Issues' ? (Number(tractor.openIssuesCount || 0) > 0) : false;
-            }
-            return matchesSearch && matchesPlant && matchesFreight && matchesRegion && matchesStatus;
-        })
-        .sort((a, b) => {
-            if (a.status === 'Active' && b.status !== 'Active') return -1;
-            if (a.status !== 'Active' && b.status === 'Active') return 1;
-            if (a.status === 'Spare' && b.status !== 'Spare') return -1;
-            if (a.status !== 'Spare' && b.status === 'Spare') return 1;
-            if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
-            if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
-            if (a.status === 'Retired' && b.status !== 'Retired') return 1;
-            if (a.status !== 'Retired' && b.status === 'Retired') return -1;
-            if (a.status !== b.status) return a.status.localeCompare(b.status);
-            const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0');
-            const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0');
-            return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '');
-        });
+    const filteredTractors = useMemo(() => {
+        return tractors
+            .filter(tractor => {
+                const matchesSearch = !searchText.trim() ||
+                    tractor.truckNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+                    (tractor.assignedOperator && operators.find(op => op.employeeId === tractor.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
+                const matchesPlant = !selectedPlant || tractor.assignedPlant === selectedPlant;
+                const matchesFreight = !freightFilter || tractor.freight === freightFilter;
+                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(tractor.assignedPlant);
+                let matchesStatus = true;
+                if (statusFilter && statusFilter !== 'All Statuses') {
+                    matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? tractor.status === statusFilter :
+                        statusFilter === 'Past Due Service' ? TractorUtility.isServiceOverdue(tractor.lastServiceDate) :
+                            statusFilter === 'Verified' ? tractor.isVerified() :
+                                statusFilter === 'Not Verified' ? !tractor.isVerified() :
+                                    statusFilter === 'Open Issues' ? (Number(tractor.openIssuesCount || 0) > 0) : false;
+                }
+                return matchesSearch && matchesPlant && matchesFreight && matchesRegion && matchesStatus;
+            })
+            .sort((a, b) => {
+                if (a.status === 'Active' && b.status !== 'Active') return -1;
+                if (a.status !== 'Active' && b.status === 'Active') return 1;
+                if (a.status === 'Spare' && b.status !== 'Spare') return -1;
+                if (a.status !== 'Spare' && b.status === 'Spare') return 1;
+                if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
+                if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
+                if (a.status === 'Retired' && b.status !== 'Retired') return 1;
+                if (a.status !== 'Retired' && b.status === 'Retired') return -1;
+                if (a.status !== b.status) return a.status.localeCompare(b.status);
+                const aNum = parseInt(a.truckNumber?.replace(/\D/g, '') || '0');
+                const bNum = parseInt(b.truckNumber?.replace(/\D/g, '') || '0');
+                return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.truckNumber || '').localeCompare(b.truckNumber || '');
+            });
+    }, [tractors, operators, selectedPlant, searchText, statusFilter, freightFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const verifiedCount = tractors.filter(m => m.isVerified()).length;
     const unverifiedCount = tractors.length - verifiedCount;
@@ -321,6 +331,14 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         );
     }
 
+    const debouncedSetSearchText = useCallback(debounce((value) => {
+        setSearchText(value)
+        updatePreferences('tractorFilters', {
+            ...preferences.tractorFilters,
+            searchText: value
+        })
+    }, 300), [preferences.tractorFilters, updatePreferences])
+
     return (
         <div className="dashboard-container tractors-view">
             {unassignedActiveOperatorsCount > 0 && (
@@ -349,22 +367,10 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             className="ios-search-input"
                             placeholder="Search by truck or operator..."
                             value={searchText}
-                            onChange={e => {
-                                setSearchText(e.target.value);
-                                updatePreferences('tractorFilters', {
-                                    ...preferences.tractorFilters,
-                                    searchText: e.target.value
-                                });
-                            }}
+                            onChange={e => debouncedSetSearchText(e.target.value)}
                         />
                         {searchText && (
-                            <button className="clear" onClick={() => {
-                                setSearchText('');
-                                updatePreferences('tractorFilters', {
-                                    ...preferences.tractorFilters,
-                                    searchText: ''
-                                });
-                            }}>
+                            <button className="clear" onClick={() => debouncedSetSearchText('')}>
                                 <i className="fas fa-times"></i>
                             </button>
                         )}

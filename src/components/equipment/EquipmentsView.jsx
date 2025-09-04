@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo, useCallback} from 'react';
 import EquipmentAddView from './EquipmentAddView';
 import EquipmentUtility from '../../utils/EquipmentUtility';
 import {EquipmentService} from '../../services/EquipmentService';
@@ -13,6 +13,14 @@ import './styles/EquipmentsView.css';
 import EquipmentIssueModal from './EquipmentIssueModal'
 import EquipmentCommentModal from './EquipmentCommentModal'
 import {RegionService} from '../../services/RegionService'
+
+function debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
@@ -125,46 +133,47 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         setShowOverview(false);
     }
 
+    const debouncedSetSearchText = useCallback(debounce((value) => {
+        setSearchText(value);
+        safeUpdateEquipmentFilter('searchText', value);
+    }, 300), [safeUpdateEquipmentFilter]);
 
-    const filteredEquipments = equipments
-        .filter(equipment => {
-            const matchesSearch = !searchText.trim() ||
-                equipment.identifyingNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                equipment.equipmentType?.toLowerCase().includes(searchText.toLowerCase());
-            const matchesPlant = !selectedPlant || equipment.assignedPlant === selectedPlant;
-            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(equipment.assignedPlant);
-            let matchesStatus = true;
-            if (statusFilter && statusFilter !== 'All Statuses') {
-                matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter)
-                    ? equipment.status === statusFilter
-                    : statusFilter === 'Past Due Service'
-                        ? EquipmentUtility.isServiceOverdue(equipment.lastServiceDate)
-                        : statusFilter === 'Open Issues'
-                            ? Number(equipment.openIssuesCount || 0) > 0
-                            : false;
-            }
-            return matchesSearch && matchesPlant && matchesRegion && matchesStatus;
-        })
-        .sort((a, b) => {
-            if (a.status === 'Active' && b.status !== 'Active') return -1;
-            if (a.status !== 'Active' && b.status === 'Active') return 1;
-            if (a.status === 'Spare' && b.status !== 'Spare') return -1;
-            if (a.status !== 'Spare' && b.status === 'Spare') return 1;
-            if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
-            if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
-            if (a.status === 'Retired' && b.status !== 'Retired') return 1;
-            if (a.status !== 'Retired' && b.status === 'Retired') return -1;
-            if (a.status !== b.status) return a.status.localeCompare(b.status);
-            const aNum = parseInt(a.identifyingNumber?.replace(/\D/g, '') || '0');
-            const bNum = parseInt(b.identifyingNumber?.replace(/\D/g, '') || '0');
-            return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.identifyingNumber || '').localeCompare(b.identifyingNumber || '');
-        });
-    ['Active', 'Spare', 'In Shop', 'Retired'].map(status => ({
-        status,
-        count: equipments.filter(e => e.status === status).length
-    }));
-    equipments.filter(e => EquipmentUtility.isServiceOverdue(e.lastServiceDate)).length;
-    equipments.filter(e => Number(e.openIssuesCount || 0) > 0).length;
+    const filteredEquipments = useMemo(() => {
+        return equipments
+            .filter(equipment => {
+                const matchesSearch = !searchText.trim() ||
+                    equipment.identifyingNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+                    equipment.equipmentType?.toLowerCase().includes(searchText.toLowerCase());
+                const matchesPlant = !selectedPlant || equipment.assignedPlant === selectedPlant;
+                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(equipment.assignedPlant);
+                let matchesStatus = true;
+                if (statusFilter && statusFilter !== 'All Statuses') {
+                    matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter)
+                        ? equipment.status === statusFilter
+                        : statusFilter === 'Past Due Service'
+                            ? EquipmentUtility.isServiceOverdue(equipment.lastServiceDate)
+                            : statusFilter === 'Open Issues'
+                                ? Number(equipment.openIssuesCount || 0) > 0
+                                : false;
+                }
+                return matchesSearch && matchesPlant && matchesRegion && matchesStatus;
+            })
+            .sort((a, b) => {
+                if (a.status === 'Active' && b.status !== 'Active') return -1;
+                if (a.status !== 'Active' && b.status === 'Active') return 1;
+                if (a.status === 'Spare' && b.status !== 'Spare') return -1;
+                if (a.status !== 'Spare' && b.status === 'Spare') return 1;
+                if (a.status === 'In Shop' && b.status !== 'In Shop') return -1;
+                if (a.status !== 'In Shop' && b.status === 'In Shop') return 1;
+                if (a.status === 'Retired' && b.status !== 'Retired') return 1;
+                if (a.status !== 'Retired' && b.status === 'Retired') return -1;
+                if (a.status !== b.status) return a.status.localeCompare(b.status);
+                const aNum = parseInt(a.identifyingNumber?.replace(/\D/g, '') || '0');
+                const bNum = parseInt(b.identifyingNumber?.replace(/\D/g, '') || '0');
+                return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : (a.identifyingNumber || '').localeCompare(b.identifyingNumber || '');
+            });
+    }, [equipments, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes]);
+
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -240,16 +249,10 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                     className="ios-search-input"
                                     placeholder="Search by identifying number or equipment type..."
                                     value={searchText}
-                                    onChange={e => {
-                                        setSearchText(e.target.value);
-                                        safeUpdateEquipmentFilter('searchText', e.target.value);
-                                    }}
+                                    onChange={e => debouncedSetSearchText(e.target.value)}
                                 />
                                 {searchText && (
-                                    <button className="clear" onClick={() => {
-                                        setSearchText('');
-                                        safeUpdateEquipmentFilter('searchText', '');
-                                    }}>
+                                    <button className="clear" onClick={() => debouncedSetSearchText('')}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
