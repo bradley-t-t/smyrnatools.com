@@ -49,6 +49,8 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [modalTractorId, setModalTractorId] = useState(null)
     const [modalTractorNumber, setModalTractorNumber] = useState('')
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
+    const [tractorsLoaded, setTractorsLoaded] = useState(false)
+    const [operatorsLoaded, setOperatorsLoaded] = useState(false)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
     const freightOptions = ['All Freight', 'Cement', 'Aggregate']
     const headerRef = useRef(null)
@@ -157,6 +159,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 return t
             })
             setTractors(processedData)
+            setTractorsLoaded(true)
             setTimeout(() => {
                 fixActiveTractorsWithoutOperator(processedData).catch(() => {})
             }, 0)
@@ -179,6 +182,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         try {
             const data = await OperatorService.fetchOperators();
             setOperators(Array.isArray(data) ? data : []);
+            setOperatorsLoaded(true)
         } catch (error) {
             console.error('Error fetching operators:', error);
             setOperators([]);
@@ -339,9 +343,11 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         })
     }, 300), [preferences.tractorFilters, updatePreferences])
 
+    const canShowUnassignedOverlay = tractorsLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
+
     return (
         <div className="dashboard-container tractors-view">
-            {unassignedActiveOperatorsCount > 0 && (
+            {canShowUnassignedOverlay && (
                 <div className="operators-availability-overlay">
                     {unassignedActiveOperatorsCount} active
                     operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned

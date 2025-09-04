@@ -50,6 +50,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [modalMixerId, setModalMixerId] = useState(null)
     const [modalMixerNumber, setModalMixerNumber] = useState('')
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
+    const [mixersLoaded, setMixersLoaded] = useState(false)
+    const [operatorsLoaded, setOperatorsLoaded] = useState(false)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
 
     const unassignedActiveOperatorsCount = useMemo(() => {
@@ -136,6 +138,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 return mixer
             })
             setMixers(processedData);
+            setMixersLoaded(true)
             setTimeout(() => {
                 fixActiveMixersWithoutOperator(processedData).catch(() => {})
             }, 0)
@@ -159,6 +162,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         try {
             const data = await OperatorService.fetchOperators();
             setOperators(Array.isArray(data) ? data : []);
+            setOperatorsLoaded(true)
         } catch (error) {
             setOperators([]);
         }
@@ -192,6 +196,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 }
             }))
             setMixers(mixersWithDetails);
+            setMixersLoaded(true)
             setTimeout(() => {
                 fixActiveMixersWithoutOperator(mixersWithDetails).catch(() => {})
             }, 0)
@@ -269,6 +274,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         return m
                     })
                     setMixers(processed);
+                    setMixersLoaded(true)
                 } catch {
                 }
                 setIsLoading(false);
@@ -366,9 +372,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         updateMixerFilter('searchText', value);
     }, 300), []);
 
+    const canShowUnassignedOverlay = mixersLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
+
     return (
         <div className="dashboard-container mixers-view">
-            {unassignedActiveOperatorsCount > 0 && (
+            {canShowUnassignedOverlay && (
                 <div className="operators-availability-overlay">
                     {unassignedActiveOperatorsCount} active
                     operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned
