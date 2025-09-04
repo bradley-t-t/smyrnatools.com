@@ -24,6 +24,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchText, setSearchText] = useState(preferences.equipmentFilters?.searchText || '');
+    const [searchInput, setSearchInput] = useState(preferences.equipmentFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.equipmentFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.equipmentFilters?.statusFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
@@ -54,6 +55,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         fetchAllData();
         if (preferences?.equipmentFilters) {
             setSearchText(preferences.equipmentFilters.searchText || '');
+            setSearchInput(preferences.equipmentFilters.searchText || '');
             setSelectedPlant(preferences.equipmentFilters.selectedPlant || '');
             setStatusFilter(preferences.equipmentFilters.statusFilter || '');
             setViewMode(preferences.equipmentFilters.viewMode || preferences.defaultViewMode || 'grid');
@@ -197,6 +199,157 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         }
     }
 
+    const content = useMemo(() => {
+        if (isLoading) {
+            return (
+                <div className="loading-container">
+                    <LoadingScreen message="Loading equipment..." inline={true}/>
+                </div>
+            )
+        }
+        if (filteredEquipments.length === 0) {
+            return (
+                <div className="no-results-container">
+                    <div className="no-results-icon">
+                        <i className="fas fa-truck-loading"></i>
+                    </div>
+                    <h3>No Equipment Found</h3>
+                    <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No equipment matches your search criteria." : "There is no equipment in the system yet."}</p>
+                    <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Equipment
+                    </button>
+                </div>
+            )
+        }
+        if (viewMode === 'grid') {
+            return (
+                <div className={`equipments-grid ${searchText ? 'search-results' : ''}`}>
+                    {filteredEquipments.map(equipment => (
+                        <EquipmentCard
+                            key={equipment.id}
+                            equipment={equipment}
+                            plantName={lookupGetPlantName(plants, equipment.assignedPlant)}
+                            onSelect={() => handleSelectEquipment(equipment.id)}
+                        />
+                    ))}
+                </div>
+            )
+        }
+        return (
+            <div className="equipments-list-table-container">
+                <table className="equipments-list-table">
+                    <colgroup>
+                        <col style={{width: '12%'}} />
+                        <col style={{width: '14%'}} />
+                        <col style={{width: '12%'}} />
+                        <col style={{width: '24%'}} />
+                        <col style={{width: '14%'}} />
+                        <col style={{width: '16%'}} />
+                        <col style={{width: '8%'}} />
+                    </colgroup>
+                    <tbody>
+                    {filteredEquipments.map(equipment => {
+                        const issuesCount = Number(equipment.openIssuesCount || 0)
+                        const commentsCount = Number(equipment.commentsCount || 0)
+                        return (
+                            <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)}
+                                style={{cursor: 'pointer'}}>
+                                <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
+                                <td>{equipment.identifyingNumber ? equipment.identifyingNumber : "---"}</td>
+                                <td>
+                                    <span
+                                        className="item-status-dot"
+                                        style={{
+                                            display: 'inline-block',
+                                            verticalAlign: 'middle',
+                                            marginRight: '8px',
+                                            backgroundColor:
+                                                equipment.status === 'Active' ? 'var(--status-active)' :
+                                                    equipment.status === 'Spare' ? 'var(--status-spare)' :
+                                                        equipment.status === 'In Shop' ? 'var(--status-inshop)' :
+                                                            equipment.status === 'Retired' ? 'var(--status-retired)' :
+                                                                'var(--accent)',
+                                        }}
+                                    ></span>
+                                    {equipment.status ? equipment.status : "---"}
+                                </td>
+                                <td>{equipment.equipmentType ? equipment.equipmentType : "---"}</td>
+                                <td>
+                                    {(() => {
+                                        const rating = Math.round(equipment.cleanlinessRating || 0)
+                                        const stars = rating > 0 ? rating : 1
+                                        return Array.from({length: stars}).map((_, i) => (
+                                            <i key={i} className="fas fa-star"
+                                               style={{color: 'var(--accent)'}}></i>
+                                        ))
+                                    })()}
+                                </td>
+                                <td>
+                                    {(() => {
+                                        const rating = Math.round(equipment.conditionRating || 0)
+                                        const stars = rating > 0 ? rating : 1
+                                        return Array.from({length: stars}).map((_, i) => (
+                                            <i key={i} className="fas fa-star"
+                                               style={{color: 'var(--accent)'}}></i>
+                                        ))
+                                    })()}
+                                </td>
+                                <td>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setModalEquipmentId(equipment.id)
+                                                setModalEquipmentNumber(equipment.identifyingNumber || '')
+                                                setShowIssueModal(true)
+                                            }}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                padding: 0,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                cursor: 'pointer'
+                                            }}
+                                            title="View issues"
+                                        >
+                                            <i className="fas fa-tools"
+                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                            <span>{issuesCount}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setModalEquipmentId(equipment.id)
+                                                setModalEquipmentNumber(equipment.identifyingNumber || '')
+                                                setShowCommentModal(true)
+                                            }}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                padding: 0,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                cursor: 'pointer'
+                                            }}
+                                            title="View comments"
+                                        >
+                                            <i className="fas fa-comment"
+                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                            <span>{commentsCount}</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )
+                    })}
+                    </tbody>
+                </table>
+            </div>
+        )
+    }, [isLoading, filteredEquipments, viewMode, searchText, selectedPlant, statusFilter, plants])
+
     return (
         <div className="dashboard-container equipments-view">
             {selectedEquipment ? (
@@ -225,11 +378,11 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                     type="text"
                                     className="ios-search-input"
                                     placeholder="Search by identifying number or equipment type..."
-                                    value={searchText}
-                                    onChange={e => debouncedSetSearchText(e.target.value)}
+                                    value={searchInput}
+                                    onChange={e => { setSearchInput(e.target.value); debouncedSetSearchText(e.target.value) }}
                                 />
-                                {searchText && (
-                                    <button className="clear" onClick={() => debouncedSetSearchText('')}>
+                                {searchInput && (
+                                    <button className="clear" onClick={() => { setSearchInput(''); debouncedSetSearchText('') }}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
@@ -298,6 +451,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                 {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
                                     <button className="filter-reset-button" onClick={() => {
                                         setSearchText('')
+                                        setSearchInput('')
                                         setSelectedPlant('')
                                         setStatusFilter('')
                                         resetEquipmentFilters({keepViewMode: true, currentViewMode: viewMode})
@@ -322,147 +476,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                             </div>
                         )}
                     </div>
-                    <div className="content-container">
-                        {isLoading ? (
-                            <div className="loading-container">
-                                <LoadingScreen message="Loading equipment..." inline={true}/>
-                            </div>
-                        ) : filteredEquipments.length === 0 ? (
-                            <div className="no-results-container">
-                                <div className="no-results-icon">
-                                    <i className="fas fa-truck-loading"></i>
-                                </div>
-                                <h3>No Equipment Found</h3>
-                                <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No equipment matches your search criteria." : "There is no equipment in the system yet."}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Equipment
-                                </button>
-                            </div>
-                        ) : viewMode === 'grid' ? (
-                            <div className={`equipments-grid ${searchText ? 'search-results' : ''}`}>
-                                {filteredEquipments.map(equipment => (
-                                    <EquipmentCard
-                                        key={equipment.id}
-                                        equipment={equipment}
-                                        plantName={lookupGetPlantName(plants, equipment.assignedPlant)}
-                                        onSelect={() => handleSelectEquipment(equipment.id)}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="equipments-list-table-container">
-                                <table className="equipments-list-table">
-                                    <colgroup>
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '14%'}} />
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '24%'}} />
-                                        <col style={{width: '14%'}} />
-                                        <col style={{width: '16%'}} />
-                                        <col style={{width: '8%'}} />
-                                    </colgroup>
-                                    <tbody>
-                                    {filteredEquipments.map(equipment => {
-                                        const issuesCount = Number(equipment.openIssuesCount || 0)
-                                        const commentsCount = Number(equipment.commentsCount || 0)
-                                        return (
-                                            <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)}
-                                                style={{cursor: 'pointer'}}>
-                                                <td>{equipment.assignedPlant ? equipment.assignedPlant : "---"}</td>
-                                                <td>{equipment.identifyingNumber ? equipment.identifyingNumber : "---"}</td>
-                                                <td>
-                                                        <span
-                                                            className="item-status-dot"
-                                                            style={{
-                                                                display: 'inline-block',
-                                                                verticalAlign: 'middle',
-                                                                marginRight: '8px',
-                                                                backgroundColor:
-                                                                    equipment.status === 'Active' ? 'var(--status-active)' :
-                                                                        equipment.status === 'Spare' ? 'var(--status-spare)' :
-                                                                            equipment.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                                equipment.status === 'Retired' ? 'var(--status-retired)' :
-                                                                                    'var(--accent)',
-                                                            }}
-                                                        ></span>
-                                                    {equipment.status ? equipment.status : "---"}
-                                                </td>
-                                                <td>{equipment.equipmentType ? equipment.equipmentType : "---"}</td>
-                                                <td>
-                                                    {(() => {
-                                                        const rating = Math.round(equipment.cleanlinessRating || 0)
-                                                        const stars = rating > 0 ? rating : 1
-                                                        return Array.from({length: stars}).map((_, i) => (
-                                                            <i key={i} className="fas fa-star"
-                                                               style={{color: 'var(--accent)'}}></i>
-                                                        ))
-                                                    })()}
-                                                </td>
-                                                <td>
-                                                    {(() => {
-                                                        const rating = Math.round(equipment.conditionRating || 0)
-                                                        const stars = rating > 0 ? rating : 1
-                                                        return Array.from({length: stars}).map((_, i) => (
-                                                            <i key={i} className="fas fa-star"
-                                                               style={{color: 'var(--accent)'}}></i>
-                                                        ))
-                                                    })()}
-                                                </td>
-                                                <td>
-                                                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setModalEquipmentId(equipment.id)
-                                                                setModalEquipmentNumber(equipment.identifyingNumber || '')
-                                                                setShowIssueModal(true)
-                                                            }}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                padding: 0,
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                            title="View issues"
-                                                        >
-                                                            <i className="fas fa-tools"
-                                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                            <span>{issuesCount}</span>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setModalEquipmentId(equipment.id)
-                                                                setModalEquipmentNumber(equipment.identifyingNumber || '')
-                                                                setShowCommentModal(true)
-                                                            }}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                padding: 0,
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                            title="View comments"
-                                                        >
-                                                            <i className="fas fa-comment"
-                                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                            <span>{commentsCount}</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                    <div className="content-container">{content}</div>
                     {showAddSheet && (
                         <EquipmentAddView
                             plants={plants}

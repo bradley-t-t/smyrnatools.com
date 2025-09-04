@@ -1,9 +1,7 @@
-// TractorCommentModal.jsx
 import React, {useEffect, useState} from 'react';
 import './styles/TractorCommentModal.css';
 import {TractorService} from '../../services/TractorService';
 import LoadingScreen from '../common/LoadingScreen';
-import {supabase} from '../../services/DatabaseService';
 import {UserService} from '../../services/UserService';
 
 function TractorCommentModal({tractorId, tractorNumber, onClose}) {
@@ -26,7 +24,7 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
             setComments(fetchedComments);
             const authorIds = [...new Set(fetchedComments.map(comment => comment.author))];
             fetchUserNames(authorIds);
-        } catch (err) {
+        } catch {
             setError('Failed to load comments. Please try again.');
         } finally {
             setIsLoading(false);
@@ -38,9 +36,8 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
         for (const authorId of authorIds) {
             if (authorId) {
                 try {
-                    const displayName = await UserService.getUserDisplayName(authorId);
-                    namesMap[authorId] = displayName;
-                } catch (error) {
+                    namesMap[authorId] = await UserService.getUserDisplayName(authorId);
+                } catch {
                     namesMap[authorId] = 'Unknown User';
                 }
             }
@@ -49,33 +46,31 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
     };
 
     const handleDeleteComment = async (commentId) => {
-        if (!window.confirm('Are you sure you want to delete this comment?')) {
-            return;
-        }
+        if (!window.confirm('Are you sure you want to delete this comment?')) return;
         try {
             await TractorService.deleteComment(commentId);
             fetchComments();
-        } catch (err) {
+        } catch {
             setError('Failed to delete comment. Please try again.');
         }
     };
 
     const handleAddComment = async (e) => {
         e.preventDefault();
-        if (!newComment.trim()) {
-            return;
-        }
+        if (!newComment.trim()) return;
         setIsSubmitting(true);
         try {
-            const {data: {user}} = await supabase.auth.getUser();
-            const userId = user?.id || sessionStorage.getItem('userId');
+            const user = await UserService.getCurrentUser();
+            const userId = typeof user === 'object' && user ? user.id : user;
             if (!userId) {
-                throw new Error('You must be logged in to add comments');
+                setError('You must be logged in to add comments');
+                setIsSubmitting(false);
+                return;
             }
             await TractorService.addComment(tractorId, newComment, userId);
             setNewComment('');
             fetchComments();
-        } catch (err) {
+        } catch {
             setError('Failed to add comment. Please try again.');
         } finally {
             setIsSubmitting(false);
@@ -88,9 +83,7 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
     };
 
     const handleBackdropClick = (e) => {
-        if (e.target.classList.contains('comment-modal-backdrop')) {
-            onClose();
-        }
+        if (e.target.classList.contains('comment-modal-backdrop')) onClose();
     };
 
     return (
@@ -102,10 +95,8 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
-
                 <div className="comment-modal-content">
                     {error && <div className="error-message">{error}</div>}
-
                     <div className="add-comment-section">
                         <h3>Add New Comment</h3>
                         <form onSubmit={handleAddComment}>
@@ -116,16 +107,11 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                                 placeholder="Write your comment here..."
                                 disabled={isSubmitting}
                             ></textarea>
-                            <button
-                                type="submit"
-                                className="add-comment-button"
-                                disabled={isSubmitting || !newComment.trim()}
-                            >
+                            <button type="submit" className="add-comment-button" disabled={isSubmitting || !newComment.trim()}>
                                 {isSubmitting ? 'Adding...' : 'Add Comment'}
                             </button>
                         </form>
                     </div>
-
                     <div className="comments-list">
                         <h3>Comments History</h3>
                         {isLoading ? (
@@ -142,15 +128,9 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                             comments.map(comment => (
                                 <div key={comment.id} className="comment-item">
                                     <div className="comment-metadata">
-                                        <span
-                                            className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
-                                        <span className="comment-date"
-                                              style={{marginLeft: '8px'}}>{formatDate(comment.createdAt)}</span>
-                                        <button
-                                            className="delete-comment-button"
-                                            onClick={() => handleDeleteComment(comment.id)}
-                                            title="Delete comment"
-                                        >
+                                        <span className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
+                                        <span className="comment-date" style={{marginLeft: '8px'}}>{formatDate(comment.createdAt)}</span>
+                                        <button className="delete-comment-button" onClick={() => handleDeleteComment(comment.id)} title="Delete comment">
                                             <i className="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -160,7 +140,6 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                         )}
                     </div>
                 </div>
-
                 <div className="comment-modal-footer">
                     <button className="cancel-button" onClick={onClose}>Close</button>
                 </div>

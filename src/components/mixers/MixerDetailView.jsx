@@ -1,14 +1,12 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {MixerService} from '../../services/MixerService'
 import {PlantService} from '../../services/PlantService'
 import {OperatorService} from '../../services/OperatorService'
 import {UserService} from '../../services/UserService'
-import {supabase} from '../../services/DatabaseService'
 import {usePreferences} from '../../app/context/PreferencesContext'
 import MixerHistoryView from './MixerHistoryView'
 import MixerCommentModal from './MixerCommentModal'
 import MixerIssueModal from './MixerIssueModal'
-import MixerCard from './MixerCard'
 import OperatorSelectModal from './OperatorSelectModal'
 import './styles/MixerDetailView.css'
 import MixerUtility from '../../utils/MixerUtility'
@@ -50,7 +48,6 @@ function MixerDetailView({mixerId, onClose}) {
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null)
     const [comments, setComments] = useState([])
     const [issues, setIssues] = useState([])
-    const mixerCardRef = useRef(null)
 
     useEffect(() => {
         async function fetchData() {
@@ -113,21 +110,12 @@ function MixerDetailView({mixerId, onClose}) {
         async function checkPlantRestriction() {
             if (isLoading || !mixer) return
             try {
-                const userId = await UserService.getCurrentUser()
+                const user = await UserService.getCurrentUser()
+                const userId = typeof user === 'object' && user?.id ? user.id : user
                 if (!userId) return
-                const hasPermission = await UserService.hasPermission(userId, 'mixers.bypass.plantrestriction')
-                if (hasPermission) return setCanEditMixer(true)
-                const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single()
-                setUserProfile(profileData)
-                if (profileData && mixer) {
-                    const isSamePlant = profileData.plant_code === mixer.assignedPlant
-                    setCanEditMixer(isSamePlant)
-                    if (!isSamePlant) {
-                        setPlantRestrictionReason(
-                            `You cannot edit or verify this mixer because it belongs to plant ${mixer.assignedPlant} and you are assigned to plant ${profileData.plant_code}.`
-                        )
-                    }
-                }
+                const {allowed, reason} = await UserService.canEditMixerForPlant(userId, mixer.assignedPlant)
+                setCanEditMixer(!!allowed)
+                setPlantRestrictionReason(reason || '')
             } catch (error) {
             }
         }
@@ -240,7 +228,7 @@ function MixerDetailView({mixerId, onClose}) {
         if (!mixer) return
         if (!showDeleteConfirmation) return setShowDeleteConfirmation(true)
         try {
-            await supabase.from('mixers').delete().eq('id', mixer.id)
+            await MixerService.deleteMixer(mixer.id)
             alert('Mixer deleted successfully')
             onClose()
         } catch (error) {
@@ -278,19 +266,19 @@ function MixerDetailView({mixerId, onClose}) {
             }
             let userObj = await UserService.getCurrentUser()
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
-            const now = new Date().toISOString()
-            const {data, error} = await supabase
-                .from('mixers')
-                .update({updated_last: now, updated_by: userId})
-                .eq('id', mixer.id)
-                .select()
-            if (error) throw new Error(`Failed to verify mixer: ${error.message}`)
-            if (data?.length) {
-                setMixer(Mixer.fromApiFormat(data[0]))
-                setMessage('Mixer verified successfully!')
-                setTimeout(() => setMessage(''), 3000)
-            }
+            const verified = await MixerService.verifyMixer(mixer.id, userId)
+            setMixer(verified)
+            setMessage('Mixer verified successfully!')
+            setTimeout(() => setMessage(''), 3000)
             setHasUnsavedChanges(false)
+            if (verified.updatedBy) {
+                try {
+                    const userName = await UserService.getUserDisplayName(verified.updatedBy)
+                    setUpdatedByEmail(userName)
+                } catch {
+                    setUpdatedByEmail('Unknown User')
+                }
+            }
         } catch (error) {
             console.error('Error verifying mixer:', error)
             alert(`Error verifying mixer: ${error.message}`)
@@ -307,61 +295,66 @@ function MixerDetailView({mixerId, onClose}) {
     }
 
     function getOperatorName(operatorId) {
-        if (!operatorId || operatorId === '0') return 'None';
-        const operator = operators.find(op => op.employeeId === operatorId);
-        return operator ? (operator.position ? `${operator.name} (${operator.position})` : operator.name) : 'Unknown';
+        if (!operatorId || operatorId === '0') return 'None'
+        const operator = operators.find(op => op.employeeId === operatorId)
+        return operator ? (operator.position ? `${operator.name} (${operator.position})` : operator.name) : 'Unknown'
     }
 
     function getPlantName(plantCode) {
-        const plant = plants.find(p => p.plantCode === plantCode);
-        return plant ? plant.plantName : plantCode;
+        const plant = plants.find(p => p.plantCode === plantCode)
+        return plant ? plant.plantName : plantCode
     }
 
     function formatDate(date) {
-        if (!date) return '';
-        return date instanceof Date ? date.toISOString().split('T')[0] : date;
+        if (!date) return ''
+        return date instanceof Date ? date.toISOString().split('T')[0] : date
     }
 
     async function fetchOperatorsForModal() {
-        let dbOperators = await OperatorService.fetchOperators();
+        let dbOperators = await OperatorService.fetchOperators()
         if (lastUnassignedOperatorId) {
-            const unassignedOperator = dbOperators.find(op => op.employeeId === lastUnassignedOperatorId);
+            const unassignedOperator = dbOperators.find(op => op.employeeId === lastUnassignedOperatorId)
             if (unassignedOperator) {
-                dbOperators = [...dbOperators, unassignedOperator];
+                dbOperators = [...dbOperators, unassignedOperator]
             }
         }
-        setOperatorModalOperators(dbOperators);
+        setOperatorModalOperators(dbOperators)
     }
 
     async function refreshOperators() {
-        const updatedOperators = await OperatorService.fetchOperators();
-        setOperators(updatedOperators);
+        const updatedOperators = await OperatorService.fetchOperators()
+        setOperators(updatedOperators)
     }
 
     useEffect(() => {
         async function fetchCommentsAndIssues() {
-            if (!mixerId) return;
-            const {data: commentData} = await supabase
-                .from('mixers_comments')
-                .select('*')
-                .eq('mixer_id', mixerId)
-                .order('created_at', {ascending: false});
-            setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
-            const {data: issueData} = await supabase
-                .from('mixers_maintenance')
-                .select('*')
-                .eq('mixer_id', mixerId)
-                .order('created_at', {ascending: false});
-            setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
+            if (!mixerId) return
+            try {
+                const [commentData, issueData] = await Promise.all([
+                    MixerService.fetchComments(mixerId).catch(() => []),
+                    MixerService.fetchIssues(mixerId).catch(() => [])
+                ])
+                const normalizedComments = Array.isArray(commentData) ? commentData.map(c => ({
+                    id: c.id,
+                    author: c.author,
+                    text: c.text,
+                    created_at: c.createdAt || c.created_at
+                })) : []
+                setComments(normalizedComments)
+                setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : [])
+            } catch {
+                setComments([])
+                setIssues([])
+            }
         }
 
-        fetchCommentsAndIssues();
-    }, [mixerId]);
+        fetchCommentsAndIssues()
+    }, [mixerId])
 
     function handleExportEmail() {
-        if (!mixer) return;
-        const hasComments = comments && comments.length > 0;
-        const openIssues = (issues || []).filter(issue => !issue.time_completed);
+        if (!mixer) return
+        const hasComments = comments && comments.length > 0
+        const openIssues = (issues || []).filter(issue => !issue.time_completed)
         let summary = `Mixer Summary for Truck #${mixer.truckNumber || ''}
 
 Basic Information
@@ -379,7 +372,7 @@ Year: ${mixer.year || ''}
 Comments
 ${hasComments
             ? comments.map(c =>
-                `- ${c.author || 'Unknown'}: ${c.comment || c.text} (${new Date(c.created_at || c.createdAt).toLocaleString()})`
+                `- ${c.author || 'Unknown'}: ${c.text || ''} (${new Date(c.created_at).toLocaleString()})`
             ).join('\n')
             : 'No comments.'}
 
@@ -389,10 +382,10 @@ ${openIssues.length > 0
                 `- ${i.issue || i.title || i.description || ''} (${new Date(i.time_created || i.created_at).toLocaleString()})`
             ).join('\n')
             : 'No open issues.'}
-`;
-        const subject = encodeURIComponent(`Mixer Summary for Truck #${mixer.truckNumber || ''}`);
-        const body = encodeURIComponent(summary);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+`
+        const subject = encodeURIComponent(`Mixer Summary for Truck #${mixer.truckNumber || ''}`)
+        const body = encodeURIComponent(summary)
+        window.location.href = `mailto:?subject=${subject}&body=${body}`
     }
 
     if (isLoading) {
@@ -416,7 +409,7 @@ ${openIssues.length > 0
                     <LoadingScreen message="Loading mixer details..." inline={true}/>
                 </div>
             </div>
-        );
+        )
     }
 
     if (!mixer) {
@@ -434,7 +427,7 @@ ${openIssues.length > 0
                     <button className="primary-button" onClick={onClose}>Return to Mixers</button>
                 </div>
             </div>
-        );
+        )
     }
 
     return (
@@ -519,15 +512,16 @@ ${openIssues.length > 0
                                         className="verification-value">{mixer.createdAt ? new Date(mixer.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
-                            <div className="verification-item">
+                            <div className="verification-item"
+                                 style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'var(--success)' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? 'var(--error)' : 'var(--warning)') : 'var(--error)'}}>
                                 <div className="verification-icon"
-                                     style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? '#10b981' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                     style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'var(--success)' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? 'var(--error)' : 'var(--warning)') : 'var(--error)'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
                                     <span className="verification-value"
-                                          style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'inherit' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                          style={{color: mixer.updatedLast ? (Mixer.ensureInstance(mixer).isVerified() ? 'inherit' : new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? 'var(--error)' : 'var(--warning)') : 'var(--error)'}}>
                                         {mixer.updatedLast ? `${new Date(mixer.updatedLast).toLocaleString()}${!Mixer.ensureInstance(mixer).isVerified() ? (new Date(mixer.updatedAt) > new Date(mixer.updatedLast) ? ' (Changes have been made)' : ' (It is a new week)') : ''}` : 'Never verified'}
                                     </span>
                                 </div>
@@ -535,13 +529,13 @@ ${openIssues.length > 0
                             <div className="verification-item"
                                  title={`Last Updated: ${new Date(mixer.updatedAt).toLocaleString()}`}>
                                 <div className="verification-icon"
-                                     style={{color: mixer.updatedBy ? '#10b981' : '#ef4444'}}>
+                                     style={{color: mixer.updatedBy ? 'var(--success)' : 'var(--error)'}}>
                                     <i className="fas fa-user-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Verified By</span>
                                     <span className="verification-value"
-                                          style={{color: mixer.updatedBy ? 'inherit' : '#ef4444'}}>{mixer.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
+                                          style={{color: mixer.updatedBy ? 'inherit' : 'var(--error)'}}>{mixer.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
                                 </div>
                             </div>
                         </div>
@@ -559,7 +553,7 @@ ${openIssues.length > 0
                     <div className="card-header">
                         <h2>Mixer Information</h2>
                     </div>
-                    <p className="edit-instructions">{canEditMixer ? "You can make changes below. Remember to save your changes." : "You are in read-only mode and cannot make changes to this mixer."}</p>
+                    <p className="edit-instructions">{canEditMixer ? 'You can make changes below. Remember to save your changes.' : 'You are in read-only mode and cannot make changes to this mixer.'}</p>
                     <div className="form-sections">
                         <div className="form-section basic-info">
                             <h3>Basic Information</h3>
@@ -616,8 +610,8 @@ ${openIssues.length > 0
                                         className="operator-select-button form-control"
                                         onClick={async () => {
                                             if (canEditMixer) {
-                                                await fetchOperatorsForModal();
-                                                setShowOperatorModal(true);
+                                                await fetchOperatorsForModal()
+                                                setShowOperatorModal(true)
                                             }
                                         }}
                                         type="button"
@@ -625,7 +619,7 @@ ${openIssues.length > 0
                                         style={!canEditMixer ? {
                                             cursor: 'not-allowed',
                                             opacity: 0.8,
-                                            backgroundColor: '#f8f9fa'
+                                            backgroundColor: 'var(--bg-secondary)'
                                         } : {}}
                                     >
                                         <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>
@@ -639,31 +633,31 @@ ${openIssues.length > 0
                                                 title="Unassign Operator"
                                                 onClick={async () => {
                                                     try {
-                                                        const prevOperator = assignedOperator;
+                                                        const prevOperator = assignedOperator
                                                         await handleSave({
                                                             assignedOperator: null,
                                                             status: 'Spare',
                                                             prevAssignedOperator: prevOperator
-                                                        });
-                                                        setAssignedOperator(null);
-                                                        setStatus('Spare');
-                                                        setLastUnassignedOperatorId(prevOperator);
-                                                        await refreshOperators();
-                                                        await fetchOperatorsForModal();
-                                                        const updatedMixer = await MixerService.fetchMixerById(mixerId);
-                                                        setMixer(updatedMixer);
-                                                        setMessage('Operator unassigned and status set to Spare');
-                                                        setTimeout(() => setMessage(''), 3000);
+                                                        })
+                                                        setAssignedOperator(null)
+                                                        setStatus('Spare')
+                                                        setLastUnassignedOperatorId(prevOperator)
+                                                        await refreshOperators()
+                                                        await fetchOperatorsForModal()
+                                                        const updatedMixer = await MixerService.fetchMixerById(mixerId)
+                                                        setMixer(updatedMixer)
+                                                        setMessage('Operator unassigned and status set to Spare')
+                                                        setTimeout(() => setMessage(''), 3000)
                                                         if (showOperatorModal) {
-                                                            setShowOperatorModal(false);
+                                                            setShowOperatorModal(false)
                                                             setTimeout(() => {
-                                                                setShowOperatorModal(true);
-                                                            }, 0);
+                                                                setShowOperatorModal(true)
+                                                            }, 0)
                                                         }
                                                     } catch (error) {
-                                                        console.error('Error unassigning operator:', error);
-                                                        setMessage('Error unassigning operator. Please try again.');
-                                                        setTimeout(() => setMessage(''), 3000);
+                                                        console.error('Error unassigning operator:', error)
+                                                        setMessage('Error unassigning operator. Please try again.')
+                                                        setTimeout(() => setMessage(''), 3000)
                                                     }
                                                 }}
                                                 type="button"
@@ -680,26 +674,26 @@ ${openIssues.length > 0
                                                             await handleSave({
                                                                 assignedOperator: lastUnassignedOperatorId,
                                                                 status: 'Active'
-                                                            });
-                                                            setAssignedOperator(lastUnassignedOperatorId);
-                                                            setStatus('Active');
-                                                            setLastUnassignedOperatorId(null);
-                                                            await refreshOperators();
-                                                            await fetchOperatorsForModal();
-                                                            const updatedMixer = await MixerService.fetchMixerById(mixerId);
-                                                            setMixer(updatedMixer);
-                                                            setMessage('Operator re-assigned and status set to Active');
-                                                            setTimeout(() => setMessage(''), 3000);
+                                                            })
+                                                            setAssignedOperator(lastUnassignedOperatorId)
+                                                            setStatus('Active')
+                                                            setLastUnassignedOperatorId(null)
+                                                            await refreshOperators()
+                                                            await fetchOperatorsForModal()
+                                                            const updatedMixer = await MixerService.fetchMixerById(mixerId)
+                                                            setMixer(updatedMixer)
+                                                            setMessage('Operator re-assigned and status set to Active')
+                                                            setTimeout(() => setMessage(''), 3000)
                                                         } catch (error) {
-                                                            console.error('Error undoing unassign:', error);
-                                                            setMessage('Error undoing unassign. Please try again.');
-                                                            setTimeout(() => setMessage(''), 3000);
+                                                            console.error('Error undoing unassign:', error)
+                                                            setMessage('Error undoing unassign. Please try again.')
+                                                            setTimeout(() => setMessage(''), 3000)
                                                         }
                                                     }}
                                                     type="button"
                                                     style={{
-                                                        backgroundColor: '#10b981',
-                                                        color: '#fff',
+                                                        backgroundColor: 'var(--success)',
+                                                        color: 'var(--text-light)',
                                                         marginLeft: '8px',
                                                         height: '38px',
                                                         minWidth: '140px',
@@ -714,35 +708,36 @@ ${openIssues.length > 0
                                                     Undo
                                                 </button>
                                             )
-                                        ))}
+                                        )
+                                    )}
                                 </div>
                                 {showOperatorModal && (
                                     <OperatorSelectModal
                                         isOpen={showOperatorModal}
                                         onClose={() => setShowOperatorModal(false)}
                                         onSelect={async operatorId => {
-                                            const newOperator = operatorId === '0' ? '' : operatorId;
-                                            const newStatus = newOperator ? 'Active' : status;
-                                            setShowOperatorModal(false);
+                                            const newOperator = operatorId === '0' ? '' : operatorId
+                                            const newStatus = newOperator ? 'Active' : status
+                                            setShowOperatorModal(false)
                                             if (newOperator) {
                                                 try {
                                                     await handleSave({
                                                         assignedOperator: newOperator,
                                                         status: newStatus
-                                                    });
-                                                    setAssignedOperator(newOperator);
-                                                    setStatus(newStatus);
-                                                    setLastUnassignedOperatorId(null);
-                                                    await refreshOperators();
-                                                    const updatedMixer = await MixerService.fetchMixerById(mixerId);
-                                                    setMixer(updatedMixer);
-                                                    setMessage('Operator assigned and status set to Active');
-                                                    setTimeout(() => setMessage(''), 3000);
-                                                    setHasUnsavedChanges(false);
+                                                    })
+                                                    setAssignedOperator(newOperator)
+                                                    setStatus(newStatus)
+                                                    setLastUnassignedOperatorId(null)
+                                                    await refreshOperators()
+                                                    const updatedMixer = await MixerService.fetchMixerById(mixerId)
+                                                    setMixer(updatedMixer)
+                                                    setMessage('Operator assigned and status set to Active')
+                                                    setTimeout(() => setMessage(''), 3000)
+                                                    setHasUnsavedChanges(false)
                                                 } catch (error) {
-                                                    console.error('Error assigning operator:', error);
-                                                    setMessage('Error assigning operator. Please try again.');
-                                                    setTimeout(() => setMessage(''), 3000);
+                                                    console.error('Error assigning operator:', error)
+                                                    setMessage('Error assigning operator. Please try again.')
+                                                    setTimeout(() => setMessage(''), 3000)
                                                 }
                                             }
                                         }}
@@ -752,7 +747,7 @@ ${openIssues.length > 0
                                         readOnly={!canEditMixer}
                                         operators={operatorModalOperators}
                                         onRefresh={async () => {
-                                            await fetchOperatorsForModal();
+                                            await fetchOperatorsForModal()
                                         }}
                                     />
                                 )}
@@ -786,7 +781,7 @@ ${openIssues.length > 0
                                                     onClick={() => canEditMixer && setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
                                                     aria-label={`Rate ${star} of 5 stars`} disabled={!canEditMixer}>
                                                 <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
-                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
+                                                   style={star <= cleanlinessRating ? {color: 'var(--accent)'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>
@@ -864,7 +859,7 @@ ${openIssues.length > 0
                 </div>
             )}
         </div>
-    );
+    )
 }
 
 export default MixerDetailView

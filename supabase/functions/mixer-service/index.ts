@@ -769,6 +769,34 @@ Deno.serve(async (req) => {
                 });
                 return new Response(JSON.stringify({data}), {headers: corsHeaders});
             }
+            case "search-by-vin": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders});
+                }
+                const query = typeof body?.query === "string" ? body.query.trim() : "";
+                if (!query) return new Response(JSON.stringify({error: "Search query is required"}), {status: 400, headers: corsHeaders});
+                const {data, error} = await supabase.from("mixers").select("*").ilike("vin", `%${query}%`).order("truck_number", {ascending: true});
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
+            }
+            case "verify": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders});
+                }
+                const id = typeof body?.id === "string" ? body.id : (typeof body?.mixerId === "string" ? body.mixerId : null);
+                let userId = typeof body?.userId === "string" && body.userId ? body.userId : (req.headers.get("X-User-Id") || null);
+                if (!id) return new Response(JSON.stringify({error: "Mixer ID is required"}), {status: 400, headers: corsHeaders});
+                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                const {data, error} = await supabase.from("mixers").update({updated_last: nowIso(), updated_by: userId}).eq("id", id).select().maybeSingle();
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                return new Response(JSON.stringify({data}), {headers: corsHeaders});
+            }
             default:
                 return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
                     status: 404,

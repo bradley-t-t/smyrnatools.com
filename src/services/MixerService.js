@@ -20,6 +20,16 @@ class MixerServiceImpl {
         return this.getAllMixers()
     }
 
+    static _attachIsVerified(m) {
+        if (!m) return m
+        if (typeof m.isVerified !== 'function') {
+            m.isVerified = function (latestHistoryDate) {
+                return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate)
+            }
+        }
+        return m
+    }
+
     static async getMixerById(id) {
         ValidationUtility.requireUUID(id, 'Mixer ID is required')
         const {res, json} = await APIUtility.post('/mixer-service/fetch-by-id', {id})
@@ -33,10 +43,7 @@ class MixerServiceImpl {
         ValidationUtility.requireUUID(id, 'Invalid mixer ID')
         const mixer = await this.getMixerById(id)
         if (!mixer) return null
-        mixer.isVerified = function (latestHistoryDate) {
-            return MixerUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy, latestHistoryDate ?? this.latestHistoryDate)
-        }
-        return mixer
+        return this._attachIsVerified(mixer)
     }
 
     static async getLatestHistoryDate(mixerId) {
@@ -146,6 +153,13 @@ class MixerServiceImpl {
         const {res, json} = await APIUtility.post('/mixer-service/search-by-truck-number', {query: query.trim()})
         if (!res.ok) throw new Error(json?.error || 'Failed to search mixers')
         return (json?.data ?? []).map(mixer => new Mixer(mixer))
+    }
+
+    static async searchMixersByVin(query) {
+        if (!query?.trim()) throw new Error('Search query is required')
+        const {res, json} = await APIUtility.post('/mixer-service/search-by-vin', {query: query.trim()})
+        if (!res.ok) throw new Error(json?.error || 'Failed to search mixers by VIN')
+        return (json?.data ?? []).map(row => this._attachIsVerified(new Mixer(row)))
     }
 
     static async getMixersNeedingService(dayThreshold = 30) {
@@ -263,6 +277,44 @@ class MixerServiceImpl {
         const {res, json} = await APIUtility.post('/mixer-service/delete-issue', {issueId})
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete issue')
         return true
+    }
+
+    static async fetchMixersWithDetails() {
+        const mixers = await this.getAllMixers()
+        const enriched = await Promise.all(mixers.map(async m => {
+            const [comments, issues] = await Promise.all([
+                this.fetchComments(m.id).catch(() => []),
+                this.fetchIssues(m.id).catch(() => [])
+            ])
+            const merged = {...m, comments, issues}
+            return this._attachIsVerified(merged)
+        }))
+        return enriched
+    }
+
+    static async ensureSpareIfNoOperator(mixersList) {
+        const toUpdate = (mixersList || []).filter(m => m.status === 'Active' && (!m.assignedOperator || m.assignedOperator === '0'))
+        for (const m of toUpdate) {
+            try {
+                await this.updateMixer(m.id, {...m, status: 'Spare'})
+                m.status = 'Spare'
+            } catch {
+            }
+        }
+        return mixersList
+    }
+
+    static async verifyMixer(mixerId, userId) {
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
+        if (!userId) {
+            const user = await UserService.getCurrentUser()
+            userId = typeof user === 'object' && user !== null ? user.id : user
+        }
+        if (!userId) throw new Error('User ID is required')
+        const {res, json} = await APIUtility.post('/mixer-service/verify', {id: mixerId, userId})
+        if (!res.ok) throw new Error(json?.error || 'Failed to verify mixer')
+        const mixer = new Mixer(json?.data)
+        return this._attachIsVerified(mixer)
     }
 }
 

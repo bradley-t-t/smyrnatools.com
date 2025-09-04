@@ -1,9 +1,7 @@
-// TractorIssueModal.jsx
 import React, {useEffect, useState} from 'react'
 import './styles/TractorIssueModal.css'
-import {supabase} from '../../services/DatabaseService'
-import {v4 as uuidv4} from 'uuid'
 import LoadingScreen from "../common/LoadingScreen";
+import {TractorService} from '../../services/TractorService'
 
 const LOAD_ISSUES_ERROR = 'Failed to load issues. Please try again.'
 const ADD_ISSUE_ERROR = 'Failed to add issue. Please try again.'
@@ -26,13 +24,9 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
         setIsLoading(true)
         setError(null)
         try {
-            const {data: fetchedIssues} = await supabase
-                .from('tractors_maintenance')
-                .select('*')
-                .eq('tractor_id', tractorId)
-                .order('time_created', {ascending: false})
+            const fetchedIssues = await TractorService.fetchIssues(tractorId)
             setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : [])
-        } catch (err) {
+        } catch {
             setError(LOAD_ISSUES_ERROR)
             setIssues([])
         } finally {
@@ -42,51 +36,33 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
 
     const handleDeleteIssue = async (issueId) => {
         try {
-            await supabase
-                .from('tractors_maintenance')
-                .delete()
-                .eq('id', issueId)
+            await TractorService.deleteIssue(issueId)
             fetchIssues()
-        } catch (err) {
+        } catch {
             setError(DELETE_ISSUE_ERROR)
         }
     }
 
     const handleCompleteIssue = async (issueId) => {
         try {
-            await supabase
-                .from('tractors_maintenance')
-                .update({time_completed: new Date().toISOString()})
-                .eq('id', issueId)
+            await TractorService.completeIssue(issueId)
             fetchIssues()
-        } catch (err) {
+        } catch {
             setError(COMPLETE_ISSUE_ERROR)
         }
     }
 
     const handleAddIssue = async (e) => {
         e.preventDefault()
-        if (!newIssue.trim()) {
-            return
-        }
+        if (!newIssue.trim()) return
         setIsSubmitting(true)
         setError(null)
         try {
-            const payload = {
-                id: uuidv4(),
-                tractor_id: tractorId,
-                issue: newIssue.trim(),
-                severity,
-                time_created: new Date().toISOString(),
-                time_completed: null
-            }
-            await supabase
-                .from('tractors_maintenance')
-                .insert([payload])
+            await TractorService.addIssue(tractorId, newIssue, severity)
             setNewIssue('')
             setSeverity('Medium')
             fetchIssues()
-        } catch (err) {
+        } catch {
             setError(ADD_ISSUE_ERROR)
         } finally {
             setIsSubmitting(false)
@@ -99,9 +75,7 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
     }
 
     const handleBackdropClick = (e) => {
-        if (e.target.classList.contains('issue-modal-backdrop')) {
-            onClose()
-        }
+        if (e.target.classList.contains('issue-modal-backdrop')) onClose()
     }
 
     return (
@@ -127,21 +101,13 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
                             ></textarea>
                             <div className="severity-selector">
                                 <label>Severity:</label>
-                                <select
-                                    value={severity}
-                                    onChange={(e) => setSeverity(e.target.value)}
-                                    disabled={isSubmitting}
-                                >
+                                <select value={severity} onChange={(e) => setSeverity(e.target.value)} disabled={isSubmitting}>
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
                                     <option value="High">High</option>
                                 </select>
                             </div>
-                            <button
-                                type="submit"
-                                className="add-issue-button"
-                                disabled={isSubmitting || !newIssue.trim()}
-                            >
+                            <button type="submit" className="add-issue-button" disabled={isSubmitting || !newIssue.trim()}>
                                 {isSubmitting ? 'Adding...' : 'Add Issue'}
                             </button>
                         </form>
@@ -165,19 +131,11 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
                                         <span className="issue-severity">Severity: {issue.severity}</span>
                                         <span className="issue-date">{formatDate(issue.time_created)}</span>
                                         <div className="issue-actions">
-                                            <button
-                                                className="delete-issue-button"
-                                                onClick={() => handleDeleteIssue(issue.id)}
-                                                title="Delete issue"
-                                            >
+                                            <button className="delete-issue-button" onClick={() => handleDeleteIssue(issue.id)} title="Delete issue">
                                                 <i className="fas fa-trash"></i>
                                             </button>
                                             {!issue.time_completed && (
-                                                <button
-                                                    className="complete-issue-button"
-                                                    onClick={() => handleCompleteIssue(issue.id)}
-                                                    title="Mark as completed"
-                                                >
+                                                <button className="complete-issue-button" onClick={() => handleCompleteIssue(issue.id)} title="Mark as completed">
                                                     <i className="fas fa-check"></i>
                                                 </button>
                                             )}

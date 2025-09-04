@@ -89,6 +89,20 @@ export class TractorService {
         return Tractor.fromApiFormat(json?.data)
     }
 
+    static async verifyTractor(tractorId, userId) {
+        const id = typeof tractorId === 'object' ? tractorId.id : tractorId
+        ValidationUtility.requireUUID(id, 'Tractor ID is required')
+        if (!userId) {
+            const user = await UserService.getCurrentUser()
+            userId = typeof user === 'object' && user !== null ? user.id : user
+        }
+        if (!userId) throw new Error('User ID is required')
+        const payload = {id, tractor: {updatedLast: new Date().toISOString()}, userId}
+        const {res, json} = await APIUtility.post('/tractor-service/update', payload)
+        if (!res.ok) throw new Error(json?.error || 'Failed to verify tractor')
+        return Tractor.fromApiFormat(json?.data)
+    }
+
     static async deleteTractor(id) {
         ValidationUtility.requireUUID(id, 'Tractor ID is required')
         const {res, json} = await APIUtility.post('/tractor-service/delete', {id})

@@ -1,14 +1,11 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {TractorService} from '../../services/TractorService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
 import {UserService} from '../../services/UserService';
-import {supabase} from '../../services/DatabaseService';
-import {usePreferences} from '../../app/context/PreferencesContext';
 import TractorHistoryView from './TractorHistoryView';
 import TractorCommentModal from './TractorCommentModal';
 import TractorIssueModal from './TractorIssueModal';
-import TractorCard from './TractorCard';
 import './styles/TractorDetailView.css';
 import {TractorUtility} from "../../utils/TractorUtility";
 import {Tractor} from "../../config/models/tractors/Tractor";
@@ -16,7 +13,6 @@ import LoadingScreen from "../common/LoadingScreen";
 import OperatorSelectModal from "../mixers/OperatorSelectModal";
 
 function TractorDetailView({tractorId, onClose}) {
-    const {preferences} = usePreferences();
     const [tractor, setTractor] = useState(null);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -50,7 +46,6 @@ function TractorDetailView({tractorId, onClose}) {
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null);
     const [comments, setComments] = useState([]);
     const [issues, setIssues] = useState([]);
-    const tractorCardRef = useRef(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -128,14 +123,14 @@ function TractorDetailView({tractorId, onClose}) {
                 const hasPermission = await UserService.hasPermission(userId, 'tractors.bypass.plantrestriction');
                 if (hasPermission) return setCanEditTractor(true);
 
-                const {data: profileData} = await supabase.from('users_profiles').select('plant_code').eq('id', userId).single();
-
-                if (profileData && tractor) {
-                    const isSamePlant = profileData.plant_code === tractor.assignedPlant;
+                const profilePlant = await UserService.getUserPlant(userId);
+                const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || null);
+                if (plantCode && tractor) {
+                    const isSamePlant = plantCode === tractor.assignedPlant;
                     setCanEditTractor(isSamePlant);
                     if (!isSamePlant) {
                         setPlantRestrictionReason(
-                            `You cannot edit or verify this tractor because it belongs to plant ${tractor.assignedPlant} and you are assigned to plant ${profileData.plant_code}.`
+                            `You cannot edit or verify this tractor because it belongs to plant ${tractor.assignedPlant} and you are assigned to plant ${plantCode}.`
                         );
                     }
                 }
@@ -286,7 +281,7 @@ function TractorDetailView({tractorId, onClose}) {
         if (!showDeleteConfirmation) return setShowDeleteConfirmation(true);
 
         try {
-            await supabase.from('tractors').delete().eq('id', tractor.id);
+            await TractorService.deleteTractor(tractor.id);
             alert('Tractor deleted successfully');
             onClose();
         } catch (error) {
@@ -328,21 +323,9 @@ function TractorDetailView({tractorId, onClose}) {
             let userObj = await UserService.getCurrentUser()
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
 
-            const now = new Date().toISOString()
-            const {data, error} = await supabase
-                .from('tractors')
-                .update({updated_last: now, updated_by: userId})
-                .eq('id', tractor.id)
-                .select()
-
-            if (error) {
-                console.error('Failed to verify tractor:', error)
-                alert(`Error verifying tractor: ${error.message}`)
-                setIsSaving(false)
-                return
-            }
-            if (data?.length) {
-                setTractor(Tractor.fromApiFormat(data[0]))
+            const updated = await TractorService.verifyTractor(tractor.id, userId)
+            if (updated) {
+                setTractor(updated)
                 setMessage('Tractor verified successfully!')
                 setTimeout(() => setMessage(''), 3000)
             }
@@ -399,18 +382,14 @@ function TractorDetailView({tractorId, onClose}) {
     useEffect(() => {
         async function fetchCommentsAndIssues() {
             if (!tractorId) return;
-            const {data: commentData} = await supabase
-                .from('tractors_comments')
-                .select('*')
-                .eq('tractor_id', tractorId)
-                .order('created_at', {ascending: false});
-            setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
-            const {data: issueData} = await supabase
-                .from('tractors_maintenance')
-                .select('*')
-                .eq('tractor_id', tractorId)
-                .order('time_created', {ascending: false});
-            setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
+            try {
+                const [commentData, issueData] = await Promise.all([
+                    TractorService.fetchComments(tractorId),
+                    TractorService.fetchIssues(tractorId)
+                ])
+                setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
+                setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
+            } catch {}
         }
 
         fetchCommentsAndIssues();
@@ -578,15 +557,16 @@ ${openIssues.length > 0
                                         className="verification-value">{tractor.createdAt ? new Date(tractor.createdAt).toLocaleString() : 'Not Assigned'}</span>
                                 </div>
                             </div>
-                            <div className="verification-item">
+                            <div className="verification-item"
+                                     style={{color: 'inherit'}}>
                                 <div className="verification-icon"
-                                     style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? '#10b981' : new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                     style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? 'var(--success)' : (new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? 'var(--error)' : 'var(--warning)')) : 'var(--error)'}}>
                                     <i className="fas fa-calendar-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Last Verified</span>
                                     <span className="verification-value"
-                                          style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? 'inherit' : new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? '#ef4444' : '#f59e0b') : '#ef4444'}}>
+                                          style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? 'inherit' : (new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? 'var(--error)' : 'var(--warning)')) : 'var(--error)'}}>
                                         {tractor.updatedLast ? `${new Date(tractor.updatedLast).toLocaleString()}${!Tractor.ensureInstance(tractor).isVerified() ? (new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? ' (Changes have been made)' : ' (It is a new week)') : ''}` : 'Never verified'}
                                     </span>
                                 </div>
@@ -594,13 +574,13 @@ ${openIssues.length > 0
                             <div className="verification-item"
                                  title={`Last Updated: ${new Date(tractor.updatedAt).toLocaleString()}`}>
                                 <div className="verification-icon"
-                                     style={{color: tractor.updatedBy ? '#10b981' : '#ef4444'}}>
+                                     style={{color: tractor.updatedBy ? 'var(--success)' : 'var(--error)'}}>
                                     <i className="fas fa-user-check"></i>
                                 </div>
                                 <div className="verification-info">
                                     <span className="verification-label">Verified By</span>
                                     <span className="verification-value"
-                                          style={{color: tractor.updatedBy ? 'inherit' : '#ef4444'}}>{tractor.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
+                                          style={{color: tractor.updatedBy ? 'inherit' : 'var(--error)'}}>{tractor.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span>
                                 </div>
                             </div>
                         </div>
@@ -660,8 +640,8 @@ ${openIssues.length > 0
                                         value="Active"
                                         disabled={!assignedOperator}
                                         style={!assignedOperator ? {
-                                            color: 'var(--text-disabled)',
-                                            backgroundColor: 'var(--background-disabled)'
+                                            color: 'var(--text-secondary)',
+                                            backgroundColor: 'var(--bg-secondary)'
                                         } : {}}
                                     >
                                         Active{!assignedOperator ? ' (Cannot set without an operator assigned)' : ''}
@@ -697,7 +677,7 @@ ${openIssues.length > 0
                                         style={!canEditTractor ? {
                                             cursor: 'not-allowed',
                                             opacity: 0.8,
-                                            backgroundColor: '#f8f9fa'
+                                            backgroundColor: 'var(--card-bg)'
                                         } : {}}
                                     >
                                         <span style={{display: 'block', overflow: 'hidden', textOverflow: 'ellipsis'}}>
@@ -770,8 +750,8 @@ ${openIssues.length > 0
                                                     }}
                                                     type="button"
                                                     style={{
-                                                        backgroundColor: '#10b981',
-                                                        color: '#fff',
+                                                        backgroundColor: 'var(--success)',
+                                                        color: 'var(--text-light)',
                                                         marginLeft: '8px',
                                                         height: '38px',
                                                         minWidth: '140px',
@@ -872,7 +852,7 @@ ${openIssues.length > 0
                                                     onClick={() => canEditTractor && setCleanlinessRating(star === cleanlinessRating ? 0 : star)}
                                                     aria-label={`Rate ${star} of 5 stars`} disabled={!canEditTractor}>
                                                 <i className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
-                                                   style={star <= cleanlinessRating ? {color: preferences.accentColor === 'red' ? '#b80017' : '#003896'} : {}}></i>
+                                                   style={star <= cleanlinessRating ? {color: 'var(--accent)'} : {}}></i>
                                             </button>
                                         ))}
                                     </div>

@@ -26,6 +26,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '')
+    const [searchInput, setSearchInput] = useState(preferences.tractorFilters?.searchText || '')
     const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '')
     const [statusFilter, setStatusFilter] = useState(preferences.tractorFilters?.statusFilter || '')
     const [freightFilter, setFreightFilter] = useState(preferences.tractorFilters?.freightFilter || '')
@@ -73,6 +74,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         fetchAllData()
         if (preferences?.tractorFilters) {
             setSearchText(preferences.tractorFilters.searchText || '')
+            setSearchInput(preferences.tractorFilters.searchText || '')
             setSelectedPlant(preferences.tractorFilters.selectedPlant || '')
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
             setFreightFilter(preferences.tractorFilters.freightFilter || '')
@@ -294,6 +296,119 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
 
     const canShowUnassignedOverlay = tractorsLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
 
+    const content = useMemo(() => {
+        if (isLoading) {
+            return (
+                <div className="loading-container">
+                    <LoadingScreen message="Loading tractors..." inline={true}/>
+                </div>
+            )
+        }
+        if (filteredTractors.length === 0) {
+            return (
+                <div className="no-results-container">
+                    <div className="no-results-icon">
+                        <i className="fas fa-truck"></i>
+                    </div>
+                    <h3>No Tractors Found</h3>
+                    <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p>
+                    <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button>
+                </div>
+            )
+        }
+        if (viewMode === 'grid') {
+            return (
+                <div className={`tractors-grid ${searchText ? 'search-results' : ''}`}>
+                    {filteredTractors.map(tractor => (
+                        <TractorCard
+                            key={tractor.id}
+                            tractor={{...tractor, operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator)}}
+                            operatorName={lookupGetOperatorName(operators, tractor.assignedOperator)}
+                            plantName={lookupGetPlantName(plants, tractor.assignedPlant)}
+                            showOperatorWarning={isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator)}
+                            onSelect={() => handleSelectTractor(tractor.id)}
+                        />
+                    ))}
+                </div>
+            )
+        }
+        return (
+            <div className="tractors-list-table-container">
+                <table className="tractors-list-table">
+                    <colgroup>
+                        <col style={{width: '10%'}} />
+                        <col style={{width: '12%'}} />
+                        <col style={{width: '12%'}} />
+                        <col style={{width: '18%'}} />
+                        <col style={{width: '12%'}} />
+                        <col style={{width: '18%'}} />
+                        <col style={{width: '10%'}} />
+                        <col style={{width: '8%'}} />
+                    </colgroup>
+                    <tbody>
+                    {filteredTractors.map(tractor => {
+                        const commentsCount = Number(tractor.commentsCount || 0)
+                        const issuesCount = Number(tractor.openIssuesCount || 0)
+                        return (
+                            <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}>
+                                <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
+                                <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
+                                <td>
+                                    <span className="item-status-dot" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '8px', backgroundColor: tractor.status === 'Active' ? 'var(--status-active)' : tractor.status === 'Spare' ? 'var(--status-spare)' : tractor.status === 'In Shop' ? 'var(--status-inshop)' : tractor.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'}}></span>
+                                    {tractor.status ? tractor.status : "---"}
+                                </td>
+                                <td>
+                                    {lookupGetOperatorName(operators, tractor.assignedOperator) ? lookupGetOperatorName(operators, tractor.assignedOperator) : "---"}
+                                    {isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator) && (
+                                        <span className="warning-badge">
+                                            <i className="fas fa-exclamation-triangle"></i>
+                                        </span>
+                                    )}
+                                </td>
+                                <td>
+                                    {(() => {
+                                        const rating = Math.round(tractor.cleanlinessRating || 0)
+                                        const stars = rating > 0 ? rating : 1
+                                        return Array.from({length: stars}).map((_, i) => (
+                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                        ))
+                                    })()}
+                                </td>
+                                <td>{tractor.vin ? tractor.vin : "---"}</td>
+                                <td>
+                                    {tractor.isVerified() ? (
+                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                            <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                            Verified
+                                        </span>
+                                    ) : (
+                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                            <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                            Not Verified
+                                        </span>
+                                    )}
+                                </td>
+                                <td>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); setModalTractorId(tractor.id); setModalTractorNumber(tractor.truckNumber || ''); setShowCommentModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer'}} title="View comments">
+                                            <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                            <span>{commentsCount}</span>
+                                        </button>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); setModalTractorId(tractor.id); setModalTractorNumber(tractor.truckNumber || ''); setShowIssueModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', marginLeft: 12}} title="View issues">
+                                            <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                            <span>{issuesCount}</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )
+                    })}
+                    </tbody>
+                </table>
+            </div>
+        )
+    }, [isLoading, filteredTractors, viewMode, searchText, selectedPlant, statusFilter, operators, plants, tractors])
+
     return (
         <div className="dashboard-container tractors-view">
             {canShowUnassignedOverlay && (
@@ -321,11 +436,11 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             type="text"
                             className="ios-search-input"
                             placeholder="Search by truck or operator..."
-                            value={searchText}
-                            onChange={e => debouncedSetSearchText(e.target.value)}
+                            value={searchInput}
+                            onChange={e => { setSearchInput(e.target.value); debouncedSetSearchText(e.target.value) }}
                         />
-                        {searchText && (
-                            <button className="clear" onClick={() => debouncedSetSearchText('')}>
+                        {searchInput && (
+                            <button className="clear" onClick={() => { setSearchInput(''); debouncedSetSearchText('') }}>
                                 <i className="fas fa-times"></i>
                             </button>
                         )}
@@ -411,6 +526,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                         {(searchText || selectedPlant || freightFilter || (statusFilter && statusFilter !== 'All Statuses')) && (
                             <button className="filter-reset-button" onClick={() => {
                                 setSearchText('')
+                                setSearchInput('')
                                 setSelectedPlant('')
                                 setStatusFilter('')
                                 setFreightFilter('')
@@ -444,171 +560,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                     </div>
                 )}
             </div>
-            <div className="content-container">
-                {isLoading ? (
-                    <div className="loading-container">
-                        <LoadingScreen message="Loading tractors..." inline={true}/>
-                    </div>
-                ) : filteredTractors.length === 0 ? (
-                    <div className="no-results-container">
-                        <div className="no-results-icon">
-                            <i className="fas fa-truck"></i>
-                        </div>
-                        <h3>No Tractors Found</h3>
-                        <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p>
-                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button>
-                    </div>
-                ) : viewMode === 'grid' ? (
-                    <div className={`tractors-grid ${searchText ? 'search-results' : ''}`}>
-                        {filteredTractors.map(tractor => (
-                            <TractorCard
-                                key={tractor.id}
-                                tractor={{...tractor, operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator)}}
-                                operatorName={lookupGetOperatorName(operators, tractor.assignedOperator)}
-                                plantName={lookupGetPlantName(plants, tractor.assignedPlant)}
-                                showOperatorWarning={isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator)}
-                                onSelect={() => handleSelectTractor(tractor.id)}
-                            />
-                        ))}
-                    </div>
-                ) : viewMode === 'list' ? (
-                    <div className="tractors-list-table-container">
-                        <table className="tractors-list-table">
-                            <colgroup>
-                                <col style={{width: '10%'}} />
-                                <col style={{width: '12%'}} />
-                                <col style={{width: '12%'}} />
-                                <col style={{width: '18%'}} />
-                                <col style={{width: '12%'}} />
-                                <col style={{width: '18%'}} />
-                                <col style={{width: '10%'}} />
-                                <col style={{width: '8%'}} />
-                            </colgroup>
-                            <tbody>
-                            {filteredTractors.map(tractor => {
-                                const commentsCount = Number(tractor.commentsCount || 0)
-                                const issuesCount = Number(tractor.openIssuesCount || 0)
-                                return (
-                                    <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)}
-                                        style={{cursor: 'pointer'}}>
-                                        <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
-                                        <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
-                                        <td>
-                                            <span
-                                                className="item-status-dot"
-                                                style={{
-                                                    display: 'inline-block',
-                                                    verticalAlign: 'middle',
-                                                    marginRight: '8px',
-                                                    backgroundColor:
-                                                        tractor.status === 'Active' ? 'var(--status-active)' :
-                                                            tractor.status === 'Spare' ? 'var(--status-spare)' :
-                                                                tractor.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                    tractor.status === 'Retired' ? 'var(--status-retired)' :
-                                                                        'var(--accent)'
-                                                }}
-                                            ></span>
-                                            {tractor.status ? tractor.status : "---"}
-                                        </td>
-                                        <td>
-                                            {lookupGetOperatorName(operators, tractor.assignedOperator) ? lookupGetOperatorName(operators, tractor.assignedOperator) : "---"}
-                                            {isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator) && (
-                                                <span className="warning-badge">
-                                                    <i className="fas fa-exclamation-triangle"></i>
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            {(() => {
-                                                const rating = Math.round(tractor.cleanlinessRating || 0)
-                                                const stars = rating > 0 ? rating : 1
-                                                return Array.from({length: stars}).map((_, i) => (
-                                                    <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
-                                                ))
-                                            })()}
-                                        </td>
-                                        <td>{tractor.vin ? tractor.vin : "---"}</td>
-                                        <td>
-                                            {tractor.isVerified() ? (
-                                                <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                    <i className="fas fa-check-circle"
-                                                       style={{color: 'var(--success)', marginRight: 6}}></i>
-                                                    Verified
-                                                </span>
-                                            ) : (
-                                                <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                    <i className="fas fa-flag"
-                                                       style={{color: 'var(--error)', marginRight: 6}}></i>
-                                                    Not Verified
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setModalTractorId(tractor.id)
-                                                        setModalTractorNumber(tractor.truckNumber || '')
-                                                        setShowCommentModal(true)
-                                                    }}
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        padding: 0,
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                    title="View comments"
-                                                >
-                                                    <i className="fas fa-comments"
-                                                       style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                    <span>{commentsCount}</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setModalTractorId(tractor.id)
-                                                        setModalTractorNumber(tractor.truckNumber || '')
-                                                        setShowIssueModal(true)
-                                                    }}
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        padding: 0,
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        cursor: 'pointer',
-                                                        marginLeft: 12
-                                                    }}
-                                                    title="View issues"
-                                                >
-                                                    <i className="fas fa-tools"
-                                                       style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                    <span>{issuesCount}</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <div className="no-results-container">
-                        <div className="no-results-icon">
-                            <i className="fas fa-truck"></i>
-                        </div>
-                        <h3>No Tractors Found</h3>
-                        <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p>
-                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button>
-                    </div>
-                )}
-            </div>
+            <div className="content-container">{content}</div>
             {showAddSheet && (
                 <TractorAddView
                     plants={plants}

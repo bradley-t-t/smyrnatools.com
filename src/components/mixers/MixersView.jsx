@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import MixerAddView from './MixerAddView';
 import MixerUtility from '../../utils/MixerUtility';
 import {MixerService} from '../../services/MixerService';
@@ -23,10 +23,12 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const {preferences, updateMixerFilter, resetMixerFilters, saveLastViewedFilters} = usePreferences();
     const headerRef = useRef(null)
     const [mixers, setMixers] = useState([]);
+    const [allMixers, setAllMixers] = useState([]);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchText, setSearchText] = useState(preferences.mixerFilters?.searchText || '');
+    const [searchInput, setSearchInput] = useState(preferences.mixerFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.mixerFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.mixerFilters?.statusFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
@@ -70,6 +72,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         fetchAllData();
         if (preferences?.mixerFilters) {
             setSearchText(preferences.mixerFilters.searchText || '');
+            setSearchInput(preferences.mixerFilters.searchText || '');
             setSelectedPlant(preferences.mixerFilters.selectedPlant || '');
             setStatusFilter(preferences.mixerFilters.statusFilter || '');
         }
@@ -89,6 +92,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -107,39 +111,13 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
         }
     }, [preferences.selectedRegion?.code])
 
-    async function fetchMixers() {
-        try {
-            const data = await MixerService.fetchMixers();
-            const processedData = data.map(mixer => {
-                mixer.isVerified = () => MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate)
-                return mixer
-            })
-            setMixers(processedData);
-            setMixersLoaded(true)
-            setTimeout(() => {
-                fixActiveMixersWithoutOperator(processedData).catch(() => {})
-            }, 0)
-        } catch (error) {
-        }
-    }
-
-    async function fixActiveMixersWithoutOperator(mixersList) {
-        const updates = mixersList
-            .filter(m => m.status === 'Active' && (!m.assignedOperator || m.assignedOperator === '0'));
-        for (const mixer of updates) {
-            try {
-                await MixerService.updateMixer(mixer.id, {...mixer, status: 'Spare'}, undefined, mixer);
-                mixer.status = 'Spare';
-            } catch (e) {
-            }
-        }
-    }
 
     async function fetchOperators() {
         try {
@@ -161,27 +139,18 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 
     async function fetchMixersWithDetails() {
         try {
-            const data = await MixerService.fetchMixers();
-            const processedData = data.map(mixer => {
+            const mixersWithDetails = await MixerService.fetchMixersWithDetails()
+            const processed = (Array.isArray(mixersWithDetails) ? mixersWithDetails : []).map(m => {
+                const mixer = {...m}
                 mixer.isVerified = () => MixerUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy, mixer.latestHistoryDate)
                 return mixer
             })
-            // Fetch comments and issues for each mixer in parallel
-            const mixersWithDetails = await Promise.all(processedData.map(async mixer => {
-                try {
-                    const [comments, issues] = await Promise.all([
-                        MixerService.fetchComments(mixer.id),
-                        MixerService.fetchIssues(mixer.id)
-                    ])
-                    return {...mixer, comments, issues}
-                } catch {
-                    return {...mixer, comments: [], issues: []}
-                }
-            }))
-            setMixers(mixersWithDetails);
+            setMixers(processed);
+            setAllMixers(processed);
             setMixersLoaded(true)
             setTimeout(() => {
-                fixActiveMixersWithoutOperator(mixersWithDetails).catch(() => {})
+                MixerService.ensureSpareIfNoOperator(processed).catch(() => {
+                })
             }, 0)
         } catch (error) {
         }
@@ -241,14 +210,16 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 }
                 setIsLoading(false);
             } else {
-                fetchMixers();
+                setMixers(allMixers);
             }
         }
 
-        if (searchText.trim().length >= 17 && /^[a-z0-9]+$/i.test(searchText.trim().replace(/\s+/g, ''))) {
+        if (searchText.trim().length >= 1) {
             searchByVin();
+        } else {
+            setMixers(allMixers);
         }
-    }, [searchText]);
+    }, [searchText, allMixers]);
 
     const filteredMixers = useMemo(() => {
         return mixers
@@ -311,6 +282,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             const root = document.querySelector('.dashboard-container.mixers-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
+
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
@@ -322,6 +294,161 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     }, 300), []);
 
     const canShowUnassignedOverlay = mixersLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
+
+    const content = useMemo(() => {
+        if (isLoading) {
+            return (
+                <div className="loading-container">
+                    <LoadingScreen message="Loading mixers..." inline={true}/>
+                </div>
+            )
+        }
+        if (filteredMixers.length === 0) {
+            return (
+                <div className="no-results-container">
+                    <div className="no-results-icon">
+                        <i className="fas fa-truck-loading"></i>
+                    </div>
+                    <h3>No Mixers Found</h3>
+                    <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
+                    <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer</button>
+                </div>
+            )
+        }
+        if (viewMode === 'grid') {
+            return (
+                <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
+                    {filteredMixers.map(mixer => (
+                        <MixerCard
+                            key={mixer.id}
+                            mixer={{
+                                ...mixer,
+                                operatorSmyrnaId: LookupUtility.getOperatorSmyrnaId(operators, mixer.assignedOperator),
+                                openIssuesCount: Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0,
+                                commentsCount: Array.isArray(mixer.comments) ? mixer.comments.length : 0
+                            }}
+                            operatorName={LookupUtility.getOperatorName(operators, mixer.assignedOperator)}
+                            plantName={LookupUtility.getPlantName(plants, mixer.assignedPlant)}
+                            showOperatorWarning={LookupUtility.isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator)}
+                            onSelect={() => handleSelectMixer(mixer.id)}
+                        />
+                    ))}
+                </div>
+            )
+        }
+        return (
+            <div className="mixers-list-table-container">
+                <table className="mixers-list-table">
+                    <colgroup>
+                        <col style={{width: '10%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '18%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '18%'}}/>
+                        <col style={{width: '10%'}}/>
+                        <col style={{width: '8%'}}/>
+                    </colgroup>
+                    <tbody>
+                    {filteredMixers.map(mixer => {
+                        const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
+                        const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
+                        return (
+                            <tr key={mixer.id} style={{cursor: 'pointer'}} onClick={() => handleSelectMixer(mixer.id)}>
+                                <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
+                                <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
+                                <td>
+                                    <span className="item-status-dot" style={{
+                                        display: 'inline-block',
+                                        verticalAlign: 'middle',
+                                        marginRight: '8px',
+                                        width: '10px',
+                                        height: '10px',
+                                        borderRadius: '50%',
+                                        backgroundColor: mixer.status === 'Active' ? 'var(--status-active)' : mixer.status === 'Spare' ? 'var(--status-spare)' : mixer.status === 'In Shop' ? 'var(--status-inshop)' : mixer.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'
+                                    }}></span>
+                                    {mixer.status ? mixer.status : "---"}
+                                </td>
+                                <td>
+                                    {LookupUtility.getOperatorName(operators, mixer.assignedOperator) ? LookupUtility.getOperatorName(operators, mixer.assignedOperator) : "---"}
+                                    {LookupUtility.isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator) && (
+                                        <span className="warning-badge">
+                                            <i className="fas fa-exclamation-triangle"></i>
+                                        </span>
+                                    )}
+                                </td>
+                                <td>
+                                    {(() => {
+                                        const rating = Math.round(mixer.cleanlinessRating || 0)
+                                        const stars = rating > 0 ? rating : 1
+                                        return Array.from({length: stars}).map((_, i) => (
+                                            <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>
+                                        ))
+                                    })()}
+                                </td>
+                                <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
+                                <td>
+                                    {mixer.isVerified() ? (
+                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                            <i className="fas fa-check-circle"
+                                               style={{color: 'var(--success)', marginRight: 6}}></i>
+                                            Verified
+                                        </span>
+                                    ) : (
+                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
+                                            <i className="fas fa-flag"
+                                               style={{color: 'var(--error)', marginRight: 6}}></i>
+                                            Not Verified
+                                        </span>
+                                    )}
+                                </td>
+                                <td>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                                        <button type="button" onClick={(e) => {
+                                            e.stopPropagation();
+                                            setModalMixerId(mixer.id);
+                                            setModalMixerNumber(mixer.truckNumber || '');
+                                            setShowCommentModal(true)
+                                        }} style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: 0,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            cursor: 'pointer'
+                                        }} title="View comments">
+                                            <i className="fas fa-comments"
+                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                            <span>{commentsCount}</span>
+                                        </button>
+                                        <button type="button" onClick={(e) => {
+                                            e.stopPropagation();
+                                            setModalMixerId(mixer.id);
+                                            setModalMixerNumber(mixer.truckNumber || '');
+                                            setShowIssueModal(true)
+                                        }} style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: 0,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            cursor: 'pointer',
+                                            marginLeft: 12
+                                        }} title="View issues">
+                                            <i className="fas fa-tools"
+                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                            <span>{issuesCount}</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )
+                    })}
+                    </tbody>
+                </table>
+            </div>
+        )
+    }, [isLoading, filteredMixers, viewMode, searchText, selectedPlant, statusFilter, operators, plants, mixers])
 
     return (
         <div className="dashboard-container mixers-view">
@@ -362,11 +489,17 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     type="text"
                                     className="ios-search-input"
                                     placeholder="Search by truck, operator, or VIN..."
-                                    value={searchText}
-                                    onChange={e => debouncedSetSearchText(e.target.value)}
+                                    value={searchInput}
+                                    onChange={e => {
+                                        setSearchInput(e.target.value);
+                                        debouncedSetSearchText(e.target.value);
+                                    }}
                                 />
-                                {searchText && (
-                                    <button className="clear" onClick={() => debouncedSetSearchText('')}>
+                                {searchInput && (
+                                    <button className="clear" onClick={() => {
+                                        setSearchInput('');
+                                        debouncedSetSearchText('');
+                                    }}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
@@ -428,6 +561,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                 {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
                                     <button className="filter-reset-button" onClick={() => {
                                         setSearchText('')
+                                        setSearchInput('')
                                         setSelectedPlant('')
                                         setStatusFilter('')
                                         resetMixerFilters({keepViewMode: true, currentViewMode: viewMode})
@@ -441,186 +575,19 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             </div>
                         </div>
                         {viewMode !== 'grid' && (
-                             <div className="mixers-list-header-row">
-                                 <div>Plant</div>
-                                 <div>Truck #</div>
-                                 <div>Status</div>
-                                 <div>Operator</div>
-                                 <div>Cleanliness</div>
-                                 <div>VIN</div>
-                                 <div>Verified</div>
-                                 <div>More</div>
-                             </div>
-                         )}
-                     </div>
-                     <div className="content-container">
-                        {isLoading ? (
-                            <div className="loading-container">
-                                <LoadingScreen message="Loading mixers..." inline={true}/>
-                            </div>
-                        ) : filteredMixers.length === 0 ? (
-                            <div className="no-results-container">
-                                <div className="no-results-icon">
-                                    <i className="fas fa-truck-loading"></i>
-                                </div>
-                                <h3>No Mixers Found</h3>
-                                <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer
-                                </button>
-                            </div>
-                        ) : viewMode === 'grid' ? (
-                            <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
-                                {filteredMixers.map(mixer => (
-                                    <MixerCard
-                                        key={mixer.id}
-                                        mixer={{
-                                            ...mixer,
-                                            operatorSmyrnaId: LookupUtility.getOperatorSmyrnaId(operators, mixer.assignedOperator),
-                                            openIssuesCount: Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0,
-                                            commentsCount: Array.isArray(mixer.comments) ? mixer.comments.length : 0
-                                        }}
-                                        operatorName={LookupUtility.getOperatorName(operators, mixer.assignedOperator)}
-                                        plantName={LookupUtility.getPlantName(plants, mixer.assignedPlant)}
-                                        showOperatorWarning={LookupUtility.isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator)}
-                                        onSelect={() => handleSelectMixer(mixer.id)}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="mixers-list-table-container">
-                                <table className="mixers-list-table">
-                                    <colgroup>
-                                        <col style={{width: '10%'}} />
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '18%'}} />
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '18%'}} />
-                                        <col style={{width: '10%'}} />
-                                        <col style={{width: '8%'}} />
-                                    </colgroup>
-                                    <tbody>
-                                    {filteredMixers.map(mixer => {
-                                        const commentsCount = Array.isArray(mixer.comments) ? mixer.comments.length : 0
-                                        const issuesCount = Array.isArray(mixer.issues) ? mixer.issues.filter(issue => !issue.time_completed).length : 0
-                                        return (
-                                            <tr key={mixer.id} style={{cursor: 'pointer'}}
-                                                onClick={() => handleSelectMixer(mixer.id)}>
-                                                <td>{mixer.assignedPlant ? mixer.assignedPlant : "---"}</td>
-                                                <td>{mixer.truckNumber ? mixer.truckNumber : "---"}</td>
-                                                <td>
-                                                        <span
-                                                            className="item-status-dot"
-                                                            style={{
-                                                                display: 'inline-block',
-                                                                verticalAlign: 'middle',
-                                                                marginRight: '8px',
-                                                                width: '10px',
-                                                                height: '10px',
-                                                                borderRadius: '50%',
-                                                                backgroundColor:
-                                                                    mixer.status === 'Active' ? 'var(--status-active)' :
-                                                                        mixer.status === 'Spare' ? 'var(--status-spare)' :
-                                                                            mixer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                                mixer.status === 'Retired' ? 'var(--status-retired)' :
-                                                                                    'var(--accent)'
-                                                            }}
-                                                        ></span>
-                                                    {mixer.status ? mixer.status : "---"}
-                                                </td>
-                                                <td>
-                                                    {LookupUtility.getOperatorName(operators, mixer.assignedOperator) ? LookupUtility.getOperatorName(operators, mixer.assignedOperator) : "---"}
-                                                    {LookupUtility.isIdAssignedToMultiple(mixers, 'assignedOperator', mixer.assignedOperator) && (
-                                                        <span className="warning-badge">
-                                                                <i className="fas fa-exclamation-triangle"></i>
-                                                            </span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    {(() => {
-                                                        const rating = Math.round(mixer.cleanlinessRating || 0)
-                                                        const stars = rating > 0 ? rating : 1
-                                                        return Array.from({length: stars}).map((_, i) => (
-                                                            <i key={i} className="fas fa-star"
-                                                               style={{color: 'var(--accent)'}}></i>
-                                                        ))
-                                                    })()}
-                                                </td>
-                                                <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
-                                                <td>
-                                                    {mixer.isVerified() ? (
-                                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                                <i className="fas fa-check-circle" style={{
-                                                                    color: 'var(--success)',
-                                                                    marginRight: 6
-                                                                }}></i>
-                                                                Verified
-                                                            </span>
-                                                    ) : (
-                                                        <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                                                <i className="fas fa-flag"
-                                                                   style={{color: 'var(--error)', marginRight: 6}}></i>
-                                                                Not Verified
-                                                            </span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setModalMixerId(mixer.id)
-                                                                setModalMixerNumber(mixer.truckNumber || '')
-                                                                setShowCommentModal(true)
-                                                            }}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                padding: 0,
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                            title="View comments"
-                                                        >
-                                                            <i className="fas fa-comments"
-                                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                            <span>{commentsCount}</span>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setModalMixerId(mixer.id)
-                                                                setModalMixerNumber(mixer.truckNumber || '')
-                                                                setShowIssueModal(true)
-                                                            }}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                padding: 0,
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                cursor: 'pointer',
-                                                                marginLeft: 12
-                                                            }}
-                                                            title="View issues"
-                                                        >
-                                                            <i className="fas fa-tools"
-                                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                            <span>{issuesCount}</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                    </tbody>
-                                </table>
+                            <div className="mixers-list-header-row">
+                                <div>Plant</div>
+                                <div>Truck #</div>
+                                <div>Status</div>
+                                <div>Operator</div>
+                                <div>Cleanliness</div>
+                                <div>VIN</div>
+                                <div>Verified</div>
+                                <div>More</div>
                             </div>
                         )}
                     </div>
+                    <div className="content-container">{content}</div>
                     {showAddSheet && (
                         <MixerAddView
                             plants={plants}
