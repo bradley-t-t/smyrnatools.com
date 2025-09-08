@@ -31,221 +31,126 @@ Deno.serve(async (req) => {
                     .from("regions")
                     .select("*")
                     .order("region_code");
-                if (error) return new Response(JSON.stringify({error: error.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             case "fetch-region-by-code": {
                 let body: any;
-                try {
-                    body = await req.json();
-                } catch {
-                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
-                }
+                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
                 const {regionCode} = body || {};
-                if (typeof regionCode !== "string" || !regionCode) return new Response(JSON.stringify({error: "Region code is required"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (typeof regionCode !== "string" || !regionCode) return new Response(JSON.stringify({error: "Region code is required"}), {status: 400, headers: corsHeaders});
                 const {data, error} = await supabase
                     .from("regions")
                     .select("*")
                     .eq("region_code", regionCode)
                     .maybeSingle();
-                if (error) return new Response(JSON.stringify({error: error.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
                 return new Response(JSON.stringify({data: data ?? null}), {headers: corsHeaders});
             }
             case "create": {
                 let body: any;
-                try {
-                    body = await req.json();
-                } catch {
-                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
-                }
+                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
                 const {regionCode, regionName, type} = body || {};
-                if (typeof regionCode !== "string" || !regionCode.trim() || typeof regionName !== "string" || !regionName.trim()) return new Response(JSON.stringify({error: "Region code and name are required"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (typeof regionCode !== "string" || !regionCode.trim() || typeof regionName !== "string" || !regionName.trim()) return new Response(JSON.stringify({error: "Region code and name are required"}), {status: 400, headers: corsHeaders});
                 const allowed = new Set(["Concrete", "Aggregate", "Office"]);
-                if (typeof type !== "string" || !allowed.has(type)) return new Response(JSON.stringify({error: "Region type must be one of Concrete, Aggregate, Office"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (typeof type !== "string" || !allowed.has(type)) return new Response(JSON.stringify({error: "Region type must be one of Concrete, Aggregate, Office"}), {status: 400, headers: corsHeaders});
                 const now = new Date().toISOString();
                 const {error} = await supabase
                     .from("regions")
-                    .insert({
-                        region_code: regionCode.trim(),
-                        region_name: regionName.trim(),
-                        type,
-                        created_at: now,
-                        updated_at: now
-                    });
-                if (error) return new Response(JSON.stringify({error: error.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                    .insert({region_code: regionCode.trim(), region_name: regionName.trim(), type, created_at: now, updated_at: now});
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "update": {
                 let body: any;
-                try {
-                    body = await req.json();
-                } catch {
-                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
-                }
+                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
                 const {regionCode, regionName, plantCodes, type} = body || {};
-                if (typeof regionCode !== "string" || !regionCode.trim() || typeof regionName !== "string" || !regionName.trim()) return new Response(JSON.stringify({error: "Region code and name are required"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (typeof regionCode !== "string" || !regionCode.trim() || typeof regionName !== "string" || !regionName.trim()) return new Response(JSON.stringify({error: "Region code and name are required"}), {status: 400, headers: corsHeaders});
                 const {data: regionData, error: regionError} = await supabase
                     .from("regions")
                     .select("id")
                     .eq("region_code", regionCode)
                     .maybeSingle();
-                if (regionError || !regionData) return new Response(JSON.stringify({error: regionError?.message || "Region not found"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (regionError || !regionData) return new Response(JSON.stringify({error: regionError?.message || "Region not found"}), {status: 400, headers: corsHeaders});
                 const regionId = regionData.id as string;
-                const updatePayload: Record<string, any> = {
-                    region_name: regionName.trim(),
-                    updated_at: new Date().toISOString()
-                };
+                const updatePayload: Record<string, any> = {region_name: regionName.trim(), updated_at: new Date().toISOString()};
                 const allowed = new Set(["Concrete", "Aggregate", "Office"]);
                 if (typeof type === "string") {
-                    if (!allowed.has(type)) return new Response(JSON.stringify({error: "Region type must be one of Concrete, Aggregate, Office"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
+                    if (!allowed.has(type)) return new Response(JSON.stringify({error: "Region type must be one of Concrete, Aggregate, Office"}), {status: 400, headers: corsHeaders});
                     updatePayload.type = type;
                 }
                 const {error: updateError} = await supabase
                     .from("regions")
                     .update(updatePayload)
                     .eq("region_code", regionCode);
-                if (updateError) return new Response(JSON.stringify({error: updateError.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (updateError) return new Response(JSON.stringify({error: updateError.message}), {status: 400, headers: corsHeaders});
                 const {error: deleteError} = await supabase
                     .from("regions_plants")
                     .delete()
                     .eq("region_id", regionId);
-                if (deleteError) return new Response(JSON.stringify({error: deleteError.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (deleteError) return new Response(JSON.stringify({error: deleteError.message}), {status: 400, headers: corsHeaders});
                 if (Array.isArray(plantCodes) && plantCodes.length > 0) {
                     const now = new Date().toISOString();
-                    const rows = (plantCodes as any[])
-                        .filter(v => typeof v === "string" && v.trim())
-                        .map(v => ({region_id: regionId, plant_code: (v as string).trim(), created_at: now}));
+                    const rows = (plantCodes as any[]).filter(v => typeof v === "string" && v.trim()).map(v => ({region_id: regionId, plant_code: (v as string).trim(), created_at: now}));
                     if (rows.length > 0) {
-                        const {error: insertError} = await supabase
-                            .from("regions_plants")
-                            .insert(rows);
-                        if (insertError) return new Response(JSON.stringify({error: insertError.message}), {
-                            status: 400,
-                            headers: corsHeaders
-                        });
+                        const {error: insertError} = await supabase.from("regions_plants").insert(rows);
+                        if (insertError) return new Response(JSON.stringify({error: insertError.message}), {status: 400, headers: corsHeaders});
                     }
                 }
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "delete": {
                 let body: any;
-                try {
-                    body = await req.json();
-                } catch {
-                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
-                }
+                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
                 const {regionCode} = body || {};
-                if (typeof regionCode !== "string" || !regionCode) return new Response(JSON.stringify({error: "Region code is required"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (typeof regionCode !== "string" || !regionCode) return new Response(JSON.stringify({error: "Region code is required"}), {status: 400, headers: corsHeaders});
                 const {data: regionData, error: regionError} = await supabase
                     .from("regions")
                     .select("id")
                     .eq("region_code", regionCode)
                     .maybeSingle();
-                if (regionError || !regionData) return new Response(JSON.stringify({error: regionError?.message || "Region not found"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (regionError || !regionData) return new Response(JSON.stringify({error: regionError?.message || "Region not found"}), {status: 400, headers: corsHeaders});
                 const regionId = regionData.id as string;
                 const {error: deletePlantsError} = await supabase
                     .from("regions_plants")
                     .delete()
                     .eq("region_id", regionId);
-                if (deletePlantsError) return new Response(JSON.stringify({error: deletePlantsError.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (deletePlantsError) return new Response(JSON.stringify({error: deletePlantsError.message}), {status: 400, headers: corsHeaders});
                 const {error: deleteRegionError} = await supabase
                     .from("regions")
                     .delete()
                     .eq("region_code", regionCode);
-                if (deleteRegionError) return new Response(JSON.stringify({error: deleteRegionError.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (deleteRegionError) return new Response(JSON.stringify({error: deleteRegionError.message}), {status: 400, headers: corsHeaders});
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "fetch-region-plants": {
                 let body: any;
-                try {
-                    body = await req.json();
-                } catch {
-                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
-                }
+                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
                 const {regionCode} = body || {};
-                if (typeof regionCode !== "string" || !regionCode) return new Response(JSON.stringify({error: "Region code is required"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (typeof regionCode !== "string" || !regionCode) return new Response(JSON.stringify({error: "Region code is required"}), {status: 400, headers: corsHeaders});
                 const {data: regionData, error: regionError} = await supabase
                     .from("regions")
                     .select("id")
                     .eq("region_code", regionCode)
                     .maybeSingle();
-                if (regionError || !regionData) return new Response(JSON.stringify({error: regionError?.message || "Region not found"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
+                if (regionError || !regionData) return new Response(JSON.stringify({error: regionError?.message || "Region not found"}), {status: 400, headers: corsHeaders});
                 const regionId = regionData.id as string;
-                const {data, error} = await supabase
+                let rows: any[] = [];
+                const {data: dataPlural, error: errorPlural} = await supabase
                     .from("regions_plants")
                     .select("plant_code, plants!inner(plant_code, plant_name)")
                     .eq("region_id", regionId);
-                if (error) return new Response(JSON.stringify({error: error.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
-                const out = (data ?? []).map((row: any) => ({
+                if (errorPlural) return new Response(JSON.stringify({error: errorPlural.message}), {status: 400, headers: corsHeaders});
+                rows = dataPlural ?? [];
+                if (!rows.length) {
+                    const {data: dataSing, error: errorSing} = await supabase
+                        .from("region_plants")
+                        .select("plant_code, plants!inner(plant_code, plant_name)")
+                        .eq("region_id", regionId);
+                    if (errorSing) return new Response(JSON.stringify({error: errorSing.message}), {status: 400, headers: corsHeaders});
+                    rows = dataSing ?? [];
+                }
+                const out = (rows ?? []).map((row: any) => ({
                     plant_code: row.plants?.plant_code ?? row.plant_code,
                     plant_name: row.plants?.plant_name ?? null
                 }));
@@ -253,28 +158,25 @@ Deno.serve(async (req) => {
             }
             case "fetch-regions-by-plant-code": {
                 let body: any;
-                try {
-                    body = await req.json();
-                } catch {
-                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
-                        status: 400,
-                        headers: corsHeaders
-                    });
-                }
+                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
                 const {plantCode} = body || {};
-                if (typeof plantCode !== "string" || !plantCode) return new Response(JSON.stringify({error: "Plant code is required"}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
-                const {data, error} = await supabase
+                if (typeof plantCode !== "string" || !plantCode) return new Response(JSON.stringify({error: "Plant code is required"}), {status: 400, headers: corsHeaders});
+                let rows: any[] = [];
+                const {data: dataPlural, error: errorPlural} = await supabase
                     .from("regions_plants")
                     .select("plant_code, regions!inner(region_code, region_name, type)")
                     .eq("plant_code", plantCode);
-                if (error) return new Response(JSON.stringify({error: error.message}), {
-                    status: 400,
-                    headers: corsHeaders
-                });
-                const out = (data ?? []).map((row: any) => ({
+                if (errorPlural) return new Response(JSON.stringify({error: errorPlural.message}), {status: 400, headers: corsHeaders});
+                rows = dataPlural ?? [];
+                if (!rows.length) {
+                    const {data: dataSing, error: errorSing} = await supabase
+                        .from("region_plants")
+                        .select("plant_code, regions!inner(region_code, region_name, type)")
+                        .eq("plant_code", plantCode);
+                    if (errorSing) return new Response(JSON.stringify({error: errorSing.message}), {status: 400, headers: corsHeaders});
+                    rows = dataSing ?? [];
+                }
+                const out = (rows ?? []).map((row: any) => ({
                     region_code: row.regions?.region_code ?? null,
                     region_name: row.regions?.region_name ?? null,
                     type: row.regions?.type ?? null
@@ -282,15 +184,9 @@ Deno.serve(async (req) => {
                 return new Response(JSON.stringify({data: out}), {headers: corsHeaders});
             }
             default:
-                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
-                    status: 404,
-                    headers: corsHeaders
-                });
+                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {status: 404, headers: corsHeaders});
         }
     } catch (error) {
-        return new Response(JSON.stringify({
-            error: "Internal server error",
-            message: (error as Error).message
-        }), {status: 500, headers: corsHeaders});
+        return new Response(JSON.stringify({error: "Internal server error", message: (error as Error).message}), {status: 500, headers: corsHeaders});
     }
 });

@@ -15,6 +15,7 @@ import MixerDetailView from './MixerDetailView'
 import MixerIssueModal from './MixerIssueModal'
 import MixerCommentModal from './MixerCommentModal'
 import {RegionService} from '../../services/RegionService'
+import {UserService} from '../../services/UserService'
 import AsyncUtility from '../../utils/AsyncUtility'
 import LookupUtility from '../../utils/LookupUtility'
 import FleetUtility from '../../utils/FleetUtility'
@@ -46,7 +47,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalMixerId, setModalMixerId] = useState(null)
     const [modalMixerNumber, setModalMixerNumber] = useState('')
-    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
     const [mixersLoaded, setMixersLoaded] = useState(false)
     const [operatorsLoaded, setOperatorsLoaded] = useState(false)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
@@ -90,32 +91,42 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     }, [preferences]);
 
     useEffect(() => {
-        const code = preferences.selectedRegion?.code || ''
         let cancelled = false
-
-        async function loadRegionPlants() {
-            if (!code) {
-                setRegionPlantCodes(null)
-                return
-            }
+        async function loadAllowedPlants() {
+            let regionCode = preferences.selectedRegion?.code || ''
             try {
-                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    setRegionPlantCodes(new Set())
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
                 if (cancelled) return
-                const codes = new Set(regionPlants.map(p => p.plantCode))
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
                 setRegionPlantCodes(codes)
-                if (selectedPlant && !codes.has(selectedPlant)) {
+                const sel = String(selectedPlant || '').trim().toUpperCase()
+                if (sel && !codes.has(sel)) {
                     setSelectedPlant('')
                     updateMixerFilter('selectedPlant', '')
                 }
             } catch {
-                setRegionPlantCodes(new Set())
+                if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
-
-        loadRegionPlants()
-        return () => {
-            cancelled = true
-        }
+        loadAllowedPlants()
+        return () => { cancelled = true }
     }, [preferences.selectedRegion?.code])
 
 
@@ -232,7 +243,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 const vinMatch = vinRaw.includes(searchText.trim().toLowerCase()) || vinNoSpaces.includes(normalizedSearch)
                 const matchesSearch = !normalizedSearch || truckMatch || operatorMatch || vinMatch
                 const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
-                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(mixer.assignedPlant)
+                const matchesRegion = !regionPlantCodes || regionPlantCodes.has(String(mixer.assignedPlant || '').trim().toUpperCase())
                 let matchesStatus = true
                 if (statusFilter && statusFilter !== 'All Statuses') {
                     matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? mixer.status === statusFilter :
@@ -244,7 +255,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 return matchesSearch && matchesPlant && matchesRegion && matchesStatus
             })
             .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'truckNumber'))
-    }, [mixers, operators, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes])
+    }, [mixers, operators, selectedPlant, searchText, statusFilter, regionPlantCodes])
 
     const unverifiedCount = mixers.filter(m => !m.isVerified()).length
     const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length
@@ -535,11 +546,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                     >
                                         <option value="">All Plants</option>
                                         {plants
-                                            .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
-                                            .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0'))
+                                            .filter(p => {
+                                                const code = String(p.plantCode || p.plant_code || '').trim().toUpperCase()
+                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
+                                            })
+                                            .sort((a, b) => parseInt((a.plantCode || a.plant_code || '').replace(/\D/g, '') || '0') - parseInt((b.plantCode || b.plant_code || '').replace(/\D/g, '') || '0'))
                                             .map(plant => (
-                                                <option key={plant.plantCode} value={plant.plantCode}>
-                                                    ({plant.plantCode}) {plant.plantName}
+                                                <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>
+                                                    ({plant.plantCode || plant.plant_code}) {plant.plantName || plant.plant_name}
                                                 </option>
                                             ))}
                                     </select>

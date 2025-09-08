@@ -8,7 +8,6 @@ const TABLES = {
     USER_ROLES: "users_permissions",
     ROLES: "users_roles"
 };
-const CORS_TIMEOUT = 10000;
 const corsHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -300,12 +299,14 @@ Deno.serve(async (req) => {
                     updated_at: new Date().toISOString()
                 }).eq("id", user.id);
                 if (updateError) {
+                    console.error("Password update failed", updateError);
                     return genericResponse;
                 }
                 const mailerSendToken = Deno.env.get("MAILERSEND_API_TOKEN");
                 const fromEmail = Deno.env.get("MAILERSEND_FROM_EMAIL");
                 const fromName = Deno.env.get("MAILERSEND_FROM_NAME") || "Smyrna Tools";
                 if (!mailerSendToken || !fromEmail) {
+                    console.warn("Mailersend env missing", {hasToken: Boolean(mailerSendToken), hasFromEmail: Boolean(fromEmail)});
                     return genericResponse;
                 }
                 const loginUrl = `${Deno.env.get("FRONTEND_URL") || "https://smyrnatools.com"}/login`;
@@ -338,9 +339,16 @@ Deno.serve(async (req) => {
                         })
                     });
                     if (!response.ok) {
+                        let bodyText = "";
+                        try {
+                            bodyText = await response.text();
+                        } catch {}
+                        console.error("Mailersend request failed", {status: response.status, body: bodyText?.slice(0, 1000)});
                         return genericResponse;
                     }
+                    console.info("Mailersend request succeeded", {status: response.status});
                 } catch (error) {
+                    console.error("Mailersend exception", error && (error.message || String(error)));
                     return genericResponse;
                 }
                 return genericResponse;

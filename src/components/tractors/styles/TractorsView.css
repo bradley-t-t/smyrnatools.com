@@ -834,6 +834,14 @@
     box-sizing: border-box;
 }
 
+.search-filters::before {
+    display: none;
+    content: none;
+    background: none;
+    height: 0;
+    opacity: 0;
+}
+
 .search-bar {
     position: relative;
     flex: 1 1 0;
@@ -886,7 +894,7 @@
 .tractors-view {
     overscroll-behavior-y: none;
     padding-top: 0;
-    --sticky-cover-height: 18px;
+    --sticky-cover-height: 14px;
 }
 
 .tractors-view::before {
@@ -895,10 +903,14 @@
     top: 0;
     left: 0;
     right: 0;
-    height: var(--sticky-cover-height, 18px);
+    height: var(--sticky-cover-height, 14px);
     background: var(--background);
     z-index: 150;
     pointer-events: none;
+}
+
+.dashboard-container.tractors-view.detail-open {
+    --sticky-cover-height: 0px;
 }
 
 .tractors-list-header-row {

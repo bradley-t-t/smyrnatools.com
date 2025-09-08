@@ -6,6 +6,7 @@ import LoadingScreen from '../common/LoadingScreen';
 import ManagerDetailView from './ManagerDetailView';
 import ManagerCard from './ManagerCard';
 import {usePreferences} from '../../app/context/PreferencesContext';
+import {RegionService} from '../../services/RegionService'
 
 function ManagersView({title = 'Managers', onSelectManager}) {
     const {preferences, updateManagerFilter, resetManagerFilters} = usePreferences()
@@ -26,13 +27,13 @@ function ManagersView({title = 'Managers', onSelectManager}) {
         const lastUsed = localStorage.getItem('managers_last_view_mode')
         return lastUsed || 'grid'
     })
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
 
     useEffect(() => {
         async function fetchCurrentUser() {
             const user = await UserService.getCurrentUser();
             if (user) setCurrentUserId(user.id);
         }
-
         fetchCurrentUser();
     }, []);
 
@@ -60,6 +61,31 @@ function ManagersView({title = 'Managers', onSelectManager}) {
         }
     }, [preferences.managerFilters?.viewMode, preferences.defaultViewMode])
 
+    useEffect(() => {
+        const code = preferences.selectedRegion?.code || ''
+        let cancelled = false
+        async function loadRegionPlants() {
+            if (!code) {
+                setRegionPlantCodes(null)
+                return
+            }
+            try {
+                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => p.plantCode))
+                setRegionPlantCodes(codes)
+                if (selectedPlant && !codes.has(selectedPlant)) {
+                    setSelectedPlant('')
+                    updateManagerFilter('selectedPlant', '')
+                }
+            } catch {
+                setRegionPlantCodes(new Set())
+            }
+        }
+        loadRegionPlants()
+        return () => { cancelled = true }
+    }, [preferences.selectedRegion?.code])
+
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
             setViewMode(null)
@@ -84,10 +110,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
 
     async function fetchManagers() {
         try {
-            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {
-                data: permissions,
-                error: permissionsError
-            }, {data: rolesList, error: rolesError}] = await Promise.all([
+            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {data: permissions, error: permissionsError}, {data: rolesList, error: rolesError}] = await Promise.all([
                 supabase.from('users').select('id, email, created_at, updated_at'),
                 supabase.from('users_profiles').select('id, first_name, last_name, plant_code, created_at, updated_at'),
                 supabase.from('users_permissions').select('user_id, role_id'),
@@ -151,12 +174,11 @@ function ManagersView({title = 'Managers', onSelectManager}) {
 
     const filteredManagers = managers
         .filter(manager => {
-            const matchesSearch = !searchText.trim() ||
-                `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchText.toLowerCase()) ||
-                manager.email.toLowerCase().includes(searchText.toLowerCase());
+            const matchesSearch = !searchText.trim() || `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchText.toLowerCase()) || manager.email.toLowerCase().includes(searchText.toLowerCase());
             const matchesPlant = !selectedPlant || manager.plantCode === selectedPlant;
             const matchesRole = !roleFilter || (manager.roleName && manager.roleName.toLowerCase() === roleFilter.toLowerCase());
-            return matchesSearch && matchesPlant && matchesRole;
+            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(manager.plantCode);
+            return matchesSearch && matchesPlant && matchesRole && matchesRegion;
         })
         .sort((a, b) => {
             const roleWeights = {'Admin': 4, 'Manager': 3, 'Supervisor': 2, 'User': 1};
@@ -191,15 +213,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                     <div className="managers-sticky-header">
                         <div className="dashboard-header">
                             <h1>{title}</h1>
-                            <div className="dashboard-actions">
-                                <button
-                                    className="action-button primary rectangular-button"
-                                    onClick={() => setShowOverview(true)}
-                                    style={{height: '44px', lineHeight: '1'}}
-                                >
-                                    <i className="fas fa-chart-bar" style={{marginRight: '8px'}}></i> Overview
-                                </button>
-                            </div>
+                            <div className="dashboard-actions"></div>
                         </div>
                         <div className="search-filters">
                             <div className="search-bar">
@@ -252,11 +266,14 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                                         aria-label="Filter by plant"
                                     >
                                         <option value="">All Plants</option>
-                                        {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
-                                            <option key={plant.plant_code} value={plant.plant_code}>
-                                                ({plant.plant_code}) {plant.plant_name}
-                                            </option>
-                                        ))}
+                                        {plants
+                                            .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                            .sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'))
+                                            .map(plant => (
+                                                <option key={plant.plant_code} value={plant.plant_code}>
+                                                    ({plant.plant_code}) {plant.plant_name}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="filter-wrapper">
@@ -285,6 +302,9 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
+                                <button className="ios-button" onClick={() => setShowOverview(true)}>
+                                    <i className="fas fa-chart-bar"></i> Overview
+                                </button>
                             </div>
                         </div>
                         {viewMode === 'list' && (
