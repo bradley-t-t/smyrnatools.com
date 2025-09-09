@@ -38,9 +38,11 @@
     --detail-header-bg: #ffffff;
     --spare: #a259e6;
     --status-active: #38a169;
+    --status-stationary: #2c7a7b;
     --status-spare: #a259e6;
     --status-inshop: #2563eb;
     --status-retired: #7c1d1d;
+    --status-sold: #6b7280;
     --comments-badge-bg: #ffe066;
     --comments-badge-text: #fff;
     --comments-badge-icon: #fff;
@@ -172,9 +174,11 @@
     --accent-border: #b9bbbe;
     --accent-primary-rgb: 35, 39, 42;
     --status-active: #38a169;
+    --status-stationary: #2c7a7b;
     --status-spare: #a259e6;
     --status-inshop: #2563eb;
     --status-retired: #7c1d1d;
+    --status-sold: #6b7280;
 }
 
 body {

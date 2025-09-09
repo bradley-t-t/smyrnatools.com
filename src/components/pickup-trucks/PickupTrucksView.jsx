@@ -309,7 +309,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                         value={statusFilter}
                                         onChange={e => setStatusFilter(e.target.value)}
                                     >
-                                        {['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Over 300k Miles'].map(s => (
+                                        {['All Statuses', 'Active', 'Stationary', 'Spare', 'In Shop', 'Retired', 'Sold', 'Over 300k Miles'].map(s => (
                                             <option key={s} value={s === 'All Statuses' ? '' : s}>{s}</option>
                                         ))}
                                     </select>

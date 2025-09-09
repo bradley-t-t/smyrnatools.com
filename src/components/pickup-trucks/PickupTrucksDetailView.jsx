@@ -173,9 +173,11 @@ function PickupTrucksDetailView({pickupId, onClose}) {
                                                                                      className="form-control">
                                 <option value="">Select Status</option>
                                 <option value="Active">Active</option>
+                                <option value="Stationary">Stationary</option>
                                 <option value="Spare">Spare</option>
                                 <option value="In Shop">In Shop</option>
                                 <option value="Retired">Retired</option>
+                                <option value="Sold">Sold</option>
                             </select></div>
                             <div className="form-group"><label>Assigned</label><input type="text" value={assigned}
                                                                                       onChange={e => setAssigned(e.target.value)}

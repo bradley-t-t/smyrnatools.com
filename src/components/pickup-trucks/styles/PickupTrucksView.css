@@ -53,6 +53,10 @@
     background: var(--status-active)
 }
 
+.pickup-trucks-view .item-status-dot.stationary {
+    background: var(--status-stationary)
+}
+
 .pickup-trucks-view .item-status-dot.spare {
     background: var(--status-spare)
 }
@@ -63,6 +67,10 @@
 
 .pickup-trucks-view .item-status-dot.retired {
     background: var(--status-retired)
+}
+
+.pickup-trucks-view .item-status-dot.sold {
+    background: var(--status-sold)
 }
 
 .pickup-trucks-view .cell-inline {

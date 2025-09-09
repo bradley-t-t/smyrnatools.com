@@ -1,5 +1,5 @@
 export function compareByStatusThenNumber(a, b, statusField = 'status', numberField = 'truckNumber') {
-    const order = {Active: 0, Spare: 1, 'In Shop': 2, Retired: 3};
+    const order = {Active: 0, Stationary: 1, Spare: 2, 'In Shop': 3, Retired: 4, Sold: 5};
     const sa = order[a?.[statusField]] ?? 99;
     const sb = order[b?.[statusField]] ?? 99;
     if (sa !== sb) return sa - sb;
