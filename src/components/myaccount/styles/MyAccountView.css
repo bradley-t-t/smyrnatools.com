@@ -375,7 +375,6 @@
     flex-wrap: wrap;
     margin-bottom: 1rem;
     width: 100%;
-    display: block;
 }
 
 .form-group {
@@ -671,77 +670,69 @@ button.save-button:disabled {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
+    justify-content: start;
+    justify-items: start;
 }
 
-.action-button-container {
-    width: 100%;
+.myaccount-action-button-container {
+    width: auto;
+    display: inline-flex;
 }
 
-.action-button {
+.myaccount-action-button {
     display: flex;
     align-items: center;
-    width: 100%;
-    padding: 1.25rem;
+    width: auto;
+    padding: 0.75rem 1rem;
     border-radius: 12px;
     background-color: var(--bg-primary);
     border: 1px solid var(--border-light);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 64px;
+    min-height: 44px;
 }
 
-.action-button.logout:hover {
-    background-color: #fef2f2;
-    border-color: #fee2e2;
+.myaccount-action-button.logout {
+    background-color: transparent;
+    border-color: var(--danger-color);
 }
 
-.action-button-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background-color: #f8f9fa;
+.myaccount-action-button-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 1rem;
-    color: #666;
-}
-
-.action-button.logout .action-button-icon {
-    color: #ef4444;
-    background-color: #fef2f2;
-}
-
-.action-button-content {
-    flex: 1;
-    text-align: left;
-}
-
-.action-title {
-    display: block;
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-}
-
-.action-button.logout .action-title {
-    color: #ef4444;
-}
-
-.action-description {
-    display: block;
-    font-size: 0.85rem;
+    margin-right: 0.75rem;
     color: var(--text-secondary);
 }
 
-.security-tips-container {
-    display: none;
+.myaccount-action-button.logout .myaccount-action-button-icon {
+    color: var(--danger-color);
 }
 
-.security-tip {
-    display: none;
+.myaccount-action-button-content {
+    flex: 1;
+    text-align: left;
+    display: flex;
+    align-items: center;
+}
+
+.myaccount-action-title {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.myaccount-action-button.logout .myaccount-action-title {
+    color: var(--danger-color);
 }
 
 .modal-overlay {
@@ -787,8 +778,8 @@ button.save-button:disabled {
 .modal-close-btn {
     background: transparent;
     border: none;
-    font-size: 1.5rem;
     color: var(--text-secondary);
+    font-size: 1.5rem;
     cursor: pointer;
 }
 
@@ -1255,4 +1246,56 @@ button.save-button:disabled {
     transform: translateY(-50%);
     pointer-events: none;
     font-size: 1rem;
+}
+
+.myaccount-logout-container {
+    width: auto;
+    display: inline-flex;
+}
+
+.myaccount-logout-button {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .625rem .9rem;
+    border: 1px solid var(--danger-color);
+    background: transparent;
+    border-radius: 10px;
+    color: var(--danger-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+    min-height: 40px;
+}
+
+.myaccount-logout-button:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--danger-color);
+}
+
+.myaccount-logout-button:focus-visible {
+    outline: 2px solid var(--danger-color);
+    outline-offset: 2px;
+}
+
+.myaccount-logout-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: inherit;
+}
+
+.myaccount-logout-content {
+    display: flex;
+    align-items: center;
+}
+
+.myaccount-logout-title {
+    font-weight: 600;
+    font-size: .95rem;
+    line-height: 1;
+    color: inherit;
+    white-space: nowrap;
 }

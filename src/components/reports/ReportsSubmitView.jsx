@@ -74,6 +74,32 @@ function ReportsSubmitView({
     const PluginComponent = plugins[report.name]
     const submitted = !!initialData?.completed
 
+    function validatePlantProduction() {
+        if (!form.plant) return 'Please select a plant before submitting.'
+        if (!form.report_date) return 'Please select a report date before submitting.'
+        const rows = Array.isArray(form.rows) ? form.rows : []
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i]
+            const nameLabel = operatorOptions.find(o => o.value === r.name)?.label || `Operator ${i + 1}`
+            const start = ReportService.parseTimeToMinutes(r.start_time)
+            const first = ReportService.parseTimeToMinutes(r.first_load)
+            const eod = ReportService.parseTimeToMinutes(r.eod_in_yard)
+            const punch = ReportService.parseTimeToMinutes(r.punch_out)
+            if (!r.start_time || start === null) return `${nameLabel}: Start Time is required and must be a valid time.`
+            if (!r.first_load || first === null) return `${nameLabel}: 1st Load time is required and must be a valid time.`
+            if (!r.eod_in_yard || eod === null) return `${nameLabel}: EOD In Yard time is required and must be a valid time.`
+            if (!r.punch_out || punch === null) return `${nameLabel}: Punch Out time is required and must be a valid time.`
+            if (first - start < 0) return `${nameLabel}: 1st Load time must be after Start Time.`
+            if (punch - eod < 0) return `${nameLabel}: Punch Out time must be after EOD In Yard.`
+            if (start !== null && punch !== null && punch - start <= 0) return `${nameLabel}: Total hours must be greater than 0.`
+            const loadsVal = r.loads
+            if (loadsVal === undefined || loadsVal === null || String(loadsVal) === '') return `${nameLabel}: Total Loads is required.`
+            const loadsNum = Number(loadsVal)
+            if (!Number.isFinite(loadsNum) || loadsNum < 0 || !Number.isInteger(loadsNum)) return `${nameLabel}: Total Loads must be a non-negative whole number.`
+        }
+        return ''
+    }
+
     function handleChange(e, name, idx, colName) {
         if (report.name === 'plant_production' && name === 'rows') {
             const updatedRows = [...(form.rows || [])]
@@ -146,6 +172,13 @@ function ReportsSubmitView({
                 }
             }
         }
+        if (report.name === 'plant_production') {
+            const v = validatePlantProduction()
+            if (v) {
+                setError(v)
+                return
+            }
+        }
         setSubmitting(true)
         try {
             await onSubmit(form, 'submit')
@@ -175,6 +208,13 @@ function ReportsSubmitView({
         setError('')
         setSuccess(false)
         setSaveMessage('')
+        if (managerEditUser && report.name === 'plant_production') {
+            const v = validatePlantProduction()
+            if (v) {
+                setError(v)
+                return
+            }
+        }
         setSavingDraft(true)
         try {
             await onSubmit(form, 'draft')

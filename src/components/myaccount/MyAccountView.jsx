@@ -554,47 +554,16 @@ function MyAccountView({userId}) {
                         <p>Manage your account settings and sessions</p>
                     </div>
                     <div className="account-actions">
-                        <div className="action-button-container" style={{width: '100%'}}>
+                        <div className="myaccount-logout-container">
                             <button
-                                className="action-button logout"
+                                className="myaccount-logout-button"
                                 onClick={handleSignOut}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    backgroundColor: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-light)',
-                                    padding: '1rem 1.5rem',
-                                    borderRadius: '8px',
-                                    width: '100%',
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
-                                }}
                             >
-                                <div className="action-button-icon" style={{
-                                    width: '2.5rem',
-                                    height: '2.5rem',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    fontSize: '1.2rem',
-                                    backgroundColor: 'var(--error-bg)',
-                                    color: 'var(--danger)'
-                                }}>
+                                <div className="myaccount-logout-icon">
                                     <i className="fas fa-sign-out-alt"></i>
                                 </div>
-                                <div className="action-button-content" style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    textAlign: 'left'
-                                }}>
-                  <span className="action-title"
-                        style={{fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem'}}>
-                    Sign Out
-                  </span>
+                                <div className="myaccount-logout-content">
+                                    <span className="myaccount-logout-title">Sign Out</span>
                                 </div>
                             </button>
                         </div>

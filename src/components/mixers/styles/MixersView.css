@@ -1397,7 +1397,7 @@
     border-top: none;
 }
 
-.mixers-view::before {
+.mixers-view::before, .pickup-trucks-view:not(.detail-open)::before {
     content: '';
     position: fixed;
     top: 0;

@@ -27,6 +27,8 @@ const getIconForMenuItem = (id) => {
             return <i className="fas fa-tractor"></i>
         case 'Trailers':
             return <i className="fas fa-trailer"></i>
+        case 'Pickup Trucks':
+            return <i className="fas fa-truck-pickup"></i>
         case 'Heavy Equipment':
             return <i className="fas fa-snowplow"></i>
         case 'Operators':
@@ -61,6 +63,7 @@ const menuItems = [
     {text: 'Tractors', id: 'Tractors', permission: 'tractors.view', alwaysVisible: false},
     {text: 'Trailers', id: 'Trailers', permission: 'trailers.view', alwaysVisible: false},
     {text: 'Heavy Equipment', id: 'Heavy Equipment', permission: 'equipment.view', alwaysVisible: false},
+    {text: 'Pickup Trucks', id: 'Pickup Trucks', permission: 'pickup_trucks.view', alwaysVisible: false},
     {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
     {text: 'Operators', id: 'Operators', permission: 'operators.view', alwaysVisible: false},
     {text: 'Managers', id: 'Managers', permission: 'managers.view', alwaysVisible: false},

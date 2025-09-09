@@ -31,6 +31,7 @@ import RegionsView from '../components/regions/RegionsView'
 import SmyrnaLogo from '../assets/images/SmyrnaLogo.png'
 import GuestView from '../components/guest/GuestView'
 import DesktopOnly from '../components/desktop-only/DesktopOnly'
+import PickupTrucksView from '../components/pickup-trucks/PickupTrucksView'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -340,6 +341,8 @@ function AppContent() {
             case 'Trailers':
                 return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {
                 }}/>
+            case 'Pickup Trucks':
+                return <PickupTrucksView title="Pickup Trucks"/>
             case 'Heavy Equipment':
                 return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {
                 }}/>
