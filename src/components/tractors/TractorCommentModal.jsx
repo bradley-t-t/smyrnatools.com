@@ -107,7 +107,8 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                                 placeholder="Write your comment here..."
                                 disabled={isSubmitting}
                             ></textarea>
-                            <button type="submit" className="add-comment-button" disabled={isSubmitting || !newComment.trim()}>
+                            <button type="submit" className="add-comment-button"
+                                    disabled={isSubmitting || !newComment.trim()}>
                                 {isSubmitting ? 'Adding...' : 'Add Comment'}
                             </button>
                         </form>
@@ -128,9 +129,12 @@ function TractorCommentModal({tractorId, tractorNumber, onClose}) {
                             comments.map(comment => (
                                 <div key={comment.id} className="comment-item">
                                     <div className="comment-metadata">
-                                        <span className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
-                                        <span className="comment-date" style={{marginLeft: '8px'}}>{formatDate(comment.createdAt)}</span>
-                                        <button className="delete-comment-button" onClick={() => handleDeleteComment(comment.id)} title="Delete comment">
+                                        <span
+                                            className="comment-author">{userNames[comment.author] || 'Loading...'}</span>
+                                        <span className="comment-date"
+                                              style={{marginLeft: '8px'}}>{formatDate(comment.createdAt)}</span>
+                                        <button className="delete-comment-button"
+                                                onClick={() => handleDeleteComment(comment.id)} title="Delete comment">
                                             <i className="fas fa-trash"></i>
                                         </button>
                                     </div>

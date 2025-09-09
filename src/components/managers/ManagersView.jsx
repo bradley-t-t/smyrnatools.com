@@ -34,6 +34,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
             const user = await UserService.getCurrentUser();
             if (user) setCurrentUserId(user.id);
         }
+
         fetchCurrentUser();
     }, []);
 
@@ -64,6 +65,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -82,8 +84,11 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
     function handleViewModeChange(mode) {
@@ -110,7 +115,10 @@ function ManagersView({title = 'Managers', onSelectManager}) {
 
     async function fetchManagers() {
         try {
-            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {data: permissions, error: permissionsError}, {data: rolesList, error: rolesError}] = await Promise.all([
+            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {
+                data: permissions,
+                error: permissionsError
+            }, {data: rolesList, error: rolesError}] = await Promise.all([
                 supabase.from('users').select('id, email, created_at, updated_at'),
                 supabase.from('users_profiles').select('id, first_name, last_name, plant_code, created_at, updated_at'),
                 supabase.from('users_permissions').select('user_id, role_id'),
@@ -342,11 +350,11 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
                                     <colgroup>
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '28%'}} />
-                                        <col style={{width: '18%'}} />
-                                        <col style={{width: '18%'}} />
-                                        <col style={{width: '24%'}} />
+                                        <col style={{width: '12%'}}/>
+                                        <col style={{width: '28%'}}/>
+                                        <col style={{width: '18%'}}/>
+                                        <col style={{width: '18%'}}/>
+                                        <col style={{width: '24%'}}/>
                                     </colgroup>
                                     <tbody>
                                     {filteredManagers.map(manager => (
@@ -366,11 +374,11 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                             <div className="managers-list-table-container">
                                 <table className="managers-list-table">
                                     <colgroup>
-                                        <col style={{width: '12%'}} />
-                                        <col style={{width: '28%'}} />
-                                        <col style={{width: '18%'}} />
-                                        <col style={{width: '18%'}} />
-                                        <col style={{width: '24%'}} />
+                                        <col style={{width: '12%'}}/>
+                                        <col style={{width: '28%'}}/>
+                                        <col style={{width: '18%'}}/>
+                                        <col style={{width: '18%'}}/>
+                                        <col style={{width: '24%'}}/>
                                     </colgroup>
                                     <tbody>
                                     {filteredManagers.map(manager => (

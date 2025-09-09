@@ -61,6 +61,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     useEffect(() => {
         const code = preferences?.selectedRegion?.code || ''
         let mounted = true
+
         async function loadRegionPlants() {
             if (!code) {
                 if (mounted) setRegionPlantCodes([])
@@ -74,6 +75,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 if (mounted) setRegionPlantCodes([])
             }
         }
+
         loadRegionPlants()
         return () => {
             mounted = false
@@ -213,7 +215,8 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                                     '--select-focus-border': 'var(--accent)'
                                 }}
                             >
-                                <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants</option>
+                                <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants
+                                </option>
                                 {visiblePlants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
                                     <option
                                         key={plant.plant_code}
@@ -322,7 +325,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                         <table className="mixers-list-table">
                             <colgroup>
                                 {headerColumns.map((w, i) => (
-                                    <col key={i} style={{width: w}} />
+                                    <col key={i} style={{width: w}}/>
                                 ))}
                             </colgroup>
                             <tbody>

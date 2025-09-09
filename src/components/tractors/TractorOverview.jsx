@@ -21,7 +21,9 @@ const TractorOverview = ({filteredTractors = null, selectedPlant = '', onStatusC
     const [notVerifiedCount, setNotVerifiedCount] = useState(0)
     const [duplicateOperatorNames, setDuplicateOperatorNames] = useState(new Set())
 
-    useEffect(() => { fetchData() }, [filteredTractors])
+    useEffect(() => {
+        fetchData()
+    }, [filteredTractors])
 
     useEffect(() => {
         if (filteredTractors && operators.length > 0) updateStatistics(filteredTractors)
@@ -61,7 +63,9 @@ const TractorOverview = ({filteredTractors = null, selectedPlant = '', onStatusC
     const calculatePlantDistributionByStatus = (tractorsData) => {
         const distribution = {}
         const uniquePlants = [...new Set(tractorsData.map(tractor => tractor.assignedPlant || 'Unassigned'))]
-        uniquePlants.forEach(plant => { distribution[plant] = { Total: 0, Active: 0, Spare: 0, 'In Shop': 0 } })
+        uniquePlants.forEach(plant => {
+            distribution[plant] = {Total: 0, Active: 0, Spare: 0, 'In Shop': 0}
+        })
         tractorsData.forEach(tractor => {
             const plant = tractor.assignedPlant || 'Unassigned'
             const status = tractor.status || 'Unknown'
@@ -97,28 +101,62 @@ const TractorOverview = ({filteredTractors = null, selectedPlant = '', onStatusC
     const getTrainerTraineeRows = () => {
         const relevantTractors = filteredTractors || tractors
         const relevantOperatorIds = new Set()
-        relevantTractors.forEach(tractor => { if (tractor.assignedOperator && tractor.assignedOperator !== '0') relevantOperatorIds.add(tractor.assignedOperator) })
+        relevantTractors.forEach(tractor => {
+            if (tractor.assignedOperator && tractor.assignedOperator !== '0') relevantOperatorIds.add(tractor.assignedOperator)
+        })
         let filteredTrainers = operators.filter(op => op.isTrainer)
         if (selectedPlant) filteredTrainers = filteredTrainers.filter(op => op.plantCode === selectedPlant || relevantOperatorIds.has(op.employeeId))
         const allTrainees = operators.filter(op => op.status === 'Training')
         const filteredTrainees = selectedPlant ? allTrainees.filter(op => filteredTrainers.some(tr => tr.employeeId === op.assignedTrainer)) : allTrainees
         const rows = []
         const trainerTraineeCount = {}
-        filteredTrainees.forEach(trainee => { const trainerId = trainee.assignedTrainer; if (trainerId) trainerTraineeCount[trainerId] = (trainerTraineeCount[trainerId] || 0) + 1 })
+        filteredTrainees.forEach(trainee => {
+            const trainerId = trainee.assignedTrainer;
+            if (trainerId) trainerTraineeCount[trainerId] = (trainerTraineeCount[trainerId] || 0) + 1
+        })
         filteredTrainers.forEach(trainer => {
             const assignedTractor = relevantTractors.find(m => m.assignedOperator === trainer.employeeId)
             const trainerTrainees = filteredTrainees.filter(t => t.assignedTrainer === trainer.employeeId)
             const hasMultipleTrainees = trainerTraineeCount[trainer.employeeId] > 1
             if (trainerTrainees.length === 0) {
-                rows.push({ truckNumber: assignedTractor ? (assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id) : '', trainer: trainer.name, trainerPlant: trainer.plantCode, trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '', trainee: '', traineePosition: '', traineePlant: '', hasMultipleTrainees: false })
+                rows.push({
+                    truckNumber: assignedTractor ? (assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id) : '',
+                    trainer: trainer.name,
+                    trainerPlant: trainer.plantCode,
+                    trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '',
+                    trainee: '',
+                    traineePosition: '',
+                    traineePlant: '',
+                    hasMultipleTrainees: false
+                })
             } else {
                 trainerTrainees.forEach(trainee => {
-                    rows.push({ truckNumber: assignedTractor ? (assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id) : '', trainer: trainer.name, trainerPlant: trainer.plantCode, trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '', trainee: trainee.name, traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '', traineePlant: trainee.plantCode, hasMultipleTrainees })
+                    rows.push({
+                        truckNumber: assignedTractor ? (assignedTractor.truckNumber || assignedTractor.unitNumber || assignedTractor.id) : '',
+                        trainer: trainer.name,
+                        trainerPlant: trainer.plantCode,
+                        trainerPosition: (trainer.position === 'Mixer Operator' || trainer.position === 'Tractor Operator') ? trainer.position : '',
+                        trainee: trainee.name,
+                        traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '',
+                        traineePlant: trainee.plantCode,
+                        hasMultipleTrainees
+                    })
                 })
             }
         })
         const traineesWithoutTrainer = filteredTrainees.filter(t => !t.assignedTrainer)
-        traineesWithoutTrainer.forEach(trainee => { rows.push({ truckNumber: '', trainer: '', trainerPlant: trainee.plantCode, trainerPosition: '', trainee: trainee.name, traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '', traineePlant: trainee.plantCode, hasMultipleTrainees: false }) })
+        traineesWithoutTrainer.forEach(trainee => {
+            rows.push({
+                truckNumber: '',
+                trainer: '',
+                trainerPlant: trainee.plantCode,
+                trainerPosition: '',
+                trainee: trainee.name,
+                traineePosition: (trainee.position === 'Mixer Operator' || trainee.position === 'Tractor Operator') ? trainee.position : '',
+                traineePlant: trainee.plantCode,
+                hasMultipleTrainees: false
+            })
+        })
         rows.sort((a, b) => a.trainerPlant < b.trainerPlant ? -1 : a.trainerPlant > b.trainerPlant ? 1 : 0)
         return rows
     }
@@ -140,34 +178,44 @@ const TractorOverview = ({filteredTractors = null, selectedPlant = '', onStatusC
             )}
             {filteredTractors && (
                 <div style={{textAlign: 'center', marginBottom: '15px'}}>
-                    <div className="filter-indicator">Showing statistics for {filteredTractors.length} tractor{filteredTractors.length !== 1 ? 's' : ''}</div>
+                    <div className="filter-indicator">Showing statistics
+                        for {filteredTractors.length} tractor{filteredTractors.length !== 1 ? 's' : ''}</div>
                 </div>
             )}
             <div className="overview-grid">
                 <div className="overview-card status-card">
                     <h2>Status Overview</h2>
                     <div className="status-grid">
-                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('All Statuses')} tabIndex={0} role="button" style={{cursor: 'pointer'}}>
+                        <div className="status-item clickable"
+                             onClick={() => onStatusClick && onStatusClick('All Statuses')} tabIndex={0} role="button"
+                             style={{cursor: 'pointer'}}>
                             <div className="status-count">{statusCounts.Total || 0}</div>
                             <div className="status-label">Total Tractors</div>
                         </div>
-                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('Active')} tabIndex={0} role="button" style={{cursor: 'pointer'}}>
+                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('Active')}
+                             tabIndex={0} role="button" style={{cursor: 'pointer'}}>
                             <div className="status-count">{statusCounts.Active || 0}</div>
                             <div className="status-label">Active</div>
                         </div>
-                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('In Shop')} tabIndex={0} role="button" style={{cursor: 'pointer'}}>
+                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('In Shop')}
+                             tabIndex={0} role="button" style={{cursor: 'pointer'}}>
                             <div className="status-count">{statusCounts['In Shop'] || 0}</div>
                             <div className="status-label">In Shop</div>
                         </div>
-                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('Spare')} tabIndex={0} role="button" style={{cursor: 'pointer'}}>
+                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('Spare')}
+                             tabIndex={0} role="button" style={{cursor: 'pointer'}}>
                             <div className="status-count">{statusCounts.Spare || 0}</div>
                             <div className="status-label">Spare</div>
                         </div>
-                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('Verified')} tabIndex={0} role="button" style={{cursor: 'pointer'}}>
+                        <div className="status-item clickable"
+                             onClick={() => onStatusClick && onStatusClick('Verified')} tabIndex={0} role="button"
+                             style={{cursor: 'pointer'}}>
                             <div className="status-count">{verifiedCount}</div>
                             <div className="status-label">Verified</div>
                         </div>
-                        <div className="status-item clickable" onClick={() => onStatusClick && onStatusClick('Not Verified')} tabIndex={0} role="button" style={{cursor: 'pointer'}}>
+                        <div className="status-item clickable"
+                             onClick={() => onStatusClick && onStatusClick('Not Verified')} tabIndex={0} role="button"
+                             style={{cursor: 'pointer'}}>
                             <div className="status-count">{notVerifiedCount}</div>
                             <div className="status-label">Not Verified</div>
                         </div>
@@ -291,7 +339,9 @@ const TractorOverview = ({filteredTractors = null, selectedPlant = '', onStatusC
                                             <td>
                                                 <span>{op.name}</span>
                                                 {duplicateOperatorNames.has(op.name) && (
-                                                    <span className="warning-badge" title="Multiple operators share this name"><i className="fas fa-exclamation-triangle"></i></span>
+                                                    <span className="warning-badge"
+                                                          title="Multiple operators share this name"><i
+                                                        className="fas fa-exclamation-triangle"></i></span>
                                                 )}
                                             </td>
                                             <td>{op.position === 'Mixer Operator' || op.position === 'Tractor Operator' ? op.position : ''}</td>

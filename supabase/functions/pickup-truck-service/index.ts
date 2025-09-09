@@ -31,31 +31,57 @@ Deno.serve(async (req) => {
 
         switch (endpoint) {
             case "fetch-all": {
-                const { data, error } = await supabase
+                const {data, error} = await supabase
                     .from("pickup_trucks")
                     .select("*")
                     .order("assigned_plant", {ascending: true})
                     .order("assigned", {ascending: true})
                     .order("make", {ascending: true})
                     .order("model", {ascending: true});
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             case "fetch-by-id": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const id = typeof body?.id === "string" ? body.id : null;
-                if (!id) return new Response(JSON.stringify({error: "Pickup Truck ID is required"}), {status: 400, headers: corsHeaders});
-                const { data, error } = await supabase.from("pickup_trucks").select("*").eq("id", id).maybeSingle();
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (!id) return new Response(JSON.stringify({error: "Pickup Truck ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const {data, error} = await supabase.from("pickup_trucks").select("*").eq("id", id).maybeSingle();
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? null}), {headers: corsHeaders});
             }
             case "create": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const pickup = body?.pickup || body;
                 const userId = typeof body?.userId === "string" && body.userId ? body.userId : null;
-                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const now = nowIso();
                 const mileageVal = typeof pickup?.mileage === "number" ? Math.max(0, Math.floor(pickup.mileage)) : (typeof pickup?.mileage === "string" && pickup.mileage.trim() !== "" ? Math.max(0, Math.floor(Number(pickup.mileage))) : null);
                 const apiData: Record<string, any> = {
@@ -73,21 +99,46 @@ Deno.serve(async (req) => {
                     updated_by: userId,
                     updated_last: null
                 };
-                const { data, error } = await supabase.from("pickup_trucks").insert([apiData]).select().maybeSingle();
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                const {data, error} = await supabase.from("pickup_trucks").insert([apiData]).select().maybeSingle();
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data}), {headers: corsHeaders});
             }
             case "update": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const id = typeof body?.pickupId === "string" ? body.pickupId : (typeof body?.id === "string" ? body.id : null);
                 const pickup = body?.pickup || body?.data || body;
                 const userId = typeof body?.userId === "string" && body.userId ? body.userId : null;
-                if (!id) return new Response(JSON.stringify({error: "Pickup Truck ID is required"}), {status: 400, headers: corsHeaders});
-                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
-                const { data: current, error: curErr } = await supabase.from("pickup_trucks").select("*").eq("id", id).maybeSingle();
-                if (curErr) return new Response(JSON.stringify({error: curErr.message}), {status: 400, headers: corsHeaders});
-                if (!current) return new Response(JSON.stringify({error: "Pickup Truck not found"}), {status: 404, headers: corsHeaders});
+                if (!id) return new Response(JSON.stringify({error: "Pickup Truck ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const {
+                    data: current,
+                    error: curErr
+                } = await supabase.from("pickup_trucks").select("*").eq("id", id).maybeSingle();
+                if (curErr) return new Response(JSON.stringify({error: curErr.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (!current) return new Response(JSON.stringify({error: "Pickup Truck not found"}), {
+                    status: 404,
+                    headers: corsHeaders
+                });
                 const mileageVal = typeof pickup?.mileage === "number" ? Math.max(0, Math.floor(pickup.mileage)) : (typeof pickup?.mileage === "string" && pickup.mileage.trim() !== "" ? Math.max(0, Math.floor(Number(pickup.mileage))) : current.mileage);
                 const hasAssigned = Object.prototype.hasOwnProperty.call(pickup, 'assigned');
                 const normalizedAssigned = hasAssigned ? (pickup.assigned == null ? null : (typeof pickup.assigned === 'string' && pickup.assigned.trim() === '' ? null : String(pickup.assigned))) : current.assigned;
@@ -109,41 +160,98 @@ Deno.serve(async (req) => {
                     updated_by: userId,
                     updated_last: current.updated_last
                 };
-                const { data, error } = await supabase.from("pickup_trucks").update(apiData).eq("id", id).select().maybeSingle();
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                const {
+                    data,
+                    error
+                } = await supabase.from("pickup_trucks").update(apiData).eq("id", id).select().maybeSingle();
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data}), {headers: corsHeaders});
             }
             case "delete": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const id = typeof body?.id === "string" ? body.id : null;
-                if (!id) return new Response(JSON.stringify({error: "Pickup Truck ID is required"}), {status: 400, headers: corsHeaders});
-                const { error } = await supabase.from("pickup_trucks").delete().eq("id", id);
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (!id) return new Response(JSON.stringify({error: "Pickup Truck ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const {error} = await supabase.from("pickup_trucks").delete().eq("id", id);
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({success: true}), {headers: corsHeaders});
             }
             case "search-by-vin": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const query = typeof body?.query === "string" ? body.query.trim() : "";
-                if (!query) return new Response(JSON.stringify({error: "Search query is required"}), {status: 400, headers: corsHeaders});
-                const { data, error } = await supabase.from("pickup_trucks").select("*").ilike("vin", `%${query}%`).order("vin", {ascending: true});
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (!query) return new Response(JSON.stringify({error: "Search query is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const {
+                    data,
+                    error
+                } = await supabase.from("pickup_trucks").select("*").ilike("vin", `%${query}%`).order("vin", {ascending: true});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             case "search-by-assigned": {
                 let body: any;
-                try { body = await req.json(); } catch { return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {status: 400, headers: corsHeaders}); }
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
                 const query = typeof body?.query === "string" ? body.query.trim() : "";
-                if (!query) return new Response(JSON.stringify({error: "Search query is required"}), {status: 400, headers: corsHeaders});
-                const { data, error } = await supabase.from("pickup_trucks").select("*").ilike("assigned", `%${query}%`).order("assigned", {ascending: true});
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (!query) return new Response(JSON.stringify({error: "Search query is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const {
+                    data,
+                    error
+                } = await supabase.from("pickup_trucks").select("*").ilike("assigned", `%${query}%`).order("assigned", {ascending: true});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
             }
             default:
-                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {status: 404, headers: corsHeaders});
+                return new Response(JSON.stringify({error: "Invalid endpoint", path: url.pathname}), {
+                    status: 404,
+                    headers: corsHeaders
+                });
         }
     } catch (error) {
-        return new Response(JSON.stringify({error: "Internal server error", message: (error as Error).message}), {status: 500, headers: corsHeaders});
+        return new Response(JSON.stringify({
+            error: "Internal server error",
+            message: (error as Error).message
+        }), {status: 500, headers: corsHeaders});
     }
 });

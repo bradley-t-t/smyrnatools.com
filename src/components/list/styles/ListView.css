@@ -241,7 +241,7 @@
     border-top-right-radius: 14px;
 }
 
-.list-list-header-row>div {
+.list-list-header-row > div {
     padding: 10px 8px;
     box-sizing: border-box;
     white-space: nowrap;

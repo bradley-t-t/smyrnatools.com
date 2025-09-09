@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
@@ -17,7 +17,12 @@ import TractorCommentModal from './TractorCommentModal'
 import {RegionService} from '../../services/RegionService'
 import {UserService} from '../../services/UserService'
 import {debounce} from '../../utils/AsyncUtility'
-import {getOperatorName as lookupGetOperatorName, getOperatorSmyrnaId as lookupGetOperatorSmyrnaId, getPlantName as lookupGetPlantName, isIdAssignedToMultiple} from '../../utils/LookupUtility'
+import {
+    getOperatorName as lookupGetOperatorName,
+    getOperatorSmyrnaId as lookupGetOperatorSmyrnaId,
+    getPlantName as lookupGetPlantName,
+    isIdAssignedToMultiple
+} from '../../utils/LookupUtility'
 import FleetUtility from '../../utils/FleetUtility'
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
@@ -99,6 +104,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -132,6 +138,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
         return () => {
             cancelled = true
@@ -161,7 +168,8 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             setTractors(processedData)
             setTractorsLoaded(true)
             setTimeout(() => {
-                fixActiveTractorsWithoutOperator(processedData).catch(() => {})
+                fixActiveTractorsWithoutOperator(processedData).catch(() => {
+                })
             }, 0)
         } catch (error) {
             console.error('Error fetching tractors:', error)
@@ -174,7 +182,8 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             try {
                 await TractorService.updateTractor(tractor.id, {...tractor, status: 'Spare'}, undefined, tractor)
                 tractor.status = 'Spare'
-            } catch (e) {}
+            } catch (e) {
+            }
         }
     }
 
@@ -287,6 +296,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             const root = document.querySelector('.dashboard-container.tractors-view')
             if (root) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
+
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
@@ -328,7 +338,10 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                     {filteredTractors.map(tractor => (
                         <TractorCard
                             key={tractor.id}
-                            tractor={{...tractor, operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator)}}
+                            tractor={{
+                                ...tractor,
+                                operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator)
+                            }}
                             operatorName={lookupGetOperatorName(operators, tractor.assignedOperator)}
                             plantName={lookupGetPlantName(plants, tractor.assignedPlant)}
                             showOperatorWarning={isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator)}
@@ -342,25 +355,31 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             <div className="tractors-list-table-container">
                 <table className="tractors-list-table">
                     <colgroup>
-                        <col style={{width: '10%'}} />
-                        <col style={{width: '12%'}} />
-                        <col style={{width: '12%'}} />
-                        <col style={{width: '18%'}} />
-                        <col style={{width: '12%'}} />
-                        <col style={{width: '18%'}} />
-                        <col style={{width: '10%'}} />
-                        <col style={{width: '8%'}} />
+                        <col style={{width: '10%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '18%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '18%'}}/>
+                        <col style={{width: '10%'}}/>
+                        <col style={{width: '8%'}}/>
                     </colgroup>
                     <tbody>
                     {filteredTractors.map(tractor => {
                         const commentsCount = Number(tractor.commentsCount || 0)
                         const issuesCount = Number(tractor.openIssuesCount || 0)
                         return (
-                            <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}>
+                            <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)}
+                                style={{cursor: 'pointer'}}>
                                 <td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td>
                                 <td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td>
                                 <td>
-                                    <span className="item-status-dot" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '8px', backgroundColor: tractor.status === 'Active' ? 'var(--status-active)' : tractor.status === 'Spare' ? 'var(--status-spare)' : tractor.status === 'In Shop' ? 'var(--status-inshop)' : tractor.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'}}></span>
+                                    <span className="item-status-dot" style={{
+                                        display: 'inline-block',
+                                        verticalAlign: 'middle',
+                                        marginRight: '8px',
+                                        backgroundColor: tractor.status === 'Active' ? 'var(--status-active)' : tractor.status === 'Spare' ? 'var(--status-spare)' : tractor.status === 'In Shop' ? 'var(--status-inshop)' : tractor.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'
+                                    }}></span>
                                     {tractor.status ? tractor.status : "---"}
                                 </td>
                                 <td>
@@ -384,24 +403,53 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                 <td>
                                     {tractor.isVerified() ? (
                                         <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                            <i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>
+                                            <i className="fas fa-check-circle"
+                                               style={{color: 'var(--success)', marginRight: 6}}></i>
                                             Verified
                                         </span>
                                     ) : (
                                         <span style={{display: 'inline-flex', alignItems: 'center'}}>
-                                            <i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>
+                                            <i className="fas fa-flag"
+                                               style={{color: 'var(--error)', marginRight: 6}}></i>
                                             Not Verified
                                         </span>
                                     )}
                                 </td>
                                 <td>
                                     <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                        <button type="button" onClick={(e) => { e.stopPropagation(); setModalTractorId(tractor.id); setModalTractorNumber(tractor.truckNumber || ''); setShowCommentModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer'}} title="View comments">
-                                            <i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                        <button type="button" onClick={(e) => {
+                                            e.stopPropagation();
+                                            setModalTractorId(tractor.id);
+                                            setModalTractorNumber(tractor.truckNumber || '');
+                                            setShowCommentModal(true)
+                                        }} style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: 0,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            cursor: 'pointer'
+                                        }} title="View comments">
+                                            <i className="fas fa-comments"
+                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
                                             <span>{commentsCount}</span>
                                         </button>
-                                        <button type="button" onClick={(e) => { e.stopPropagation(); setModalTractorId(tractor.id); setModalTractorNumber(tractor.truckNumber || ''); setShowIssueModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', marginLeft: 12}} title="View issues">
-                                            <i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i>
+                                        <button type="button" onClick={(e) => {
+                                            e.stopPropagation();
+                                            setModalTractorId(tractor.id);
+                                            setModalTractorNumber(tractor.truckNumber || '');
+                                            setShowIssueModal(true)
+                                        }} style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: 0,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            cursor: 'pointer',
+                                            marginLeft: 12
+                                        }} title="View issues">
+                                            <i className="fas fa-tools"
+                                               style={{color: 'var(--accent)', marginRight: 4}}></i>
                                             <span>{issuesCount}</span>
                                         </button>
                                     </div>
@@ -450,10 +498,16 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                     className="ios-search-input"
                                     placeholder="Search by truck or operator..."
                                     value={searchInput}
-                                    onChange={e => { setSearchInput(e.target.value); debouncedSetSearchText(e.target.value) }}
+                                    onChange={e => {
+                                        setSearchInput(e.target.value);
+                                        debouncedSetSearchText(e.target.value)
+                                    }}
                                 />
                                 {searchInput && (
-                                    <button className="clear" onClick={() => { setSearchInput(''); debouncedSetSearchText('') }}>
+                                    <button className="clear" onClick={() => {
+                                        setSearchInput('');
+                                        debouncedSetSearchText('')
+                                    }}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
@@ -497,10 +551,11 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                                 return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
                                             })
                                             .sort((a, b) => parseInt((a.plantCode || a.plant_code || '').replace(/\D/g, '') || '0') - parseInt((b.plantCode || b.plant_code || '').replace(/\D/g, '') || '0')).map(plant => (
-                                            <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>
-                                                ({plant.plantCode || plant.plant_code}) {plant.plantName || plant.plant_name}
-                                            </option>
-                                        ))}
+                                                <option key={plant.plantCode || plant.plant_code}
+                                                        value={plant.plantCode || plant.plant_code}>
+                                                    ({plant.plantCode || plant.plant_code}) {plant.plantName || plant.plant_name}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="filter-wrapper">

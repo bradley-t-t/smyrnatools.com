@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo, useCallback} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TrailerCard from './TrailerCard';
@@ -19,7 +19,7 @@ import LookupUtility from '../../utils/LookupUtility'
 import FleetUtility from '../../utils/FleetUtility'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
-    const { preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences } = usePreferences()
+    const {preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences} = usePreferences()
     const [trailers, setTrailers] = useState([])
     const [tractors, setTractors] = useState([])
     const [plants, setPlants] = useState([])
@@ -54,6 +54,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 setIsLoading(false)
             }
         }
+
         fetchAllData()
         if (preferences?.trailerFilters) {
             setSearchText(preferences.trailerFilters.searchText || '')
@@ -79,6 +80,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -100,6 +102,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -280,13 +283,13 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 <div className="trailers-list-table-container">
                     <table className="trailers-list-table">
                         <colgroup>
-                            <col style={{width: '12%'}} />
-                            <col style={{width: '14%'}} />
-                            <col style={{width: '12%'}} />
-                            <col style={{width: '18%'}} />
-                            <col style={{width: '14%'}} />
-                            <col style={{width: '22%'}} />
-                            <col style={{width: '8%'}} />
+                            <col style={{width: '12%'}}/>
+                            <col style={{width: '14%'}}/>
+                            <col style={{width: '12%'}}/>
+                            <col style={{width: '18%'}}/>
+                            <col style={{width: '14%'}}/>
+                            <col style={{width: '22%'}}/>
+                            <col style={{width: '8%'}}/>
                         </colgroup>
                         <tbody>
                         {filteredTrailers.map(trailer => {
@@ -422,10 +425,16 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                     className="ios-search-input"
                                     placeholder="Search by trailer or tractor..."
                                     value={searchInput}
-                                    onChange={e => { setSearchInput(e.target.value); debouncedSetSearchText(e.target.value) }}
+                                    onChange={e => {
+                                        setSearchInput(e.target.value);
+                                        debouncedSetSearchText(e.target.value)
+                                    }}
                                 />
                                 {searchInput && (
-                                    <button className="clear" onClick={() => { debouncedSetSearchText(''); setSearchInput('') }}>
+                                    <button className="clear" onClick={() => {
+                                        debouncedSetSearchText('');
+                                        setSearchInput('')
+                                    }}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
@@ -466,10 +475,10 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                         {plants
                                             .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
                                             .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
-                                            <option key={plant.plantCode} value={plant.plantCode}>
-                                                ({plant.plantCode}) {plant.plantName}
-                                            </option>
-                                        ))}
+                                                <option key={plant.plantCode} value={plant.plantCode}>
+                                                    ({plant.plantCode}) {plant.plantName}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="filter-wrapper">

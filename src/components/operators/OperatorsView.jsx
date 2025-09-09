@@ -77,6 +77,7 @@ function OperatorsView({
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -95,6 +96,7 @@ function OperatorsView({
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -406,10 +408,10 @@ function OperatorsView({
                                                 const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
                                                 return aCode - bCode
                                             }).map(plant => (
-                                            <option key={plant.plant_code} value={plant.plant_code}>
-                                                ({plant.plant_code}) {plant.plant_name}
-                                            </option>
-                                        ))}
+                                                <option key={plant.plant_code} value={plant.plant_code}>
+                                                    ({plant.plant_code}) {plant.plant_name}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="filter-wrapper">
@@ -443,7 +445,8 @@ function OperatorsView({
                             </div>
                         </div>
                         {viewMode === 'list' && (
-                            <div className={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}>
+                            <div
+                                className={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}>
                                 <div>Plant</div>
                                 <div>Name</div>
                                 <div>Status</div>
@@ -498,22 +501,22 @@ function OperatorsView({
                                     <colgroup>
                                         {statusFilter === 'Pending Start' ? (
                                             <>
-                                                <col style={{width: '10%'}} />
-                                                <col style={{width: '24%'}} />
-                                                <col style={{width: '14%'}} />
-                                                <col style={{width: '16%'}} />
-                                                <col style={{width: '18%'}} />
-                                                <col style={{width: '10%'}} />
-                                                <col style={{width: '8%'}} />
+                                                <col style={{width: '10%'}}/>
+                                                <col style={{width: '24%'}}/>
+                                                <col style={{width: '14%'}}/>
+                                                <col style={{width: '16%'}}/>
+                                                <col style={{width: '18%'}}/>
+                                                <col style={{width: '10%'}}/>
+                                                <col style={{width: '8%'}}/>
                                             </>
                                         ) : (
                                             <>
-                                                <col style={{width: '12%'}} />
-                                                <col style={{width: '28%'}} />
-                                                <col style={{width: '16%'}} />
-                                                <col style={{width: '22%'}} />
-                                                <col style={{width: '12%'}} />
-                                                <col style={{width: '10%'}} />
+                                                <col style={{width: '12%'}}/>
+                                                <col style={{width: '28%'}}/>
+                                                <col style={{width: '16%'}}/>
+                                                <col style={{width: '22%'}}/>
+                                                <col style={{width: '12%'}}/>
+                                                <col style={{width: '10%'}}/>
                                             </>
                                         )}
                                     </colgroup>

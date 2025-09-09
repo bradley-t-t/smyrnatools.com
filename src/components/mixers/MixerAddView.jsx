@@ -22,12 +22,14 @@ function MixerAddView({plants, onClose, onMixerAdded}) {
             } catch (error) {
             }
         }
+
         loadMixers();
     }, []);
 
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -43,6 +45,7 @@ function MixerAddView({plants, onClose, onMixerAdded}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true

@@ -306,7 +306,10 @@ Deno.serve(async (req) => {
                 const fromEmail = Deno.env.get("MAILERSEND_FROM_EMAIL");
                 const fromName = Deno.env.get("MAILERSEND_FROM_NAME") || "Smyrna Tools";
                 if (!mailerSendToken || !fromEmail) {
-                    console.warn("Mailersend env missing", {hasToken: Boolean(mailerSendToken), hasFromEmail: Boolean(fromEmail)});
+                    console.warn("Mailersend env missing", {
+                        hasToken: Boolean(mailerSendToken),
+                        hasFromEmail: Boolean(fromEmail)
+                    });
                     return genericResponse;
                 }
                 const loginUrl = `${Deno.env.get("FRONTEND_URL") || "https://smyrnatools.com"}/login`;
@@ -342,8 +345,12 @@ Deno.serve(async (req) => {
                         let bodyText = "";
                         try {
                             bodyText = await response.text();
-                        } catch {}
-                        console.error("Mailersend request failed", {status: response.status, body: bodyText?.slice(0, 1000)});
+                        } catch {
+                        }
+                        console.error("Mailersend request failed", {
+                            status: response.status,
+                            body: bodyText?.slice(0, 1000)
+                        });
                         return genericResponse;
                     }
                     console.info("Mailersend request succeeded", {status: response.status});

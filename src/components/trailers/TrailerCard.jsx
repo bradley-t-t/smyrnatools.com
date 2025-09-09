@@ -23,22 +23,38 @@ function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSel
 
     return (
         <div className="tractor-card" {...cardProps}>
-            <div style={{height: 4, width: '100%', background: statusColor, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10}}/>
+            <div style={{
+                height: 4,
+                width: '100%',
+                background: statusColor,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10
+            }}/>
             {openIssuesCount > 0 && (
-                <div className="trailer-issues-badge" style={{position: 'absolute', top: '12px', zIndex: 4}} title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
+                <div className="trailer-issues-badge" style={{position: 'absolute', top: '12px', zIndex: 4}}
+                     title={`${openIssuesCount} open issue${openIssuesCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-tools" style={{marginRight: '4px', fontSize: '0.9rem'}}></i>
                     <span>{openIssuesCount}</span>
                 </div>
             )}
             {commentsCount > 0 && (
-                <div className="trailer-comments-badge" style={{position: 'absolute', top: '12px', right: openIssuesCount > 0 ? '72px' : '20px', zIndex: 4}} title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}>
+                <div className="trailer-comments-badge" style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: openIssuesCount > 0 ? '72px' : '20px',
+                    zIndex: 4
+                }} title={`${commentsCount} comment${commentsCount !== 1 ? 's' : ''}`}>
                     <i className="fas fa-comments trailer-comment-icon"></i>
                     <span>{commentsCount}</span>
                 </div>
             )}
             <div className="card-content">
                 <div className="card-header">
-                    <h3 className="tractor-name" style={{color: accentColor}}>Trailer #{trailer.trailerNumber || 'Not Assigned'}</h3>
+                    <h3 className="tractor-name" style={{color: accentColor}}>Trailer
+                        #{trailer.trailerNumber || 'Not Assigned'}</h3>
                 </div>
                 <div className="card-details">
                     <div className="detail-row">
@@ -76,7 +92,10 @@ function TrailerCard({trailer, tractorName, plantName, showTractorWarning, onSel
                             {trailer.cleanlinessRating ? (
                                 <div className="stars-container">
                                     {[...Array(5)].map((_, i) => (
-                                        <i key={i} className={`fas fa-star ${i < trailer.cleanlinessRating ? 'filled-star' : 'empty-star'}`} style={i < trailer.cleanlinessRating ? {color: accentColor} : {}} aria-hidden="true"></i>
+                                        <i key={i}
+                                           className={`fas fa-star ${i < trailer.cleanlinessRating ? 'filled-star' : 'empty-star'}`}
+                                           style={i < trailer.cleanlinessRating ? {color: accentColor} : {}}
+                                           aria-hidden="true"></i>
                                     ))}
                                 </div>
                             ) : 'Not Rated'}

@@ -1,0 +1,9 @@
+.pickup-trucks-overview .make-distribution-title {
+    margin-left: 10px
+}
+
+.pickup-trucks-overview .distribution-table .no-data {
+    font-style: italic;
+    padding: 8px 12px
+}
+

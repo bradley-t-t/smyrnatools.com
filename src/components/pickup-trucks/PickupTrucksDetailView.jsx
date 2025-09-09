@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import {PickupTruckService} from '../../services/PickupTruckService'
 import '../mixers/styles/MixerDetailView.css'
+import './styles/PickupTrucksDetailView.css'
 import LoadingScreen from '../common/LoadingScreen'
 import {PlantService} from '../../services/PlantService'
 
@@ -41,6 +42,7 @@ function PickupTrucksDetailView({pickupId, onClose}) {
                 setIsLoading(false)
             }
         }
+
         fetchData()
     }, [pickupId])
 
@@ -53,6 +55,7 @@ function PickupTrucksDetailView({pickupId, onClose}) {
                 setPlants([])
             }
         }
+
         loadPlants()
     }, [])
 
@@ -88,7 +91,8 @@ function PickupTrucksDetailView({pickupId, onClose}) {
         try {
             await PickupTruckService.remove(pickup.id)
             onClose?.()
-        } catch {}
+        } catch {
+        }
     }
 
     function handleExportEmail() {
@@ -101,11 +105,11 @@ function PickupTrucksDetailView({pickupId, onClose}) {
 
     if (isLoading) {
         return (
-            <div className="mixer-detail-view">
-                <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+            <div className="mixer-detail-view pickup-trucks-detail">
+                <div className="detail-header themed">
                     <button className="back-button" onClick={onClose}><i className="fas fa-arrow-left"></i></button>
                     <h1>Pickup Details</h1>
-                    <div style={{width: '36px'}}></div>
+                    <div className="header-spacer-36"></div>
                 </div>
                 <div className="detail-content">
                     <LoadingScreen message="Loading pickup details..." inline={true}/>
@@ -116,8 +120,8 @@ function PickupTrucksDetailView({pickupId, onClose}) {
 
     if (!pickup) {
         return (
-            <div className="mixer-detail-view">
-                <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+            <div className="mixer-detail-view pickup-trucks-detail">
+                <div className="detail-header themed">
                     <button className="back-button" onClick={onClose}><i className="fas fa-arrow-left"></i></button>
                     <h1>Pickup Not Found</h1>
                 </div>
@@ -130,44 +134,80 @@ function PickupTrucksDetailView({pickupId, onClose}) {
     }
 
     return (
-        <div className="mixer-detail-view">
+        <div className="mixer-detail-view pickup-trucks-detail">
             {isSaving && (
-                <div className="saving-overlay"><div className="saving-indicator"></div></div>
+                <div className="saving-overlay">
+                    <div className="saving-indicator"></div>
+                </div>
             )}
-            <div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}>
+            <div className="detail-header themed">
                 <div className="header-left">
-                    <button className="back-button" onClick={onClose} aria-label="Back"><i className="fas fa-arrow-left"></i><span>Back</span></button>
+                    <button className="back-button" onClick={onClose} aria-label="Back"><i
+                        className="fas fa-arrow-left"></i><span>Back</span></button>
                 </div>
                 <h1>Pickup {assigned ? `- ${assigned}` : ''}</h1>
                 <div className="header-actions">
-                    <button className="issues-button" style={{marginRight: 0}} onClick={handleExportEmail}><i className="fas fa-envelope"></i> Email</button>
+                    <button className="issues-button no-right-margin" onClick={handleExportEmail}><i
+                        className="fas fa-envelope"></i> Email
+                    </button>
                 </div>
             </div>
-            <div className="detail-content" style={{maxWidth: '1000px', margin: '0 auto', overflow: 'visible'}}>
-                {message && (<div className={`message ${message.toLowerCase().includes('error') ? 'error' : 'success'}`}>{message}</div>)}
+            <div className="detail-content pickup-detail-content">
+                {message && (<div
+                    className={`message ${message.toLowerCase().includes('error') ? 'error' : 'success'}`}>{message}</div>)}
                 <div className="detail-card">
                     <div className="card-header"><h2>Pickup Information</h2></div>
                     <p className="edit-instructions">You can make changes below. Remember to save your changes.</p>
-                    <div className="form-sections" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20}}>
+                    <div className="form-sections pickup-form-sections">
                         <div className="form-section basic-info">
                             <h3>Basic Information</h3>
-                            <div className="form-group"><label>Assigned Plant</label><select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)} className="form-control"><option value="">Select Plant</option>{plants.map(p => (<option key={p.plantCode || p.plant_code} value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>))}</select></div>
-                            <div className="form-group"><label>Status</label><select value={status} onChange={e => setStatus(e.target.value)} className="form-control"><option value="">Select Status</option><option value="Active">Active</option><option value="Spare">Spare</option><option value="In Shop">In Shop</option><option value="Retired">Retired</option></select></div>
-                            <div className="form-group"><label>Assigned</label><input type="text" value={assigned} onChange={e => setAssigned(e.target.value)} className="form-control"/></div>
-                            <div className="form-group"><label>Mileage</label><input type="number" value={mileage} onChange={e => setMileage(e.target.value)} className="form-control"/></div>
+                            <div className="form-group"><label>Assigned Plant</label><select value={assignedPlant}
+                                                                                             onChange={e => setAssignedPlant(e.target.value)}
+                                                                                             className="form-control">
+                                <option value="">Select Plant</option>
+                                {plants.map(p => (<option key={p.plantCode || p.plant_code}
+                                                          value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>))}
+                            </select></div>
+                            <div className="form-group"><label>Status</label><select value={status}
+                                                                                     onChange={e => setStatus(e.target.value)}
+                                                                                     className="form-control">
+                                <option value="">Select Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Spare">Spare</option>
+                                <option value="In Shop">In Shop</option>
+                                <option value="Retired">Retired</option>
+                            </select></div>
+                            <div className="form-group"><label>Assigned</label><input type="text" value={assigned}
+                                                                                      onChange={e => setAssigned(e.target.value)}
+                                                                                      className="form-control"/></div>
+                            <div className="form-group"><label>Mileage</label><input type="number" value={mileage}
+                                                                                     onChange={e => setMileage(e.target.value)}
+                                                                                     className="form-control"/></div>
                         </div>
                         <div className="form-section vehicle-info">
                             <h3>Asset Details</h3>
-                            <div className="form-group"><label>VIN</label><input type="text" value={vin} onChange={e => setVin(e.target.value)} className="form-control"/></div>
-                            <div className="form-group"><label>Make</label><input type="text" value={make} onChange={e => setMake(e.target.value)} className="form-control"/></div>
-                            <div className="form-group"><label>Model</label><input type="text" value={model} onChange={e => setModel(e.target.value)} className="form-control"/></div>
-                            <div className="form-group"><label>Year</label><input type="text" value={year} onChange={e => setYear(e.target.value)} className="form-control"/></div>
-                            <div className="form-group"><label>Comments</label><textarea value={comments} onChange={e => setComments(e.target.value)} className="form-control" rows={3}/></div>
+                            <div className="form-group"><label>VIN</label><input type="text" value={vin}
+                                                                                 onChange={e => setVin(e.target.value)}
+                                                                                 className="form-control"/></div>
+                            <div className="form-group"><label>Make</label><input type="text" value={make}
+                                                                                  onChange={e => setMake(e.target.value)}
+                                                                                  className="form-control"/></div>
+                            <div className="form-group"><label>Model</label><input type="text" value={model}
+                                                                                   onChange={e => setModel(e.target.value)}
+                                                                                   className="form-control"/></div>
+                            <div className="form-group"><label>Year</label><input type="text" value={year}
+                                                                                  onChange={e => setYear(e.target.value)}
+                                                                                  className="form-control"/></div>
+                            <div className="form-group"><label>Comments</label><textarea value={comments}
+                                                                                         onChange={e => setComments(e.target.value)}
+                                                                                         className="form-control"
+                                                                                         rows={3}/></div>
                         </div>
                     </div>
                 </div>
                 <div className="form-actions">
-                    <button className="primary-button save-button" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
+                    <button className="primary-button save-button" onClick={handleSave}
+                            disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
                     <button className="danger-button" onClick={handleDelete} disabled={isSaving}>Delete Pickup</button>
                 </div>
             </div>

@@ -1378,7 +1378,7 @@
     border-top-right-radius: 14px;
 }
 
-.trailers-list-header-row>div {
+.trailers-list-header-row > div {
     padding: 10px 8px;
     box-sizing: border-box;
     white-space: nowrap;

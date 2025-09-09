@@ -536,7 +536,7 @@
     border-top-right-radius: 14px;
 }
 
-.managers-list-header-row>div {
+.managers-list-header-row > div {
     padding: 10px 12px;
     box-sizing: border-box;
     white-space: nowrap;

@@ -9,7 +9,6 @@ import {usePreferences} from '../../app/context/PreferencesContext';
 import TrailerHistoryView from './TrailerHistoryView';
 import TrailerCommentModal from './TrailerCommentModal';
 import TrailerIssueModal from './TrailerIssueModal';
-import TrailerCard from './TrailerCard';
 import './styles/TrailerDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';
 import TractorSelectModal from "./TractorSelectModal";

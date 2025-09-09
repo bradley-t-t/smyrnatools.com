@@ -23,12 +23,14 @@ function TrailerAddView({plants, onClose, onTrailerAdded}) {
             } catch (error) {
             }
         }
+
         loadTrailers();
     }, []);
 
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -44,8 +46,11 @@ function TrailerAddView({plants, onClose, onTrailerAdded}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code, assignedPlant])
 
     const visiblePlants = useMemo(() => {

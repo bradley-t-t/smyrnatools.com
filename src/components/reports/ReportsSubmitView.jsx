@@ -263,7 +263,8 @@ function ReportsSubmitView({
     function handleBackClick() {
         if (hasUnsavedChanges) {
             handleSaveDraft({
-                preventDefault: () => {}
+                preventDefault: () => {
+                }
             })
             setTimeout(() => onBack(), 800)
         } else {
@@ -310,7 +311,11 @@ function ReportsSubmitView({
                 setForm(f => ({...f, rows: []}))
                 return
             }
-            const {operatorOptions, mixers, activeOperators} = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
+            const {
+                operatorOptions,
+                mixers,
+                activeOperators
+            } = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
             setOperatorOptions(operatorOptions)
             setMixers(mixers)
             if (report.name === 'plant_production' && !readOnly) {

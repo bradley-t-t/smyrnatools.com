@@ -101,13 +101,15 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
                             ></textarea>
                             <div className="severity-selector">
                                 <label>Severity:</label>
-                                <select value={severity} onChange={(e) => setSeverity(e.target.value)} disabled={isSubmitting}>
+                                <select value={severity} onChange={(e) => setSeverity(e.target.value)}
+                                        disabled={isSubmitting}>
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
                                     <option value="High">High</option>
                                 </select>
                             </div>
-                            <button type="submit" className="add-issue-button" disabled={isSubmitting || !newIssue.trim()}>
+                            <button type="submit" className="add-issue-button"
+                                    disabled={isSubmitting || !newIssue.trim()}>
                                 {isSubmitting ? 'Adding...' : 'Add Issue'}
                             </button>
                         </form>
@@ -131,11 +133,14 @@ function TractorIssueModal({tractorId, tractorNumber, onClose}) {
                                         <span className="issue-severity">Severity: {issue.severity}</span>
                                         <span className="issue-date">{formatDate(issue.time_created)}</span>
                                         <div className="issue-actions">
-                                            <button className="delete-issue-button" onClick={() => handleDeleteIssue(issue.id)} title="Delete issue">
+                                            <button className="delete-issue-button"
+                                                    onClick={() => handleDeleteIssue(issue.id)} title="Delete issue">
                                                 <i className="fas fa-trash"></i>
                                             </button>
                                             {!issue.time_completed && (
-                                                <button className="complete-issue-button" onClick={() => handleCompleteIssue(issue.id)} title="Mark as completed">
+                                                <button className="complete-issue-button"
+                                                        onClick={() => handleCompleteIssue(issue.id)}
+                                                        title="Mark as completed">
                                                     <i className="fas fa-check"></i>
                                                 </button>
                                             )}

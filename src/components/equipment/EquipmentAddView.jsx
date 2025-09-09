@@ -1,4 +1,4 @@
-import React, {useMemo, useState, useEffect} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {EquipmentService} from '../../services/EquipmentService';
 import {AuthService} from '../../services/AuthService';
 import './styles/EquipmentAddView.css';
@@ -18,6 +18,7 @@ function EquipmentAddView({plants, onClose, onEquipmentAdded}) {
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -33,8 +34,11 @@ function EquipmentAddView({plants, onClose, onEquipmentAdded}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code, assignedPlant])
 
     const visiblePlants = useMemo(() => {

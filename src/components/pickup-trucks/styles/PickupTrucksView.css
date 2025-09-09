@@ -1,0 +1,88 @@
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(1) {
+    width: 14%
+}
+
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(2) {
+    width: 14%
+}
+
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(3) {
+    width: 20%
+}
+
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(4) {
+    width: 10%
+}
+
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(5) {
+    width: 14%
+}
+
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(6) {
+    width: 14%
+}
+
+.pickup-trucks-view .mixers-list-table.pickup-trucks-columns col:nth-child(7) {
+    width: 14%
+}
+
+.mixers-list-header-row.pickup-trucks-columns {
+    grid-template-columns:14% 14% 20% 10% 14% 14% 14%
+}
+
+.pickup-trucks-view .clickable-row {
+    cursor: pointer;
+    transition: background .18s, color .18s
+}
+
+.pickup-trucks-view .mixers-list-table tbody tr.clickable-row:hover {
+    background: var(--accent-row-hover-bg)
+}
+
+.pickup-trucks-view .item-status-dot {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent)
+}
+
+.pickup-trucks-view .item-status-dot.active {
+    background: var(--status-active)
+}
+
+.pickup-trucks-view .item-status-dot.spare {
+    background: var(--status-spare)
+}
+
+.pickup-trucks-view .item-status-dot.in-shop {
+    background: var(--status-inshop)
+}
+
+.pickup-trucks-view .item-status-dot.retired {
+    background: var(--status-retired)
+}
+
+.pickup-trucks-view .cell-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px
+}
+
+.pickup-trucks-view .mileage-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px
+}
+
+.pickup-trucks-view .mileage-cell .warning-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center
+}
+
+.pickup-trucks-view .dashboard-actions .action-button i {
+    margin-right: 8px
+}

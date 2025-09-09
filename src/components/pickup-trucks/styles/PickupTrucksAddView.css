@@ -1,0 +1,23 @@
+.pickup-trucks-add {
+    max-width: 600px
+}
+
+.pickup-trucks-add .form-row {
+    gap: 14px
+}
+
+.pickup-trucks-add .form-group.wide textarea {
+    min-height: 96px
+}
+
+.pickup-trucks-add input[type=number].ios-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+    font-variant-numeric: tabular-nums
+}
+
+.pickup-trucks-add input[type=number].ios-input::-webkit-outer-spin-button, .pickup-trucks-add input[type=number].ios-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0
+}
+

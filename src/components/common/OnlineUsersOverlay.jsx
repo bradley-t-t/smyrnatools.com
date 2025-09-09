@@ -27,7 +27,8 @@ function OnlineUsersOverlay() {
     return (
         <div className={`online-users-overlay${isExpanded ? ' expanded' : ''}${isMinimized ? ' minimized' : ''}`}>
             {isMinimized ? (
-                <div className="online-users-minimized-compact" onClick={toggleMinimize} tabIndex={0} aria-label="Show online users" role="button">
+                <div className="online-users-minimized-compact" onClick={toggleMinimize} tabIndex={0}
+                     aria-label="Show online users" role="button">
                     <span className="user-count">{onlineUsers.length}</span>
                     <button className="action-button icon-only" tabIndex={-1} aria-hidden="true">
                         <i className="fas fa-user"></i>
@@ -42,10 +43,13 @@ function OnlineUsersOverlay() {
                             <div className={`user-count${animateCount ? ' pulse' : ''}`}>{onlineUsers.length}</div>
                         </div>
                         <div className="header-actions">
-                            <button className="action-button circle" onClick={toggleExpand} title={isExpanded ? 'Show less' : 'Show more'} aria-label={isExpanded ? 'Show less users' : 'Show more users'}>
+                            <button className="action-button circle" onClick={toggleExpand}
+                                    title={isExpanded ? 'Show less' : 'Show more'}
+                                    aria-label={isExpanded ? 'Show less users' : 'Show more users'}>
                                 <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                             </button>
-                            <button className="action-button circle" onClick={toggleMinimize} title="Minimize" aria-label="Minimize online users overlay">
+                            <button className="action-button circle" onClick={toggleMinimize} title="Minimize"
+                                    aria-label="Minimize online users overlay">
                                 <i className="fas fa-xmark"></i>
                             </button>
                         </div>
@@ -69,7 +73,8 @@ function OnlineUsersOverlay() {
                         {!isExpanded && onlineUsers.length > 3 && (
                             <div className="more-users">
                                 <span>+{onlineUsers.length - 3} more</span>
-                                <button className="action-button circle icon-only" title="Show more" aria-label="Show more users" onClick={toggleExpand}>
+                                <button className="action-button circle icon-only" title="Show more"
+                                        aria-label="Show more users" onClick={toggleExpand}>
                                     <i className="fas fa-chevron-down"></i>
                                 </button>
                             </div>

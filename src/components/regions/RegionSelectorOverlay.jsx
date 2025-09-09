@@ -20,6 +20,7 @@ function RegionSelectorOverlay() {
 
     useEffect(() => {
         let mounted = true
+
         async function initRegion() {
             try {
                 let uid = userId
@@ -28,7 +29,8 @@ function RegionSelectorOverlay() {
                         const user = await UserService.getCurrentUser()
                         uid = user?.id || ''
                         if (uid) setUserId(uid)
-                    } catch {}
+                    } catch {
+                    }
                 }
                 if (!uid) {
                     setRegionLoading(false)
@@ -37,7 +39,8 @@ function RegionSelectorOverlay() {
                 try {
                     const hasPerm = await UserService.hasPermission(uid, 'region.select')
                     if (mounted) setCanSelectRegion(!!hasPerm)
-                } catch {}
+                } catch {
+                }
                 let defaultRegion = {code: '', name: '', type: ''}
                 try {
                     const plantCode = await UserService.getUserPlant(uid)
@@ -52,20 +55,28 @@ function RegionSelectorOverlay() {
                                     type: r.type || r.region_type || ''
                                 }
                             }
-                        } catch {}
+                        } catch {
+                        }
                     }
-                } catch {}
+                } catch {
+                }
                 if (!preferences.selectedRegion?.code && defaultRegion.code) {
-                    updatePreferences('selectedRegion', {code: defaultRegion.code, name: defaultRegion.name, type: defaultRegion.type || ''})
+                    updatePreferences('selectedRegion', {
+                        code: defaultRegion.code,
+                        name: defaultRegion.name,
+                        type: defaultRegion.type || ''
+                    })
                 }
                 try {
                     const regions = await RegionService.fetchRegions()
                     if (mounted) setAllRegions(regions)
-                } catch {}
+                } catch {
+                }
             } finally {
                 if (mounted) setRegionLoading(false)
             }
         }
+
         initRegion()
         return () => {
             mounted = false
@@ -89,7 +100,8 @@ function RegionSelectorOverlay() {
     return (
         <div className={`region-selector-overlay${isMinimized ? ' minimized' : ''}`}>
             {isMinimized ? (
-                <div className="region-minimized-compact" onClick={() => setIsMinimized(false)} title={currentRegionDisplay}>
+                <div className="region-minimized-compact" onClick={() => setIsMinimized(false)}
+                     title={currentRegionDisplay}>
                     <span className="region-icon"><i className="fas fa-globe"></i></span>
                     <span className="region-label">{currentRegionDisplay}</span>
                     <button className="action-button icon-only" tabIndex={-1}>
@@ -105,7 +117,8 @@ function RegionSelectorOverlay() {
                             <i className="fas fa-xmark"></i>
                         </button>
                     </div>
-                    <select className="region-select" value={preferences.selectedRegion?.code || ''} onChange={handleChangeRegion}>
+                    <select className="region-select" value={preferences.selectedRegion?.code || ''}
+                            onChange={handleChangeRegion}>
                         <option value="">Select a region</option>
                         {allRegions.map(r => (
                             <option key={r.region_code || r.regionCode} value={r.region_code || r.regionCode}>

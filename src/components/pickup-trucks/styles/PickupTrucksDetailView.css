@@ -1,0 +1,22 @@
+.pickup-trucks-detail .pickup-detail-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow: visible
+}
+
+.pickup-trucks-detail .pickup-form-sections {
+    display: grid;
+    grid-template-columns:1fr 1fr;
+    gap: 20px
+}
+
+@media (max-width: 900px) {
+    .pickup-trucks-detail .pickup-form-sections {
+        grid-template-columns:1fr
+    }
+}
+
+.pickup-trucks-detail .header-spacer-36 {
+    width: 36px
+}
+

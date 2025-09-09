@@ -1,4 +1,3 @@
-import APIUtility from '../utils/APIUtility'
 import {supabase} from './DatabaseService'
 import CacheUtility from '../utils/CacheUtility'
 import {UserService} from './UserService'

@@ -24,12 +24,14 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
             } catch (error) {
             }
         }
+
         loadTractors();
     }, []);
 
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -45,8 +47,11 @@ function TractorAddView({plants, onClose, onTractorAdded}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code, assignedPlant])
 
     const visiblePlants = useMemo(() => {

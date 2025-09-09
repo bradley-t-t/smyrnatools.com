@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {DatabaseService, supabase} from '../../services/DatabaseService';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
-import ManagerCard from './ManagerCard';
 import {useAuth} from '../../app/context/AuthContext';
 import './styles/ManagerDetailView.css';
 import {UserService} from '../../services/UserService';

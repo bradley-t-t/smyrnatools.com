@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo, useCallback} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import EquipmentAddView from './EquipmentAddView';
 import EquipmentUtility from '../../utils/EquipmentUtility';
 import {EquipmentService} from '../../services/EquipmentService';
@@ -19,7 +19,8 @@ import FleetUtility from '../../utils/FleetUtility'
 
 function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const {preferences, updateEquipmentFilter, resetEquipmentFilters, saveLastViewedFilters} = usePreferences();
-    const safeUpdateEquipmentFilter = typeof updateEquipmentFilter === 'function' ? updateEquipmentFilter : () => {};
+    const safeUpdateEquipmentFilter = typeof updateEquipmentFilter === 'function' ? updateEquipmentFilter : () => {
+    };
     const [equipments, setEquipments] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +53,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 setIsLoading(false);
             }
         }
+
         fetchAllData();
         if (preferences?.equipmentFilters) {
             setSearchText(preferences.equipmentFilters.searchText || '');
@@ -66,6 +68,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -84,6 +87,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -103,7 +107,8 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         try {
             const data = await PlantService.fetchPlants();
             setPlants(data);
-        } catch {}
+        } catch {
+        }
     }
 
     function handleSelectEquipment(equipmentId) {
@@ -238,13 +243,13 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             <div className="equipments-list-table-container">
                 <table className="equipments-list-table">
                     <colgroup>
-                        <col style={{width: '12%'}} />
-                        <col style={{width: '14%'}} />
-                        <col style={{width: '12%'}} />
-                        <col style={{width: '24%'}} />
-                        <col style={{width: '14%'}} />
-                        <col style={{width: '16%'}} />
-                        <col style={{width: '8%'}} />
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '14%'}}/>
+                        <col style={{width: '12%'}}/>
+                        <col style={{width: '24%'}}/>
+                        <col style={{width: '14%'}}/>
+                        <col style={{width: '16%'}}/>
+                        <col style={{width: '8%'}}/>
                     </colgroup>
                     <tbody>
                     {filteredEquipments.map(equipment => {
@@ -379,10 +384,16 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                     className="ios-search-input"
                                     placeholder="Search by identifying number or equipment type..."
                                     value={searchInput}
-                                    onChange={e => { setSearchInput(e.target.value); debouncedSetSearchText(e.target.value) }}
+                                    onChange={e => {
+                                        setSearchInput(e.target.value);
+                                        debouncedSetSearchText(e.target.value)
+                                    }}
                                 />
                                 {searchInput && (
-                                    <button className="clear" onClick={() => { setSearchInput(''); debouncedSetSearchText('') }}>
+                                    <button className="clear" onClick={() => {
+                                        setSearchInput('');
+                                        debouncedSetSearchText('')
+                                    }}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
@@ -424,10 +435,10 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                         {plants
                                             .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
                                             .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
-                                            <option key={plant.plantCode} value={plant.plantCode}>
-                                                ({plant.plantCode}) {plant.plantName}
-                                            </option>
-                                        ))}
+                                                <option key={plant.plantCode} value={plant.plantCode}>
+                                                    ({plant.plantCode}) {plant.plantName}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="filter-wrapper">

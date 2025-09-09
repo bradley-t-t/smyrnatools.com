@@ -1,20 +1,20 @@
 class Trailer {
     constructor({
-        id = null,
-        trailer_number = '',
-        assigned_plant = '',
-        trailer_type = 'Cement',
-        assigned_tractor = null,
-        cleanliness_rating = 1,
-        created_at = new Date().toISOString(),
-        updated_at = new Date().toISOString(),
-        updated_last = null,
-        updated_by = null,
-        status = 'Active',
-        latestHistoryDate = null,
-        openIssuesCount = 0,
-        commentsCount = 0
-    } = {}) {
+                    id = null,
+                    trailer_number = '',
+                    assigned_plant = '',
+                    trailer_type = 'Cement',
+                    assigned_tractor = null,
+                    cleanliness_rating = 1,
+                    created_at = new Date().toISOString(),
+                    updated_at = new Date().toISOString(),
+                    updated_last = null,
+                    updated_by = null,
+                    status = 'Active',
+                    latestHistoryDate = null,
+                    openIssuesCount = 0,
+                    commentsCount = 0
+                } = {}) {
         this.id = id || crypto.randomUUID();
         this.trailerNumber = trailer_number;
         this.assignedPlant = assigned_plant;

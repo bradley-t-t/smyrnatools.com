@@ -1,0 +1,30 @@
+.pickup-trucks-card {
+    position: relative
+}
+
+.pickup-trucks-card .status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--accent);
+    z-index: 10
+}
+
+.pickup-trucks-card .status-bar.active {
+    background: var(--status-active)
+}
+
+.pickup-trucks-card .status-bar.spare {
+    background: var(--status-spare)
+}
+
+.pickup-trucks-card .status-bar.in-shop {
+    background: var(--status-inshop)
+}
+
+.pickup-trucks-card .status-bar.retired {
+    background: var(--status-retired)
+}
+

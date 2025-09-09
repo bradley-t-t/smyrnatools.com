@@ -389,7 +389,8 @@ function TractorDetailView({tractorId, onClose}) {
                 ])
                 setComments(Array.isArray(commentData) ? commentData.filter(c => c && (c.comment || c.text)) : []);
                 setIssues(Array.isArray(issueData) ? issueData.filter(i => i && (i.issue || i.title || i.description)) : []);
-            } catch {}
+            } catch {
+            }
         }
 
         fetchCommentsAndIssues();
@@ -558,7 +559,7 @@ ${openIssues.length > 0
                                 </div>
                             </div>
                             <div className="verification-item"
-                                     style={{color: 'inherit'}}>
+                                 style={{color: 'inherit'}}>
                                 <div className="verification-icon"
                                      style={{color: tractor.updatedLast ? (Tractor.ensureInstance(tractor).isVerified() ? 'var(--success)' : (new Date(tractor.updatedAt) > new Date(tractor.updatedLast) ? 'var(--error)' : 'var(--warning)')) : 'var(--error)'}}>
                                     <i className="fas fa-calendar-check"></i>

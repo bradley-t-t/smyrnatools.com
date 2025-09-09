@@ -38,6 +38,7 @@ function MyAccountView({userId}) {
 
     useEffect(() => {
         let mounted = true
+
         async function initRegion() {
             try {
                 const uid = userId || sessionStorage.getItem('userId')
@@ -45,11 +46,13 @@ function MyAccountView({userId}) {
                 try {
                     const hasPerm = await UserService.hasPermission(uid, 'region.select')
                     if (mounted) setCanSelectRegion(!!hasPerm)
-                } catch {}
+                } catch {
+                }
                 try {
                     const regions = await RegionService.fetchRegions()
                     if (mounted) setAllRegions(Array.isArray(regions) ? regions : [])
-                } catch {}
+                } catch {
+                }
                 try {
                     if (!preferences.selectedRegion?.code) {
                         const userPlant = plantCode || (await UserService.getUserPlant(uid)) || ''
@@ -65,16 +68,21 @@ function MyAccountView({userId}) {
                                     }
                                     if (def.code) updatePreferences('selectedRegion', def)
                                 }
-                            } catch {}
+                            } catch {
+                            }
                         }
                     }
-                } catch {}
+                } catch {
+                }
             } finally {
                 if (mounted) setRegionsLoaded(true)
             }
         }
+
         initRegion()
-        return () => { mounted = false }
+        return () => {
+            mounted = false
+        }
     }, [userId, plantCode])
 
     const fetchUserProfile = async () => {
@@ -336,7 +344,7 @@ function MyAccountView({userId}) {
                         {userRole && <div className="account-badge"
                                           style={{backgroundColor: 'var(--myaccount-accent)'}}>{userRole}</div>}
                         {(preferences.selectedRegion?.name || regionName) && <div className="account-badge"
-                                            style={{backgroundColor: 'var(--myaccount-accent)'}}>{preferences.selectedRegion?.name || regionName}</div>}
+                                                                                  style={{backgroundColor: 'var(--myaccount-accent)'}}>{preferences.selectedRegion?.name || regionName}</div>}
                         {plantCode && <div className="account-badge plant-badge">{plantCode}</div>}
                     </div>
                 </div>
@@ -466,11 +474,19 @@ function MyAccountView({userId}) {
                                             value={preferences.selectedRegion?.code || ''}
                                             onChange={handleChangeRegion}
                                             disabled={!regionsLoaded}
-                                            style={{width: '100%', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-secondary)', color: 'var(--text-primary)'}}
+                                            style={{
+                                                width: '100%',
+                                                padding: '6px 12px',
+                                                borderRadius: '6px',
+                                                border: '1px solid var(--border-light)',
+                                                background: 'var(--bg-secondary)',
+                                                color: 'var(--text-primary)'
+                                            }}
                                         >
                                             <option value="">Select a region</option>
                                             {allRegions.map(r => (
-                                                <option key={r.region_code || r.regionCode} value={r.region_code || r.regionCode}>
+                                                <option key={r.region_code || r.regionCode}
+                                                        value={r.region_code || r.regionCode}>
                                                     {r.region_name || r.regionName || ''}
                                                 </option>
                                             ))}

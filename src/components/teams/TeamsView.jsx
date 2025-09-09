@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {supabase} from '../../services/DatabaseService';
 import ThemeUtility from '../../utils/ThemeUtility';
 import OperatorCard from '../operators/OperatorCard';
@@ -108,6 +108,7 @@ function TeamsView() {
     useEffect(() => {
         const code = preferences.selectedRegion?.code || '';
         let cancelled = false;
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null);
@@ -125,6 +126,7 @@ function TeamsView() {
                 setRegionPlantCodes(new Set());
             }
         }
+
         loadRegionPlants();
         return () => {
             cancelled = true;
@@ -216,6 +218,7 @@ function TeamsView() {
             const root = document.querySelector('.dashboard-container.teams-view');
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px');
         }
+
         updateStickyCoverHeight();
         window.addEventListener('resize', updateStickyCoverHeight);
         return () => window.removeEventListener('resize', updateStickyCoverHeight);
@@ -562,7 +565,7 @@ function TeamsView() {
                                 <table className="teams-list-table">
                                     <colgroup>
                                         {headerColumns.map((w, i) => (
-                                            <col key={i} style={{width: w}} />
+                                            <col key={i} style={{width: w}}/>
                                         ))}
                                     </colgroup>
                                     <tbody>

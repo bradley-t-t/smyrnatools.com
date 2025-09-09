@@ -239,6 +239,7 @@ function ReportsView() {
     useEffect(() => {
         const code = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             if (!code) {
                 setRegionPlantCodes(null)
@@ -254,6 +255,7 @@ function ReportsView() {
                 setRegionPlantCodes(new Set())
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -265,6 +267,7 @@ function ReportsView() {
         const missing = ids.filter(id => !(id in reporterPlantMap))
         if (missing.length === 0) return
         let cancelled = false
+
         async function loadReporterPlants() {
             try {
                 setLoadingReporterPlants(true)
@@ -279,15 +282,20 @@ function ReportsView() {
                 if (cancelled) return
                 setReporterPlantMap(prev => {
                     const next = {...prev}
-                    entries.forEach(([id, code]) => { next[id] = code || '' })
+                    entries.forEach(([id, code]) => {
+                        next[id] = code || ''
+                    })
                     return next
                 })
             } finally {
                 if (!cancelled) setLoadingReporterPlants(false)
             }
         }
+
         loadReporterPlants()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [localReports, user])
 
     const totalMyWeeks = getTotalWeeksSinceStart()
@@ -681,7 +689,8 @@ function ReportsView() {
                                                                              key={item.name + item.weekIso}>
                                                                             <div className="reports-list-title">
                                                                                 {item.title}
-                                                                                <span className={`reports-status ${statusClass}`}>
+                                                                                <span
+                                                                                    className={`reports-status ${statusClass}`}>
                                                                                     {statusText}
                                                                                 </span>
                                                                             </div>

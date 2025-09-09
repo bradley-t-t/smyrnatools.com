@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react';
 import supabase from '../../services/DatabaseService';
-import OperatorCard from './OperatorCard';
 import './styles/OperatorDetailView.css';
 import OperatorScheduledOffButton from './OperatorScheduledOffView';
 

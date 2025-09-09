@@ -92,6 +92,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -125,8 +126,11 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
 
@@ -552,7 +556,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                             })
                                             .sort((a, b) => parseInt((a.plantCode || a.plant_code || '').replace(/\D/g, '') || '0') - parseInt((b.plantCode || b.plant_code || '').replace(/\D/g, '') || '0'))
                                             .map(plant => (
-                                                <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>
+                                                <option key={plant.plantCode || plant.plant_code}
+                                                        value={plant.plantCode || plant.plant_code}>
                                                     ({plant.plantCode || plant.plant_code}) {plant.plantName || plant.plant_name}
                                                 </option>
                                             ))}

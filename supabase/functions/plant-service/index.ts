@@ -181,8 +181,14 @@ Deno.serve(async (req) => {
                 });
                 regionIds = (regionPlants ?? []).map((rp: { region_id: number }) => rp.region_id);
                 if (!regionIds.length) {
-                    const {data: regionPlants2, error: regionPlantsError2} = await supabase.from("regions_plants").select("region_id").eq("plant_code", plantCode);
-                    if (regionPlantsError2) return new Response(JSON.stringify({error: regionPlantsError2.message}), {status: 400, headers: corsHeaders});
+                    const {
+                        data: regionPlants2,
+                        error: regionPlantsError2
+                    } = await supabase.from("regions_plants").select("region_id").eq("plant_code", plantCode);
+                    if (regionPlantsError2) return new Response(JSON.stringify({error: regionPlantsError2.message}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
                     regionIds = (regionPlants2 ?? []).map((rp: { region_id: number }) => rp.region_id);
                 }
                 if (!regionIds.length) return new Response(JSON.stringify({

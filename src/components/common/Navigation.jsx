@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import './styles/Navigation.css'
 import SmyrnaLogo from '../../assets/images/SmyrnaLogo.png'
 import FlagSmyrnaLogo from '../../assets/images/FlagSmyrnaLogo.png'
@@ -74,13 +74,13 @@ const menuItems = [
 ]
 
 export default function Navigation({
-    selectedView,
-    onSelectView,
-    children,
-    userName = '',
-    userId = null,
-    listStatusFilter = ''
-}) {
+                                       selectedView,
+                                       onSelectView,
+                                       children,
+                                       userName = '',
+                                       userId = null,
+                                       listStatusFilter = ''
+                                   }) {
     const {preferences, toggleNavbarMinimized} = usePreferences()
     const [collapsed, setCollapsed] = useState(preferences.navbarMinimized)
     const [visibleMenuItems, setVisibleMenuItems] = useState([])
@@ -128,6 +128,7 @@ export default function Navigation({
                 lastMenuItemsRef.current = []
             }
         }
+
         filterMenuItems()
     }, [userId, regionType, regionCode])
 
@@ -217,7 +218,11 @@ export default function Navigation({
                                     >
                                         {getIconForMenuItem(item.id)}
                                     </span>
-                                    {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>{item.text}</span>}
+                                    {!collapsed && <span className="menu-text" style={{
+                                        fontSize: 17,
+                                        padding: 0,
+                                        margin: 0
+                                    }}>{item.text}</span>}
                                 </li>
                             )
                         })}
@@ -244,7 +249,8 @@ export default function Navigation({
                             >
                                 {getIconForMenuItem('Settings')}
                             </span>
-                            {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
+                            {!collapsed && <span className="menu-text"
+                                                 style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
                         </li>
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
@@ -271,7 +277,8 @@ export default function Navigation({
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
+                                    <span className="menu-text"
+                                          style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
                                     {userName && <span className="user-name" style={{paddingLeft: 0}}>{userName}</span>}
                                 </div>
                             )}

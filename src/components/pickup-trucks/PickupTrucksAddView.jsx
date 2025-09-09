@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import {PickupTruckService} from '../../services/PickupTruckService'
 import {AuthService} from '../../services/AuthService'
 import '../mixers/styles/MixerAddView.css'
+import './styles/PickupTrucksAddView.css'
 
 function PickupTrucksAddView({onClose, onAdded}) {
     const [vin, setVin] = useState('')
@@ -42,7 +43,7 @@ function PickupTrucksAddView({onClose, onAdded}) {
 
     return (
         <div className="add-mixer-modal-backdrop">
-            <div className="add-mixer-modal enhanced">
+            <div className="add-mixer-modal enhanced pickup-trucks-add">
                 <div className="add-mixer-header sticky">
                     <h2>Add Pickup Truck</h2>
                     <button className="ios-button close-btn" onClick={onClose} aria-label="Close">×</button>
@@ -55,42 +56,50 @@ function PickupTrucksAddView({onClose, onAdded}) {
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>VIN</label>
-                                        <input type="text" className="ios-input" value={vin} onChange={e => setVin(e.target.value)} placeholder="Enter VIN"/>
+                                        <input type="text" className="ios-input" value={vin}
+                                               onChange={e => setVin(e.target.value)} placeholder="Enter VIN"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Year</label>
-                                        <input type="text" className="ios-input" value={year} onChange={e => setYear(e.target.value)} placeholder="Enter year"/>
+                                        <input type="text" className="ios-input" value={year}
+                                               onChange={e => setYear(e.target.value)} placeholder="Enter year"/>
                                     </div>
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>Make</label>
-                                        <input type="text" className="ios-input" value={make} onChange={e => setMake(e.target.value)} placeholder="Enter make"/>
+                                        <input type="text" className="ios-input" value={make}
+                                               onChange={e => setMake(e.target.value)} placeholder="Enter make"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Model</label>
-                                        <input type="text" className="ios-input" value={model} onChange={e => setModel(e.target.value)} placeholder="Enter model"/>
+                                        <input type="text" className="ios-input" value={model}
+                                               onChange={e => setModel(e.target.value)} placeholder="Enter model"/>
                                     </div>
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>Assigned</label>
-                                        <input type="text" className="ios-input" value={assigned} onChange={e => setAssigned(e.target.value)} placeholder="Enter name"/>
+                                        <input type="text" className="ios-input" value={assigned}
+                                               onChange={e => setAssigned(e.target.value)} placeholder="Enter name"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Mileage</label>
-                                        <input type="number" className="ios-input" value={mileage} onChange={e => setMileage(e.target.value)} placeholder="Enter mileage"/>
+                                        <input type="number" className="ios-input" value={mileage}
+                                               onChange={e => setMileage(e.target.value)} placeholder="Enter mileage"/>
                                     </div>
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group wide">
                                         <label>Comments</label>
-                                        <textarea className="ios-input" rows={3} value={comments} onChange={e => setComments(e.target.value)} placeholder="Notes"/>
+                                        <textarea className="ios-input" rows={3} value={comments}
+                                                  onChange={e => setComments(e.target.value)} placeholder="Notes"/>
                                     </div>
                                 </div>
                             </div>
                             <div className="form-actions">
-                                <button type="submit" className="ios-button-primary" disabled={isSaving}>{isSaving ? 'Adding...' : 'Add Pickup'}</button>
+                                <button type="submit" className="ios-button-primary"
+                                        disabled={isSaving}>{isSaving ? 'Adding...' : 'Add Pickup'}</button>
                             </div>
                         </form>
                     </div>
@@ -101,4 +110,3 @@ function PickupTrucksAddView({onClose, onAdded}) {
 }
 
 export default PickupTrucksAddView
-

@@ -6,10 +6,10 @@
     max-width: 98vw;
     max-height: 500px;
     border-radius: 12px;
-    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.10);
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.10);
     z-index: 9999;
     overflow: hidden;
-    transition: all 0.22s cubic-bezier(.4,0,.2,1);
+    transition: all 0.22s cubic-bezier(.4, 0, .2, 1);
     opacity: 1;
     border: 1px solid var(--accent);
     background: rgba(var(--card-bg-rgb), 0.80);
@@ -32,7 +32,7 @@
     bottom: 18px;
     right: 18px;
     border-radius: 20px;
-    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
     overflow: visible;
     border: none;
     background: none;
@@ -73,14 +73,14 @@
     height: 32px;
     border-radius: 16px;
     background: linear-gradient(90deg, var(--accent) 60%, var(--accent-secondary, var(--accent)) 100%);
-    box-shadow: 0 1px 4px 0 rgba(0,0,0,0.08);
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.08);
     cursor: pointer;
     transition: background 0.14s, box-shadow 0.14s, transform 0.14s;
 }
 
 .online-users-minimized-compact:hover {
     transform: scale(1.04);
-    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.10);
 }
 
 .online-users-minimized-compact .user-count {
@@ -143,19 +143,25 @@
     border-radius: 8px;
     min-width: 18px;
     text-align: center;
-    transition: transform 0.2s cubic-bezier(.4,0,.2,1);
+    transition: transform 0.2s cubic-bezier(.4, 0, .2, 1);
     font-weight: 500;
     margin-left: 4px;
 }
 
 .header-title .user-count.pulse {
-    animation: pulse 0.4s cubic-bezier(.4,0,.2,1);
+    animation: pulse 0.4s cubic-bezier(.4, 0, .2, 1);
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .header-actions {
@@ -199,7 +205,7 @@
 .action-button.circle:hover {
     background: rgba(var(--accent-rgb), 0.10);
     color: var(--accent);
-    box-shadow: 0 1px 4px 0 rgba(0,0,0,0.06);
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.06);
 }
 
 .online-users-minimized .action-button.circle {
@@ -221,7 +227,7 @@
     margin: 0 4px 4px 4px;
     transition: background 0.14s;
     background: rgba(var(--card-bg-rgb), 0.50);
-    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
 .online-user:hover {
@@ -240,7 +246,7 @@
     margin-right: 8px;
     font-size: 12px;
     font-weight: 500;
-    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.06);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     letter-spacing: 0.2px;
 }
 
@@ -325,7 +331,7 @@
 .more-users button:hover {
     background: rgba(var(--accent-rgb), 0.08);
     color: var(--accent);
-    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.06);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .online-users-overlay[data-theme="dark"] {
@@ -346,13 +352,13 @@
 }
 
 .online-users-overlay[data-theme="dark"] .action-button:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
 }
 
 .online-users-overlay[data-theme="dark"] .online-user:hover,
 .online-users-overlay[data-theme="dark"] .more-users:hover {
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .online-users-overlay[data-theme="dark"] .more-users {

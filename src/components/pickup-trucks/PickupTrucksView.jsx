@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import '../../styles/FilterStyles.css'
 import '../mixers/styles/MixersView.css'
+import './styles/PickupTrucksView.css'
 import LoadingScreen from '../common/LoadingScreen'
 import PickupTrucksCard from './PickupTrucksCard'
 import PickupTrucksDetailView from './PickupTrucksDetailView'
@@ -50,6 +51,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                 setPlants([])
             }
         }
+
         loadPlants()
     }, [])
 
@@ -70,6 +72,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             const root = document.querySelector('.dashboard-container.pickup-trucks-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
+
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
@@ -89,11 +92,39 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             const assigned = String(p.assigned || '').toLowerCase()
             const matchesSearch = !q || vin.includes(q) || make.includes(q) || model.includes(q) || year.includes(q) || assigned.includes(q)
             const matchesPlant = !selectedPlant || String(p.assignedPlant || '').trim() === selectedPlant
-            const matchesStatus = !statusFilter || String(p.status || '').trim() === statusFilter
+            const matchesStatus = !statusFilter || (statusFilter === 'Over 300k Miles' ? (typeof p.mileage === 'number' && p.mileage > 300000) : String(p.status || '').trim() === statusFilter)
             return matchesSearch && matchesPlant && matchesStatus
         })
         return list.sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'assigned'))
     }, [pickups, searchText, selectedPlant, statusFilter])
+
+    const duplicateVINs = useMemo(() => {
+        const counts = new Map()
+        for (const p of pickups) {
+            const key = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
+            if (!key) continue
+            counts.set(key, (counts.get(key) || 0) + 1)
+        }
+        const dups = new Set()
+        counts.forEach((count, key) => {
+            if (count > 1) dups.add(key)
+        })
+        return dups
+    }, [pickups])
+
+    const duplicateAssigned = useMemo(() => {
+        const counts = new Map()
+        for (const p of pickups) {
+            const key = String(p.assigned || '').trim().toLowerCase()
+            if (!key) continue
+            counts.set(key, (counts.get(key) || 0) + 1)
+        }
+        const dups = new Set()
+        counts.forEach((count, key) => {
+            if (count > 1) dups.add(key)
+        })
+        return dups
+    }, [pickups])
 
     const content = useMemo(() => {
         if (isLoading) {
@@ -126,38 +157,82 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
         }
         return (
             <div className="mixers-list-table-container">
-                <table className="mixers-list-table">
+                <table className="mixers-list-table pickup-trucks-columns">
                     <colgroup>
-                        <col style={{width: '14%'}}/>
-                        <col style={{width: '14%'}}/>
-                        <col style={{width: '20%'}}/>
-                        <col style={{width: '10%'}}/>
-                        <col style={{width: '14%'}}/>
-                        <col style={{width: '14%'}}/>
-                        <col style={{width: '14%'}}/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
+                        <col/>
                     </colgroup>
                     <tbody>
-                    {filtered.map(p => (
-                        <tr key={p.id} style={{cursor: 'pointer'}} onClick={() => setSelectedId(p.id)}>
-                            <td>{p.assignedPlant || '—'}</td>
-                            <td>{p.status || '—'}</td>
-                            <td>{p.assigned || '—'}</td>
-                            <td>{p.year || '—'}</td>
-                            <td>{`${p.make || ''} ${p.model || ''}`.trim() || '—'}</td>
-                            <td>{p.vin || '—'}</td>
-                            <td>{typeof p.mileage === 'number' ? p.mileage.toLocaleString() : '—'}</td>
-                        </tr>
-                    ))}
+                    {filtered.map(p => {
+                        const statusClass = String(p.status || '').toLowerCase().replace(/\s+/g, '-')
+                        const vinKey = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
+                        const assignedKey = String(p.assigned || '').trim().toLowerCase()
+                        return (
+                            <tr key={p.id} className="clickable-row" onClick={() => setSelectedId(p.id)}>
+                                <td>{p.assignedPlant || '—'}</td>
+                                <td>
+                                    <span className={`item-status-dot ${statusClass}`}></span>
+                                    {p.status || '—'}
+                                </td>
+                                <td>
+                                    {p.assigned ? (
+                                        <span className="cell-inline">
+                                            <span>{p.assigned}</span>
+                                            {duplicateAssigned.has(assignedKey) && (
+                                                <span className="warning-badge" title="Assigned to multiple pickups">
+                                                    <i className="fas fa-exclamation-triangle"></i>
+                                                </span>
+                                            )}
+                                        </span>
+                                    ) : '—'}
+                                </td>
+                                <td>{p.year || '—'}</td>
+                                <td>{`${p.make || ''} ${p.model || ''}`.trim() || '—'}</td>
+                                <td>
+                                    {p.vin ? (
+                                        <span className="cell-inline">
+                                            <span>{p.vin}</span>
+                                            {duplicateVINs.has(vinKey) && (
+                                                <span className="warning-badge" title="Duplicate VIN">
+                                                    <i className="fas fa-exclamation-triangle"></i>
+                                                </span>
+                                            )}
+                                        </span>
+                                    ) : '—'}
+                                </td>
+                                <td>
+                                    {typeof p.mileage === 'number' ? (
+                                        <span className="mileage-cell">
+                                            <span>{p.mileage.toLocaleString()}</span>
+                                            {p.mileage > 300000 && (
+                                                <span className="warning-badge" title="High mileage">
+                                                    <i className="fas fa-exclamation-triangle"></i>
+                                                </span>
+                                            )}
+                                        </span>
+                                    ) : '—'}
+                                </td>
+                            </tr>
+                        )
+                    })}
                     </tbody>
                 </table>
             </div>
         )
-    }, [isLoading, filtered, viewMode, searchText, selectedPlant, statusFilter])
+    }, [isLoading, filtered, viewMode, searchText, selectedPlant, statusFilter, duplicateVINs, duplicateAssigned])
 
     return (
         <div className={`dashboard-container pickup-trucks-view${selectedId ? ' detail-open' : ''}`}>
             {selectedId ? (
-                <PickupTrucksDetailView pickupId={selectedId} onClose={() => { setSelectedId(null); fetchAllPickups() }}/>
+                <PickupTrucksDetailView pickupId={selectedId} onClose={() => {
+                    setSelectedId(null);
+                    fetchAllPickups()
+                }}/>
             ) : (
                 <>
                     <div className="mixers-sticky-header" ref={headerRef}>
@@ -167,9 +242,8 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                 <button
                                     className="action-button primary rectangular-button"
                                     onClick={() => setShowAddSheet(true)}
-                                    style={{height: '44px', lineHeight: '1'}}
                                 >
-                                    <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Pickup
+                                    <i className="fas fa-plus"></i> Add Pickup
                                 </button>
                             </div>
                         </div>
@@ -180,10 +254,16 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                     className="ios-search-input"
                                     placeholder="Search by VIN, make, model, year, or name..."
                                     value={searchInput}
-                                    onChange={e => { setSearchInput(e.target.value); debouncedSetSearchText(e.target.value) }}
+                                    onChange={e => {
+                                        setSearchInput(e.target.value);
+                                        debouncedSetSearchText(e.target.value)
+                                    }}
                                 />
                                 {searchInput && (
-                                    <button className="clear" onClick={() => { setSearchInput(''); debouncedSetSearchText('') }}>
+                                    <button className="clear" onClick={() => {
+                                        setSearchInput('');
+                                        debouncedSetSearchText('')
+                                    }}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 )}
@@ -216,7 +296,8 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                     >
                                         <option value="">All Plants</option>
                                         {plants.sort((a, b) => String(a.plantCode || '').localeCompare(String(b.plantCode || ''))).map(plant => (
-                                            <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>
+                                            <option key={plant.plantCode || plant.plant_code}
+                                                    value={plant.plantCode || plant.plant_code}>
                                                 {(plant.plantCode || plant.plant_code) + ' ' + (plant.plantName || plant.plant_name)}
                                             </option>
                                         ))}
@@ -228,13 +309,18 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                         value={statusFilter}
                                         onChange={e => setStatusFilter(e.target.value)}
                                     >
-                                        {['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired'].map(s => (
+                                        {['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Over 300k Miles'].map(s => (
                                             <option key={s} value={s === 'All Statuses' ? '' : s}>{s}</option>
                                         ))}
                                     </select>
                                 </div>
                                 {(searchText || selectedPlant || statusFilter) && (
-                                    <button className="filter-reset-button" onClick={() => { setSearchText(''); setSearchInput(''); setSelectedPlant(''); setStatusFilter('') }}>
+                                    <button className="filter-reset-button" onClick={() => {
+                                        setSearchText('');
+                                        setSearchInput('');
+                                        setSelectedPlant('');
+                                        setStatusFilter('')
+                                    }}>
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
@@ -244,7 +330,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                             </div>
                         </div>
                         {viewMode !== 'grid' && (
-                            <div className="mixers-list-header-row" style={{gridTemplateColumns: '14% 14% 20% 10% 14% 14% 14%'}}>
+                            <div className="mixers-list-header-row pickup-trucks-columns">
                                 <div>Plant</div>
                                 <div>Status</div>
                                 <div>Assigned</div>
@@ -275,7 +361,8 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                     <PickupTrucksOverview pickups={filtered}/>
                                 </div>
                                 <div className="modal-footer">
-                                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close</button>
+                                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close
+                                    </button>
                                 </div>
                             </div>
                         </div>
