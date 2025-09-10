@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo} from 'react';
 import {ListService} from '../../services/ListService';
 import {UserService} from '../../services/UserService';
 import {usePreferences} from '../../app/context/PreferencesContext';
@@ -8,6 +8,7 @@ import GrammarUtility from '../../utils/GrammarUtility';
 import './styles/ListDetailView.css';
 import './styles/ScrollStyles.css';
 import ListItemChat from './ListItemChat';
+import {RegionService} from '../../services/RegionService';
 
 function ListDetailView({itemId, onClose}) {
     const {preferences} = usePreferences();
@@ -21,6 +22,7 @@ function ListDetailView({itemId, onClose}) {
     const [formData, setFormData] = useState({description: '', plantCode: '', deadline: '', comments: ''});
     const [plants, setPlants] = useState([]);
     const [message, setMessage] = useState({text: '', type: ''});
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set());
 
     useEffect(() => {
         if (itemId) {
@@ -62,6 +64,51 @@ function ListDetailView({itemId, onClose}) {
             showMessage('Failed to load plants', 'error');
         }
     }
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadAllowed() {
+            let regionCode = preferences.selectedRegion?.code || '';
+            try {
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser();
+                    const uid = user?.id || '';
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid);
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '');
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode);
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null;
+                            regionCode = r ? (r.regionCode || r.region_code || '') : '';
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set());
+                    return;
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode);
+                if (cancelled) return;
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean));
+                setRegionPlantCodes(codes);
+                if (formData.plantCode && !codes.has(String(formData.plantCode).trim().toUpperCase()))
+                    setFormData(prev => ({...prev, plantCode: prev.plantCode}));
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set());
+            }
+        }
+
+        loadAllowed();
+
+        return () => {
+            cancelled = true
+        };
+    }, [preferences.selectedRegion?.code, formData.plantCode]);
+
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return plants;
+        return plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase()));
+    }, [plants, regionPlantCodes]);
 
     function handleChange(e) {
         setFormData(prev => ({...prev, [e.target.name]: e.target.value}));
@@ -238,9 +285,11 @@ function ListDetailView({itemId, onClose}) {
                                                 }}
                                             >
                                                 <option value="">Select a plant</option>
-                                                {plants.map(plant => (
-                                                    <option key={plant.plant_code}
-                                                            value={plant.plant_code}>({plant.plant_code}) {plant.plant_name}</option>
+                                                {!regionPlantCodes.has(String(formData.plantCode || '').trim().toUpperCase()) && formData.plantCode && (
+                                                    <option value={formData.plantCode}>{formData.plantCode}</option>
+                                                )}
+                                                {filteredPlants.map(p => (
+                                                    <option key={p.plant_code} value={p.plant_code}>({p.plant_code}) {p.plant_name}</option>
                                                 ))}
                                             </select>
                                         </div>

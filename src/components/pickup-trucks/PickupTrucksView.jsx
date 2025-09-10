@@ -11,8 +11,12 @@ import {PickupTruckService} from '../../services/PickupTruckService'
 import AsyncUtility from '../../utils/AsyncUtility'
 import {PlantService} from '../../services/PlantService'
 import FleetUtility from '../../utils/FleetUtility'
+import {usePreferences} from '../../app/context/PreferencesContext'
+import {RegionService} from '../../services/RegionService'
+import {UserService} from '../../services/UserService'
 
 function PickupTrucksView({title = 'Pickup Trucks'}) {
+    const {preferences} = usePreferences()
     const headerRef = useRef(null)
     const [pickups, setPickups] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -25,6 +29,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
     const [plants, setPlants] = useState([])
     const [selectedPlant, setSelectedPlant] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
 
     const fetchAllPickups = useCallback(async () => {
         setIsLoading(true)
@@ -51,9 +56,46 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                 setPlants([])
             }
         }
-
         loadPlants()
     }, [])
+
+    useEffect(() => {
+        let cancelled = false
+        async function loadAllowedPlants() {
+            let regionCode = preferences.selectedRegion?.code || ''
+            try {
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set())
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
+                setRegionPlantCodes(codes)
+                const sel = String(selectedPlant || '').trim().toUpperCase()
+                if (sel && !codes.has(sel)) {
+                    setSelectedPlant('')
+                }
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set())
+            }
+        }
+        loadAllowedPlants()
+        return () => {cancelled = true}
+    }, [preferences.selectedRegion?.code])
 
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
@@ -72,7 +114,6 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             const root = document.querySelector('.dashboard-container.pickup-trucks-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
-
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
@@ -82,21 +123,27 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
         setSearchText(value)
     }, 300), [])
 
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return []
+        return plants.filter(p => regionPlantCodes.has(String(p.plantCode || p.plant_code || '').trim().toUpperCase()))
+    }, [plants, regionPlantCodes])
+
     const filtered = useMemo(() => {
         const q = searchText.trim().toLowerCase()
         const list = pickups.filter(p => {
             const vin = String(p.vin || '').toLowerCase()
             const make = String(p.make || '').toLowerCase()
             const model = String(p.model || '').toLowerCase()
-            const year = String(p.year || '').toLowerCase()
-            const assigned = String(p.assigned || '').toLowerCase()
-            const matchesSearch = !q || vin.includes(q) || make.includes(q) || model.includes(q) || year.includes(q) || assigned.includes(q)
-            const matchesPlant = !selectedPlant || String(p.assignedPlant || '').trim() === selectedPlant
+            const yearVal = String(p.year || '').toLowerCase()
+            const assignedVal = String(p.assigned || '').toLowerCase()
+            const matchesSearch = !q || vin.includes(q) || make.includes(q) || model.includes(q) || yearVal.includes(q) || assignedVal.includes(q)
+            const matchesPlant = !selectedPlant || String(p.assignedPlant || '').trim().toUpperCase() === selectedPlant.toUpperCase()
             const matchesStatus = !statusFilter || (statusFilter === 'Over 300k Miles' ? (typeof p.mileage === 'number' && p.mileage > 300000) : String(p.status || '').trim() === statusFilter)
-            return matchesSearch && matchesPlant && matchesStatus
+            const inRegion = regionPlantCodes.size === 0 || regionPlantCodes.has(String(p.assignedPlant || '').trim().toUpperCase())
+            return matchesSearch && matchesPlant && matchesStatus && inRegion
         })
         return list.sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'assigned'))
-    }, [pickups, searchText, selectedPlant, statusFilter])
+    }, [pickups, searchText, selectedPlant, statusFilter, regionPlantCodes])
 
     const duplicateVINs = useMemo(() => {
         const counts = new Map()
@@ -106,9 +153,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             counts.set(key, (counts.get(key) || 0) + 1)
         }
         const dups = new Set()
-        counts.forEach((count, key) => {
-            if (count > 1) dups.add(key)
-        })
+        counts.forEach((count, key) => { if (count > 1) dups.add(key) })
         return dups
     }, [pickups])
 
@@ -120,9 +165,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             counts.set(key, (counts.get(key) || 0) + 1)
         }
         const dups = new Set()
-        counts.forEach((count, key) => {
-            if (count > 1) dups.add(key)
-        })
+        counts.forEach((count, key) => { if (count > 1) dups.add(key) })
         return dups
     }, [pickups])
 
@@ -295,12 +338,15 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                         aria-label="Filter by plant"
                                     >
                                         <option value="">All Plants</option>
-                                        {plants.sort((a, b) => String(a.plantCode || '').localeCompare(String(b.plantCode || ''))).map(plant => (
-                                            <option key={plant.plantCode || plant.plant_code}
-                                                    value={plant.plantCode || plant.plant_code}>
-                                                {(plant.plantCode || plant.plant_code) + ' ' + (plant.plantName || plant.plant_name)}
-                                            </option>
-                                        ))}
+                                        {!regionPlantCodes.has(String(selectedPlant || '').trim().toUpperCase()) && selectedPlant && <option value={selectedPlant}>{selectedPlant}</option>}
+                                        {filteredPlants
+                                            .sort((a, b) => parseInt(String(a.plantCode || a.plant_code || '').replace(/\D/g, '') || '0') - parseInt(String(b.plantCode || b.plant_code || '').replace(/\D/g, '') || '0'))
+                                            .map(plant => (
+                                                <option key={plant.plantCode || plant.plant_code}
+                                                        value={plant.plantCode || plant.plant_code}>
+                                                    {(plant.plantCode || plant.plant_code) + ' ' + (plant.plantName || plant.plant_name)}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                                 <div className="filter-wrapper">

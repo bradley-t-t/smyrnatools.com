@@ -1,5 +1,5 @@
 import Trailer from '../../config/models/trailers/Trailer';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, useMemo} from 'react';
 import {TrailerService} from '../../services/TrailerService';
 import {PlantService} from '../../services/PlantService';
 import {TractorService} from '../../services/TractorService';
@@ -12,6 +12,7 @@ import TrailerIssueModal from './TrailerIssueModal';
 import './styles/TrailerDetailView.css';
 import LoadingScreen from '../common/LoadingScreen';
 import TractorSelectModal from "./TractorSelectModal";
+import {RegionService} from '../../services/RegionService';
 
 function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
     const {preferences} = usePreferences();
@@ -44,6 +45,7 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
     const [issues, setIssues] = useState([]);
     const [status, setStatus] = useState(trailer?.status || '');
     const trailerCardRef = useRef(null);
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set());
 
     useEffect(() => {
         async function fetchData() {
@@ -97,6 +99,45 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
 
         fetchData();
     }, [initialTrailer, trailerId]);
+
+    useEffect(() => {
+        let cancelled = false
+        async function loadAllowedPlants() {
+            let regionCode = preferences.selectedRegion?.code || ''
+            try {
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set())
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
+                setRegionPlantCodes(codes)
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set())
+            }
+        }
+        loadAllowedPlants()
+        return () => {cancelled = true}
+    }, [preferences.selectedRegion?.code])
+
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return []
+        return plants.filter(p => regionPlantCodes.has(String(p.plantCode || p.plant_code || '').trim().toUpperCase()))
+    }, [plants, regionPlantCodes])
 
     useEffect(() => {
         async function checkPlantRestriction() {
@@ -363,6 +404,8 @@ ${openIssues.length > 0
         );
     }
 
+    const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
+
     return (
         <div className="trailer-detail-view">
             {showComments && <TrailerCommentModal trailerId={trailer.id} trailerNumber={trailer?.trailerNumber}
@@ -442,8 +485,9 @@ ${openIssues.length > 0
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditTrailer} className="trailer-form-control">
                                     <option value="">Select Plant</option>
-                                    {plants.map(plant => (
-                                        <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
+                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {filteredPlants.map(p => (
+                                        <option key={p.plantCode || p.plant_code} value={p.plantCode || p.plant_code}>{p.plantName || p.plant_name}</option>
                                     ))}
                                 </select>
                             </div>

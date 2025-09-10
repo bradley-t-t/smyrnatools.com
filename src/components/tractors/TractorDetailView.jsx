@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo} from 'react';
 import {TractorService} from '../../services/TractorService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
@@ -11,8 +11,11 @@ import {TractorUtility} from "../../utils/TractorUtility";
 import {Tractor} from "../../config/models/tractors/Tractor";
 import LoadingScreen from "../common/LoadingScreen";
 import OperatorSelectModal from "../mixers/OperatorSelectModal";
+import {usePreferences} from '../../app/context/PreferencesContext';
+import {RegionService} from '../../services/RegionService';
 
 function TractorDetailView({tractorId, onClose}) {
+    const {preferences} = usePreferences()
     const [tractor, setTractor] = useState(null);
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
@@ -46,6 +49,7 @@ function TractorDetailView({tractorId, onClose}) {
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null);
     const [comments, setComments] = useState([]);
     const [issues, setIssues] = useState([]);
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
 
     useEffect(() => {
         async function fetchData() {
@@ -57,12 +61,10 @@ function TractorDetailView({tractorId, onClose}) {
                     PlantService.fetchPlants(),
                     TractorService.getAllTractors()
                 ]);
-
                 setTractor(tractorData);
                 setOperators(operatorsData);
                 setPlants(plantsData);
                 setTractors(allTractors);
-
                 setTruckNumber(tractorData.truckNumber || '');
                 setAssignedOperator(tractorData.assignedOperator || '');
                 setAssignedPlant(tractorData.assignedPlant || '');
@@ -75,7 +77,6 @@ function TractorDetailView({tractorId, onClose}) {
                 setModel(tractorData.model || '');
                 setYear(tractorData.year || '');
                 setFreight(tractorData.freight || '');
-
                 setOriginalValues({
                     truckNumber: tractorData.truckNumber || '',
                     assignedOperator: tractorData.assignedOperator || '',
@@ -90,9 +91,7 @@ function TractorDetailView({tractorId, onClose}) {
                     year: tractorData.year || '',
                     freight: tractorData.freight || ''
                 });
-
                 document.documentElement.style.setProperty('--rating-value', tractorData.cleanlinessRating || 0);
-
                 if (tractorData.updatedBy) {
                     try {
                         const userName = await UserService.getUserDisplayName(tractorData.updatedBy);
@@ -102,49 +101,78 @@ function TractorDetailView({tractorId, onClose}) {
                     }
                 }
             } catch (error) {
-                console.error('Error fetching tractor details:', error);
             } finally {
                 setIsLoading(false);
                 setHasUnsavedChanges(false);
             }
         }
-
         fetchData();
     }, [tractorId]);
 
     useEffect(() => {
+        let cancelled = false
+        async function loadAllowedPlants() {
+            let regionCode = preferences.selectedRegion?.code || ''
+            try {
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set())
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
+                setRegionPlantCodes(codes)
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set())
+            }
+        }
+        loadAllowedPlants()
+        return () => {cancelled = true}
+    }, [preferences.selectedRegion?.code])
+
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return []
+        return plants.filter(p => regionPlantCodes.has(String(p.plantCode || p.plant_code || '').trim().toUpperCase()))
+    }, [plants, regionPlantCodes])
+
+    useEffect(() => {
         async function checkPlantRestriction() {
             if (isLoading || !tractor) return;
-
             try {
                 const userId = await UserService.getCurrentUser();
                 if (!userId) return;
-
                 const hasPermission = await UserService.hasPermission(userId, 'tractors.bypass.plantrestriction');
                 if (hasPermission) return setCanEditTractor(true);
-
                 const profilePlant = await UserService.getUserPlant(userId);
                 const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || null);
                 if (plantCode && tractor) {
                     const isSamePlant = plantCode === tractor.assignedPlant;
                     setCanEditTractor(isSamePlant);
                     if (!isSamePlant) {
-                        setPlantRestrictionReason(
-                            `You cannot edit or verify this tractor because it belongs to plant ${tractor.assignedPlant} and you are assigned to plant ${plantCode}.`
-                        );
+                        setPlantRestrictionReason(`You cannot edit or verify this tractor because it belongs to plant ${tractor.assignedPlant} and you are assigned to plant ${plantCode}.`);
                     }
                 }
             } catch (error) {
-                console.error('Error checking plant restriction:', error);
             }
         }
-
         checkPlantRestriction();
     }, [tractor, isLoading]);
 
     useEffect(() => {
         if (!originalValues.truckNumber || isLoading) return;
-
         const formatDateForComparison = date => date ? (date instanceof Date ? date.toISOString().split('T')[0] : '') : '';
         const hasChanges =
             truckNumber !== originalValues.truckNumber ||
@@ -158,7 +186,6 @@ function TractorDetailView({tractorId, onClose}) {
             model !== originalValues.model ||
             year !== originalValues.year ||
             freight !== originalValues.freight;
-
         setHasUnsavedChanges(hasChanges);
     }, [truckNumber, assignedPlant, status, cleanlinessRating, lastServiceDate, hasBlower, vin, make, model, year, freight, originalValues, isLoading]);
 
@@ -178,27 +205,22 @@ function TractorDetailView({tractorId, onClose}) {
             alert('Error: Cannot save tractor with undefined ID');
             return;
         }
-
         setIsSaving(true);
         try {
             let userObj = await UserService.getCurrentUser();
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj;
-
             const formatDate = date => {
                 if (!date) return null;
                 const parsedDate = date instanceof Date ? date : new Date(date);
                 if (isNaN(parsedDate.getTime())) return null;
                 return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')} ${String(parsedDate.getHours()).padStart(2, '0')}:${String(parsedDate.getMinutes()).padStart(2, '0')}:${String(parsedDate.getSeconds()).padStart(2, '0')}+00`;
             };
-
             let assignedOperatorValue = Object.prototype.hasOwnProperty.call(overrideValues, 'assignedOperator')
                 ? overrideValues.assignedOperator
                 : assignedOperator;
-
             let statusValue = Object.prototype.hasOwnProperty.call(overrideValues, 'status')
                 ? overrideValues.status
                 : status;
-
             if ((!assignedOperatorValue || assignedOperatorValue === '' || assignedOperatorValue === null) && statusValue === 'Active') {
                 statusValue = 'Spare';
             }
@@ -208,19 +230,16 @@ function TractorDetailView({tractorId, onClose}) {
             if (['In Shop', 'Retired', 'Spare'].includes(statusValue) && assignedOperatorValue) {
                 assignedOperatorValue = null;
             }
-
             let tractorForHistory = {
                 ...tractor,
                 assignedOperator: Object.prototype.hasOwnProperty.call(overrideValues, 'prevAssignedOperator')
                     ? overrideValues.prevAssignedOperator
                     : tractor.assignedOperator
             };
-
             let cleanlinessValue = overrideValues.cleanlinessRating ?? cleanlinessRating;
             if (!cleanlinessValue || isNaN(cleanlinessValue) || cleanlinessValue < 1) {
                 cleanlinessValue = 1;
             }
-
             const updatedTractor = {
                 ...tractor,
                 id: tractor.id,
@@ -240,7 +259,6 @@ function TractorDetailView({tractorId, onClose}) {
                 updatedBy: userId,
                 updatedLast: tractor.updatedLast
             };
-
             await TractorService.updateTractor(
                 updatedTractor.id,
                 updatedTractor,
@@ -248,10 +266,8 @@ function TractorDetailView({tractorId, onClose}) {
                 tractorForHistory
             );
             setTractor(updatedTractor);
-
             setMessage('Changes saved successfully! Tractor needs verification.');
             setTimeout(() => setMessage(''), 5000);
-
             setOriginalValues({
                 truckNumber: updatedTractor.truckNumber,
                 assignedOperator: updatedTractor.assignedOperator,
@@ -266,10 +282,8 @@ function TractorDetailView({tractorId, onClose}) {
                 year: updatedTractor.year,
                 freight: updatedTractor.freight || ''
             });
-
             setHasUnsavedChanges(false);
         } catch (error) {
-            console.error('Error saving tractor:', error);
             alert(`Error saving changes: ${error.message || 'Unknown error'}`);
         } finally {
             setIsSaving(false);
@@ -279,13 +293,11 @@ function TractorDetailView({tractorId, onClose}) {
     async function handleDelete() {
         if (!tractor) return;
         if (!showDeleteConfirmation) return setShowDeleteConfirmation(true);
-
         try {
             await TractorService.deleteTractor(tractor.id);
             alert('Tractor deleted successfully');
             onClose();
         } catch (error) {
-            console.error('Error deleting tractor:', error);
             alert('Error deleting tractor');
         } finally {
             setShowDeleteConfirmation(false);
@@ -294,7 +306,6 @@ function TractorDetailView({tractorId, onClose}) {
 
     async function handleVerifyTractor() {
         if (!tractor) return
-
         const operatorName = getOperatorName(assignedOperator)
         if (
             status === 'Active' &&
@@ -309,31 +320,24 @@ function TractorDetailView({tractorId, onClose}) {
             setTimeout(() => setMessage(''), 4000)
             return
         }
-
         setIsSaving(true)
         try {
             if (hasUnsavedChanges) {
                 await handleSave().catch(error => {
-                    console.error('Error saving changes before verification:', error)
                     alert('Failed to save your changes before verification. Please try saving manually first.')
                     throw new Error('Failed to save changes before verification')
                 })
             }
-
             let userObj = await UserService.getCurrentUser()
             let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
-
             const updated = await TractorService.verifyTractor(tractor.id, userId)
             if (updated) {
                 setTractor(updated)
                 setMessage('Tractor verified successfully!')
                 setTimeout(() => setMessage(''), 3000)
             }
-
             setHasUnsavedChanges(false)
-
         } catch (error) {
-            console.error('Error verifying tractor:', error)
             alert(`Error verifying tractor: ${error.message}`)
         } finally {
             setIsSaving(false)
@@ -392,7 +396,6 @@ function TractorDetailView({tractorId, onClose}) {
             } catch {
             }
         }
-
         fetchCommentsAndIssues();
     }, [tractorId]);
 
@@ -475,6 +478,8 @@ ${openIssues.length > 0
             </div>
         );
     }
+
+    const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
 
     return (
         <div className="tractor-detail-view">
@@ -657,8 +662,9 @@ ${openIssues.length > 0
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditTractor} className="form-control">
                                     <option value="">Select Plant</option>
-                                    {plants.map(plant => (
-                                        <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
+                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {filteredPlants.map(plant => (
+                                        <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>{plant.plantName || plant.plant_name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -714,7 +720,6 @@ ${openIssues.length > 0
                                                             }, 0);
                                                         }
                                                     } catch (error) {
-                                                        console.error('Error unassigning operator:', error);
                                                         setMessage('Error unassigning operator. Please try again.');
                                                         setTimeout(() => setMessage(''), 3000);
                                                     }
@@ -744,7 +749,6 @@ ${openIssues.length > 0
                                                             setMessage('Operator re-assigned and status set to Active');
                                                             setTimeout(() => setMessage(''), 3000);
                                                         } catch (error) {
-                                                            console.error('Error undoing unassign:', error);
                                                             setMessage('Error undoing unassign. Please try again.');
                                                             setTimeout(() => setMessage(''), 3000);
                                                         }
@@ -793,7 +797,6 @@ ${openIssues.length > 0
                                                     setTimeout(() => setMessage(''), 3000);
                                                     setHasUnsavedChanges(false);
                                                 } catch (error) {
-                                                    console.error('Error assigning operator:', error);
                                                     setMessage('Error assigning operator. Please try again.');
                                                     setTimeout(() => setMessage(''), 3000);
                                                 }

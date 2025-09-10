@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, useMemo} from 'react'
 import {MixerService} from '../../services/MixerService'
 import {PlantService} from '../../services/PlantService'
 import {OperatorService} from '../../services/OperatorService'
@@ -12,6 +12,7 @@ import './styles/MixerDetailView.css'
 import MixerUtility from '../../utils/MixerUtility'
 import {Mixer} from "../../config/models/mixers/Mixer"
 import LoadingScreen from "../common/LoadingScreen"
+import {RegionService} from '../../services/RegionService'
 
 function MixerDetailView({mixerId, onClose}) {
     const {preferences} = usePreferences()
@@ -29,7 +30,6 @@ function MixerDetailView({mixerId, onClose}) {
     const [updatedByEmail, setUpdatedByEmail] = useState(null)
     const [message, setMessage] = useState('')
     const [showOperatorModal, setShowOperatorModal] = useState(false)
-    const [, setUserProfile] = useState(null)
     const [canEditMixer, setCanEditMixer] = useState(true)
     const [plantRestrictionReason, setPlantRestrictionReason] = useState('')
     const [originalValues, setOriginalValues] = useState({})
@@ -48,6 +48,7 @@ function MixerDetailView({mixerId, onClose}) {
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null)
     const [comments, setComments] = useState([])
     const [issues, setIssues] = useState([])
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
 
     useEffect(() => {
         async function fetchData() {
@@ -102,9 +103,47 @@ function MixerDetailView({mixerId, onClose}) {
                 setHasUnsavedChanges(false)
             }
         }
-
         fetchData()
     }, [mixerId])
+
+    useEffect(() => {
+        let cancelled = false
+        async function loadAllowedPlants() {
+            let regionCode = preferences.selectedRegion?.code || ''
+            try {
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set())
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
+                setRegionPlantCodes(codes)
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set())
+            }
+        }
+        loadAllowedPlants()
+        return () => {cancelled = true}
+    }, [preferences.selectedRegion?.code])
+
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return []
+        return plants.filter(p => regionPlantCodes.has(String(p.plantCode || p.plant_code || '').trim().toUpperCase()))
+    }, [plants, regionPlantCodes])
 
     useEffect(() => {
         async function checkPlantRestriction() {
@@ -119,7 +158,6 @@ function MixerDetailView({mixerId, onClose}) {
             } catch (error) {
             }
         }
-
         checkPlantRestriction()
     }, [mixer, isLoading])
 
@@ -232,7 +270,6 @@ function MixerDetailView({mixerId, onClose}) {
             alert('Mixer deleted successfully')
             onClose()
         } catch (error) {
-            console.error('Error deleting mixer:', error)
             alert('Error deleting mixer')
         } finally {
             setShowDeleteConfirmation(false)
@@ -258,8 +295,7 @@ function MixerDetailView({mixerId, onClose}) {
         setIsSaving(true)
         try {
             if (hasUnsavedChanges) {
-                await handleSave().catch(error => {
-                    console.error('Error saving changes before verification:', error)
+                await handleSave().catch(() => {
                     alert('Failed to save your changes before verification. Please try saving manually first.')
                     throw new Error('Failed to save changes before verification')
                 })
@@ -280,7 +316,6 @@ function MixerDetailView({mixerId, onClose}) {
                 }
             }
         } catch (error) {
-            console.error('Error verifying mixer:', error)
             alert(`Error verifying mixer: ${error.message}`)
         } finally {
             setIsSaving(false)
@@ -347,7 +382,6 @@ function MixerDetailView({mixerId, onClose}) {
                 setIssues([])
             }
         }
-
         fetchCommentsAndIssues()
     }, [mixerId])
 
@@ -355,34 +389,15 @@ function MixerDetailView({mixerId, onClose}) {
         if (!mixer) return
         const hasComments = comments && comments.length > 0
         const openIssues = (issues || []).filter(issue => !issue.time_completed)
-        let summary = `Mixer Summary for Truck #${mixer.truckNumber || ''}
-
-Basic Information
-Status: ${mixer.status || ''}
-Assigned Plant: ${getPlantName(mixer.assignedPlant)}
-Assigned Operator: ${getOperatorName(mixer.assignedOperator)}
-Cleanliness Rating: ${mixer.cleanlinessRating || 'N/A'}
-Last Service Date: ${mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'N/A'}
-Last Chip Date: ${mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'N/A'}
-VIN: ${mixer.vin || ''}
-Make: ${mixer.make || ''}
-Model: ${mixer.model || ''}
-Year: ${mixer.year || ''}
-
-Comments
-${hasComments
+        let summary = `Mixer Summary for Truck #${mixer.truckNumber || ''}\n\nBasic Information\nStatus: ${mixer.status || ''}\nAssigned Plant: ${getPlantName(mixer.assignedPlant)}\nAssigned Operator: ${getOperatorName(mixer.assignedOperator)}\nCleanliness Rating: ${mixer.cleanlinessRating || 'N/A'}\nLast Service Date: ${mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'N/A'}\nLast Chip Date: ${mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'N/A'}\nVIN: ${mixer.vin || ''}\nMake: ${mixer.make || ''}\nModel: ${mixer.model || ''}\nYear: ${mixer.year || ''}\n\nComments\n${hasComments
             ? comments.map(c =>
                 `- ${c.author || 'Unknown'}: ${c.text || ''} (${new Date(c.created_at).toLocaleString()})`
             ).join('\n')
-            : 'No comments.'}
-
-Issues (${openIssues.length})
-${openIssues.length > 0
+            : 'No comments.'}\n\nIssues (${openIssues.length})\n${openIssues.length > 0
             ? openIssues.map(i =>
                 `- ${i.issue || i.title || i.description || ''} (${new Date(i.time_created || i.created_at).toLocaleString()})`
             ).join('\n')
-            : 'No open issues.'}
-`
+            : 'No open issues.'}\n`
         const subject = encodeURIComponent(`Mixer Summary for Truck #${mixer.truckNumber || ''}`)
         const body = encodeURIComponent(summary)
         window.location.href = `mailto:?subject=${subject}&body=${body}`
@@ -429,6 +444,8 @@ ${openIssues.length > 0
             </div>
         )
     }
+
+    const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
 
     return (
         <div className="mixer-detail-view">
@@ -598,7 +615,8 @@ ${openIssues.length > 0
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditMixer} className="form-control">
                                     <option value="">Select Plant</option>
-                                    {plants.map(plant => (
+                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {filteredPlants.map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
                                     ))}
                                 </select>
@@ -655,7 +673,6 @@ ${openIssues.length > 0
                                                             }, 0)
                                                         }
                                                     } catch (error) {
-                                                        console.error('Error unassigning operator:', error)
                                                         setMessage('Error unassigning operator. Please try again.')
                                                         setTimeout(() => setMessage(''), 3000)
                                                     }
@@ -685,7 +702,6 @@ ${openIssues.length > 0
                                                             setMessage('Operator re-assigned and status set to Active')
                                                             setTimeout(() => setMessage(''), 3000)
                                                         } catch (error) {
-                                                            console.error('Error undoing unassign:', error)
                                                             setMessage('Error undoing unassign. Please try again.')
                                                             setTimeout(() => setMessage(''), 3000)
                                                         }
@@ -735,7 +751,6 @@ ${openIssues.length > 0
                                                     setTimeout(() => setMessage(''), 3000)
                                                     setHasUnsavedChanges(false)
                                                 } catch (error) {
-                                                    console.error('Error assigning operator:', error)
                                                     setMessage('Error assigning operator. Please try again.')
                                                     setTimeout(() => setMessage(''), 3000)
                                                 }

@@ -1,11 +1,15 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, useMemo} from 'react'
 import {PickupTruckService} from '../../services/PickupTruckService'
 import '../mixers/styles/MixerDetailView.css'
 import './styles/PickupTrucksDetailView.css'
 import LoadingScreen from '../common/LoadingScreen'
 import {PlantService} from '../../services/PlantService'
+import {usePreferences} from '../../app/context/PreferencesContext'
+import {RegionService} from '../../services/RegionService'
+import {UserService} from '../../services/UserService'
 
 function PickupTrucksDetailView({pickupId, onClose}) {
+    const {preferences} = usePreferences()
     const [pickup, setPickup] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
@@ -20,6 +24,7 @@ function PickupTrucksDetailView({pickupId, onClose}) {
     const [mileage, setMileage] = useState('')
     const [comments, setComments] = useState('')
     const [plants, setPlants] = useState([])
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
 
     useEffect(() => {
         async function fetchData() {
@@ -58,6 +63,45 @@ function PickupTrucksDetailView({pickupId, onClose}) {
 
         loadPlants()
     }, [])
+
+    useEffect(() => {
+        let cancelled = false
+        async function loadAllowedPlants() {
+            let regionCode = preferences.selectedRegion?.code || ''
+            try {
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set())
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
+                setRegionPlantCodes(codes)
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set())
+            }
+        }
+        loadAllowedPlants()
+        return () => {cancelled = true}
+    }, [preferences.selectedRegion?.code])
+
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return []
+        return plants.filter(p => regionPlantCodes.has(String(p.plantCode || p.plant_code || '').trim().toUpperCase()))
+    }, [plants, regionPlantCodes])
 
     async function handleSave() {
         if (!pickup?.id) return
@@ -133,6 +177,8 @@ function PickupTrucksDetailView({pickupId, onClose}) {
         )
     }
 
+    const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
+
     return (
         <div className="mixer-detail-view pickup-trucks-detail">
             {isSaving && (
@@ -165,8 +211,9 @@ function PickupTrucksDetailView({pickupId, onClose}) {
                                                                                              onChange={e => setAssignedPlant(e.target.value)}
                                                                                              className="form-control">
                                 <option value="">Select Plant</option>
-                                {plants.map(p => (<option key={p.plantCode || p.plant_code}
-                                                          value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>))}
+                                {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                {filteredPlants.map(p => (<option key={p.plantCode || p.plant_code}
+                                                                  value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>))}
                             </select></div>
                             <div className="form-group"><label>Status</label><select value={status}
                                                                                      onChange={e => setStatus(e.target.value)}

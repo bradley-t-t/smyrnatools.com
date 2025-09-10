@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {DatabaseService, supabase} from '../../services/DatabaseService';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
@@ -6,6 +6,7 @@ import {useAuth} from '../../app/context/AuthContext';
 import './styles/ManagerDetailView.css';
 import {UserService} from '../../services/UserService';
 import {AuthUtility} from '../../utils/AuthUtility';
+import {RegionService} from '../../services/RegionService';
 
 function ManagerDetailView({managerId, onClose}) {
     const {preferences} = usePreferences();
@@ -28,6 +29,7 @@ function ManagerDetailView({managerId, onClose}) {
     const [roleName, setRoleName] = useState('');
     const [password, setPassword] = useState('');
     const [showPasswordField, setShowPasswordField] = useState(false);
+    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set());
 
     useEffect(() => {
         document.body.classList.add('in-detail-view');
@@ -71,13 +73,57 @@ function ManagerDetailView({managerId, onClose}) {
         setIsReadOnly(!(canEditAny || canEditByWeight));
     }, [manager, currentUserRoleWeight]);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadRegionPlants() {
+            let regionCode = preferences.selectedRegion?.code || '';
+            try {
+                if (!regionCode) {
+                    const u = await UserService.getCurrentUser();
+                    const uid = u?.id || '';
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid);
+                        const plant = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '');
+                        if (plant) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plant);
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null;
+                            regionCode = r ? (r.regionCode || r.region_code || '') : '';
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(new Set());
+                    return;
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode);
+                if (cancelled) return;
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean));
+                setRegionPlantCodes(codes);
+                if (plantCode && !codes.has(String(plantCode).trim().toUpperCase())) setPlantCode(plantCode);
+            } catch {
+                if (!cancelled) setRegionPlantCodes(new Set());
+            }
+        }
+
+        loadRegionPlants();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [preferences.selectedRegion?.code, plantCode]);
+
+    const filteredPlants = useMemo(() => {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return plants.slice().sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'));
+        return plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase())).sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'));
+    }, [plants, regionPlantCodes]);
+
     async function fetchCurrentUserRole() {
         try {
             if (!user?.id) return;
             const highestRole = await UserService.getHighestRole(user.id);
             setCurrentUserRoleWeight(highestRole?.weight || 0);
-        } catch (error) {
-            console.error('Error fetching current user role:', error);
+        } catch {
             setCurrentUserRoleWeight(0);
         }
     }
@@ -99,8 +145,7 @@ function ManagerDetailView({managerId, onClose}) {
             if (data?.length && !data.some(r => r.name === roleName)) {
                 setRoleName(data[0].name);
             }
-        } catch (error) {
-            console.error('Error fetching roles:', error);
+        } catch {
             setAvailableRoles([]);
         }
     }
@@ -121,7 +166,7 @@ function ManagerDetailView({managerId, onClose}) {
             if (profileError) throw profileError;
             if (permissionError && permissionError.code !== 'PGRST116') throw permissionError;
 
-            let roleName = 'User', roleId = null, roleWeight = 0;
+            let rName = 'User', roleId = null, roleWeight = 0;
             if (permissionData?.role_id) {
                 const {data: roleData, error: roleError} = await supabase
                     .from('users_roles')
@@ -129,7 +174,7 @@ function ManagerDetailView({managerId, onClose}) {
                     .eq('id', permissionData.role_id)
                     .single();
                 if (!roleError && roleData) {
-                    roleName = roleData.name;
+                    rName = roleData.name;
                     roleId = roleData.id;
                     roleWeight = roleData.weight || 0;
                 }
@@ -141,7 +186,7 @@ function ManagerDetailView({managerId, onClose}) {
                 firstName: profileData.first_name,
                 lastName: profileData.last_name,
                 plantCode: profileData.plant_code,
-                roleName,
+                roleName: rName,
                 roleId,
                 roleWeight,
                 createdAt: profileData.created_at,
@@ -176,8 +221,7 @@ function ManagerDetailView({managerId, onClose}) {
             const {data, error} = await supabase.from('plants').select('*');
             if (error) throw error;
             setPlants(data || []);
-        } catch (error) {
-            console.error('Error fetching plants:', error);
+        } catch {
         }
     }
 
@@ -268,8 +312,7 @@ function ManagerDetailView({managerId, onClose}) {
             if (error) throw error;
             alert('Manager deleted successfully');
             onClose();
-        } catch (error) {
-            console.error('Error deleting manager:', error);
+        } catch {
             alert('Error deleting manager');
         } finally {
             setShowDeleteConfirmation(false);
@@ -369,21 +412,6 @@ function ManagerDetailView({managerId, onClose}) {
                         <h2>Edit Information</h2>
                     </div>
                     <p className="edit-instructions">Make changes below and click Save when finished.</p>
-                    <div className="metadata-info" style={{display: 'none'}}>
-                        <div className="metadata-row">
-                            <span className="metadata-label">Created:</span>
-                            <span
-                                className="metadata-value">{manager.createdAt ? new Date(manager.createdAt).toLocaleString() : 'Not Assigned'}</span>
-                        </div>
-                        <div className="metadata-row">
-                            <span className="metadata-label">Last Updated:</span>
-                            <span
-                                className="metadata-value">{manager.updatedAt ? new Date(manager.updatedAt).toLocaleString() : 'Not Assigned'}</span>
-                            <button onClick={() => fetchRoles()} style={{marginLeft: '10px', fontSize: '10px'}}>Refresh
-                                roles
-                            </button>
-                        </div>
-                    </div>
                     <div className="form-group">
                         <label>First Name</label>
                         <input
@@ -423,7 +451,9 @@ function ManagerDetailView({managerId, onClose}) {
                             disabled={isReadOnly}
                         >
                             <option value="">Select Plant</option>
-                            {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
+                            {!regionPlantCodes.has(String(plantCode || '').trim().toUpperCase()) && plantCode &&
+                                <option value={plantCode}>{plantCode}</option>}
+                            {filteredPlants.map(plant => (
                                 <option key={plant.plant_code} value={plant.plant_code}>
                                     ({plant.plant_code}) {plant.plant_name}
                                 </option>
