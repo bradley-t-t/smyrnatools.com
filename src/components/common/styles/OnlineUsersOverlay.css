@@ -1,4 +1,4 @@
-.online-users-overlay {
+.ouo-online-users-overlay {
     position: fixed;
     bottom: 18px;
     right: 18px;
@@ -6,33 +6,31 @@
     max-width: 98vw;
     max-height: 500px;
     border-radius: 12px;
-    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.10);
     z-index: 9999;
     overflow: hidden;
-    transition: all 0.22s cubic-bezier(.4, 0, .2, 1);
+    transition: var(--transition-all);
     opacity: 1;
     border: 1px solid var(--accent);
-    background: rgba(var(--card-bg-rgb), 0.80);
+    background: var(--card-bg);
     backdrop-filter: blur(8px) saturate(1.1);
 }
 
-.online-users-overlay:hover {
+.ouo-online-users-overlay:hover {
     opacity: 1;
 }
 
-.online-users-overlay.expanded {
+.ouo-online-users-overlay.expanded {
     max-height: 500px;
     width: 280px;
     max-width: 98vw;
 }
 
-.online-users-overlay.minimized {
+.ouo-online-users-overlay.minimized {
     width: auto;
     height: auto;
     bottom: 18px;
     right: 18px;
     border-radius: 20px;
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
     overflow: visible;
     border: none;
     background: none;
@@ -40,30 +38,29 @@
     opacity: 0.92;
 }
 
-.online-users-minimized {
+.ouo-online-users-minimized {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 8px 16px;
-    color: white;
+    color: var(--text-light);
     font-weight: 600;
     cursor: pointer;
     border-radius: 50px;
     gap: 8px;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-md);
+    transition: var(--transition-all);
     background-color: var(--accent);
 }
 
-.online-users-minimized:hover {
+.ouo-online-users-minimized:hover {
     transform: scale(1.05);
 }
 
-.online-users-minimized .user-count {
+.ouo-online-users-minimized .ouo-user-count {
     font-size: 14px;
 }
 
-.online-users-minimized-compact {
+.ouo-online-users-minimized-compact {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -73,25 +70,25 @@
     height: 32px;
     border-radius: 16px;
     background: linear-gradient(90deg, var(--accent) 60%, var(--accent-secondary, var(--accent)) 100%);
-    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
     transition: background 0.14s, box-shadow 0.14s, transform 0.14s;
 }
 
-.online-users-minimized-compact:hover {
+.ouo-online-users-minimized-compact:hover {
     transform: scale(1.04);
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.10);
+    box-shadow: var(--shadow-md);
 }
 
-.online-users-minimized-compact .user-count {
-    color: white;
+.ouo-online-users-minimized-compact .ouo-user-count {
+    color: var(--text-light);
     font-size: 13px;
     font-weight: 500;
     padding: 0 6px;
     letter-spacing: 0.2px;
 }
 
-.online-users-minimized-compact .action-button.icon-only {
+.ouo-online-users-minimized-compact .ouo-action-button.ouo-icon-only {
     margin-left: 1px;
     background: none;
     width: 24px;
@@ -106,18 +103,18 @@
     min-height: 24px;
     max-width: 24px;
     max-height: 24px;
-    color: white;
+    color: var(--text-light);
     border: none;
     border-radius: 0;
     font-size: 14px;
 }
 
-.online-users-minimized-compact .action-button.icon-only:hover {
+.ouo-online-users-minimized-compact .ouo-action-button.ouo-icon-only:hover {
     background: none;
-    color: white;
+    color: var(--text-light);
 }
 
-.online-users-header {
+.ouo-online-users-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -126,7 +123,7 @@
     background: transparent;
 }
 
-.header-title {
+.ouo-header-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -135,9 +132,9 @@
     letter-spacing: 0.1px;
 }
 
-.header-title .user-count {
+.ouo-header-title .ouo-user-count {
     background: var(--accent);
-    color: white;
+    color: var(--text-light);
     font-size: 11px;
     padding: 2px 7px;
     border-radius: 8px;
@@ -148,28 +145,22 @@
     margin-left: 4px;
 }
 
-.header-title .user-count.pulse {
-    animation: pulse 0.4s cubic-bezier(.4, 0, .2, 1);
+.ouo-header-title .ouo-user-count.ouo-pulse {
+    animation: ouo-pulse 0.4s cubic-bezier(.4, 0, .2, 1);
 }
 
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.12);
-    }
-    100% {
-        transform: scale(1);
-    }
+@keyframes ouo-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
 }
 
-.header-actions {
+.ouo-header-actions {
     display: flex;
     gap: 4px;
 }
 
-.action-button {
+.ouo-action-button {
     width: 28px;
     height: 28px;
     min-width: 28px;
@@ -190,7 +181,7 @@
     font-size: 15px;
 }
 
-.action-button.circle {
+.ouo-action-button.ouo-circle {
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -201,62 +192,62 @@
     background: none;
 }
 
-.action-button:hover,
-.action-button.circle:hover {
-    background: rgba(var(--accent-rgb), 0.10);
+.ouo-action-button:hover,
+.ouo-action-button.ouo-circle:hover {
+    background: var(--badge-bg);
     color: var(--accent);
-    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-xs);
 }
 
-.online-users-minimized .action-button.circle {
+.ouo-online-users-minimized .ouo-action-button.ouo-circle {
     margin-left: 8px;
 }
 
-.online-users-list {
+.ouo-online-users-list {
     overflow-y: auto;
     max-height: 220px;
     padding: 6px 0 6px 0;
     background: transparent;
 }
 
-.online-user {
+.ouo-online-user {
     display: flex;
     align-items: center;
     padding: 6px 14px;
     border-radius: 8px;
     margin: 0 4px 4px 4px;
     transition: background 0.14s;
-    background: rgba(var(--card-bg-rgb), 0.50);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-xs);
 }
 
-.online-user:hover {
-    background: rgba(var(--accent-rgb), 0.06);
+.ouo-online-user:hover {
+    background: var(--badge-bg);
 }
 
-.user-avatar {
+.ouo-user-avatar {
     width: 24px;
     height: 24px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent) 60%, var(--accent-secondary, var(--accent)) 100%);
-    color: white;
+    color: var(--text-light);
     display: flex;
     align-items: center;
     justify-content: center;
     margin-right: 8px;
     font-size: 12px;
     font-weight: 500;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-xs);
     letter-spacing: 0.2px;
 }
 
-.user-info {
+.ouo-user-info {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.user-name {
+.ouo-user-name {
     font-size: 13px;
     font-weight: 400;
     white-space: nowrap;
@@ -268,7 +259,7 @@
     align-items: center;
 }
 
-.user-status {
+.ouo-user-status {
     display: flex;
     align-items: center;
     gap: 0;
@@ -279,18 +270,18 @@
     height: 13px;
 }
 
-.status-indicator {
+.ouo-status-indicator {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #10b981;
+    background: var(--success);
     display: inline-block;
-    box-shadow: 0 0 2px #10b98199;
+    box-shadow: 0 0 2px var(--success);
     vertical-align: middle;
     margin-left: 2px;
 }
 
-.more-users {
+.ouo-more-users {
     text-align: center;
     padding: 6px 0 0 0;
     font-size: 12px;
@@ -304,7 +295,7 @@
     font-weight: 500;
 }
 
-.more-users button {
+.ouo-more-users button {
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -324,55 +315,55 @@
     font-size: 12px;
 }
 
-.more-users button.icon-only {
+.ouo-more-users button.ouo-icon-only {
     margin-left: 0;
 }
 
-.more-users button:hover {
-    background: rgba(var(--accent-rgb), 0.08);
+.ouo-more-users button:hover {
+    background: var(--badge-bg);
     color: var(--accent);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-xs);
 }
 
-.online-users-overlay[data-theme="dark"] {
-    background: rgba(var(--bg-primary-rgb), 0.90);
+.ouo-online-users-overlay[data-theme="dark"] {
+    background: var(--bg-primary);
     border-color: var(--accent);
 }
 
-.online-users-overlay[data-theme="dark"] .user-name {
+.ouo-online-users-overlay[data-theme="dark"] .ouo-user-name {
     color: var(--text-primary);
 }
 
-.online-users-overlay[data-theme="dark"] .user-status {
+.ouo-online-users-overlay[data-theme="dark"] .ouo-user-status {
     color: var(--text-secondary);
 }
 
-.online-users-overlay[data-theme="dark"] .action-button {
+.ouo-online-users-overlay[data-theme="dark"] .ouo-action-button {
     color: var(--text-secondary);
 }
 
-.online-users-overlay[data-theme="dark"] .action-button:hover {
-    background: rgba(255, 255, 255, 0.08);
+.ouo-online-users-overlay[data-theme="dark"] .ouo-action-button:hover {
+    background: var(--badge-bg);
     color: var(--text-primary);
 }
 
-.online-users-overlay[data-theme="dark"] .online-user:hover,
-.online-users-overlay[data-theme="dark"] .more-users:hover {
-    background: rgba(255, 255, 255, 0.03);
+.ouo-online-users-overlay[data-theme="dark"] .ouo-online-user:hover,
+.ouo-online-users-overlay[data-theme="dark"] .ouo-more-users:hover {
+    background: var(--bg-tertiary);
 }
 
-.online-users-overlay[data-theme="dark"] .more-users {
+.ouo-online-users-overlay[data-theme="dark"] .ouo-more-users {
     color: var(--text-secondary);
 }
 
-.online-users-overlay[data-theme="dark"] .more-users:hover {
+.ouo-online-users-overlay[data-theme="dark"] .ouo-more-users:hover {
     color: var(--text-primary);
 }
 
-.overlay-region-controls {
+.ouo-overlay-region-controls {
     padding: 6px 10px 0 10px;
 }
 
-.overlay-region-controls .region-select {
+.ouo-overlay-region-controls .ouo-region-select {
     width: 100%;
 }

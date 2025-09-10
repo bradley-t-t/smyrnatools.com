@@ -27,7 +27,6 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     const [form, setForm] = useState(initialData?.data || initialData || {})
     const [maintenanceItems, setMaintenanceItems] = useState([])
     const [ownerName, setOwnerName] = useState('')
-    const [weekRange, setWeekRange] = useState('')
     const [submittedAt, setSubmittedAt] = useState('')
     const [summaryTab, setSummaryTab] = useState('summary')
     const [operatorOptions, setOperatorOptions] = useState([])
@@ -51,15 +50,6 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
 
         fetchOwnerName()
     }, [report, user, initialData, completedByUser])
-
-    useEffect(() => {
-        let weekIso = report.weekIso || initialData?.week
-        if (weekIso) {
-            setWeekRange(ReportService.getWeekRangeFromIso(weekIso))
-        } else if (report.report_date_range_start && report.report_date_range_end) {
-            setWeekRange(ReportService.getWeekRangeFromIso(report.report_date_range_start.toISOString().slice(0, 10)))
-        }
-    }, [report, initialData])
 
     useEffect(() => {
         async function fetchMaintenanceItems() {
@@ -156,12 +146,11 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
         fetchPlants()
     }, [])
 
-    let weekRangeHeader = weekRange
     let reportTitle = report.title || 'Report Review'
 
     let {yph, yphGrade, yphLabel, lost, lostGrade, lostLabel} = ReportService.getYardageMetrics(form)
-    ReportService.getYphColor(yphGrade);
-    ReportService.getYphColor(lostGrade);
+    ReportService.getYphColor(yphGrade)
+    ReportService.getYphColor(lostGrade)
     const PluginComponent = plugins[report.name]
     const isSubmitted = !!initialData?.completed
 
@@ -177,6 +166,27 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     useEffect(() => {
         setActiveTab(tabOptions[0].key)
     }, [report.name])
+
+    function formatVerboseDate(dateInput) {
+        if (!dateInput) return ''
+        const d = new Date(dateInput)
+        return d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+    }
+
+    function getWeekVerbose(weekIso) {
+        if (!weekIso) return ''
+        const monday = new Date(weekIso)
+        monday.setDate(monday.getDate() + 1)
+        monday.setHours(0, 0, 0, 0)
+        const saturday = new Date(monday)
+        saturday.setDate(monday.getDate() + 5)
+        const left = monday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
+        const right = saturday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+        return `${left} – ${right}`
+    }
+
+    const weekVerbose = getWeekVerbose(report.weekIso || initialData?.week)
+    const reportDateVerbose = form.report_date ? formatVerboseDate(form.report_date) : ''
 
     return (
         <div className="reports-review-view">
@@ -223,17 +233,26 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                     <div className="report-form-title">
                         {reportTitle}
                     </div>
-                    {weekRangeHeader && (
-                        <div className="week-range-header">
-                            {report.name === 'plant_production'
-                                ? (() => {
-                                    const plantCode = form.plant || (Array.isArray(form.rows) && form.rows.length > 0 ? form.rows[0].plant_code : '')
-                                    return weekRangeHeader + (form.report_date ? ` - ${form.report_date}` : '') + (plantCode ? ` - ${plantCode}'s Report` : '')
-                                })()
-                                : weekRangeHeader
-                            }
-                        </div>
-                    )}
+                    <div className="report-context">
+                        {weekVerbose ? (
+                            <div className="context-chip">
+                                <i className="far fa-calendar-alt"></i>
+                                <span>{weekVerbose}</span>
+                            </div>
+                        ) : null}
+                        {reportDateVerbose ? (
+                            <div className="context-chip">
+                                <i className="far fa-calendar-check"></i>
+                                <span>{reportDateVerbose}</span>
+                            </div>
+                        ) : null}
+                        {(report.name === 'plant_production' && plantCode) ? (
+                            <div className="context-chip">
+                                <i className="fas fa-industry"></i>
+                                <span>Plant {plantCode}</span>
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
                 <div className="report-form-body-wide">
                     <>

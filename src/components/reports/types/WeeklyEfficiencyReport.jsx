@@ -133,8 +133,8 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
             const B = b.r
             if (sortKey === 'operator') return getOperatorName(A, operatorOptions).localeCompare(getOperatorName(B, operatorOptions)) * dir
             if (sortKey === 'loads') return ((Number(A.loads) || 0) - (Number(B.loads) || 0)) * dir
-            if (sortKey === 'hours') return (((a.hours ?? -Infinity)) - ((b.hours ?? -Infinity))) * dir
-            if (sortKey === 'lph') return (((a.lph ?? -Infinity)) - ((b.lph ?? -Infinity))) * dir
+            if (sortKey === 'hours' ) return (((a.hours ?? -Infinity)) - ((b.hours ?? -Infinity))) * dir
+            if (sortKey === 'lph'  ) return (((a.lph ?? -Infinity)) - ((b.lph ?? -Infinity))) * dir
             if (sortKey === 'start') return (((a.start ?? -1)) - ((b.start ?? -1))) * dir
             return 0
         }
@@ -185,7 +185,7 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                 <tbody>
                 {processed.map(({r, dStart, dEnd, hours, lph, key}) => {
                     const warnStart = dStart !== null && dStart > 15
-                    const warnEnd = dEnd !== null && dEnd > 15
+                    const warnEnd = dEnd !== null && dEnd > 20
                     const isOpen = expanded.has(key)
                     return (
                         <React.Fragment key={key}>

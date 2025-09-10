@@ -243,7 +243,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                     className="action-button primary rectangular-button"
                                     onClick={() => setShowAddSheet(true)}
                                 >
-                                    <i className="fas fa-plus"></i> Add Pickup
+                                    <i className="fas fa-plus"></i> Pickup
                                 </button>
                             </div>
                         </div>

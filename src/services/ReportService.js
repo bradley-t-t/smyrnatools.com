@@ -189,9 +189,9 @@ class ReportServiceImpl {
                 if (!isNaN(elapsed)) {
                     totalElapsedEnd += elapsed
                     countElapsedEnd++
-                    if (elapsed > 15) warnings.push({
+                    if (elapsed > 20) warnings.push({
                         row: rows.indexOf(row),
-                        message: `EOD to Punch Out is ${elapsed} min (> 15 min)`
+                        message: `EOD to Punch Out is ${elapsed} min (> 20 min)`
                     })
                 }
             }
@@ -217,7 +217,7 @@ class ReportServiceImpl {
         if (avgElapsedStart !== null && avgElapsedStart < 0) avgWarnings.push('Reported Start and 1st Load times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
         if (avgElapsedEnd !== null && avgElapsedEnd < 0) avgWarnings.push('Reported Washout -> Punch Out times produce a negative elapsed duration (likely an AM/PM entry error). Please review and correct the time entries.')
         if (avgElapsedStart !== null && avgElapsedStart > 15) avgWarnings.push(`Avg Punch In to 1st Load is ${avgElapsedStart.toFixed(1)} min (> 15 min)`)
-        if (avgElapsedEnd !== null && avgElapsedEnd > 15) avgWarnings.push(`Washout to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 15 min)`)
+        if (avgElapsedEnd !== null && avgElapsedEnd > 20) avgWarnings.push(`Washout to Punch Out is ${avgElapsedEnd.toFixed(1)} min (> 20 min)`)
         if (avgLoads !== null && avgLoads < 3) avgWarnings.push(`Avg Total Loads is ${avgLoads.toFixed(2)} (< 3)`)
         if (avgHours !== null && avgHours > 14) avgWarnings.push(`Avg Total Hours is ${avgHours.toFixed(2)} (> 14 hours)`)
         return {

@@ -67,12 +67,7 @@ function ReportsSubmitView({
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [confirmationChecks, setConfirmationChecks] = useState([false, false])
 
-    let weekRange = ''
-    if (report.weekIso) {
-        weekRange = ReportService.getWeekRangeFromIso(report.weekIso)
-    }
     const PluginComponent = plugins[report.name]
-    const submitted = !!initialData?.completed
 
     function validatePlantProduction() {
         if (!form.plant) return 'Please select a plant before submitting.'
@@ -263,8 +258,7 @@ function ReportsSubmitView({
     function handleBackClick() {
         if (hasUnsavedChanges) {
             handleSaveDraft({
-                preventDefault: () => {
-                }
+                preventDefault: () => {}
             })
             setTimeout(() => onBack(), 800)
         } else {
@@ -416,6 +410,28 @@ function ReportsSubmitView({
     } else if (managerEditUser) {
         editingUserName = managerEditUser.slice(0, 8)
     }
+
+    function formatVerboseDate(dateInput) {
+        if (!dateInput) return ''
+        const d = new Date(dateInput)
+        return d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+    }
+
+    function getWeekVerbose(weekIso) {
+        if (!weekIso) return ''
+        const monday = new Date(weekIso)
+        monday.setDate(monday.getDate() + 1)
+        monday.setHours(0, 0, 0, 0)
+        const saturday = new Date(monday)
+        saturday.setDate(monday.getDate() + 5)
+        const left = monday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
+        const right = saturday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+        return `${left} – ${right}`
+    }
+
+    const weekVerbose = getWeekVerbose(report.weekIso)
+    const reportDateVerbose = form.report_date ? formatVerboseDate(form.report_date) : ''
+
     return (
         <div style={{width: '100%', minHeight: '100vh', background: 'var(--background)'}}>
             <div style={{maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0'}}>
@@ -439,11 +455,26 @@ function ReportsSubmitView({
                     <div className="report-form-title">
                         {report.title || ''}
                     </div>
-                    {weekRange && (
-                        <div style={{fontWeight: 700, fontSize: 17, color: 'var(--accent)'}}>
-                            {weekRange}
-                        </div>
-                    )}
+                    <div className="report-context">
+                        {weekVerbose ? (
+                            <div className="context-chip">
+                                <i className="far fa-calendar-alt"></i>
+                                <span>{weekVerbose}</span>
+                            </div>
+                        ) : null}
+                        {reportDateVerbose ? (
+                            <div className="context-chip">
+                                <i className="far fa-calendar-check"></i>
+                                <span>{reportDateVerbose}</span>
+                            </div>
+                        ) : null}
+                        {(report.name === 'plant_production' && form.plant) ? (
+                            <div className="context-chip">
+                                <i className="fas fa-industry"></i>
+                                <span>Plant {form.plant}</span>
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
                 <form className="report-form-body-wide" onSubmit={handleSubmit}>
                     <div className="report-form-fields-grid">
