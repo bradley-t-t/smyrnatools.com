@@ -258,7 +258,8 @@ function ReportsSubmitView({
     function handleBackClick() {
         if (hasUnsavedChanges) {
             handleSaveDraft({
-                preventDefault: () => {}
+                preventDefault: () => {
+                }
             })
             setTimeout(() => onBack(), 800)
         } else {
@@ -425,7 +426,12 @@ function ReportsSubmitView({
         const saturday = new Date(monday)
         saturday.setDate(monday.getDate() + 5)
         const left = monday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
-        const right = saturday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+        const right = saturday.toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        })
         return `${left} – ${right}`
     }
 

@@ -217,7 +217,9 @@ td, th {
     background: transparent !important;
 }
 
-.mixers-content { background: transparent !important; }
+.mixers-content {
+    background: transparent !important;
+}
 
 .modal-backdrop {
     position: fixed;
@@ -237,8 +239,12 @@ td, th {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-content {
@@ -255,8 +261,14 @@ td, th {
 }
 
 @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .modal-header {
@@ -320,8 +332,12 @@ td, th {
 }
 
 @keyframes vu-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .vu-modal-content {
@@ -338,8 +354,14 @@ td, th {
 }
 
 @keyframes vu-slide-up {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .vu-modal-header {

@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {ListService} from '../../services/ListService';
 import {UserService} from '../../services/UserService';
 import {usePreferences} from '../../app/context/PreferencesContext';
@@ -67,6 +67,7 @@ function ListDetailView({itemId, onClose}) {
 
     useEffect(() => {
         let cancelled = false;
+
         async function loadAllowed() {
             let regionCode = preferences.selectedRegion?.code || '';
             try {
@@ -289,7 +290,8 @@ function ListDetailView({itemId, onClose}) {
                                                     <option value={formData.plantCode}>{formData.plantCode}</option>
                                                 )}
                                                 {filteredPlants.map(p => (
-                                                    <option key={p.plant_code} value={p.plant_code}>({p.plant_code}) {p.plant_name}</option>
+                                                    <option key={p.plant_code}
+                                                            value={p.plant_code}>({p.plant_code}) {p.plant_name}</option>
                                                 ))}
                                             </select>
                                         </div>

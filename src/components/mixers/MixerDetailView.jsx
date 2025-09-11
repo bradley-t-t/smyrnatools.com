@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import {MixerService} from '../../services/MixerService'
 import {PlantService} from '../../services/PlantService'
 import {OperatorService} from '../../services/OperatorService'
@@ -103,11 +103,13 @@ function MixerDetailView({mixerId, onClose}) {
                 setHasUnsavedChanges(false)
             }
         }
+
         fetchData()
     }, [mixerId])
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -136,8 +138,11 @@ function MixerDetailView({mixerId, onClose}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
     const filteredPlants = useMemo(() => {
@@ -158,6 +163,7 @@ function MixerDetailView({mixerId, onClose}) {
             } catch (error) {
             }
         }
+
         checkPlantRestriction()
     }, [mixer, isLoading])
 
@@ -382,6 +388,7 @@ function MixerDetailView({mixerId, onClose}) {
                 setIssues([])
             }
         }
+
         fetchCommentsAndIssues()
     }, [mixerId])
 
@@ -615,7 +622,8 @@ function MixerDetailView({mixerId, onClose}) {
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditMixer} className="form-control">
                                     <option value="">Select Plant</option>
-                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {!assignedPlantInRegion && assignedPlant &&
+                                        <option value={assignedPlant}>{assignedPlant}</option>}
                                     {filteredPlants.map(plant => (
                                         <option key={plant.plantCode} value={plant.plantCode}>{plant.plantName}</option>
                                     ))}

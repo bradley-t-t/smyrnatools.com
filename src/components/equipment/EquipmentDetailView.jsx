@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState, useMemo} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {EquipmentService} from '../../services/EquipmentService';
 import {PlantService} from '../../services/PlantService';
 import {UserService} from '../../services/UserService';
@@ -119,6 +119,7 @@ function EquipmentDetailView({equipmentId, onClose}) {
                 setRegionPlantCodes(new Set());
             }
         }
+
         loadAllowedPlants();
     }, [preferences.selectedRegion?.code]);
 
@@ -463,9 +464,11 @@ ${openIssues.length > 0
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditEquipment} className="form-control">
                                     <option value="">Select Plant</option>
-                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {!assignedPlantInRegion && assignedPlant &&
+                                        <option value={assignedPlant}>{assignedPlant}</option>}
                                     {filteredPlants.map(plant => (
-                                        <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>{plant.plantName || plant.plant_name}</option>
+                                        <option key={plant.plantCode || plant.plant_code}
+                                                value={plant.plantCode || plant.plant_code}>{plant.plantName || plant.plant_name}</option>
                                     ))}
                                 </select>
                             </div>

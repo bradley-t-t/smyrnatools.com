@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {TractorService} from '../../services/TractorService';
 import {PlantService} from '../../services/PlantService';
 import {OperatorService} from '../../services/OperatorService';
@@ -106,11 +106,13 @@ function TractorDetailView({tractorId, onClose}) {
                 setHasUnsavedChanges(false);
             }
         }
+
         fetchData();
     }, [tractorId]);
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -139,8 +141,11 @@ function TractorDetailView({tractorId, onClose}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
     const filteredPlants = useMemo(() => {
@@ -168,6 +173,7 @@ function TractorDetailView({tractorId, onClose}) {
             } catch (error) {
             }
         }
+
         checkPlantRestriction();
     }, [tractor, isLoading]);
 
@@ -396,6 +402,7 @@ function TractorDetailView({tractorId, onClose}) {
             } catch {
             }
         }
+
         fetchCommentsAndIssues();
     }, [tractorId]);
 
@@ -662,9 +669,11 @@ ${openIssues.length > 0
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditTractor} className="form-control">
                                     <option value="">Select Plant</option>
-                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {!assignedPlantInRegion && assignedPlant &&
+                                        <option value={assignedPlant}>{assignedPlant}</option>}
                                     {filteredPlants.map(plant => (
-                                        <option key={plant.plantCode || plant.plant_code} value={plant.plantCode || plant.plant_code}>{plant.plantName || plant.plant_name}</option>
+                                        <option key={plant.plantCode || plant.plant_code}
+                                                value={plant.plantCode || plant.plant_code}>{plant.plantName || plant.plant_name}</option>
                                     ))}
                                 </select>
                             </div>

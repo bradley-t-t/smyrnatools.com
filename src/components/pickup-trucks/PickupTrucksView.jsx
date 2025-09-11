@@ -56,11 +56,13 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                 setPlants([])
             }
         }
+
         loadPlants()
     }, [])
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -93,8 +95,11 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
     function handleViewModeChange(mode) {
@@ -114,6 +119,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             const root = document.querySelector('.dashboard-container.pickup-trucks-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
+
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
@@ -153,7 +159,9 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             counts.set(key, (counts.get(key) || 0) + 1)
         }
         const dups = new Set()
-        counts.forEach((count, key) => { if (count > 1) dups.add(key) })
+        counts.forEach((count, key) => {
+            if (count > 1) dups.add(key)
+        })
         return dups
     }, [pickups])
 
@@ -165,7 +173,9 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
             counts.set(key, (counts.get(key) || 0) + 1)
         }
         const dups = new Set()
-        counts.forEach((count, key) => { if (count > 1) dups.add(key) })
+        counts.forEach((count, key) => {
+            if (count > 1) dups.add(key)
+        })
         return dups
     }, [pickups])
 
@@ -338,7 +348,8 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                         aria-label="Filter by plant"
                                     >
                                         <option value="">All Plants</option>
-                                        {!regionPlantCodes.has(String(selectedPlant || '').trim().toUpperCase()) && selectedPlant && <option value={selectedPlant}>{selectedPlant}</option>}
+                                        {!regionPlantCodes.has(String(selectedPlant || '').trim().toUpperCase()) && selectedPlant &&
+                                            <option value={selectedPlant}>{selectedPlant}</option>}
                                         {filteredPlants
                                             .sort((a, b) => parseInt(String(a.plantCode || a.plant_code || '').replace(/\D/g, '') || '0') - parseInt(String(b.plantCode || b.plant_code || '').replace(/\D/g, '') || '0'))
                                             .map(plant => (

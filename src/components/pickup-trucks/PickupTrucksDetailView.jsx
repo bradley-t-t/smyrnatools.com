@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useMemo} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import {PickupTruckService} from '../../services/PickupTruckService'
 import '../mixers/styles/MixerDetailView.css'
 import './styles/PickupTrucksDetailView.css'
@@ -66,6 +66,7 @@ function PickupTrucksDetailView({pickupId, onClose}) {
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -94,8 +95,11 @@ function PickupTrucksDetailView({pickupId, onClose}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
     const filteredPlants = useMemo(() => {
@@ -211,7 +215,8 @@ function PickupTrucksDetailView({pickupId, onClose}) {
                                                                                              onChange={e => setAssignedPlant(e.target.value)}
                                                                                              className="form-control">
                                 <option value="">Select Plant</option>
-                                {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                {!assignedPlantInRegion && assignedPlant &&
+                                    <option value={assignedPlant}>{assignedPlant}</option>}
                                 {filteredPlants.map(p => (<option key={p.plantCode || p.plant_code}
                                                                   value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>))}
                             </select></div>

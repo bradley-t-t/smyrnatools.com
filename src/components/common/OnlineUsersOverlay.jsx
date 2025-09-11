@@ -40,7 +40,8 @@ function OnlineUsersOverlay() {
                         <div className="ouo-header-title">
                             <i className="fas fa-users"></i>
                             <span>Online Users</span>
-                            <div className={`ouo-user-count${animateCount ? ' ouo-pulse' : ''}`}>{onlineUsers.length}</div>
+                            <div
+                                className={`ouo-user-count${animateCount ? ' ouo-pulse' : ''}`}>{onlineUsers.length}</div>
                         </div>
                         <div className="ouo-header-actions">
                             <button className="ouo-action-button ouo-circle" onClick={toggleExpand}

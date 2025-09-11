@@ -1,3 +1,4 @@
-import React from 'react'
-export default function ThreeScene(){return null}
+export default function ThreeScene() {
+    return null
+}
 

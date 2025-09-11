@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import PropTypes from 'prop-types'
 import './index.css'
 import './App.css'
@@ -102,18 +102,25 @@ function UpdateWarningPopup({onRefreshNow, onClose, latestVersion}) {
                 <div className="vu-modal-body">
                     <p>A new version is available.</p>
                     {latestVersion ? <p style={{opacity: 0.8}}>Version: {latestVersion}</p> : null}
-                    <p>Refresh now to apply the update, or close this popup to keep working. The page will automatically refresh in 5 minutes to apply updates.</p>
+                    <p>Refresh now to apply the update, or close this popup to keep working. The page will automatically
+                        refresh in 5 minutes to apply updates.</p>
                 </div>
                 <div className="vu-modal-footer">
                     <button className="vu-action-button" onClick={onClose} aria-label="Close">Close</button>
-                    <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh Now</button>
+                    <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh
+                        Now
+                    </button>
                 </div>
             </div>
         </div>
     )
 }
 
-UpdateWarningPopup.propTypes = {onRefreshNow: PropTypes.func.isRequired, onClose: PropTypes.func.isRequired, latestVersion: PropTypes.string}
+UpdateWarningPopup.propTypes = {
+    onRefreshNow: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    latestVersion: PropTypes.string
+}
 
 function ScheduledUpdateBanner({remainingMs, onRefreshNow, onDismiss}) {
     const minutes = Math.max(0, Math.floor(remainingMs / 60000))
@@ -126,13 +133,19 @@ function ScheduledUpdateBanner({remainingMs, onRefreshNow, onDismiss}) {
             </div>
             <div className="vu-banner-actions">
                 <button className="vu-action-button" onClick={onDismiss} aria-label="Dismiss">Dismiss</button>
-                <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh Now</button>
+                <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh
+                    Now
+                </button>
             </div>
         </div>
     )
 }
 
-ScheduledUpdateBanner.propTypes = {remainingMs: PropTypes.number.isRequired, onRefreshNow: PropTypes.func.isRequired, onDismiss: PropTypes.func.isRequired}
+ScheduledUpdateBanner.propTypes = {
+    remainingMs: PropTypes.number.isRequired,
+    onRefreshNow: PropTypes.func.isRequired,
+    onDismiss: PropTypes.func.isRequired
+}
 
 function AppContent() {
     const [userId, setUserId] = useState(null)

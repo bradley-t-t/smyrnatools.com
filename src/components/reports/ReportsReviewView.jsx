@@ -181,7 +181,12 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
         const saturday = new Date(monday)
         saturday.setDate(monday.getDate() + 5)
         const left = monday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
-        const right = saturday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+        const right = saturday.toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        })
         return `${left} – ${right}`
     }
 

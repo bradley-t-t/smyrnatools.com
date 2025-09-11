@@ -1,5 +1,5 @@
 import Trailer from '../../config/models/trailers/Trailer';
-import React, {useEffect, useRef, useState, useMemo} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {TrailerService} from '../../services/TrailerService';
 import {PlantService} from '../../services/PlantService';
 import {TractorService} from '../../services/TractorService';
@@ -102,6 +102,7 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -130,8 +131,11 @@ function TrailerDetailView({trailer: initialTrailer, trailerId, onClose}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code])
 
     const filteredPlants = useMemo(() => {
@@ -485,9 +489,11 @@ ${openIssues.length > 0
                                 <select value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)}
                                         disabled={!canEditTrailer} className="trailer-form-control">
                                     <option value="">Select Plant</option>
-                                    {!assignedPlantInRegion && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                    {!assignedPlantInRegion && assignedPlant &&
+                                        <option value={assignedPlant}>{assignedPlant}</option>}
                                     {filteredPlants.map(p => (
-                                        <option key={p.plantCode || p.plant_code} value={p.plantCode || p.plant_code}>{p.plantName || p.plant_name}</option>
+                                        <option key={p.plantCode || p.plant_code}
+                                                value={p.plantCode || p.plant_code}>{p.plantName || p.plant_name}</option>
                                     ))}
                                 </select>
                             </div>

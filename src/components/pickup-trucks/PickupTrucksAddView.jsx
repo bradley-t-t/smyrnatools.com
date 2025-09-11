@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import {PickupTruckService} from '../../services/PickupTruckService'
 import {AuthService} from '../../services/AuthService'
 import '../mixers/styles/MixerAddView.css'
@@ -26,6 +26,7 @@ function PickupTrucksAddView({onClose, onAdded}) {
 
     useEffect(() => {
         let cancelled = false
+
         async function loadPlants() {
             try {
                 const data = await PlantService.fetchPlants()
@@ -34,12 +35,16 @@ function PickupTrucksAddView({onClose, onAdded}) {
                 if (!cancelled) setPlants([])
             }
         }
+
         loadPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [])
 
     useEffect(() => {
         let cancelled = false
+
         async function loadAllowedPlants() {
             let regionCode = preferences.selectedRegion?.code || ''
             try {
@@ -70,8 +75,11 @@ function PickupTrucksAddView({onClose, onAdded}) {
                 if (!cancelled) setRegionPlantCodes(new Set())
             }
         }
+
         loadAllowedPlants()
-        return () => {cancelled = true}
+        return () => {
+            cancelled = true
+        }
     }, [preferences.selectedRegion?.code, assignedPlant])
 
     const filteredPlants = useMemo(() => {
@@ -131,17 +139,21 @@ function PickupTrucksAddView({onClose, onAdded}) {
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>Plant*</label>
-                                        <select className="ios-select" value={assignedPlant} onChange={e => setAssignedPlant(e.target.value)} required>
+                                        <select className="ios-select" value={assignedPlant}
+                                                onChange={e => setAssignedPlant(e.target.value)} required>
                                             <option value="">Select Plant</option>
-                                            {!regionPlantCodes.has(String(assignedPlant || '').trim().toUpperCase()) && assignedPlant && <option value={assignedPlant}>{assignedPlant}</option>}
+                                            {!regionPlantCodes.has(String(assignedPlant || '').trim().toUpperCase()) && assignedPlant &&
+                                                <option value={assignedPlant}>{assignedPlant}</option>}
                                             {sortedFilteredPlants.map(p => (
-                                                <option key={p.plantCode || p.plant_code} value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>
+                                                <option key={p.plantCode || p.plant_code}
+                                                        value={p.plantCode || p.plant_code}>{(p.plantCode || p.plant_code) + ' ' + (p.plantName || p.plant_name)}</option>
                                             ))}
                                         </select>
                                     </div>
                                     <div className="form-group">
                                         <label>Status</label>
-                                        <select className="ios-select" value={status} onChange={e => setStatus(e.target.value)}>
+                                        <select className="ios-select" value={status}
+                                                onChange={e => setStatus(e.target.value)}>
                                             <option value="Active">Active</option>
                                             <option value="Stationary">Stationary</option>
                                             <option value="Spare">Spare</option>
@@ -154,42 +166,50 @@ function PickupTrucksAddView({onClose, onAdded}) {
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>VIN</label>
-                                        <input type="text" className="ios-input" value={vin} onChange={e => setVin(e.target.value)} placeholder="Enter VIN"/>
+                                        <input type="text" className="ios-input" value={vin}
+                                               onChange={e => setVin(e.target.value)} placeholder="Enter VIN"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Year</label>
-                                        <input type="text" className="ios-input" value={year} onChange={e => setYear(e.target.value)} placeholder="Enter year"/>
+                                        <input type="text" className="ios-input" value={year}
+                                               onChange={e => setYear(e.target.value)} placeholder="Enter year"/>
                                     </div>
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>Make</label>
-                                        <input type="text" className="ios-input" value={make} onChange={e => setMake(e.target.value)} placeholder="Enter make"/>
+                                        <input type="text" className="ios-input" value={make}
+                                               onChange={e => setMake(e.target.value)} placeholder="Enter make"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Model</label>
-                                        <input type="text" className="ios-input" value={model} onChange={e => setModel(e.target.value)} placeholder="Enter model"/>
+                                        <input type="text" className="ios-input" value={model}
+                                               onChange={e => setModel(e.target.value)} placeholder="Enter model"/>
                                     </div>
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label>Assigned</label>
-                                        <input type="text" className="ios-input" value={assigned} onChange={e => setAssigned(e.target.value)} placeholder="Enter name"/>
+                                        <input type="text" className="ios-input" value={assigned}
+                                               onChange={e => setAssigned(e.target.value)} placeholder="Enter name"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Mileage</label>
-                                        <input type="number" className="ios-input" value={mileage} onChange={e => setMileage(e.target.value)} placeholder="Enter mileage"/>
+                                        <input type="number" className="ios-input" value={mileage}
+                                               onChange={e => setMileage(e.target.value)} placeholder="Enter mileage"/>
                                     </div>
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group wide">
                                         <label>Comments</label>
-                                        <textarea className="ios-input" rows={3} value={comments} onChange={e => setComments(e.target.value)} placeholder="Notes"/>
+                                        <textarea className="ios-input" rows={3} value={comments}
+                                                  onChange={e => setComments(e.target.value)} placeholder="Notes"/>
                                     </div>
                                 </div>
                             </div>
                             <div className="form-actions">
-                                <button type="submit" className="ios-button-primary" disabled={isSaving}>{isSaving ? 'Adding...' : 'Add Pickup'}</button>
+                                <button type="submit" className="ios-button-primary"
+                                        disabled={isSaving}>{isSaving ? 'Adding...' : 'Add Pickup'}</button>
                             </div>
                         </form>
                     </div>
