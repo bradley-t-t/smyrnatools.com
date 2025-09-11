@@ -20,6 +20,7 @@ import {AccountProvider} from './context/AccountContext';
 import ListView from '../components/list/ListView';
 import GuestView from '../components/guest/GuestView';
 import DesktopOnly from '../components/desktop-only/DesktopOnly';
+import ParticleBackground from '../components/common/ParticleBackground'
 
 function App() {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -32,6 +33,7 @@ function App() {
     if (isMobile) return (
         <PreferencesProvider>
             <AccountProvider>
+                <ParticleBackground/>
                 <DesktopOnly/>
             </AccountProvider>
         </PreferencesProvider>
@@ -40,6 +42,7 @@ function App() {
     return (
         <PreferencesProvider>
             <AccountProvider>
+                <ParticleBackground/>
                 <BrowserRouter>
                     <Routes>
                         <Route element={<AuthLayout/>}>
@@ -68,5 +71,3 @@ function App() {
 }
 
 export default App;
-
-

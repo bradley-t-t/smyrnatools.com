@@ -99,7 +99,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                     })
                 }
             } catch {
-                setRegionPlantCodes(new Set())
+                setRegionPlantCodes(null)
             }
         }
 
@@ -205,7 +205,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                     trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
                     (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
                 const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
-                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(trailer.assignedPlant)
+                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(trailer.assignedPlant)
                 let matchesType = true
                 if (typeFilter && typeFilter !== 'All Types') {
                     matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter :
@@ -473,7 +473,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                     >
                                         <option value="">All Plants</option>
                                         {plants
-                                            .filter(p => !preferences.selectedRegion?.code || (regionPlantCodes && regionPlantCodes.has(p.plantCode)))
+                                            .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(p.plantCode))
                                             .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
                                                 <option key={plant.plantCode} value={plant.plantCode}>
                                                     ({plant.plantCode}) {plant.plantName}

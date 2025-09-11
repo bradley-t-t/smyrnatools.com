@@ -38,7 +38,7 @@ function SettingsView() {
             )}
             <div className="settings-header">
                 <h1>Settings</h1>
-                <p>Tune the app to your liking.</p>
+                <p>Adjust your setting how you would like.</p>
             </div>
             <div className="settings-content">
                 <div className="settings-card">

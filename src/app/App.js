@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, useRef} from 'react'
 import PropTypes from 'prop-types'
 import './index.css'
 import './App.css'
@@ -32,6 +32,7 @@ import SmyrnaLogo from '../assets/images/SmyrnaLogo.png'
 import GuestView from '../components/guest/GuestView'
 import DesktopOnly from '../components/desktop-only/DesktopOnly'
 import PickupTrucksView from '../components/pickup-trucks/PickupTrucksView'
+import ParticleBackground from '../components/common/ParticleBackground'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -88,6 +89,51 @@ function UpdateLoadingScreen({version}) {
 
 UpdateLoadingScreen.propTypes = {version: PropTypes.string}
 
+function UpdateWarningPopup({onRefreshNow, onClose, latestVersion}) {
+    return (
+        <div className="vu-modal-backdrop" onClick={onClose}>
+            <div className="vu-modal-content" onClick={e => e.stopPropagation()}>
+                <div className="vu-modal-header">
+                    <h2>Update Available</h2>
+                    <button className="vu-close-button" onClick={onClose} aria-label="Close">
+                        <i className="fas fa-times"></i>
+                    </button>
+                </div>
+                <div className="vu-modal-body">
+                    <p>A new version is available.</p>
+                    {latestVersion ? <p style={{opacity: 0.8}}>Version: {latestVersion}</p> : null}
+                    <p>Refresh now to apply the update, or close this popup to keep working. The page will automatically refresh in 5 minutes to apply updates.</p>
+                </div>
+                <div className="vu-modal-footer">
+                    <button className="vu-action-button" onClick={onClose} aria-label="Close">Close</button>
+                    <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh Now</button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+UpdateWarningPopup.propTypes = {onRefreshNow: PropTypes.func.isRequired, onClose: PropTypes.func.isRequired, latestVersion: PropTypes.string}
+
+function ScheduledUpdateBanner({remainingMs, onRefreshNow, onDismiss}) {
+    const minutes = Math.max(0, Math.floor(remainingMs / 60000))
+    const seconds = Math.max(0, Math.floor((remainingMs % 60000) / 1000))
+    return (
+        <div className="vu-update-banner">
+            <div className="vu-banner-content">
+                <i className="fas fa-sync vu-banner-icon"></i>
+                <span>An update is scheduled. The page will refresh in {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')} to apply updates.</span>
+            </div>
+            <div className="vu-banner-actions">
+                <button className="vu-action-button" onClick={onDismiss} aria-label="Dismiss">Dismiss</button>
+                <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh Now</button>
+            </div>
+        </div>
+    )
+}
+
+ScheduledUpdateBanner.propTypes = {remainingMs: PropTypes.number.isRequired, onRefreshNow: PropTypes.func.isRequired, onDismiss: PropTypes.func.isRequired}
+
 function AppContent() {
     const [userId, setUserId] = useState(null)
     const [selectedView, setSelectedView] = useState('Mixers')
@@ -103,6 +149,11 @@ function AppContent() {
     const [latestVersion, setLatestVersion] = useState('')
     const [isGuestOnly, setIsGuestOnly] = useState(false)
     const [rolesLoaded, setRolesLoaded] = useState(false)
+    const [showUpdateWarning, setShowUpdateWarning] = useState(false)
+    const [scheduledAt, setScheduledAt] = useState(null)
+    const scheduledTimeoutRef = useRef(null)
+    const [showScheduledBanner, setShowScheduledBanner] = useState(false)
+    const [remainingMs, setRemainingMs] = useState(0)
 
     useEffect(() => {
         fetch('/version.json', {cache: 'no-store'}).then(res => res.json()).then(data => setCurrentVersion(data.version || '')).catch(() => setCurrentVersion(''))
@@ -115,7 +166,7 @@ function AppContent() {
             fetch('/version.json', {cache: 'no-store'}).then(res => res.json()).then(data => {
                 if (data.version && currentVersion && compareVersions(data.version, currentVersion) > 0) {
                     setLatestVersion(data.version)
-                    setUpdateMode(true)
+                    if (!updateMode && !showUpdateWarning && !scheduledAt) setShowUpdateWarning(true)
                 }
             }).catch(() => {
             })
@@ -125,7 +176,7 @@ function AppContent() {
         return () => {
             if (intervalId) clearInterval(intervalId)
         }
-    }, [currentVersion])
+    }, [currentVersion, updateMode, showUpdateWarning, scheduledAt])
 
     function compareVersions(a, b) {
         const pa = a.split('.').map(Number)
@@ -268,6 +319,22 @@ function AppContent() {
         getUserData()
     }, [userId])
 
+    useEffect(() => {
+        let raf
+        if (scheduledAt && !updateMode) {
+            const tick = () => {
+                const now = Date.now()
+                const remaining = Math.max(0, scheduledAt - now)
+                setRemainingMs(remaining)
+                if (remaining > 0) raf = requestAnimationFrame(tick)
+            }
+            raf = requestAnimationFrame(tick)
+        }
+        return () => {
+            if (raf) cancelAnimationFrame(raf)
+        }
+    }, [scheduledAt, updateMode])
+
     const handleViewSelection = (viewId) => {
         if (isGuestOnly && viewId !== 'Guest') return
         setSelectedView(viewId)
@@ -352,21 +419,48 @@ function AppContent() {
         }
     }
 
-    if (isMobile) return <DesktopOnly/>
-    if (updateMode) return <UpdateLoadingScreen version={latestVersion || currentVersion}/>
+    const startImmediateUpdate = () => {
+        if (scheduledTimeoutRef.current) {
+            clearTimeout(scheduledTimeoutRef.current)
+            scheduledTimeoutRef.current = null
+        }
+        setShowUpdateWarning(false)
+        setShowScheduledBanner(false)
+        setUpdateMode(true)
+    }
 
+    const scheduleUpdateInFiveMinutes = () => {
+        if (scheduledTimeoutRef.current) return
+        setShowUpdateWarning(false)
+        const at = Date.now() + 5 * 60 * 1000
+        setScheduledAt(at)
+        setShowScheduledBanner(true)
+        scheduledTimeoutRef.current = setTimeout(() => {
+            startImmediateUpdate()
+        }, 5 * 60 * 1000)
+    }
+
+    const dismissScheduledBanner = () => setShowScheduledBanner(false)
+
+    if (isMobile) return <><ParticleBackground/><DesktopOnly/></>
+    if (updateMode) return <><ParticleBackground/><UpdateLoadingScreen version={latestVersion || currentVersion}/></>
     if (!userId) return (
-        <div className="App">{renderCurrentView()}</div>
+        <div className="App">
+            <ParticleBackground/>
+            {renderCurrentView()}
+        </div>
     )
     if (!rolesLoaded) return null
     if (isGuestOnly) return (
         <div className="App">
+            <ParticleBackground/>
             <GuestView/>
         </div>
     )
 
     return (
         <div className="App">
+            <ParticleBackground/>
             <Navigation
                 selectedView={selectedView}
                 onSelectView={handleViewSelection}
@@ -377,6 +471,20 @@ function AppContent() {
             >
                 {renderCurrentView()}
             </Navigation>
+            {showUpdateWarning && (
+                <UpdateWarningPopup
+                    latestVersion={latestVersion}
+                    onRefreshNow={startImmediateUpdate}
+                    onClose={scheduleUpdateInFiveMinutes}
+                />
+            )}
+            {showScheduledBanner && scheduledAt && !updateMode && (
+                <ScheduledUpdateBanner
+                    remainingMs={remainingMs}
+                    onRefreshNow={startImmediateUpdate}
+                    onDismiss={dismissScheduledBanner}
+                />
+            )}
         </div>
     )
 }

@@ -28,6 +28,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [operators, setOperators] = useState([]);
     const [plants, setPlants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRegionLoading, setIsRegionLoading] = useState(false)
     const [searchText, setSearchText] = useState(preferences.mixerFilters?.searchText || '');
     const [searchInput, setSearchInput] = useState(preferences.mixerFilters?.searchText || '');
     const [selectedPlant, setSelectedPlant] = useState(preferences.mixerFilters?.selectedPlant || '');
@@ -47,7 +48,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalMixerId, setModalMixerId] = useState(null)
     const [modalMixerNumber, setModalMixerNumber] = useState('')
-    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const [mixersLoaded, setMixersLoaded] = useState(false)
     const [operatorsLoaded, setOperatorsLoaded] = useState(false)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues'];
@@ -94,6 +95,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         let cancelled = false
 
         async function loadAllowedPlants() {
+            setIsRegionLoading(!!preferences.selectedRegion?.code)
             let regionCode = preferences.selectedRegion?.code || ''
             try {
                 if (!regionCode) {
@@ -110,7 +112,8 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     }
                 }
                 if (!regionCode) {
-                    setRegionPlantCodes(new Set())
+                    setRegionPlantCodes(null)
+                    setIsRegionLoading(false)
                     return
                 }
                 const regionPlants = await RegionService.fetchRegionPlants(regionCode)
@@ -123,7 +126,9 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                     updateMixerFilter('selectedPlant', '')
                 }
             } catch {
-                if (!cancelled) setRegionPlantCodes(new Set())
+                if (!cancelled) setRegionPlantCodes(null)
+            } finally {
+                if (!cancelled) setIsRegionLoading(false)
             }
         }
 
@@ -247,7 +252,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 const vinMatch = vinRaw.includes(searchText.trim().toLowerCase()) || vinNoSpaces.includes(normalizedSearch)
                 const matchesSearch = !normalizedSearch || truckMatch || operatorMatch || vinMatch
                 const matchesPlant = !selectedPlant || mixer.assignedPlant === selectedPlant
-                const matchesRegion = !regionPlantCodes || regionPlantCodes.has(String(mixer.assignedPlant || '').trim().toUpperCase())
+                const matchesRegion = !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(String(mixer.assignedPlant || '').trim().toUpperCase())
                 let matchesStatus = true
                 if (statusFilter && statusFilter !== 'All Statuses') {
                     matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? mixer.status === statusFilter :
@@ -311,7 +316,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const canShowUnassignedOverlay = mixersLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
 
     const content = useMemo(() => {
-        if (isLoading) {
+        if (isLoading || isRegionLoading) {
             return (
                 <div className="loading-container">
                     <LoadingScreen message="Loading mixers..." inline={true}/>
@@ -463,7 +468,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                 </table>
             </div>
         )
-    }, [isLoading, filteredMixers, viewMode, searchText, selectedPlant, statusFilter, operators, plants, mixers])
+    }, [isLoading, isRegionLoading, filteredMixers, viewMode, searchText, selectedPlant, statusFilter, operators, plants, mixers])
 
     return (
         <div className="dashboard-container mixers-view">

@@ -31,6 +31,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [operators, setOperators] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isRegionLoading, setIsRegionLoading] = useState(false)
     const [searchText, setSearchText] = useState(preferences.tractorFilters?.searchText || '')
     const [searchInput, setSearchInput] = useState(preferences.tractorFilters?.searchText || '')
     const [selectedPlant, setSelectedPlant] = useState(preferences.tractorFilters?.selectedPlant || '')
@@ -50,7 +51,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalTractorId, setModalTractorId] = useState(null)
     const [modalTractorNumber, setModalTractorNumber] = useState('')
-    const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const [tractorsLoaded, setTractorsLoaded] = useState(false)
     const [operatorsLoaded, setOperatorsLoaded] = useState(false)
     const filterOptions = ['All Statuses', 'Active', 'Spare', 'In Shop', 'Retired', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
@@ -106,6 +107,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         let cancelled = false
 
         async function loadAllowedPlants() {
+            setIsRegionLoading(!!preferences.selectedRegion?.code)
             let regionCode = preferences.selectedRegion?.code || ''
             try {
                 if (!regionCode) {
@@ -122,7 +124,8 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                     }
                 }
                 if (!regionCode) {
-                    setRegionPlantCodes(new Set())
+                    setRegionPlantCodes(null)
+                    setIsRegionLoading(false)
                     return
                 }
                 const regionPlants = await RegionService.fetchRegionPlants(regionCode)
@@ -135,7 +138,9 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                     updateTractorFilter('selectedPlant', '')
                 }
             } catch {
-                if (!cancelled) setRegionPlantCodes(new Set())
+                if (!cancelled) setRegionPlantCodes(null)
+            } finally {
+                if (!cancelled) setIsRegionLoading(false)
             }
         }
 
@@ -246,7 +251,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                     (tractor.assignedOperator && operators.find(op => op.employeeId === tractor.assignedOperator)?.name.toLowerCase().includes(searchText.toLowerCase()));
                 const matchesPlant = !selectedPlant || tractor.assignedPlant === selectedPlant;
                 const matchesFreight = !freightFilter || tractor.freight === freightFilter;
-                const matchesRegion = !regionPlantCodes || regionPlantCodes.has(String(tractor.assignedPlant || '').trim().toUpperCase());
+                const matchesRegion = !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(String(tractor.assignedPlant || '').trim().toUpperCase());
                 let matchesStatus = true;
                 if (statusFilter && statusFilter !== 'All Statuses') {
                     matchesStatus = ['Active', 'Spare', 'In Shop', 'Retired'].includes(statusFilter) ? tractor.status === statusFilter :
@@ -313,7 +318,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const canShowUnassignedOverlay = tractorsLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
 
     const content = useMemo(() => {
-        if (isLoading) {
+        if (isLoading || isRegionLoading) {
             return (
                 <div className="loading-container">
                     <LoadingScreen message="Loading tractors..." inline={true}/>
@@ -461,7 +466,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 </table>
             </div>
         )
-    }, [isLoading, filteredTractors, viewMode, searchText, selectedPlant, statusFilter, operators, plants, tractors])
+    }, [isLoading, isRegionLoading, filteredTractors, viewMode, searchText, selectedPlant, statusFilter, operators, plants, tractors])
 
     return (
         <div className={`dashboard-container tractors-view${selectedTractor ? ' detail-open' : ''}`}>
