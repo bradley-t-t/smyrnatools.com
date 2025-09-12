@@ -14,7 +14,7 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
         async function fetchUserData() {
             if (!userId) {
                 if (isMounted) {
-                    setUserName('Unknown');
+                    setUserName('Unknown User');
                     setInitials('?');
                     setIsLoading(false);
                 }
@@ -34,15 +34,15 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
                 } else if (displayName.includes('@')) {
                     setInitials(displayName.substring(0, 2).toUpperCase());
                 } else if (displayName.startsWith('User ')) {
-                    setInitials(userId.substring(0, 2).toUpperCase());
+                    setInitials(displayName.substring(0, 2).toUpperCase());
                 } else {
                     setInitials(displayName.substring(0, 2).toUpperCase());
                 }
             } catch (error) {
                 if (isMounted) {
                     setError(error.message);
-                    setUserName(`User ${userId ? userId.substring(0, 8) : 'Unknown'}`);
-                    setInitials('!');
+                    setUserName('Unknown User');
+                    setInitials('?');
                 }
             } finally {
                 if (isMounted) {
@@ -76,7 +76,7 @@ function UserLabel({userId, showInitials = false, showIcon = false, size = 'medi
         ) : showInitials ? (
             <span className="user-initials error">!</span>
         ) : null}
-                <span className="user-name">Error: {error.substring(0, 15)}...</span>
+                <span className="user-name">Unknown User</span>
       </span>
         );
     }

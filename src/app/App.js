@@ -12,8 +12,6 @@ import LoginView from '../components/login/LoginView'
 import MyAccountView from '../components/myaccount/MyAccountView'
 import Navigation from "../components/common/Navigation"
 import ListView from '../components/list/ListView'
-import {AuthProvider} from './context/AuthContext'
-import {PreferencesProvider} from './context/PreferencesContext'
 import WebView from "../components/common/WebView"
 import {UserService} from "../services/UserService"
 import OnlineUsersOverlay from '../components/common/OnlineUsersOverlay'
@@ -33,6 +31,7 @@ import GuestView from '../components/guest/GuestView'
 import DesktopOnly from '../components/desktop-only/DesktopOnly'
 import PickupTrucksView from '../components/pickup-trucks/PickupTrucksView'
 import ParticleBackground from '../components/common/ParticleBackground'
+import DashboardView from '../components/dashboard/DashboardView'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -149,9 +148,9 @@ ScheduledUpdateBanner.propTypes = {
 
 function AppContent() {
     const [userId, setUserId] = useState(null)
-    const [selectedView, setSelectedView] = useState('Mixers')
+    const [selectedView, setSelectedView] = useState('Dashboard')
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
-    const [title, setTitle] = useState('Mixers')
+    const [title, setTitle] = useState('Dashboard')
     const [selectedMixer, setSelectedMixer] = useState(null)
     const [selectedTractor, setSelectedTractor] = useState(null)
     const [webViewURL, setWebViewURL] = useState(null)
@@ -238,9 +237,9 @@ function AppContent() {
 
     useEffect(() => {
         const handleSignOut = () => {
-            setUserId(null);
-            setSelectedView('Mixers');
-            setIsGuestOnly(false);
+            setUserId(null)
+            setSelectedView('Dashboard')
+            setIsGuestOnly(false)
             setRolesLoaded(false)
         }
         window.addEventListener('authSignOut', handleSignOut)
@@ -376,25 +375,17 @@ function AppContent() {
         if (webViewURL) return <WebView url={webViewURL} onClose={() => setWebViewURL(null)}/>
         if (selectedView === 'Plants') return <PlantsView title="Plants"/>
         if (selectedView === 'Regions') return <RegionsView title="Regions"/>
+        if (selectedView === 'Dashboard') return <DashboardView/>
         switch (selectedView) {
+            case 'Dashboard':
+                return <DashboardView/>
             case 'Mixers': {
                 if (selectedMixer) {
                     try {
-                        return <MixerDetailView mixerId={selectedMixer} onClose={() => {
-                            setSelectedMixer(null);
-                            setTitle('Mixers')
-                        }}/>
-                    } catch {
-                        setSelectedMixer(null)
-                        setTitle('Mixers')
-                    }
+                        return <MixerDetailView mixerId={selectedMixer} onClose={() => { setSelectedMixer(null); setTitle('Mixers') }}/>
+                    } catch { setSelectedMixer(null); setTitle('Mixers') }
                 }
-                return <MixersView onSelectMixer={(mixerId) => {
-                    if (mixerId) {
-                        setSelectedMixer(mixerId);
-                        setTitle('Mixer Details')
-                    }
-                }}/>
+                return <MixersView onSelectMixer={(mixerId) => { if (mixerId) { setSelectedMixer(mixerId); setTitle('Mixer Details') } }}/>
             }
             case 'Operators':
                 return <OperatorsView title={title}/>
@@ -419,24 +410,18 @@ function AppContent() {
             case 'Tractors':
                 return <TractorsView title="Tractor Fleet" onSelectTractor={setSelectedTractor}/>
             case 'Trailers':
-                return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {
-                }}/>
+                return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {}}/>
             case 'Pickup Trucks':
                 return <PickupTrucksView title="Pickup Trucks"/>
             case 'Heavy Equipment':
-                return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {
-                }}/>
+                return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {}}/>
             default:
-                return <div className="coming-soon"><h2>{selectedView} view is coming soon!</h2><p>This feature is under
-                    development.</p></div>
+                return <div className="coming-soon"><h2>{selectedView} view is coming soon!</h2><p>This feature is under development.</p></div>
         }
     }
 
     const startImmediateUpdate = () => {
-        if (scheduledTimeoutRef.current) {
-            clearTimeout(scheduledTimeoutRef.current)
-            scheduledTimeoutRef.current = null
-        }
+        if (scheduledTimeoutRef.current) { clearTimeout(scheduledTimeoutRef.current); scheduledTimeoutRef.current = null }
         setShowUpdateWarning(false)
         setShowScheduledBanner(false)
         setUpdateMode(true)
@@ -448,28 +433,16 @@ function AppContent() {
         const at = Date.now() + 5 * 60 * 1000
         setScheduledAt(at)
         setShowScheduledBanner(true)
-        scheduledTimeoutRef.current = setTimeout(() => {
-            startImmediateUpdate()
-        }, 5 * 60 * 1000)
+        scheduledTimeoutRef.current = setTimeout(() => { startImmediateUpdate() }, 5 * 60 * 1000)
     }
 
     const dismissScheduledBanner = () => setShowScheduledBanner(false)
 
     if (isMobile) return <><ParticleBackground/><DesktopOnly/></>
     if (updateMode) return <><ParticleBackground/><UpdateLoadingScreen version={latestVersion || currentVersion}/></>
-    if (!userId) return (
-        <div className="App">
-            <ParticleBackground/>
-            {renderCurrentView()}
-        </div>
-    )
+    if (!userId) return (<div className="App"><ParticleBackground/>{renderCurrentView()}</div>)
     if (!rolesLoaded) return null
-    if (isGuestOnly) return (
-        <div className="App">
-            <ParticleBackground/>
-            <GuestView/>
-        </div>
-    )
+    if (isGuestOnly) return (<div className="App"><ParticleBackground/><GuestView/></div>)
 
     return (
         <div className="App">
@@ -484,20 +457,8 @@ function AppContent() {
             >
                 {renderCurrentView()}
             </Navigation>
-            {showUpdateWarning && (
-                <UpdateWarningPopup
-                    latestVersion={latestVersion}
-                    onRefreshNow={startImmediateUpdate}
-                    onClose={scheduleUpdateInFiveMinutes}
-                />
-            )}
-            {showScheduledBanner && scheduledAt && !updateMode && (
-                <ScheduledUpdateBanner
-                    remainingMs={remainingMs}
-                    onRefreshNow={startImmediateUpdate}
-                    onDismiss={dismissScheduledBanner}
-                />
-            )}
+            {showUpdateWarning && (<UpdateWarningPopup latestVersion={latestVersion} onRefreshNow={startImmediateUpdate} onClose={scheduleUpdateInFiveMinutes}/>)}
+            {showScheduledBanner && scheduledAt && !updateMode && (<ScheduledUpdateBanner remainingMs={remainingMs} onRefreshNow={startImmediateUpdate} onDismiss={dismissScheduledBanner}/>)}
         </div>
     )
 }
@@ -512,12 +473,10 @@ function App() {
         }
     }, [])
     return (
-        <AuthProvider>
-            <PreferencesProvider>
-                <AppContent/>
-                <div style={{position: 'relative', zIndex: 9999}}><OnlineUsersOverlay/><TipBanner/></div>
-            </PreferencesProvider>
-        </AuthProvider>
+        <>
+            <AppContent/>
+            <div style={{position: 'relative', zIndex: 9999}}><OnlineUsersOverlay/><TipBanner/></div>
+        </>
     )
 }
 

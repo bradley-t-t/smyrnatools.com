@@ -4,6 +4,7 @@ import './app/index.css';
 import './styles/Global.css';
 import App from './app/App.js';
 import {PreferencesProvider} from './app/context/PreferencesContext';
+import {AuthProvider} from './app/context/AuthContext';
 import vitalsUtility from './utils/VitalsUtility';
 
 
@@ -14,9 +15,11 @@ document.head.appendChild(Object.assign(document.createElement('meta'), {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <PreferencesProvider>
-            <App/>
-        </PreferencesProvider>
+        <AuthProvider>
+            <PreferencesProvider>
+                <App/>
+            </PreferencesProvider>
+        </AuthProvider>
     </React.StrictMode>
 );
 

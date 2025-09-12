@@ -1,5 +1,5 @@
 const FormatUtility = {
-    formatDate(dateStr) {
+    formatDate: (dateStr) => {
         if (!dateStr) return ''
         const date = new Date(dateStr)
         if (isNaN(date.getTime())) return dateStr
@@ -11,6 +11,13 @@ const FormatUtility = {
         else if (day % 10 === 2 && day !== 12) suffix = 'nd'
         else if (day % 10 === 3 && day !== 13) suffix = 'rd'
         return formatted.replace(`${day}`, `${day}${suffix}`)
+    },
+    formatDateTime: (dateStr) => {
+        if (!dateStr) return ''
+        const date = new Date(dateStr)
+        if (isNaN(date.getTime())) return dateStr
+        const options = {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}
+        return date.toLocaleString('en-US', options)
     }
 }
 

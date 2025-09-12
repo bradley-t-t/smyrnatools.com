@@ -1,19 +1,29 @@
 import React, {useEffect, useState} from 'react';
-import {usePreferences} from '../../app/context/PreferencesContext';
 import {TrailerService} from '../../services/TrailerService';
+import {TractorService} from '../../services/TractorService';
 import LoadingScreen from '../common/LoadingScreen';
 import UserLabel from '../common/UserLabel';
 import './styles/TrailerHistoryView.css';
+import {FormatUtility} from '../../utils/FormatUtility';
 
 function TrailerHistoryView({trailer, onClose}) {
-    const {preferences} = usePreferences();
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [tractors, setTractors] = useState([]);
 
     useEffect(() => {
         fetchHistory();
+        fetchTractors();
     }, [trailer.id]);
+
+    const fetchTractors = async () => {
+        try {
+            const list = await TractorService.fetchTractors();
+            setTractors(list);
+        } catch (_) {
+        }
+    };
 
     const fetchHistory = async () => {
         setIsLoading(true);
@@ -48,33 +58,31 @@ function TrailerHistoryView({trailer, onClose}) {
         }
     };
 
-    const formatDate = (dateString) => {
+    const formatTimestamp = (dateString) => {
         if (!dateString) return 'Not Assigned';
-        const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        return FormatUtility.formatDateTime(dateString);
     };
 
-    const getHistoryItemColor = (fieldName) => {
-        const normalizedFieldName = fieldName.includes('_') ? fieldName : fieldName.replace(/([A-Z])/g, '_$1').toLowerCase();
-        const isDarkMode = preferences.themeMode === 'dark';
-        switch (normalizedFieldName) {
-            case 'trailer_type':
-                return isDarkMode ? '#2d3142' : '#d9dbe6';
-            case 'verification':
-                return isDarkMode ? '#1a365d' : '#e1f5fe';
-            case 'assigned_tractor':
-                return isDarkMode ? '#1c3829' : '#e8f5e9';
-            case 'assigned_plant':
-                return isDarkMode ? '#3d2c1a' : '#fff3e0';
-            default:
-                return isDarkMode ? '#222222' : '#f8f8f8';
-        }
+    const getHistoryItemColor = () => {
+        return 'var(--bg-secondary)';
+    };
+
+    const getTractorLabel = (tractorId) => {
+        if (!tractorId) return 'Not Assigned';
+        const t = tractors.find(tr => tr.id === tractorId);
+        if (!t) return 'Unknown';
+        return t.truckNumber ? `Truck #${t.truckNumber}` : 'Unknown';
     };
 
     const formatValue = (fieldName, value) => {
+        const key = fieldName && fieldName.includes('_') ? fieldName : String(fieldName || '').replace(/([A-Z])/g, '_$1').toLowerCase();
         if (value === null || value === undefined || value === '') return 'Not Assigned';
-        if (fieldName === 'cleanliness_rating') {
-            return '★'.repeat(parseInt(value));
+        if (key === 'cleanliness_rating') {
+            const n = parseInt(value, 10);
+            return Number.isFinite(n) && n > 0 ? '★'.repeat(n) : String(value);
+        }
+        if (key === 'assigned_tractor') {
+            return getTractorLabel(value);
         }
         return value;
     };
@@ -83,7 +91,7 @@ function TrailerHistoryView({trailer, onClose}) {
         <div className="history-modal-backdrop">
             <div className="history-modal">
                 <div className="history-modal-header"
-                     style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>
+                     style={{backgroundColor: 'var(--accent)'}}>
                     <h2>History for Trailer #{trailer.trailerNumber}</h2>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>
@@ -115,7 +123,7 @@ function TrailerHistoryView({trailer, onClose}) {
                                         <div
                                             className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
                                         <div
-                                            className="history-timestamp">{formatDate(entry.changedAt || entry.changed_at)}</div>
+                                            className="history-timestamp">{formatTimestamp(entry.changedAt || entry.changed_at)}</div>
                                     </div>
                                     <div className="history-change">
                                         <div className="history-old-value">
@@ -145,3 +153,4 @@ function TrailerHistoryView({trailer, onClose}) {
 }
 
 export default TrailerHistoryView;
+

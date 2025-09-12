@@ -345,7 +345,7 @@ function OperatorsView({
     }, [viewMode, searchText, selectedPlant, statusFilter])
 
     return (
-        <div className="dashboard-container operators-view">
+        <div className={`dashboard-container operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
             {showDetailView && selectedOperator && (
                 <OperatorDetailView
                     operatorId={selectedOperator.employeeId}

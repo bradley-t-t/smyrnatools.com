@@ -1,12 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import {supabase} from '../../services/DatabaseService';
+import {OperatorService} from '../../services/OperatorService';
 import UserLabel from '../common/UserLabel';
 import './styles/EquipmentHistoryView.css';
+import {FormatUtility} from '../../utils/FormatUtility';
 
 function EquipmentHistoryView({equipment, onClose}) {
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [operators, setOperators] = useState([]);
     const [sortConfig] = useState({
         key: 'changedAt',
         direction: 'descending'
@@ -14,7 +17,16 @@ function EquipmentHistoryView({equipment, onClose}) {
 
     useEffect(() => {
         fetchHistory();
+        fetchOperators();
     }, [equipment?.id]);
+
+    const fetchOperators = async () => {
+        try {
+            const ops = await OperatorService.fetchOperators();
+            setOperators(ops);
+        } catch (e) {
+        }
+    };
 
     const fetchHistory = async () => {
         setIsLoading(true);
@@ -64,10 +76,15 @@ function EquipmentHistoryView({equipment, onClose}) {
         }
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    const formatTimestamp = (dateString) => {
+        if (!dateString) return 'Not Assigned';
+        return FormatUtility.formatDateTime(dateString);
+    };
+
+    const getOperatorName = (operatorId) => {
+        if (!operatorId || operatorId === '0') return 'None';
+        const op = operators.find(o => o.employeeId === operatorId);
+        return op ? op.name : 'Unknown';
     };
 
     const formatValue = (fieldName, value) => {
@@ -86,7 +103,10 @@ function EquipmentHistoryView({equipment, onClose}) {
             }
         }
         if (fieldName === 'last_service_date') {
-            return value ? new Date(value).toLocaleDateString() : 'Not Assigned';
+            return value ? FormatUtility.formatDate(value) : 'Not Assigned';
+        }
+        if (fieldName === 'assigned_operator') {
+            return getOperatorName(value);
         }
         return value;
     };
@@ -154,7 +174,7 @@ function EquipmentHistoryView({equipment, onClose}) {
                                 >
                                     <div className="history-item-header">
                                         <div className="history-field-name">{formatFieldName(entry.field_name)}</div>
-                                        <div className="history-timestamp">{formatDate(entry.changed_at)}</div>
+                                        <div className="history-timestamp">{formatTimestamp(entry.changed_at)}</div>
                                     </div>
                                     <div className="history-change">
                                         <div className="history-old-value">

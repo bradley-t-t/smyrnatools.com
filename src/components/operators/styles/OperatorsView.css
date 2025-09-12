@@ -52,7 +52,7 @@
     --sticky-cover-height: 14px;
 }
 
-.operators-view::before {
+.operators-view:not(.detail-open)::before {
     content: '';
     position: fixed;
     top: 0;

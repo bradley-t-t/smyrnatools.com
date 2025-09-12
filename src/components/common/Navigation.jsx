@@ -59,6 +59,7 @@ const getIconForMenuItem = (id) => {
 }
 
 const menuItems = [
+    {text: 'Dashboard', id: 'Dashboard', permission: 'dashboard.view', alwaysVisible: false},
     {text: 'Mixers', id: 'Mixers', permission: 'mixers.view', alwaysVisible: false},
     {text: 'Tractors', id: 'Tractors', permission: 'tractors.view', alwaysVisible: false},
     {text: 'Trailers', id: 'Trailers', permission: 'trailers.view', alwaysVisible: false},
@@ -111,16 +112,11 @@ export default function Navigation({
             try {
                 const permissions = await UserService.getUserPermissions(userId)
                 let filtered = menuItems.filter(item => {
-                    if (item.permission) {
-                        return permissions.includes(item.permission)
-                    }
-                    return item.permission === null
+                    if (item.permission) return permissions.includes(item.permission)
+                    return false
                 })
-                if (regionType === 'Office') {
-                    filtered = filtered.filter(item => item.id === 'Reports')
-                } else if (regionType === 'Aggregate') {
-                    filtered = filtered.filter(item => !['Mixers', 'Teams', 'List', 'Tractors', 'Trailers'].includes(item.id))
-                }
+                if (regionType === 'Office') filtered = filtered.filter(item => item.id === 'Reports' || item.id === 'Dashboard')
+                else if (regionType === 'Aggregate') filtered = filtered.filter(item => !['Mixers', 'Teams', 'List', 'Tractors', 'Trailers'].includes(item.id))
                 setVisibleMenuItems(filtered)
                 lastMenuItemsRef.current = filtered
             } catch (error) {
@@ -128,17 +124,11 @@ export default function Navigation({
                 lastMenuItemsRef.current = []
             }
         }
-
         filterMenuItems()
     }, [userId, regionType, regionCode])
 
     useEffect(() => {
-        if (
-            visibleMenuItems.length > 0 &&
-            !visibleMenuItems.some(item => item.id === selectedView) &&
-            selectedView !== 'Settings' &&
-            selectedView !== 'MyAccount'
-        ) {
+        if (visibleMenuItems.length > 0 && !visibleMenuItems.some(item => item.id === selectedView) && selectedView !== 'Settings' && selectedView !== 'MyAccount') {
             onSelectView(visibleMenuItems[0].id)
         }
     }, [visibleMenuItems, selectedView, onSelectView])
@@ -198,87 +188,45 @@ export default function Navigation({
                                     key={item.id}
                                     className={`menu-item ${isActive ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                                     onClick={() => {
-                                        if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) {
-                                            window.appSwitchView(item.id)
-                                        } else {
-                                            onSelectView(item.id)
-                                        }
+                                        if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) window.appSwitchView(item.id)
+                                        else onSelectView(item.id)
                                     }}
-                                    style={collapsed ? {} : {
-                                        padding: '13px 18px',
-                                        minHeight: 0,
-                                        lineHeight: 1.35,
-                                        fontSize: 17
-                                    }}
+                                    style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
                                 >
-                                    <span
-                                        className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
-                                        title={item.text}
-                                        style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}
-                                    >
+                                    <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title={item.text} style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
                                         {getIconForMenuItem(item.id)}
                                     </span>
-                                    {!collapsed && <span className="menu-text" style={{
-                                        fontSize: 17,
-                                        padding: 0,
-                                        margin: 0
-                                    }}>{item.text}</span>}
+                                    {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>{item.text}</span>}
                                 </li>
                             )
                         })}
                         <li
                             className={`menu-item ${selectedView === 'Settings' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                             onClick={() => {
-                                if (window.appSwitchView) {
-                                    window.appSwitchView('Settings')
-                                } else {
-                                    onSelectView('Settings')
-                                }
+                                if (window.appSwitchView) window.appSwitchView('Settings')
+                                else onSelectView('Settings')
                             }}
-                            style={collapsed ? {} : {
-                                padding: '13px 18px',
-                                minHeight: 0,
-                                lineHeight: 1.35,
-                                fontSize: 17
-                            }}
+                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
                         >
-                            <span
-                                className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
-                                title="Settings"
-                                style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}
-                            >
+                            <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title="Settings" style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
                                 {getIconForMenuItem('Settings')}
                             </span>
-                            {!collapsed && <span className="menu-text"
-                                                 style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
+                            {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
                         </li>
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
                             onClick={() => {
-                                if (window.appSwitchView) {
-                                    window.appSwitchView('MyAccount')
-                                } else {
-                                    onSelectView('MyAccount')
-                                }
+                                if (window.appSwitchView) window.appSwitchView('MyAccount')
+                                else onSelectView('MyAccount')
                             }}
-                            style={collapsed ? {} : {
-                                padding: '13px 18px',
-                                minHeight: 0,
-                                lineHeight: 1.35,
-                                fontSize: 17
-                            }}
+                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
                         >
-                            <span
-                                className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
-                                title="My Account"
-                                style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}
-                            >
+                            <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title="My Account" style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
                                 {getIconForMenuItem('MyAccount')}
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text"
-                                          style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
+                                    <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
                                     {userName && <span className="user-name" style={{paddingLeft: 0}}>{userName}</span>}
                                 </div>
                             )}
