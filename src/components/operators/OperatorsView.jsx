@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import './styles/OperatorsView.css'
 import '../../styles/FilterStyles.css'
 import {supabase} from '../../services/DatabaseService'
@@ -18,6 +18,7 @@ function OperatorsView({
                            initialStatusFilter
                        }) {
     const {preferences, updateOperatorFilter, resetOperatorFilters} = usePreferences()
+    const headerRef = useRef(null)
     const [operators, setOperators] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -198,6 +199,21 @@ function OperatorsView({
     const reloadAll = async () => {
         await fetchAllData()
     }
+
+    const duplicateNamesSet = React.useMemo(() => {
+        const counts = new Map()
+        operators.forEach(op => {
+            const key = (op?.name || '').trim().toLowerCase()
+            if (!key) return
+            counts.set(key, (counts.get(key) || 0) + 1)
+        })
+        const dups = new Set()
+        counts.forEach((count, key) => {
+            if (count > 1) dups.add(key)
+        })
+        return dups
+    }, [operators])
+
     const filteredOperators = operators
         .filter(operator => {
             const matchesSearch = searchText.trim() === '' ||
@@ -315,6 +331,19 @@ function OperatorsView({
         resetOperatorFilters({keepViewMode: true, currentViewMode})
     }
 
+    useEffect(() => {
+        function updateStickyCoverHeight() {
+            const el = headerRef.current
+            const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
+            const root = document.querySelector('.dashboard-container.operators-view')
+            if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
+        }
+
+        updateStickyCoverHeight()
+        window.addEventListener('resize', updateStickyCoverHeight)
+        return () => window.removeEventListener('resize', updateStickyCoverHeight)
+    }, [viewMode, searchText, selectedPlant, statusFilter])
+
     return (
         <div className="dashboard-container operators-view">
             {showDetailView && selectedOperator && (
@@ -329,7 +358,7 @@ function OperatorsView({
             )}
             {!showDetailView && (
                 <>
-                    <div className="operators-sticky-header">
+                    <div className="operators-sticky-header" ref={headerRef}>
                         <div className="dashboard-header">
                             <h1>
                                 {title}
@@ -492,6 +521,7 @@ function OperatorsView({
                                         trainers={trainers}
                                         onSelect={() => handleSelectOperator(operator)}
                                         rating={operator.rating}
+                                        isDuplicateName={duplicateNamesSet.has((operator.name || '').trim().toLowerCase())}
                                     />
                                 ))}
                             </div>
@@ -525,7 +555,12 @@ function OperatorsView({
                                         <tr key={operator.employeeId} style={{cursor: 'pointer'}}
                                             onClick={() => handleSelectOperator(operator)}>
                                             <td>{operator.plantCode ? operator.plantCode : "---"}</td>
-                                            <td>{operator.name ? operator.name : "---"}</td>
+                                            <td>
+                                                {operator.name ? operator.name : "---"}
+                                                {duplicateNamesSet.has((operator.name || '').trim().toLowerCase()) && (
+                                                    <i className="fas fa-exclamation-triangle duplicate-warning-icon" title="Duplicate name" aria-label="Duplicate name"></i>
+                                                )}
+                                            </td>
                                             <td>
                                                     <span
                                                         className="item-status-dot"

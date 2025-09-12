@@ -3,7 +3,7 @@ import './styles/OperatorCard.css';
 import ThemeUtility from '../../utils/ThemeUtility';
 import formatUtility from '../../utils/FormatUtility';
 
-function OperatorCard({operator, plantName, onSelect, onDelete, trainers, children, rating}) {
+function OperatorCard({operator, plantName, onSelect, onDelete: _onDelete, trainers, children, rating, isDuplicateName}) {
     if (!operator) return null;
     const statusColor = ThemeUtility.operatorStatusColors[operator.status] || ThemeUtility.operatorStatusColors.default;
     const handleCardClick = () => {
@@ -48,6 +48,13 @@ function OperatorCard({operator, plantName, onSelect, onDelete, trainers, childr
                     <h3 className="operator-name"
                         style={{color: 'var(--accent)'}}>
                         {operator.name}
+                        {isDuplicateName && (
+                            <i
+                                className="fas fa-exclamation-triangle duplicate-warning-icon"
+                                title="Duplicate name"
+                                aria-label="Duplicate name"
+                            ></i>
+                        )}
                     </h3>
                 </div>
                 <div className="card-details">

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import './styles/ListView.css'
 import '../../styles/FilterStyles.css'
 import {ListService} from '../../services/ListService'
@@ -13,6 +13,7 @@ import {RegionService} from '../../services/RegionService'
 
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const {updateListFilter, resetListFilters, preferences} = usePreferences()
+    const headerRef = useRef(null)
     const [, setListItems] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -164,9 +165,21 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         ? ['38%', '14%', '12%', '12%', '16%', '8%']
         : ['44%', '16%', '14%', '16%', '10%']
 
+    useEffect(() => {
+        function updateStickyCoverHeight() {
+            const el = headerRef.current
+            const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
+            const root = document.querySelector('.dashboard-container.list-view')
+            if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
+        }
+        updateStickyCoverHeight()
+        window.addEventListener('resize', updateStickyCoverHeight)
+        return () => window.removeEventListener('resize', updateStickyCoverHeight)
+    }, [searchText, selectedPlant, statusFilter])
+
     return (
         <div className="dashboard-container list-view">
-            <div className="list-sticky-header">
+            <div className="list-sticky-header" ref={headerRef}>
                 <div className="dashboard-header">
                     <h1>{title}</h1>
                     <div className="dashboard-actions">

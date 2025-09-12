@@ -47,6 +47,16 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
             return;
         }
 
+        const normalizedNewName = name.trim().toLowerCase();
+        const hasDuplicate = Array.isArray(operators) && operators.some(o => (o?.name || '').trim().toLowerCase() === normalizedNewName);
+
+        if (hasDuplicate) {
+            const proceed = window.confirm(`An operator named "${name.trim()}" already exists. Create anyway?`);
+            if (!proceed) {
+                return;
+            }
+        }
+
         setIsSaving(true);
 
         try {

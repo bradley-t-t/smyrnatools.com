@@ -84,6 +84,14 @@
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.duplicate-warning-icon {
+    color: var(--warning);
+    font-size: 0.95em;
 }
 
 .card-details {

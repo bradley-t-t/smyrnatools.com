@@ -204,10 +204,26 @@
     padding-bottom: 10px;
 }
 
+.dashboard-container.list-view {
+    padding-top: 0 !important;
+    padding-right: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    padding-left: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .dashboard-container.list-view {
+        padding-top: 0 !important;
+        padding-right: var(--spacing-md);
+        padding-bottom: var(--spacing-md);
+        padding-left: var(--spacing-md);
+    }
+}
+
 .list-view {
     overscroll-behavior-y: none;
     padding-top: 0;
-    --sticky-cover-height: 18px;
+    --sticky-cover-height: 14px;
 }
 
 .list-view::before {
