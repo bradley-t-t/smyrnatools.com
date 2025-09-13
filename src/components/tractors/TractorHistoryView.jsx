@@ -24,7 +24,8 @@ function TractorHistoryView({tractor, onClose}) {
         try {
             const operatorsData = await OperatorService.fetchOperators();
             setOperators(operatorsData);
-        } catch (err) {}
+        } catch (err) {
+        }
     };
 
     const fetchHistory = async () => {
@@ -147,7 +148,8 @@ function TractorHistoryView({tractor, onClose}) {
                     ) : history.length === 0 ? (
                         <div className="empty-history">
                             <p>No history records found for this tractor.</p>
-                            <p className="empty-subtext">History entries will appear here when changes are made to this tractor.</p>
+                            <p className="empty-subtext">History entries will appear here when changes are made to this
+                                tractor.</p>
                         </div>
                     ) : (
                         <div className="history-timeline">
@@ -157,17 +159,21 @@ function TractorHistoryView({tractor, onClose}) {
                                     className="history-item"
                                 >
                                     <div className="history-item-header">
-                                        <div className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
-                                        <div className="history-timestamp">{formatTimestamp(entry.changedAt || entry.changed_at)}</div>
+                                        <div
+                                            className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
+                                        <div
+                                            className="history-timestamp">{formatTimestamp(entry.changedAt || entry.changed_at)}</div>
                                     </div>
 
                                     <div className="history-change">
                                         <div className="history-old-value">
-                                            <span className="value-label">From:</span> {formatValue(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value)}
+                                            <span
+                                                className="value-label">From:</span> {formatValue(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value)}
                                         </div>
                                         <div className="history-arrow">→</div>
                                         <div className="history-new-value">
-                                            <span className="value-label">To:</span> {formatValue(entry.fieldName || entry.field_name, entry.newValue || entry.new_value)}
+                                            <span
+                                                className="value-label">To:</span> {formatValue(entry.fieldName || entry.field_name, entry.newValue || entry.new_value)}
                                         </div>
                                     </div>
 

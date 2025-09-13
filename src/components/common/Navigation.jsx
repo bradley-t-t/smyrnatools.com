@@ -124,6 +124,7 @@ export default function Navigation({
                 lastMenuItemsRef.current = []
             }
         }
+
         filterMenuItems()
     }, [userId, regionType, regionCode])
 
@@ -191,12 +192,23 @@ export default function Navigation({
                                         if (window.appSwitchView && (item.id === 'List' || item.id === 'Archive')) window.appSwitchView(item.id)
                                         else onSelectView(item.id)
                                     }}
-                                    style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
+                                    style={collapsed ? {} : {
+                                        padding: '13px 18px',
+                                        minHeight: 0,
+                                        lineHeight: 1.35,
+                                        fontSize: 17
+                                    }}
                                 >
-                                    <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title={item.text} style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
+                                    <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`}
+                                          title={item.text}
+                                          style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
                                         {getIconForMenuItem(item.id)}
                                     </span>
-                                    {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>{item.text}</span>}
+                                    {!collapsed && <span className="menu-text" style={{
+                                        fontSize: 17,
+                                        padding: 0,
+                                        margin: 0
+                                    }}>{item.text}</span>}
                                 </li>
                             )
                         })}
@@ -206,12 +218,19 @@ export default function Navigation({
                                 if (window.appSwitchView) window.appSwitchView('Settings')
                                 else onSelectView('Settings')
                             }}
-                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
+                            style={collapsed ? {} : {
+                                padding: '13px 18px',
+                                minHeight: 0,
+                                lineHeight: 1.35,
+                                fontSize: 17
+                            }}
                         >
-                            <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title="Settings" style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
+                            <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title="Settings"
+                                  style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
                                 {getIconForMenuItem('Settings')}
                             </span>
-                            {!collapsed && <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
+                            {!collapsed && <span className="menu-text"
+                                                 style={{fontSize: 17, padding: 0, margin: 0}}>Settings</span>}
                         </li>
                         <li
                             className={`menu-item ${selectedView === 'MyAccount' ? 'active' : ''} ${collapsed ? 'menu-item-collapsed' : ''}`}
@@ -219,14 +238,21 @@ export default function Navigation({
                                 if (window.appSwitchView) window.appSwitchView('MyAccount')
                                 else onSelectView('MyAccount')
                             }}
-                            style={collapsed ? {} : {padding: '13px 18px', minHeight: 0, lineHeight: 1.35, fontSize: 17}}
+                            style={collapsed ? {} : {
+                                padding: '13px 18px',
+                                minHeight: 0,
+                                lineHeight: 1.35,
+                                fontSize: 17
+                            }}
                         >
-                            <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title="My Account" style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
+                            <span className={`menu-icon${collapsed ? ' menu-icon-collapsed' : ''}`} title="My Account"
+                                  style={collapsed ? {} : {marginRight: 14, fontSize: 20, minWidth: 24}}>
                                 {getIconForMenuItem('MyAccount')}
                             </span>
                             {!collapsed && (
                                 <div className="user-menu-content">
-                                    <span className="menu-text" style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
+                                    <span className="menu-text"
+                                          style={{fontSize: 17, padding: 0, margin: 0}}>My Account</span>
                                     {userName && <span className="user-name" style={{paddingLeft: 0}}>{userName}</span>}
                                 </div>
                             )}

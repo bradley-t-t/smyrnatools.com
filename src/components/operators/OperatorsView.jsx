@@ -346,7 +346,8 @@ function OperatorsView({
     }, [viewMode, searchText, selectedPlant, statusFilter])
 
     return (
-        <div className={`dashboard-container operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
+        <div
+            className={`dashboard-container operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
             {showDetailView && selectedOperator && (
                 <OperatorDetailView
                     operatorId={selectedOperator.employeeId}
@@ -562,7 +563,8 @@ function OperatorsView({
                                             <td>
                                                 {operator.name ? operator.name : "---"}
                                                 {duplicateNamesSet.has((operator.name || '').trim().toLowerCase()) && (
-                                                    <i className="fas fa-exclamation-triangle duplicate-warning-icon" title="Duplicate name" aria-label="Duplicate name"></i>
+                                                    <i className="fas fa-exclamation-triangle duplicate-warning-icon"
+                                                       title="Duplicate name" aria-label="Duplicate name"></i>
                                                 )}
                                             </td>
                                             <td>{operator.phone ? operator.phone : "---"}</td>

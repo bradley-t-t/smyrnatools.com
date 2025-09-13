@@ -382,10 +382,21 @@ function AppContent() {
             case 'Mixers': {
                 if (selectedMixer) {
                     try {
-                        return <MixerDetailView mixerId={selectedMixer} onClose={() => { setSelectedMixer(null); setTitle('Mixers') }}/>
-                    } catch { setSelectedMixer(null); setTitle('Mixers') }
+                        return <MixerDetailView mixerId={selectedMixer} onClose={() => {
+                            setSelectedMixer(null);
+                            setTitle('Mixers')
+                        }}/>
+                    } catch {
+                        setSelectedMixer(null);
+                        setTitle('Mixers')
+                    }
                 }
-                return <MixersView onSelectMixer={(mixerId) => { if (mixerId) { setSelectedMixer(mixerId); setTitle('Mixer Details') } }}/>
+                return <MixersView onSelectMixer={(mixerId) => {
+                    if (mixerId) {
+                        setSelectedMixer(mixerId);
+                        setTitle('Mixer Details')
+                    }
+                }}/>
             }
             case 'Operators':
                 return <OperatorsView title={title}/>
@@ -410,18 +421,24 @@ function AppContent() {
             case 'Tractors':
                 return <TractorsView title="Tractor Fleet" onSelectTractor={setSelectedTractor}/>
             case 'Trailers':
-                return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {}}/>
+                return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {
+                }}/>
             case 'Pickup Trucks':
                 return <PickupTrucksView title="Pickup Trucks"/>
             case 'Heavy Equipment':
-                return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {}}/>
+                return <EquipmentsView title="Equipment Fleet" onSelectEquipment={() => {
+                }}/>
             default:
-                return <div className="coming-soon"><h2>{selectedView} view is coming soon!</h2><p>This feature is under development.</p></div>
+                return <div className="coming-soon"><h2>{selectedView} view is coming soon!</h2><p>This feature is under
+                    development.</p></div>
         }
     }
 
     const startImmediateUpdate = () => {
-        if (scheduledTimeoutRef.current) { clearTimeout(scheduledTimeoutRef.current); scheduledTimeoutRef.current = null }
+        if (scheduledTimeoutRef.current) {
+            clearTimeout(scheduledTimeoutRef.current);
+            scheduledTimeoutRef.current = null
+        }
         setShowUpdateWarning(false)
         setShowScheduledBanner(false)
         setUpdateMode(true)
@@ -433,7 +450,9 @@ function AppContent() {
         const at = Date.now() + 5 * 60 * 1000
         setScheduledAt(at)
         setShowScheduledBanner(true)
-        scheduledTimeoutRef.current = setTimeout(() => { startImmediateUpdate() }, 5 * 60 * 1000)
+        scheduledTimeoutRef.current = setTimeout(() => {
+            startImmediateUpdate()
+        }, 5 * 60 * 1000)
     }
 
     const dismissScheduledBanner = () => setShowScheduledBanner(false)
@@ -457,8 +476,11 @@ function AppContent() {
             >
                 {renderCurrentView()}
             </Navigation>
-            {showUpdateWarning && (<UpdateWarningPopup latestVersion={latestVersion} onRefreshNow={startImmediateUpdate} onClose={scheduleUpdateInFiveMinutes}/>)}
-            {showScheduledBanner && scheduledAt && !updateMode && (<ScheduledUpdateBanner remainingMs={remainingMs} onRefreshNow={startImmediateUpdate} onDismiss={dismissScheduledBanner}/>)}
+            {showUpdateWarning && (<UpdateWarningPopup latestVersion={latestVersion} onRefreshNow={startImmediateUpdate}
+                                                       onClose={scheduleUpdateInFiveMinutes}/>)}
+            {showScheduledBanner && scheduledAt && !updateMode && (
+                <ScheduledUpdateBanner remainingMs={remainingMs} onRefreshNow={startImmediateUpdate}
+                                       onDismiss={dismissScheduledBanner}/>)}
         </div>
     )
 }

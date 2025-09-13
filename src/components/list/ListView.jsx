@@ -172,6 +172,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
             const root = document.querySelector('.dashboard-container.list-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
+
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)

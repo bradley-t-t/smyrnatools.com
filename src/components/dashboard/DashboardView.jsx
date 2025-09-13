@@ -52,6 +52,7 @@ export default function DashboardView() {
     useEffect(() => {
         let cancelled = false
         let intervalId
+
         async function init() {
             const isInitial = !lastUpdated
             if (isInitial) setLoading(true)
@@ -88,14 +89,20 @@ export default function DashboardView() {
                 if (allPerm) {
                     if (currentCode) {
                         const found = regionsList.find(r => (r.regionCode || r.region_code) === currentCode)
-                        if (found) nextRegion = {code: found.regionCode || found.region_code || '', name: found.regionName || found.region_name || ''}
+                        if (found) nextRegion = {
+                            code: found.regionCode || found.region_code || '',
+                            name: found.regionName || found.region_name || ''
+                        }
                         else nextRegion = {code: '', name: ''}
                     } else {
                         nextRegion = {code: '', name: ''}
                     }
                 } else {
                     const found = regionsList.find(r => (r.regionCode || r.region_code) === currentCode) || regionsList[0]
-                    if (found) nextRegion = {code: found.regionCode || found.region_code || '', name: found.regionName || found.region_name || ''}
+                    if (found) nextRegion = {
+                        code: found.regionCode || found.region_code || '',
+                        name: found.regionName || found.region_name || ''
+                    }
                     else nextRegion = {code: '', name: ''}
                 }
                 if (nextRegion.code !== regionCode || nextRegion.name !== regionName) {
@@ -150,7 +157,9 @@ export default function DashboardView() {
                     const userIdsWithManagerRole = new Set((permissions || []).filter(p => managerRoleIds.has(p.role_id)).map(p => p.user_id))
                     const plantCodesSet = (effectivePlantCodes && effectivePlantCodes.size > 0) ? effectivePlantCodes : null
                     mgrCount = (profiles || []).filter(pr => userIdsWithManagerRole.has(pr.id) && (!plantCodesSet || plantCodesSet.has(String(pr.plant_code || '').trim()))).length
-                } catch { mgrCount = 0 }
+                } catch {
+                    mgrCount = 0
+                }
                 setManagersCount(mgrCount)
                 try {
                     const listBase = supabase.from('list_items')
@@ -268,6 +277,7 @@ export default function DashboardView() {
                 }
             }
         }
+
         init()
         intervalId = setInterval(() => {
             setRefreshKey(v => v + 1)
@@ -291,10 +301,19 @@ export default function DashboardView() {
     const shopEquipment = useMemo(() => equipment.filter(e => e.status === 'In Shop'), [equipment])
 
     const activePickups = useMemo(() => pickups.filter(p => p.status === 'Active'), [pickups])
+    const inShopPickups = useMemo(() => pickups.filter(p => p.status === 'In Shop'), [pickups])
+    const stationaryPickups = useMemo(() => pickups.filter(p => p.status === 'Stationary'), [pickups])
+    const soldPickups = useMemo(() => pickups.filter(p => p.status === 'Sold'), [pickups])
+    const sparePickups = useMemo(() => pickups.filter(p => p.status === 'Spare'), [pickups])
+    const retiredPickups = useMemo(() => pickups.filter(p => p.status === 'Retired'), [pickups])
 
     const assignedOperatorIds = useMemo(() => new Set(activeMixers.map(m => m.assignedOperator).filter(Boolean)), [activeMixers])
+    const assignedMixerOperatorIds = useMemo(() => new Set(activeMixers.map(m => m.assignedOperator).filter(Boolean)), [activeMixers])
+    const assignedTractorOperatorIds = useMemo(() => new Set(activeTractors.map(t => t.assignedOperator).filter(Boolean)), [activeTractors])
     const activeOperators = useMemo(() => operators.filter(o => o.status === 'Active'), [operators])
     const assignedOperators = useMemo(() => activeOperators.filter(o => assignedOperatorIds.has(o.employeeId)), [activeOperators, assignedOperatorIds])
+    const assignedMixerOperators = useMemo(() => activeOperators.filter(o => assignedMixerOperatorIds.has(o.employeeId)), [activeOperators, assignedMixerOperatorIds])
+    const assignedTractorOperators = useMemo(() => activeOperators.filter(o => assignedTractorOperatorIds.has(o.employeeId)), [activeOperators, assignedTractorOperatorIds])
     const unassignedActiveOperators = useMemo(() => Math.max(0, activeOperators.length - assignedOperators.length), [activeOperators, assignedOperators])
 
     const daysSince = d => d ? Math.ceil((Date.now() - new Date(d).getTime()) / 86400000) : null
@@ -363,11 +382,13 @@ export default function DashboardView() {
                         <select className="ios-select" value={regionCode} onChange={onRegionChange} aria-label="Region">
                             {hasAllRegionsPermission && <option value="">All Regions</option>}
                             {permittedRegions.map(r => (
-                                <option key={r.regionCode || r.region_code} value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
+                                <option key={r.regionCode || r.region_code}
+                                        value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
                             ))}
                         </select>
                         {regionCode ? (
-                            <select className="ios-select" value={selectedPlant} onChange={onPlantChange} aria-label="Plant">
+                            <select className="ios-select" value={selectedPlant} onChange={onPlantChange}
+                                    aria-label="Plant">
                                 <option value="">All Plants</option>
                                 {regionPlants.map(p => {
                                     const code = p.plantCode || p.plant_code
@@ -378,7 +399,9 @@ export default function DashboardView() {
                         ) : null}
                     </div>
                     <div className="toolbar-group">
-                        <div className="updated-at"><span className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span></div>
+                        <div className="updated-at"><span
+                            className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span>
+                        </div>
                         <button className="btn ghost" onClick={onRefresh} aria-label="Refresh" disabled={refreshing}>
                             {refreshing ? <span className="mini-loader"/> : null}
                             <span>Refresh</span>
@@ -388,7 +411,7 @@ export default function DashboardView() {
             </div>
             {error && (
                 <div className="error-banner" role="alert">
-                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
                         <span>{error}</span>
                         <button className="btn danger ghost" onClick={onRetry}>Retry</button>
                     </div>
@@ -396,13 +419,17 @@ export default function DashboardView() {
             )}
             <div className="content-container">
                 {loading ? (
-                    <div className="loading-container"><div className="loader"/></div>
+                    <div className="loading-container">
+                        <div className="loader"/>
+                    </div>
                 ) : (
                     <div className="dashboard-grid">
                         <div className="kpi-card">
                             <div className="kpi-title">Region</div>
-                            <div className="kpi-value">{regionCode ? `${regionName || regionCode}` : 'All Regions'}</div>
-                            <div className="kpi-sub">Plants {plantCount}{selectedPlant ? ` • Plant ${selectedPlant}` : ''}</div>
+                            <div
+                                className="kpi-value">{regionCode ? `${regionName || regionCode}` : 'All Regions'}</div>
+                            <div
+                                className="kpi-sub">Plants {plantCount}{selectedPlant ? ` • Plant ${selectedPlant}` : ''}</div>
                         </div>
                         <div className="kpi-card">
                             <div className="kpi-title">Mixers</div>
@@ -412,7 +439,9 @@ export default function DashboardView() {
                                 <div className="kpi-pill">In Shop {shopMixers.length}</div>
                             </div>
                             <div className="kpi-row">
-                                <div className="kpi-pill">Verified {mixersVerified.percent}% ({mixersVerified.count}/{mixers.length})</div>
+                                <div className="kpi-pill">Verified {mixersVerified.percent}%
+                                    ({mixersVerified.count}/{mixers.length})
+                                </div>
                                 <div className="kpi-pill">Needing Service {mixersOverdue}</div>
                                 <div className="kpi-pill">Open Issues {mixersIssuesTotal}</div>
                                 <div className="kpi-pill">Comments {mixersCommentsTotal}</div>
@@ -426,7 +455,9 @@ export default function DashboardView() {
                                 <div className="kpi-pill">In Shop {shopTractors.length}</div>
                             </div>
                             <div className="kpi-row">
-                                <div className="kpi-pill">Verified {tractorsVerified.percent}% ({tractorsVerified.count}/{tractors.length})</div>
+                                <div className="kpi-pill">Verified {tractorsVerified.percent}%
+                                    ({tractorsVerified.count}/{tractors.length})
+                                </div>
                                 <div className="kpi-pill">Needing Service {tractorsOverdue}</div>
                                 <div className="kpi-pill">Open Issues {tractorsIssuesTotal}</div>
                                 <div className="kpi-pill">Comments {tractorsCommentsTotal}</div>
@@ -463,6 +494,11 @@ export default function DashboardView() {
                             <div className="kpi-value">{pickups.length}</div>
                             <div className="kpi-row">
                                 <div className="kpi-pill">Active {activePickups.length}</div>
+                                <div className="kpi-pill">In Shop {inShopPickups.length}</div>
+                                <div className="kpi-pill">Stationary {stationaryPickups.length}</div>
+                                <div className="kpi-pill">Sold {soldPickups.length}</div>
+                                <div className="kpi-pill">Spare {sparePickups.length}</div>
+                                <div className="kpi-pill">Retired {retiredPickups.length}</div>
                             </div>
                         </div>
                         <div className="kpi-card">
@@ -472,6 +508,8 @@ export default function DashboardView() {
                                 <div className="kpi-pill">Active {activeOperators.length}</div>
                                 <div className="kpi-pill">Assigned {assignedOperators.length}</div>
                                 <div className="kpi-pill">Unassigned {unassignedActiveOperators}</div>
+                                <div className="kpi-pill">Assigned to Mixers {assignedMixerOperators.length}</div>
+                                <div className="kpi-pill">Assigned to Tractors {assignedTractorOperators.length}</div>
                             </div>
                         </div>
                         <div className="kpi-card">

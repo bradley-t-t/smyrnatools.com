@@ -3,7 +3,16 @@ import './styles/OperatorCard.css';
 import ThemeUtility from '../../utils/ThemeUtility';
 import formatUtility from '../../utils/FormatUtility';
 
-function OperatorCard({operator, plantName, onSelect, onDelete: _onDelete, trainers, children, rating, isDuplicateName}) {
+function OperatorCard({
+                          operator,
+                          plantName,
+                          onSelect,
+                          onDelete: _onDelete,
+                          trainers,
+                          children,
+                          rating,
+                          isDuplicateName
+                      }) {
     if (!operator) return null;
     const statusColor = ThemeUtility.operatorStatusColors[operator.status] || ThemeUtility.operatorStatusColors.default;
     const handleCardClick = () => {

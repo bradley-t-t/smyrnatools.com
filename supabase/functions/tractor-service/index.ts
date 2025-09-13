@@ -636,7 +636,10 @@ Deno.serve(async (req) => {
                     });
                 }
                 const dayThreshold = Number.isInteger(body?.dayThreshold) ? body.dayThreshold : 30;
-                const { data, error } = await supabase.from("tractors").select("*").order("truck_number", {ascending: true});
+                const {
+                    data,
+                    error
+                } = await supabase.from("tractors").select("*").order("truck_number", {ascending: true});
                 if (error) return new Response(JSON.stringify({error: error.message}), {
                     status: 400,
                     headers: corsHeaders
