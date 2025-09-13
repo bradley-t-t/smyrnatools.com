@@ -6,6 +6,7 @@ import './styles/OperatorAddView.css';
 
 function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
     const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
     const [status, setStatus] = useState('Active');
     const [position, setPosition] = useState('');
@@ -79,7 +80,8 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                 created_at: now,
                 updated_at: now,
                 updated_by: userId,
-                pending_start_date: status === 'Pending Start' ? pendingStartDate : null
+                pending_start_date: status === 'Pending Start' ? pendingStartDate : null,
+                phone: phone || null
             };
 
             const savedOperator = await OperatorService.createOperator(newOperator);
@@ -117,6 +119,17 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Enter full name"
                                 required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="phone">Phone</label>
+                            <input
+                                id="phone"
+                                type="tel"
+                                className="ios-input"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="(555) 555-5555"
                             />
                         </div>
                         <div className="form-row-horizontal">

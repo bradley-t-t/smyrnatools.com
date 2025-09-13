@@ -144,7 +144,8 @@ Deno.serve(async (req) => {
                     position: input?.position ?? null,
                     created_at: input?.created_at ?? now,
                     updated_at: now,
-                    pending_start_date: input?.pending_start_date ?? null
+                    pending_start_date: input?.pending_start_date ?? null,
+                    phone: input?.phone ?? null
                 };
                 const {data, error} = await supabase.from("operators").insert(row).select("*").single();
                 if (error) return new Response(JSON.stringify({error: error.message}), {
@@ -177,7 +178,8 @@ Deno.serve(async (req) => {
                     position: input?.position ?? null,
                     created_at: input?.created_at ?? undefined,
                     updated_at: now,
-                    pending_start_date: input?.pending_start_date ?? null
+                    pending_start_date: input?.pending_start_date ?? null,
+                    phone: input?.phone ?? null
                 };
                 Object.keys(updateObj).forEach((k) => updateObj[k] === undefined && delete updateObj[k]);
                 const {data, error} = await supabase

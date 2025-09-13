@@ -3,7 +3,6 @@ import {TractorService} from '../../services/TractorService';
 import {OperatorService} from '../../services/OperatorService';
 import LoadingScreen from '../common/LoadingScreen';
 import UserLabel from '../common/UserLabel';
-import './styles/TractorHistoryView.css';
 import {FormatUtility} from '../../utils/FormatUtility';
 
 function TractorHistoryView({tractor, onClose}) {
@@ -25,8 +24,7 @@ function TractorHistoryView({tractor, onClose}) {
         try {
             const operatorsData = await OperatorService.fetchOperators();
             setOperators(operatorsData);
-        } catch (err) {
-        }
+        } catch (err) {}
     };
 
     const fetchHistory = async () => {
@@ -71,14 +69,10 @@ function TractorHistoryView({tractor, onClose}) {
         return FormatUtility.formatDateTime(dateString);
     };
 
-    const getHistoryItemColor = () => {
-        return 'var(--bg-secondary)';
-    };
-
     const getOperatorName = (operatorId) => {
         if (!operatorId || operatorId === '0') return 'None';
         const operator = operators.find(op => op.employeeId === operatorId);
-        return operator ? `${operator.name}` : 'Unknown';
+        return operator ? operator.name : 'Unknown';
     };
 
     const formatValue = (fieldName, value) => {
@@ -135,8 +129,7 @@ function TractorHistoryView({tractor, onClose}) {
     return (
         <div className="history-modal-backdrop">
             <div className="history-modal">
-                <div className="history-modal-header"
-                     style={{backgroundColor: 'var(--accent)'}}>
+                <div className="history-modal-header">
                     <h2>History for Truck #{tractor.truckNumber}</h2>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>
@@ -154,8 +147,7 @@ function TractorHistoryView({tractor, onClose}) {
                     ) : history.length === 0 ? (
                         <div className="empty-history">
                             <p>No history records found for this tractor.</p>
-                            <p className="empty-subtext">History entries will appear here when changes are made to this
-                                tractor.</p>
+                            <p className="empty-subtext">History entries will appear here when changes are made to this tractor.</p>
                         </div>
                     ) : (
                         <div className="history-timeline">
@@ -163,24 +155,19 @@ function TractorHistoryView({tractor, onClose}) {
                                 <div
                                     key={entry.id || index}
                                     className="history-item"
-                                    style={{backgroundColor: getHistoryItemColor(entry.fieldName || entry.field_name)}}
                                 >
                                     <div className="history-item-header">
-                                        <div
-                                            className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
-                                        <div
-                                            className="history-timestamp">{formatTimestamp(entry.changedAt || entry.changed_at)}</div>
+                                        <div className="history-field-name">{formatFieldName(entry.fieldName || entry.field_name)}</div>
+                                        <div className="history-timestamp">{formatTimestamp(entry.changedAt || entry.changed_at)}</div>
                                     </div>
 
                                     <div className="history-change">
                                         <div className="history-old-value">
-                                            <span
-                                                className="value-label">From:</span> {formatValue(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value)}
+                                            <span className="value-label">From:</span> {formatValue(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value)}
                                         </div>
                                         <div className="history-arrow">→</div>
                                         <div className="history-new-value">
-                                            <span
-                                                className="value-label">To:</span> {formatValue(entry.fieldName || entry.field_name, entry.newValue || entry.new_value)}
+                                            <span className="value-label">To:</span> {formatValue(entry.fieldName || entry.field_name, entry.newValue || entry.new_value)}
                                         </div>
                                     </div>
 

@@ -70,6 +70,10 @@ function OperatorCard({operator, plantName, onSelect, onDelete: _onDelete, train
                         <div className="detail-label">Employee ID</div>
                         <div className="detail-value">{operator.smyrnaId || 'Not Assigned'}</div>
                     </div>
+                    <div className="detail-row">
+                        <div className="detail-label">Phone</div>
+                        <div className="detail-value">{operator.phone || 'Not Set'}</div>
+                    </div>
                     {operator.status === 'Pending Start' && (
                         <div className="detail-row">
                             <div className="detail-label">Pending Start Date</div>

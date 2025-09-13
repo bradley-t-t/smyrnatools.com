@@ -11,13 +11,15 @@ import {OperatorService} from '../../services/OperatorService'
 import {ReportService} from '../../services/ReportService'
 import {supabase} from '../../services/DatabaseService'
 import VerifiedUtility from '../../utils/VerifiedUtility'
+import {UserService} from '../../services/UserService'
 
 export default function DashboardView() {
     const {preferences, setSelectedRegion} = usePreferences()
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState('')
-    const [regions, setRegions] = useState([])
+    const [permittedRegions, setPermittedRegions] = useState([])
+    const [hasAllRegionsPermission, setHasAllRegionsPermission] = useState(false)
     const [regionPlants, setRegionPlants] = useState([])
     const [allPlantsCount, setAllPlantsCount] = useState(0)
     const [selectedPlant, setSelectedPlant] = useState('')
@@ -56,16 +58,54 @@ export default function DashboardView() {
             else setRefreshing(true)
             setError('')
             try {
-                const [allRegions, plantsForRegion, allPlants] = await Promise.all([
-                    RegionService.fetchRegions().catch(() => []),
-                    regionCode ? RegionService.fetchRegionPlants(regionCode).catch(() => []) : Promise.resolve([]),
-                    ReportService.fetchPlantsSorted().catch(() => [])
-                ])
+                const allPlants = await ReportService.fetchPlantsSorted().catch(() => [])
                 if (cancelled) return
-                setRegions(allRegions)
-                setRegionPlants(plantsForRegion)
                 setAllPlantsCount(Array.isArray(allPlants) ? allPlants.length : 0)
-                const basePlantCodes = new Set((plantsForRegion || []).map(p => String(p.plantCode || '').trim()).filter(Boolean))
+                const {data: sessionData} = await supabase.auth.getSession()
+                const uid = sessionData?.session?.user?.id || sessionStorage.getItem('userId') || ''
+                const allPerm = await UserService.hasPermission(uid, 'region.select.all').catch(() => false)
+                if (cancelled) return
+                setHasAllRegionsPermission(!!allPerm)
+                let regionsList = []
+                if (allPerm) {
+                    regionsList = await RegionService.fetchRegions().catch(() => [])
+                } else {
+                    const {data: profile} = await supabase.from('users_profiles').select('plant_code, regions').eq('id', uid).maybeSingle()
+                    const profileRegions = Array.isArray(profile?.regions) ? profile.regions.filter(r => typeof r === 'string' && r.trim()) : []
+                    if (profileRegions.length) {
+                        const allRegs = await RegionService.fetchRegions().catch(() => [])
+                        const codeSet = new Set(profileRegions.map(c => c.toLowerCase()))
+                        regionsList = allRegs.filter(r => codeSet.has(String(((r.regionCode || r.region_code) || '')).toLowerCase()))
+                    }
+                    if ((!regionsList || regionsList.length === 0) && profile?.plant_code) {
+                        regionsList = await RegionService.fetchRegionsByPlantCode(profile.plant_code).catch(() => [])
+                    }
+                }
+                if (cancelled) return
+                setPermittedRegions(regionsList)
+                let nextRegion
+                const currentCode = regionCode
+                if (allPerm) {
+                    if (currentCode) {
+                        const found = regionsList.find(r => (r.regionCode || r.region_code) === currentCode)
+                        if (found) nextRegion = {code: found.regionCode || found.region_code || '', name: found.regionName || found.region_name || ''}
+                        else nextRegion = {code: '', name: ''}
+                    } else {
+                        nextRegion = {code: '', name: ''}
+                    }
+                } else {
+                    const found = regionsList.find(r => (r.regionCode || r.region_code) === currentCode) || regionsList[0]
+                    if (found) nextRegion = {code: found.regionCode || found.region_code || '', name: found.regionName || found.region_name || ''}
+                    else nextRegion = {code: '', name: ''}
+                }
+                if (nextRegion.code !== regionCode || nextRegion.name !== regionName) {
+                    setSelectedRegion(nextRegion.code, nextRegion.name)
+                    setSelectedPlant('')
+                }
+                const plantsForRegion = nextRegion.code ? await RegionService.fetchRegionPlants(nextRegion.code).catch(() => []) : []
+                if (cancelled) return
+                setRegionPlants(plantsForRegion)
+                const basePlantCodes = new Set((plantsForRegion || []).map(p => String(((p.plantCode || p.plant_code) || '')).trim()).filter(Boolean))
                 const effectivePlantCodes = selectedPlant ? new Set([String(selectedPlant).trim()]) : basePlantCodes
                 const [mix, trac, trail, equip, pick, ops] = await Promise.all([
                     MixerService.getAllMixers().catch(() => []),
@@ -145,18 +185,8 @@ export default function DashboardView() {
                         const codes = Array.from(effectivePlantCodes)
                         userIds = (profiles || []).filter(pr => pr.plant_code && codes.includes(String(pr.plant_code).trim())).map(pr => pr.id)
                     }
-                    let reportsCompleted = supabase
-                        .from('reports')
-                        .select('id', {count: 'exact'})
-                        .eq('completed', true)
-                        .gte('week', prevMonStr)
-                        .lte('week', prevSatStr)
-                    let reportsPastDue = supabase
-                        .from('reports')
-                        .select('id', {count: 'exact'})
-                        .eq('completed', false)
-                        .gte('week', prevMonStr)
-                        .lte('week', prevSatStr)
+                    let reportsCompleted = supabase.from('reports').select('id', {count: 'exact'}).eq('completed', true).gte('week', prevMonStr).lte('week', prevSatStr)
+                    let reportsPastDue = supabase.from('reports').select('id', {count: 'exact'}).eq('completed', false).gte('week', prevMonStr).lte('week', prevSatStr)
                     if (userIds && userIds.length > 0) {
                         reportsCompleted = reportsCompleted.in('user_id', userIds)
                         reportsPastDue = reportsPastDue.in('user_id', userIds)
@@ -297,9 +327,14 @@ export default function DashboardView() {
 
     const onRegionChange = e => {
         const code = e.target.value
-        const r = regions.find(x => x.regionCode === code)
-        if (r) setSelectedRegion(r.regionCode, r.regionName)
-        else setSelectedRegion('', '')
+        if (!code && !hasAllRegionsPermission) return
+        if (!code && hasAllRegionsPermission) {
+            setSelectedRegion('', '')
+            setSelectedPlant('')
+            return
+        }
+        const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code)
+        if (r) setSelectedRegion(r.regionCode || r.region_code, r.regionName || r.region_name)
         setSelectedPlant('')
     }
 
@@ -326,17 +361,17 @@ export default function DashboardView() {
                 <div className="dashboard-actions">
                     <div className="toolbar-group">
                         <select className="ios-select" value={regionCode} onChange={onRegionChange} aria-label="Region">
-                            <option value="">All Regions</option>
-                            {regions.map(r => (
-                                <option key={r.regionCode} value={r.regionCode}>{r.regionName} ({r.regionCode})</option>
+                            {hasAllRegionsPermission && <option value="">All Regions</option>}
+                            {permittedRegions.map(r => (
+                                <option key={r.regionCode || r.region_code} value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
                             ))}
                         </select>
                         {regionCode ? (
                             <select className="ios-select" value={selectedPlant} onChange={onPlantChange} aria-label="Plant">
                                 <option value="">All Plants</option>
                                 {regionPlants.map(p => {
-                                    const code = p.plantCode
-                                    const name = p.plantName || code
+                                    const code = p.plantCode || p.plant_code
+                                    const name = p.plantName || p.plant_name || code
                                     return <option key={code} value={code}>{name} ({code})</option>
                                 })}
                             </select>

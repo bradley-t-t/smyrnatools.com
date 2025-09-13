@@ -135,7 +135,8 @@ function OperatorsView({
                 assignedTrainer: op.assigned_trainer,
                 position: op.position,
                 pendingStartDate: op.pending_start_date || '',
-                rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0
+                rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0,
+                phone: op.phone || ''
             }))
             setOperators(formattedOperators)
             localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators))
@@ -186,8 +187,8 @@ function OperatorsView({
                 .from('operators_scheduled_off')
                 .select('id, days_off')
             if (error) throw error
-            const map = {};
-            (data || []).forEach(item => {
+            const map = {}
+            ;(data || []).forEach(item => {
                 map[item.id] = Array.isArray(item.days_off) ? item.days_off : []
             })
             setScheduledOffMap(map)
@@ -279,8 +280,8 @@ function OperatorsView({
     statusesForCounts.map(status => ({
         status,
         count: operators.filter(op => op.status === status).length
-    }));
-    operators.filter(op => op.isTrainer).length;
+    }))
+    operators.filter(op => op.isTrainer).length
     const OverviewPopup = () => (
         <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
             <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
@@ -478,6 +479,7 @@ function OperatorsView({
                                 className={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}>
                                 <div>Plant</div>
                                 <div>Name</div>
+                                <div>Phone</div>
                                 <div>Status</div>
                                 {statusFilter === 'Pending Start' && (
                                     <div>Pending Start</div>
@@ -531,21 +533,23 @@ function OperatorsView({
                                     <colgroup>
                                         {statusFilter === 'Pending Start' ? (
                                             <>
-                                                <col style={{width: '10%'}}/>
-                                                <col style={{width: '24%'}}/>
+                                                <col style={{width: '9%'}}/>
+                                                <col style={{width: '20%'}}/>
+                                                <col style={{width: '14%'}}/>
+                                                <col style={{width: '12%'}}/>
                                                 <col style={{width: '14%'}}/>
                                                 <col style={{width: '16%'}}/>
-                                                <col style={{width: '18%'}}/>
-                                                <col style={{width: '10%'}}/>
-                                                <col style={{width: '8%'}}/>
+                                                <col style={{width: '9%'}}/>
+                                                <col style={{width: '6%'}}/>
                                             </>
                                         ) : (
                                             <>
-                                                <col style={{width: '12%'}}/>
-                                                <col style={{width: '28%'}}/>
-                                                <col style={{width: '16%'}}/>
+                                                <col style={{width: '10%'}}/>
                                                 <col style={{width: '22%'}}/>
+                                                <col style={{width: '16%'}}/>
                                                 <col style={{width: '12%'}}/>
+                                                <col style={{width: '20%'}}/>
+                                                <col style={{width: '10%'}}/>
                                                 <col style={{width: '10%'}}/>
                                             </>
                                         )}
@@ -561,6 +565,7 @@ function OperatorsView({
                                                     <i className="fas fa-exclamation-triangle duplicate-warning-icon" title="Duplicate name" aria-label="Duplicate name"></i>
                                                 )}
                                             </td>
+                                            <td>{operator.phone ? operator.phone : "---"}</td>
                                             <td>
                                                     <span
                                                         className="item-status-dot"

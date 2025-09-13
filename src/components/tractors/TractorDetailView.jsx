@@ -259,7 +259,11 @@ function TractorDetailView({tractorId, onClose}) {
                 vin: overrideValues.vin ?? vin,
                 make: overrideValues.make ?? make,
                 model: overrideValues.model ?? model,
-                year: overrideValues.year ?? year,
+                year: (() => {
+                    const y = overrideValues.year ?? year;
+                    const n = Number(y);
+                    return Number.isFinite(n) && n > 0 ? n : null;
+                })(),
                 freight: overrideValues.freight ?? freight,
                 updatedAt: new Date().toISOString(),
                 updatedBy: userId,
@@ -271,22 +275,23 @@ function TractorDetailView({tractorId, onClose}) {
                 undefined,
                 tractorForHistory
             );
-            setTractor(updatedTractor);
+            const refreshedTractor = await TractorService.fetchTractorById(tractor.id);
+            setTractor(refreshedTractor);
             setMessage('Changes saved successfully! Tractor needs verification.');
             setTimeout(() => setMessage(''), 5000);
             setOriginalValues({
-                truckNumber: updatedTractor.truckNumber,
-                assignedOperator: updatedTractor.assignedOperator,
-                assignedPlant: updatedTractor.assignedPlant,
-                status: updatedTractor.status,
-                cleanlinessRating: updatedTractor.cleanlinessRating,
-                lastServiceDate: updatedTractor.lastServiceDate ? new Date(updatedTractor.lastServiceDate) : null,
-                hasBlower: updatedTractor.hasBlower,
-                vin: updatedTractor.vin,
-                make: updatedTractor.make,
-                model: updatedTractor.model,
-                year: updatedTractor.year,
-                freight: updatedTractor.freight || ''
+                truckNumber: refreshedTractor.truckNumber,
+                assignedOperator: refreshedTractor.assignedOperator,
+                assignedPlant: refreshedTractor.assignedPlant,
+                status: refreshedTractor.status,
+                cleanlinessRating: refreshedTractor.cleanlinessRating,
+                lastServiceDate: refreshedTractor.lastServiceDate ? new Date(refreshedTractor.lastServiceDate) : null,
+                hasBlower: refreshedTractor.hasBlower,
+                vin: refreshedTractor.vin,
+                make: refreshedTractor.make,
+                model: refreshedTractor.model,
+                year: refreshedTractor.year,
+                freight: refreshedTractor.freight || ''
             });
             setHasUnsavedChanges(false);
         } catch (error) {

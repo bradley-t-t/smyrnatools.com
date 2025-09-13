@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import supabase from '../../services/DatabaseService';
+import supabase, {DatabaseService} from '../../services/DatabaseService';
 import './styles/OperatorDetailView.css';
 import OperatorScheduledOffButton from './OperatorScheduledOffView';
 
@@ -24,6 +24,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [hasUnsavedChanges] = useState(false);
     const [scheduledOffDays, setScheduledOffDays] = useState([]);
     const [rating, setRating] = useState(0);
+    const [phone, setPhone] = useState('');
 
     useEffect(() => {
         document.body.classList.add('in-detail-view');
@@ -74,6 +75,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             setAssignedTrainer(data.assigned_trainer || '');
             setHasTrainingPermission(true);
             setRating(typeof data.rating === 'number' ? data.rating : Number(data.rating) || 0);
+            setPhone(data.phone || '');
         } catch (error) {
         }
         setIsLoading(false);
@@ -103,15 +105,10 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
         if (onClose) onClose();
     };
 
-    const getPlantName = (plantCode) => {
-        const plant = plants.find(p => p.plant_code === plantCode);
-        return plant ? plant.plant_name : plantCode || 'No Plant';
-    };
-
     const handleSave = async () => {
         setIsSaving(true);
         setMessage('');
-        let updateObj = {
+        const updateObj = {
             smyrna_id: smyrnaId,
             name: name,
             status: status,
@@ -120,15 +117,34 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             is_trainer: isTrainer,
             assigned_trainer: assignedTrainer,
             pending_start_date: status === 'Pending Start' ? pendingStartDate : null,
-            rating: typeof rating === 'number' ? rating : Number(rating) || 0
-        }
+            rating: typeof rating === 'number' ? rating : Number(rating) || 0,
+            phone: phone || null
+        };
         try {
             const {error} = await supabase
                 .from('operators')
                 .update(updateObj)
                 .eq('employee_id', operatorId);
             if (error) {
-                setMessage('Error saving changes. Please try again.');
+                if (String(error?.code) === '42703' || /column\s+"?phone"?\s+does not exist/i.test(String(error?.message))) {
+                    try {
+                        await DatabaseService.executeRawQuery('alter table public.operators add column if not exists phone text');
+                        const retry = await supabase
+                            .from('operators')
+                            .update(updateObj)
+                            .eq('employee_id', operatorId);
+                        if (retry?.error) {
+                            setMessage('Error saving changes. Please try again.');
+                        } else {
+                            setMessage('Changes saved successfully!');
+                            fetchData();
+                        }
+                    } catch (e) {
+                        setMessage('Error saving changes. Please try again.');
+                    }
+                } else {
+                    setMessage('Error saving changes. Please try again.');
+                }
             } else {
                 setMessage('Changes saved successfully!');
                 fetchData();
@@ -221,6 +237,16 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="form-control"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Phone</label>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="form-control"
+                            placeholder="(555) 555-5555"
                         />
                     </div>
                     <div className="form-group">

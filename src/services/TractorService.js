@@ -113,6 +113,22 @@ export class TractorService {
     static async createHistoryEntry(tractorId, fieldName, oldValue, newValue, changedBy) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
         if (!fieldName) throw new Error('Field name required')
+        const allowedFields = [
+            'truck_number',
+            'assigned_plant',
+            'assigned_operator',
+            'last_service_date',
+            'cleanliness_rating',
+            'has_blower',
+            'vin',
+            'make',
+            'model',
+            'year',
+            'freight',
+            'status'
+        ]
+        const snakeCaseField = fieldName.includes('_') ? fieldName : fieldName.replace(/([A-Z])/g, '_$1').toLowerCase()
+        if (!allowedFields.includes(snakeCaseField)) return null
         let userId = changedBy
         if (!userId) {
             const user = await UserService.getCurrentUser()
@@ -121,7 +137,7 @@ export class TractorService {
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
         const {res, json} = await APIUtility.post('/tractor-service/add-history', {
             tractorId,
-            fieldName,
+            fieldName: snakeCaseField,
             oldValue,
             newValue,
             changedBy: userId
