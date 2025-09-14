@@ -14,7 +14,7 @@ import VerifiedUtility from '../../utils/VerifiedUtility'
 import {UserService} from '../../services/UserService'
 
 export default function DashboardView() {
-    const {preferences, setSelectedRegion} = usePreferences()
+    const {preferences} = usePreferences()
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState('')
@@ -22,7 +22,9 @@ export default function DashboardView() {
     const [hasAllRegionsPermission, setHasAllRegionsPermission] = useState(false)
     const [regionPlants, setRegionPlants] = useState([])
     const [allPlantsCount, setAllPlantsCount] = useState(0)
-    const [selectedPlant, setSelectedPlant] = useState('')
+    const [dashboardRegionCode, setDashboardRegionCode] = useState('')
+    const [dashboardRegionName, setDashboardRegionName] = useState('')
+    const [dashboardPlant, setDashboardPlant] = useState('')
     const [mixers, setMixers] = useState([])
     const [tractors, setTractors] = useState([])
     const [trailers, setTrailers] = useState([])
@@ -46,13 +48,9 @@ export default function DashboardView() {
     const [refreshKey, setRefreshKey] = useState(0)
     const [lastUpdated, setLastUpdated] = useState(null)
 
-    const regionCode = preferences.selectedRegion?.code || ''
-    const regionName = preferences.selectedRegion?.name || ''
-
     useEffect(() => {
         let cancelled = false
         let intervalId
-
         async function init() {
             const isInitial = !lastUpdated
             if (isInitial) setLoading(true)
@@ -84,36 +82,19 @@ export default function DashboardView() {
                 }
                 if (cancelled) return
                 setPermittedRegions(regionsList)
-                let nextRegion
-                const currentCode = regionCode
-                if (allPerm) {
-                    if (currentCode) {
-                        const found = regionsList.find(r => (r.regionCode || r.region_code) === currentCode)
-                        if (found) nextRegion = {
-                            code: found.regionCode || found.region_code || '',
-                            name: found.regionName || found.region_name || ''
-                        }
-                        else nextRegion = {code: '', name: ''}
-                    } else {
-                        nextRegion = {code: '', name: ''}
-                    }
-                } else {
-                    const found = regionsList.find(r => (r.regionCode || r.region_code) === currentCode) || regionsList[0]
-                    if (found) nextRegion = {
-                        code: found.regionCode || found.region_code || '',
-                        name: found.regionName || found.region_name || ''
-                    }
-                    else nextRegion = {code: '', name: ''}
+                let nextRegionCode = dashboardRegionCode
+                let nextRegionName = dashboardRegionName
+                if (!nextRegionCode && regionsList.length > 0) {
+                    nextRegionCode = regionsList[0].regionCode || regionsList[0].region_code || ''
+                    nextRegionName = regionsList[0].regionName || regionsList[0].region_name || ''
+                    setDashboardRegionCode(nextRegionCode)
+                    setDashboardRegionName(nextRegionName)
                 }
-                if (nextRegion.code !== regionCode || nextRegion.name !== regionName) {
-                    setSelectedRegion(nextRegion.code, nextRegion.name)
-                    setSelectedPlant('')
-                }
-                const plantsForRegion = nextRegion.code ? await RegionService.fetchRegionPlants(nextRegion.code).catch(() => []) : []
+                const plantsForRegion = nextRegionCode ? await RegionService.fetchRegionPlants(nextRegionCode).catch(() => []) : []
                 if (cancelled) return
                 setRegionPlants(plantsForRegion)
                 const basePlantCodes = new Set((plantsForRegion || []).map(p => String(((p.plantCode || p.plant_code) || '')).trim()).filter(Boolean))
-                const effectivePlantCodes = selectedPlant ? new Set([String(selectedPlant).trim()]) : basePlantCodes
+                const effectivePlantCodes = dashboardPlant ? new Set([String(dashboardPlant).trim()]) : basePlantCodes
                 const [mix, trac, trail, equip, pick, ops] = await Promise.all([
                     MixerService.getAllMixers().catch(() => []),
                     TractorService.getAllTractors().catch(() => []),
@@ -157,9 +138,7 @@ export default function DashboardView() {
                     const userIdsWithManagerRole = new Set((permissions || []).filter(p => managerRoleIds.has(p.role_id)).map(p => p.user_id))
                     const plantCodesSet = (effectivePlantCodes && effectivePlantCodes.size > 0) ? effectivePlantCodes : null
                     mgrCount = (profiles || []).filter(pr => userIdsWithManagerRole.has(pr.id) && (!plantCodesSet || plantCodesSet.has(String(pr.plant_code || '').trim()))).length
-                } catch {
-                    mgrCount = 0
-                }
+                } catch { mgrCount = 0 }
                 setManagersCount(mgrCount)
                 try {
                     const listBase = supabase.from('list_items')
@@ -277,7 +256,6 @@ export default function DashboardView() {
                 }
             }
         }
-
         init()
         intervalId = setInterval(() => {
             setRefreshKey(v => v + 1)
@@ -286,27 +264,22 @@ export default function DashboardView() {
             cancelled = true
             if (intervalId) clearInterval(intervalId)
         }
-    }, [regionCode, selectedPlant, refreshKey])
+    }, [dashboardRegionCode, dashboardPlant, refreshKey])
 
     const activeMixers = useMemo(() => mixers.filter(m => m.status === 'Active'), [mixers])
     const shopMixers = useMemo(() => mixers.filter(m => m.status === 'In Shop'), [mixers])
-
     const activeTractors = useMemo(() => tractors.filter(t => t.status === 'Active'), [tractors])
     const shopTractors = useMemo(() => tractors.filter(t => t.status === 'In Shop'), [tractors])
-
     const activeTrailers = useMemo(() => trailers.filter(t => t.status === 'Active'), [trailers])
     const shopTrailers = useMemo(() => trailers.filter(t => t.status === 'In Shop'), [trailers])
-
     const activeEquipment = useMemo(() => equipment.filter(e => e.status === 'Active'), [equipment])
     const shopEquipment = useMemo(() => equipment.filter(e => e.status === 'In Shop'), [equipment])
-
     const activePickups = useMemo(() => pickups.filter(p => p.status === 'Active'), [pickups])
     const inShopPickups = useMemo(() => pickups.filter(p => p.status === 'In Shop'), [pickups])
     const stationaryPickups = useMemo(() => pickups.filter(p => p.status === 'Stationary'), [pickups])
     const soldPickups = useMemo(() => pickups.filter(p => p.status === 'Sold'), [pickups])
     const sparePickups = useMemo(() => pickups.filter(p => p.status === 'Spare'), [pickups])
     const retiredPickups = useMemo(() => pickups.filter(p => p.status === 'Retired'), [pickups])
-
     const assignedOperatorIds = useMemo(() => new Set(activeMixers.map(m => m.assignedOperator).filter(Boolean)), [activeMixers])
     const assignedMixerOperatorIds = useMemo(() => new Set(activeMixers.map(m => m.assignedOperator).filter(Boolean)), [activeMixers])
     const assignedTractorOperatorIds = useMemo(() => new Set(activeTractors.map(t => t.assignedOperator).filter(Boolean)), [activeTractors])
@@ -315,55 +288,50 @@ export default function DashboardView() {
     const assignedMixerOperators = useMemo(() => activeOperators.filter(o => assignedMixerOperatorIds.has(o.employeeId)), [activeOperators, assignedMixerOperatorIds])
     const assignedTractorOperators = useMemo(() => activeOperators.filter(o => assignedTractorOperatorIds.has(o.employeeId)), [activeOperators, assignedTractorOperatorIds])
     const unassignedActiveOperators = useMemo(() => Math.max(0, activeOperators.length - assignedOperators.length), [activeOperators, assignedOperators])
-
     const daysSince = d => d ? Math.ceil((Date.now() - new Date(d).getTime()) / 86400000) : null
-
     const overdueDays = 90
     const isServiceOverdue = d => {
         if (!d) return true
         const diff = daysSince(d)
         return typeof diff === 'number' ? diff > overdueDays : true
     }
-
     const countOverdue = arr => (arr || []).reduce((s, x) => s + (isServiceOverdue(x.lastServiceDate) ? 1 : 0), 0)
-
     const verifiedFor = arr => {
         const total = arr.length
         if (!total) return {count: 0, percent: 0}
         const verifiedCount = arr.filter(a => VerifiedUtility.isVerified(a.updatedLast, a.updatedAt, a.updatedBy)).length
         return {count: verifiedCount, percent: Math.round((verifiedCount / total) * 100)}
     }
-
     const mixersVerified = useMemo(() => verifiedFor(mixers), [mixers])
     const tractorsVerified = useMemo(() => verifiedFor(tractors), [tractors])
-
     const mixersOverdue = useMemo(() => countOverdue(mixers), [mixers])
     const tractorsOverdue = useMemo(() => countOverdue(tractors), [tractors])
     const trailersOverdue = useMemo(() => countOverdue(trailers), [trailers])
     const equipmentOverdue = useMemo(() => countOverdue(equipment), [equipment])
-
-    const plantCount = selectedPlant ? 1 : (regionCode ? regionPlants.length : allPlantsCount)
-
+    const plantCount = dashboardPlant ? 1 : (dashboardRegionCode ? regionPlants.length : allPlantsCount)
     const onRegionChange = e => {
         const code = e.target.value
         if (!code && !hasAllRegionsPermission) return
+        let name = ''
         if (!code && hasAllRegionsPermission) {
-            setSelectedRegion('', '')
-            setSelectedPlant('')
+            setDashboardRegionCode('')
+            setDashboardRegionName('')
+            setDashboardPlant('')
             return
         }
         const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code)
-        if (r) setSelectedRegion(r.regionCode || r.region_code, r.regionName || r.region_name)
-        setSelectedPlant('')
+        if (r) {
+            name = r.regionName || r.region_name || ''
+            setDashboardRegionCode(r.regionCode || r.region_code)
+            setDashboardRegionName(name)
+        }
+        setDashboardPlant('')
     }
-
     const onPlantChange = e => {
-        setSelectedPlant(e.target.value)
+        setDashboardPlant(e.target.value)
     }
-
     const onRetry = () => setRefreshKey(v => v + 1)
     const onRefresh = () => setRefreshKey(v => v + 1)
-
     const timeAgo = d => {
         if (!d) return ''
         const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000)
@@ -372,23 +340,20 @@ export default function DashboardView() {
         if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
         return `${Math.floor(diff / 86400)}d ago`
     }
-
     return (
         <div className="dashboard-container">
             <div className="dashboard-header">
                 <h1>Dashboard</h1>
                 <div className="dashboard-actions">
                     <div className="toolbar-group">
-                        <select className="ios-select" value={regionCode} onChange={onRegionChange} aria-label="Region">
+                        <select className="ios-select" value={dashboardRegionCode} onChange={onRegionChange} aria-label="Region">
                             {hasAllRegionsPermission && <option value="">All Regions</option>}
                             {permittedRegions.map(r => (
-                                <option key={r.regionCode || r.region_code}
-                                        value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
+                                <option key={r.regionCode || r.region_code} value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
                             ))}
                         </select>
-                        {regionCode ? (
-                            <select className="ios-select" value={selectedPlant} onChange={onPlantChange}
-                                    aria-label="Plant">
+                        {dashboardRegionCode ? (
+                            <select className="ios-select" value={dashboardPlant} onChange={onPlantChange} aria-label="Plant">
                                 <option value="">All Plants</option>
                                 {regionPlants.map(p => {
                                     const code = p.plantCode || p.plant_code
@@ -399,9 +364,7 @@ export default function DashboardView() {
                         ) : null}
                     </div>
                     <div className="toolbar-group">
-                        <div className="updated-at"><span
-                            className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span>
-                        </div>
+                        <div className="updated-at"><span className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span></div>
                         <button className="btn ghost" onClick={onRefresh} aria-label="Refresh" disabled={refreshing}>
                             {refreshing ? <span className="mini-loader"/> : null}
                             <span>Refresh</span>
@@ -411,7 +374,7 @@ export default function DashboardView() {
             </div>
             {error && (
                 <div className="error-banner" role="alert">
-                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
                         <span>{error}</span>
                         <button className="btn danger ghost" onClick={onRetry}>Retry</button>
                     </div>
@@ -419,17 +382,13 @@ export default function DashboardView() {
             )}
             <div className="content-container">
                 {loading ? (
-                    <div className="loading-container">
-                        <div className="loader"/>
-                    </div>
+                    <div className="loading-container"><div className="loader"/></div>
                 ) : (
                     <div className="dashboard-grid">
                         <div className="kpi-card">
                             <div className="kpi-title">Region</div>
-                            <div
-                                className="kpi-value">{regionCode ? `${regionName || regionCode}` : 'All Regions'}</div>
-                            <div
-                                className="kpi-sub">Plants {plantCount}{selectedPlant ? ` • Plant ${selectedPlant}` : ''}</div>
+                            <div className="kpi-value">{dashboardRegionCode ? `${dashboardRegionName || dashboardRegionCode}` : 'All Regions'}</div>
+                            <div className="kpi-sub">Plants {plantCount}{dashboardPlant ? ` • Plant ${dashboardPlant}` : ''}</div>
                         </div>
                         <div className="kpi-card">
                             <div className="kpi-title">Mixers</div>
