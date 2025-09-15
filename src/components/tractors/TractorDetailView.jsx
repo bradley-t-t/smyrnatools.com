@@ -334,7 +334,7 @@ function TractorDetailView({tractorId, onClose}) {
         setIsSaving(true)
         try {
             if (hasUnsavedChanges) {
-                await handleSave().catch(error => {
+                await handleSave().catch(() => {
                     alert('Failed to save your changes before verification. Please try saving manually first.')
                     throw new Error('Failed to save changes before verification')
                 })
@@ -346,6 +346,14 @@ function TractorDetailView({tractorId, onClose}) {
                 setTractor(updated)
                 setMessage('Tractor verified successfully!')
                 setTimeout(() => setMessage(''), 3000)
+                if (updated.updatedBy) {
+                    try {
+                        const userName = await UserService.getUserDisplayName(updated.updatedBy)
+                        setUpdatedByEmail(userName)
+                    } catch {
+                        setUpdatedByEmail('Unknown User')
+                    }
+                }
             }
             setHasUnsavedChanges(false)
         } catch (error) {

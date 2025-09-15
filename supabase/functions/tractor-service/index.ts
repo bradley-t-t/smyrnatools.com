@@ -653,6 +653,87 @@ Deno.serve(async (req) => {
                 });
                 return new Response(JSON.stringify({data: filtered}), {headers: corsHeaders});
             }
+            case "fetch-cleanliness-history": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
+                const tractorId = typeof body?.tractorId === "string" ? body.tractorId : null;
+                const months = Number.isInteger(body?.months) ? body.months : 6;
+                const threshold = new Date();
+                threshold.setMonth(threshold.getMonth() - months);
+                let query = supabase
+                    .from("tractors_history")
+                    .select("*")
+                    .eq("field_name", "cleanliness_rating")
+                    .gte("changed_at", threshold.toISOString())
+                    .order("changed_at", {ascending: true})
+                    .limit(200);
+                if (tractorId) query = query.eq("tractor_id", tractorId);
+                const {data, error} = await query;
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                return new Response(JSON.stringify({data: data ?? []}), {headers: corsHeaders});
+            }
+            case "add-history": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
+                const tractorId = typeof body?.tractorId === "string" ? body.tractorId : null;
+                const fieldName = typeof body?.fieldName === "string" ? body.fieldName : null;
+                const oldValue = body?.oldValue == null ? null : String(body.oldValue);
+                const newValue = body?.newValue == null ? null : String(body.newValue);
+                const changedBy = typeof body?.changedBy === "string" && body.changedBy ? body.changedBy : null;
+                if (!tractorId) return new Response(JSON.stringify({error: "Tractor ID is required"}), {status: 400, headers: corsHeaders});
+                if (!fieldName) return new Response(JSON.stringify({error: "Field name required"}), {status: 400, headers: corsHeaders});
+                let userId = changedBy;
+                if (!userId) userId = (req.headers.get("X-User-Id") || "00000000-0000-0000-0000-000000000000");
+                const record = {
+                    tractor_id: tractorId,
+                    field_name: fieldName,
+                    old_value: oldValue,
+                    new_value: newValue,
+                    changed_at: nowIso(),
+                    changed_by: userId
+                };
+                const {data, error} = await supabase.from("tractors_history").insert(record).select().maybeSingle();
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                return new Response(JSON.stringify({data}), {headers: corsHeaders});
+            }
+            case "verify": {
+                let body: any;
+                try {
+                    body = await req.json();
+                } catch {
+                    return new Response(JSON.stringify({error: "Invalid JSON in request body"}), {
+                        status: 400,
+                        headers: corsHeaders
+                    });
+                }
+                const id = typeof body?.id === "string" ? body.id : (typeof body?.tractorId === "string" ? body.tractorId : null);
+                let userId = typeof body?.userId === "string" && body.userId ? body.userId : (req.headers.get("X-User-Id") || null);
+                if (!id) return new Response(JSON.stringify({error: "Tractor ID is required"}), {status: 400, headers: corsHeaders});
+                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                const {data, error} = await supabase.from("tractors").update({
+                    updated_last: nowIso(),
+                    updated_by: userId
+                }).eq("id", id).select().maybeSingle();
+                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                return new Response(JSON.stringify({data}), {headers: corsHeaders});
+            }
             default:
                 return new Response(JSON.stringify({error: "Unknown endpoint"}), {
                     status: 404,

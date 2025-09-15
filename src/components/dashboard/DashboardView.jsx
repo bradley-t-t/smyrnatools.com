@@ -287,6 +287,7 @@ export default function DashboardView() {
     const assignedOperators = useMemo(() => activeOperators.filter(o => assignedOperatorIds.has(o.employeeId)), [activeOperators, assignedOperatorIds])
     const assignedMixerOperators = useMemo(() => activeOperators.filter(o => assignedMixerOperatorIds.has(o.employeeId)), [activeOperators, assignedMixerOperatorIds])
     const assignedTractorOperators = useMemo(() => activeOperators.filter(o => assignedTractorOperatorIds.has(o.employeeId)), [activeOperators, assignedTractorOperatorIds])
+    const pendingStartOperators = useMemo(() => operators.filter(o => o.status === 'Pending Start'), [operators])
     const unassignedActiveOperators = useMemo(() => Math.max(0, activeOperators.length - assignedOperators.length), [activeOperators, assignedOperators])
     const daysSince = d => d ? Math.ceil((Date.now() - new Date(d).getTime()) / 86400000) : null
     const overdueDays = 90
@@ -469,6 +470,7 @@ export default function DashboardView() {
                                 <div className="kpi-pill">Unassigned {unassignedActiveOperators}</div>
                                 <div className="kpi-pill">Assigned to Mixers {assignedMixerOperators.length}</div>
                                 <div className="kpi-pill">Assigned to Tractors {assignedTractorOperators.length}</div>
+                                <div className="kpi-pill">Pending Start {pendingStartOperators.length}</div>
                             </div>
                         </div>
                         <div className="kpi-card">

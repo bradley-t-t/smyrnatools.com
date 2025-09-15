@@ -97,8 +97,7 @@ export class TractorService {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) throw new Error('User ID is required')
-        const payload = {id, tractor: {updatedLast: new Date().toISOString()}, userId}
-        const {res, json} = await APIUtility.post('/tractor-service/update', payload)
+        const {res, json} = await APIUtility.post('/tractor-service/verify', {id, userId})
         if (!res.ok) throw new Error(json?.error || 'Failed to verify tractor')
         return Tractor.fromApiFormat(json?.data)
     }
