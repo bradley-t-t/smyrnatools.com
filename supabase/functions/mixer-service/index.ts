@@ -25,6 +25,30 @@ function toDbTimestamp(v: any) {
     return null;
 }
 
+function normalize(field: string, value: any): any {
+    if (value === undefined || value === null) return null;
+    const f = String(field || "").toLowerCase();
+    let v: any = value;
+    if (typeof v === "string") v = v.trim();
+    if (v === "") return null;
+    if (f.includes("date")) {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? String(v) : d.toISOString().split("T")[0];
+    }
+    if (f.includes("rating") || f.includes("hours") || f.includes("mileage") || f.includes("year")) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : v;
+    }
+    if (f.startsWith("has_") || f.startsWith("is_")) {
+        if (v === true || v === "true" || v === 1 || v === "1") return true;
+        if (v === false || v === "false" || v === 0 || v === "0") return false;
+    }
+    if (f.startsWith("assigned_") || f.endsWith("_id") || f.includes("operator") || f.includes("tractor")) {
+        if (v === "0" || v === 0) return null;
+    }
+    return v;
+}
+
 function decodeBase64ToUint8Array(base64: string): Uint8Array {
     const binary_string = atob(base64);
     const len = binary_string.length;
@@ -247,30 +271,28 @@ Deno.serve(async (req) => {
                     changed_by: string;
                 }> = [];
                 const fields = [
-                    {field: "truckNumber", db: "truck_number"},
-                    {field: "assignedPlant", db: "assigned_plant"},
-                    {field: "assignedOperator", db: "assigned_operator"},
-                    {field: "lastServiceDate", db: "last_service_date", type: "date"},
-                    {field: "lastChipDate", db: "last_chip_date", type: "date"},
-                    {field: "cleanlinessRating", db: "cleanliness_rating", type: "number"},
-                    {field: "vin", db: "vin"},
-                    {field: "make", db: "make"},
-                    {field: "model", db: "model"},
-                    {field: "year", db: "year", type: "number"},
-                    {field: "status", db: "status"}
+                    {field: "truck_number"},
+                    {field: "assigned_plant"},
+                    {field: "assigned_operator"},
+                    {field: "last_service_date"},
+                    {field: "last_chip_date"},
+                    {field: "cleanliness_rating"},
+                    {field: "vin"},
+                    {field: "make"},
+                    {field: "model"},
+                    {field: "year"},
+                    {field: "status"}
                 ];
                 for (const f of fields) {
-                    const beforeVal = (current as any)[f.db];
-                    const afterVal = (apiData as any)[f.db];
-                    const norm = (v: any) => v === undefined ? null : (v === null ? null : (f.type === "date" ? toDbTimestamp(v) : (f.type === "number" ? (typeof v === "number" ? v : Number(v)) : v)));
-                    const b = norm(beforeVal);
-                    const a = norm(afterVal);
-                    const changed = f.type === "number" ? (Number(b) !== Number(a)) : (String(b ?? "") !== String(a ?? ""));
-                    if (changed) diffs.push({
+                    const beforeVal = (current as any)[f.field];
+                    const afterVal = (apiData as any)[f.field];
+                    const b = normalize(f.field, beforeVal);
+                    const a = normalize(f.field, afterVal);
+                    if (b !== a) diffs.push({
                         mixer_id: id,
                         field_name: f.field,
-                        old_value: b?.toString?.() ?? null,
-                        new_value: a?.toString?.() ?? null,
+                        old_value: b != null ? String(b) : null,
+                        new_value: a != null ? String(a) : null,
                         changed_at: nowIso(),
                         changed_by: userId
                     });
@@ -752,13 +774,16 @@ Deno.serve(async (req) => {
                     status: 400,
                     headers: corsHeaders
                 });
+                const b = normalize(fieldName, oldValue);
+                const a = normalize(fieldName, newValue);
+                if (b === a) return new Response(JSON.stringify({data: null, skipped: true}), {headers: corsHeaders});
                 let userId = changedBy;
                 if (!userId) userId = (req.headers.get("X-User-Id") || "00000000-0000-0000-0000-000000000000");
                 const record = {
                     mixer_id: mixerId,
                     field_name: fieldName,
-                    old_value: oldValue,
-                    new_value: newValue,
+                    old_value: b != null ? String(b) : null,
+                    new_value: a != null ? String(a) : null,
                     changed_at: nowIso(),
                     changed_by: userId
                 };

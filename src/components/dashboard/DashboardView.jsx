@@ -51,6 +51,7 @@ export default function DashboardView() {
     useEffect(() => {
         let cancelled = false
         let intervalId
+
         async function init() {
             const isInitial = !lastUpdated
             if (isInitial) setLoading(true)
@@ -138,7 +139,9 @@ export default function DashboardView() {
                     const userIdsWithManagerRole = new Set((permissions || []).filter(p => managerRoleIds.has(p.role_id)).map(p => p.user_id))
                     const plantCodesSet = (effectivePlantCodes && effectivePlantCodes.size > 0) ? effectivePlantCodes : null
                     mgrCount = (profiles || []).filter(pr => userIdsWithManagerRole.has(pr.id) && (!plantCodesSet || plantCodesSet.has(String(pr.plant_code || '').trim()))).length
-                } catch { mgrCount = 0 }
+                } catch {
+                    mgrCount = 0
+                }
                 setManagersCount(mgrCount)
                 try {
                     const listBase = supabase.from('list_items')
@@ -256,6 +259,7 @@ export default function DashboardView() {
                 }
             }
         }
+
         init()
         intervalId = setInterval(() => {
             setRefreshKey(v => v + 1)
@@ -347,14 +351,17 @@ export default function DashboardView() {
                 <h1>Dashboard</h1>
                 <div className="dashboard-actions">
                     <div className="toolbar-group">
-                        <select className="ios-select" value={dashboardRegionCode} onChange={onRegionChange} aria-label="Region">
+                        <select className="ios-select" value={dashboardRegionCode} onChange={onRegionChange}
+                                aria-label="Region">
                             {hasAllRegionsPermission && <option value="">All Regions</option>}
                             {permittedRegions.map(r => (
-                                <option key={r.regionCode || r.region_code} value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
+                                <option key={r.regionCode || r.region_code}
+                                        value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
                             ))}
                         </select>
                         {dashboardRegionCode ? (
-                            <select className="ios-select" value={dashboardPlant} onChange={onPlantChange} aria-label="Plant">
+                            <select className="ios-select" value={dashboardPlant} onChange={onPlantChange}
+                                    aria-label="Plant">
                                 <option value="">All Plants</option>
                                 {regionPlants.map(p => {
                                     const code = p.plantCode || p.plant_code
@@ -365,7 +372,9 @@ export default function DashboardView() {
                         ) : null}
                     </div>
                     <div className="toolbar-group">
-                        <div className="updated-at"><span className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span></div>
+                        <div className="updated-at"><span
+                            className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span>
+                        </div>
                         <button className="btn ghost" onClick={onRefresh} aria-label="Refresh" disabled={refreshing}>
                             {refreshing ? <span className="mini-loader"/> : null}
                             <span>Refresh</span>
@@ -375,7 +384,7 @@ export default function DashboardView() {
             </div>
             {error && (
                 <div className="error-banner" role="alert">
-                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
                         <span>{error}</span>
                         <button className="btn danger ghost" onClick={onRetry}>Retry</button>
                     </div>
@@ -383,13 +392,17 @@ export default function DashboardView() {
             )}
             <div className="content-container">
                 {loading ? (
-                    <div className="loading-container"><div className="loader"/></div>
+                    <div className="loading-container">
+                        <div className="loader"/>
+                    </div>
                 ) : (
                     <div className="dashboard-grid">
                         <div className="kpi-card">
                             <div className="kpi-title">Region</div>
-                            <div className="kpi-value">{dashboardRegionCode ? `${dashboardRegionName || dashboardRegionCode}` : 'All Regions'}</div>
-                            <div className="kpi-sub">Plants {plantCount}{dashboardPlant ? ` • Plant ${dashboardPlant}` : ''}</div>
+                            <div
+                                className="kpi-value">{dashboardRegionCode ? `${dashboardRegionName || dashboardRegionCode}` : 'All Regions'}</div>
+                            <div
+                                className="kpi-sub">Plants {plantCount}{dashboardPlant ? ` • Plant ${dashboardPlant}` : ''}</div>
                         </div>
                         <div className="kpi-card">
                             <div className="kpi-title">Mixers</div>

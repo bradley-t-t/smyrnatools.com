@@ -25,6 +25,30 @@ function toDbTimestamp(v: any) {
     return null;
 }
 
+function normalize(field: string, value: any): any {
+    if (value === undefined || value === null) return null;
+    const f = String(field || "").toLowerCase();
+    let v: any = value;
+    if (typeof v === "string") v = v.trim();
+    if (v === "") return null;
+    if (f.includes("date")) {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? String(v) : d.toISOString().split("T")[0];
+    }
+    if (f.includes("rating") || f.includes("hours") || f.includes("mileage") || f.includes("year")) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : v;
+    }
+    if (f.startsWith("has_") || f.startsWith("is_") || f.includes("verification")) {
+        if (v === true || v === "true" || v === 1 || v === "1") return true;
+        if (v === false || v === "false" || v === 0 || v === "0") return false;
+    }
+    if (f.startsWith("assigned_") || f.endsWith("_id") || f.includes("operator")) {
+        if (v === "0" || v === 0) return null;
+    }
+    return v;
+}
+
 Deno.serve(async (req) => {
     if (req.method === "OPTIONS") return handleOptions();
     try {
@@ -272,47 +296,30 @@ Deno.serve(async (req) => {
                     changed_at: string;
                     changed_by: string;
                 }> = [];
-                const allowedFieldNames = new Set([
-                    "truck_number",
-                    "assigned_plant",
-                    "assigned_operator",
-                    "last_service_date",
-                    "cleanliness_rating",
-                    "has_blower",
-                    "vin",
-                    "make",
-                    "model",
-                    "year",
-                    "freight",
-                    "status"
-                ]);
                 const fields = [
-                    {field: "truckNumber", db: "truck_number"},
-                    {field: "assignedPlant", db: "assigned_plant"},
-                    {field: "assignedOperator", db: "assigned_operator"},
-                    {field: "lastServiceDate", db: "last_service_date", type: "date"},
-                    {field: "cleanlinessRating", db: "cleanliness_rating", type: "number"},
-                    {field: "hasBlower", db: "has_blower"},
-                    {field: "vin", db: "vin"},
-                    {field: "make", db: "make"},
-                    {field: "model", db: "model"},
-                    {field: "year", db: "year", type: "number"},
-                    {field: "status", db: "status"},
-                    {field: "freight", db: "freight"}
+                    {db: "truck_number"},
+                    {db: "assigned_plant"},
+                    {db: "assigned_operator"},
+                    {db: "last_service_date"},
+                    {db: "cleanliness_rating"},
+                    {db: "has_blower"},
+                    {db: "vin"},
+                    {db: "make"},
+                    {db: "model"},
+                    {db: "year"},
+                    {db: "freight"},
+                    {db: "status"}
                 ];
                 for (const f of fields) {
-                    if (!allowedFieldNames.has(f.db)) continue;
                     const beforeVal = (current as any)[f.db];
                     const afterVal = (apiData as any)[f.db];
-                    const norm = (v: any) => v === undefined ? null : (v === null ? null : (f.type === "date" ? toDbTimestamp(v) : (f.type === "number" ? (typeof v === "number" ? String(v) : String(Number(v))) : String(v))));
-                    const b = norm(beforeVal);
-                    const a = norm(afterVal);
-                    const changed = f.type === "number" ? (Number(b) !== Number(a)) : (String(b ?? "") !== String(a ?? ""));
-                    if (changed) diffs.push({
+                    const b = normalize(f.db, beforeVal);
+                    const a = normalize(f.db, afterVal);
+                    if (b !== a) diffs.push({
                         tractor_id: id,
                         field_name: f.db,
-                        old_value: b ?? null,
-                        new_value: a ?? null,
+                        old_value: b != null ? String(b) : null,
+                        new_value: a != null ? String(a) : null,
                         changed_at: nowIso(),
                         changed_by: userId
                     });
@@ -646,11 +653,7 @@ Deno.serve(async (req) => {
                 });
                 const now = new Date();
                 const thresholdDate = new Date(now.getTime() - dayThreshold * 24 * 60 * 60 * 1000);
-                const filtered = (data ?? []).filter((tractor: any) => {
-                    if (!tractor.last_service_date) return true;
-                    const lastService = new Date(tractor.last_service_date);
-                    return lastService < thresholdDate;
-                });
+                const filtered = (data ?? []).filter((t: any) => !t.last_service_date || new Date(t.last_service_date) < thresholdDate);
                 return new Response(JSON.stringify({data: filtered}), {headers: corsHeaders});
             }
             case "fetch-cleanliness-history": {
@@ -667,13 +670,7 @@ Deno.serve(async (req) => {
                 const months = Number.isInteger(body?.months) ? body.months : 6;
                 const threshold = new Date();
                 threshold.setMonth(threshold.getMonth() - months);
-                let query = supabase
-                    .from("tractors_history")
-                    .select("*")
-                    .eq("field_name", "cleanliness_rating")
-                    .gte("changed_at", threshold.toISOString())
-                    .order("changed_at", {ascending: true})
-                    .limit(200);
+                let query = supabase.from("tractors_history").select("*").eq("field_name", "cleanliness_rating").gte("changed_at", threshold.toISOString()).order("changed_at", {ascending: true}).limit(200);
                 if (tractorId) query = query.eq("tractor_id", tractorId);
                 const {data, error} = await query;
                 if (error) return new Response(JSON.stringify({error: error.message}), {
@@ -694,23 +691,35 @@ Deno.serve(async (req) => {
                 }
                 const tractorId = typeof body?.tractorId === "string" ? body.tractorId : null;
                 const fieldName = typeof body?.fieldName === "string" ? body.fieldName : null;
-                const oldValue = body?.oldValue == null ? null : String(body.oldValue);
-                const newValue = body?.newValue == null ? null : String(body.newValue);
+                const oldValueRaw = body?.oldValue == null ? null : String(body.oldValue);
+                const newValueRaw = body?.newValue == null ? null : String(body.newValue);
                 const changedBy = typeof body?.changedBy === "string" && body.changedBy ? body.changedBy : null;
-                if (!tractorId) return new Response(JSON.stringify({error: "Tractor ID is required"}), {status: 400, headers: corsHeaders});
-                if (!fieldName) return new Response(JSON.stringify({error: "Field name required"}), {status: 400, headers: corsHeaders});
+                if (!tractorId) return new Response(JSON.stringify({error: "Tractor ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (!fieldName) return new Response(JSON.stringify({error: "Field name required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                const b = normalize(fieldName, oldValueRaw);
+                const a = normalize(fieldName, newValueRaw);
+                if (b === a) return new Response(JSON.stringify({data: null, skipped: true}), {headers: corsHeaders});
                 let userId = changedBy;
                 if (!userId) userId = (req.headers.get("X-User-Id") || "00000000-0000-0000-0000-000000000000");
                 const record = {
                     tractor_id: tractorId,
                     field_name: fieldName,
-                    old_value: oldValue,
-                    new_value: newValue,
+                    old_value: b != null ? String(b) : null,
+                    new_value: a != null ? String(a) : null,
                     changed_at: nowIso(),
                     changed_by: userId
                 };
                 const {data, error} = await supabase.from("tractors_history").insert(record).select().maybeSingle();
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data}), {headers: corsHeaders});
             }
             case "verify": {
@@ -725,25 +734,28 @@ Deno.serve(async (req) => {
                 }
                 const id = typeof body?.id === "string" ? body.id : (typeof body?.tractorId === "string" ? body.tractorId : null);
                 let userId = typeof body?.userId === "string" && body.userId ? body.userId : (req.headers.get("X-User-Id") || null);
-                if (!id) return new Response(JSON.stringify({error: "Tractor ID is required"}), {status: 400, headers: corsHeaders});
-                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {status: 400, headers: corsHeaders});
+                if (!id) return new Response(JSON.stringify({error: "Tractor ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+                if (!userId) return new Response(JSON.stringify({error: "User ID is required"}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 const {data, error} = await supabase.from("tractors").update({
                     updated_last: nowIso(),
                     updated_by: userId
                 }).eq("id", id).select().maybeSingle();
-                if (error) return new Response(JSON.stringify({error: error.message}), {status: 400, headers: corsHeaders});
+                if (error) return new Response(JSON.stringify({error: error.message}), {
+                    status: 400,
+                    headers: corsHeaders
+                });
                 return new Response(JSON.stringify({data}), {headers: corsHeaders});
             }
             default:
-                return new Response(JSON.stringify({error: "Unknown endpoint"}), {
-                    status: 404,
-                    headers: corsHeaders
-                });
+                return new Response(JSON.stringify({error: "Unknown endpoint"}), {status: 404, headers: corsHeaders});
         }
     } catch (e) {
-        return new Response(JSON.stringify({error: e.message}), {
-            status: 500,
-            headers: corsHeaders
-        });
+        return new Response(JSON.stringify({error: (e as Error).message}), {status: 500, headers: corsHeaders});
     }
 });

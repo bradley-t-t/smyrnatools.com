@@ -25,6 +25,30 @@ function toDbTimestamp(v: any) {
     return null;
 }
 
+function normalize(field: string, value: any): any {
+    if (value === undefined || value === null) return null;
+    const f = String(field || "").toLowerCase();
+    let v: any = value;
+    if (typeof v === "string") v = v.trim();
+    if (v === "") return null;
+    if (f.includes("date")) {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? String(v) : d.toISOString().split("T")[0];
+    }
+    if (f.includes("rating") || f.includes("hours") || f.includes("mileage") || f.includes("year")) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : v;
+    }
+    if (f.startsWith("has_") || f.startsWith("is_")) {
+        if (v === true || v === "true" || v === 1 || v === "1") return true;
+        if (v === false || v === "false" || v === 0 || v === "0") return false;
+    }
+    if (f.startsWith("assigned_") || f.endsWith("_id")) {
+        if (v === "0" || v === 0) return null;
+    }
+    return v;
+}
+
 Deno.serve(async (req) => {
     if (req.method === "OPTIONS") return handleOptions();
     try {
@@ -254,26 +278,24 @@ Deno.serve(async (req) => {
                     {db: "assigned_plant"},
                     {db: "equipment_type"},
                     {db: "status"},
-                    {db: "last_service_date", type: "date"},
-                    {db: "hours_mileage", type: "number"},
-                    {db: "cleanliness_rating", type: "number"},
-                    {db: "condition_rating", type: "number"},
+                    {db: "last_service_date"},
+                    {db: "hours_mileage"},
+                    {db: "cleanliness_rating"},
+                    {db: "condition_rating"},
                     {db: "equipment_make"},
                     {db: "equipment_model"},
-                    {db: "year_made", type: "number"}
+                    {db: "year_made"}
                 ];
                 for (const f of fields) {
                     const beforeVal = (current as any)[f.db];
                     const afterVal = (apiData as any)[f.db];
-                    const norm = (v: any) => v === undefined ? null : (v === null ? null : (f.type === "date" ? toDbTimestamp(v) : (f.type === "number" ? (typeof v === "number" ? v : Number(v)) : v)));
-                    const b = norm(beforeVal);
-                    const a = norm(afterVal);
-                    const changed = f.type === "number" ? (Number(b) !== Number(a)) : (String(b ?? "") !== String(a ?? ""));
-                    if (changed) diffs.push({
+                    const b = normalize(f.db, beforeVal);
+                    const a = normalize(f.db, afterVal);
+                    if (b !== a) diffs.push({
                         equipment_id: id,
                         field_name: f.db,
-                        old_value: b?.toString?.() ?? null,
-                        new_value: a?.toString?.() ?? null,
+                        old_value: b != null ? String(b) : null,
+                        new_value: a != null ? String(a) : null,
                         changed_at: nowIso(),
                         changed_by: userId
                     });
@@ -653,13 +675,16 @@ Deno.serve(async (req) => {
                     status: 400,
                     headers: corsHeaders
                 });
+                const b = normalize(fieldName, oldValue);
+                const a = normalize(fieldName, newValue);
+                if (b === a) return new Response(JSON.stringify({data: null, skipped: true}), {headers: corsHeaders});
                 let userId = changedBy;
                 if (!userId) userId = (req.headers.get("X-User-Id") || "00000000-0000-0000-0000-000000000000");
                 const record = {
                     equipment_id: equipmentId,
                     field_name: fieldName,
-                    old_value: oldValue,
-                    new_value: newValue,
+                    old_value: b != null ? String(b) : null,
+                    new_value: a != null ? String(a) : null,
                     changed_at: nowIso(),
                     changed_by: userId
                 };

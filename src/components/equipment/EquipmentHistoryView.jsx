@@ -4,6 +4,7 @@ import {OperatorService} from '../../services/OperatorService';
 import UserLabel from '../common/UserLabel';
 import './styles/EquipmentHistoryView.css';
 import {FormatUtility} from '../../utils/FormatUtility';
+import {HistoryUtility} from '../../utils/HistoryUtility';
 
 function EquipmentHistoryView({equipment, onClose}) {
     const [history, setHistory] = useState([]);
@@ -37,7 +38,15 @@ function EquipmentHistoryView({equipment, onClose}) {
                 .eq('equipment_id', equipment.id)
                 .order('changed_at', {ascending: false});
             if (error) setError('Failed to load history. Please try again.');
-            else setHistory(data || []);
+            else {
+                let filtered = data || [];
+                try {
+                    filtered = filtered.filter(entry => !HistoryUtility.areEquivalent(entry.field_name, entry.old_value, entry.new_value));
+                } catch (_) {
+                }
+                setHistory(filtered);
+                setError(null);
+            }
         } catch (err) {
             setError('Failed to load history. Please try again.');
         } finally {

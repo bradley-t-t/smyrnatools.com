@@ -5,6 +5,8 @@ import LoadingScreen from '../common/LoadingScreen';
 import UserLabel from '../common/UserLabel';
 import './styles/MixerHistoryView.css';
 import {FormatUtility} from '../../utils/FormatUtility';
+import {HistoryUtility} from '../../utils/HistoryUtility';
+import {supabase} from '../../services/DatabaseService';
 
 function MixerHistoryView({mixer, onClose}) {
     const [history, setHistory] = useState([]);
@@ -33,10 +35,31 @@ function MixerHistoryView({mixer, onClose}) {
         setIsLoading(true);
         try {
             const historyData = await MixerService.getMixerHistory(mixer.id);
-            setHistory(historyData);
+            let filtered = historyData || [];
+            try {
+                filtered = filtered.filter(entry => !HistoryUtility.areEquivalent(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value, entry.newValue || entry.new_value));
+            } catch (_) {
+            }
+            setHistory(filtered);
             setError(null);
         } catch (err) {
-            setError('Failed to load history. Please try again.');
+            try {
+                const {data, error} = await supabase
+                    .from('mixers_history')
+                    .select('*')
+                    .eq('mixer_id', mixer.id)
+                    .order('changed_at', {ascending: false});
+                if (error) throw error;
+                let rows = data || [];
+                try {
+                    rows = rows.filter(entry => !HistoryUtility.areEquivalent(entry.field_name, entry.old_value, entry.new_value));
+                } catch (_) {
+                }
+                setHistory(rows);
+                setError(null);
+            } catch (_) {
+                setError('Failed to load history. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -199,4 +222,3 @@ function MixerHistoryView({mixer, onClose}) {
 }
 
 export default MixerHistoryView;
-

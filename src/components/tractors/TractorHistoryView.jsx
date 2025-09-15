@@ -4,6 +4,8 @@ import {OperatorService} from '../../services/OperatorService';
 import LoadingScreen from '../common/LoadingScreen';
 import UserLabel from '../common/UserLabel';
 import {FormatUtility} from '../../utils/FormatUtility';
+import {HistoryUtility} from '../../utils/HistoryUtility';
+import {supabase} from '../../services/DatabaseService';
 
 function TractorHistoryView({tractor, onClose}) {
     const [history, setHistory] = useState([]);
@@ -32,10 +34,31 @@ function TractorHistoryView({tractor, onClose}) {
         setIsLoading(true);
         try {
             const historyData = await TractorService.getTractorHistory(tractor.id);
-            setHistory(historyData);
+            let filtered = historyData || [];
+            try {
+                filtered = filtered.filter(entry => !HistoryUtility.areEquivalent(entry.fieldName || entry.field_name, entry.oldValue || entry.old_value, entry.newValue || entry.new_value));
+            } catch (_) {
+            }
+            setHistory(filtered);
             setError(null);
         } catch (err) {
-            setError('Failed to load history. Please try again.');
+            try {
+                const {data, error} = await supabase
+                    .from('tractors_history')
+                    .select('*')
+                    .eq('tractor_id', tractor.id)
+                    .order('changed_at', {ascending: false});
+                if (error) throw error;
+                let rows = data || [];
+                try {
+                    rows = rows.filter(entry => !HistoryUtility.areEquivalent(entry.field_name, entry.old_value, entry.new_value));
+                } catch (_) {
+                }
+                setHistory(rows);
+                setError(null);
+            } catch (_) {
+                setError('Failed to load history. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
