@@ -6,6 +6,8 @@ import {DistrictManagerSubmitPlugin} from './types/WeeklyDistrictManagerReport'
 import {EfficiencySubmitPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerSubmitPlugin} from './types/WeeklySafetyManagerReport'
 import {GeneralManagerSubmitPlugin} from './types/WeeklyGeneralManagerReport'
+import {UserService} from '../../services/UserService'
+import {supabase} from '../../services/DatabaseService'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
@@ -21,6 +23,64 @@ function getTruckNumberForOperator(row, mixers) {
     const mixer = mixers.find(m => m.assigned_operator === row.name)
     if (mixer && mixer.truck_number) return mixer.truck_number
     return ''
+}
+
+async function sendReportSubmittedEmail({report, weekVerbose}) {
+    try {
+        let submittedById = ''
+        let submittedByName = ''
+        let submittedByEmail = ''
+        try {
+            const current = await UserService.getCurrentUser()
+            submittedById = current?.id || sessionStorage.getItem('userId') || ''
+            if (submittedById) {
+                const {data: profile} = await supabase.from('users_profiles').select('first_name, last_name').eq('id', submittedById).single()
+                if (profile) {
+                    const full = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+                    submittedByName = full || ''
+                }
+                const userRec = await UserService.getUserById(submittedById)
+                if (userRec?.email) submittedByEmail = userRec.email
+                if (!submittedByName && userRec?.name) submittedByName = String(userRec.name).trim()
+            }
+        } catch {
+        }
+        if (!submittedByName) {
+            const deriveNameFromEmail = (email) => {
+                const e = String(email || '').trim()
+                const local = e.split('@')[0] || ''
+                if (!local) return ''
+                return local.split(/[._-]+/).map(p => p ? p[0].toUpperCase() + p.slice(1) : '').join(' ').trim()
+            }
+            if (submittedByEmail) submittedByName = deriveNameFromEmail(submittedByEmail)
+        }
+        let token = ''
+        try {
+            const {data} = await supabase.auth.getSession()
+            token = data?.session?.access_token || ''
+        } catch {
+        }
+        const url = `${process.env.REACT_APP_EDGE_FUNCTIONS_URL}/report-notify/on-submitted`
+        const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || ''
+        const authHeader = token ? `Bearer ${token}` : (anonKey ? `Bearer ${anonKey}` : '')
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(authHeader ? {Authorization: authHeader} : {}),
+                ...(anonKey ? {apikey: anonKey} : {})
+            },
+            body: JSON.stringify({
+                reportName: report.name,
+                reportTitle: report.title,
+                weekVerbose,
+                submittedById,
+                submittedByName,
+                submittedByEmail
+            })
+        })
+    } catch {
+    }
 }
 
 function ReportsSubmitView({
@@ -178,6 +238,7 @@ function ReportsSubmitView({
         try {
             await onSubmit(form, 'submit')
             setSuccess(true)
+            await sendReportSubmittedEmail({report, weekVerbose})
         } catch (err) {
             setError(err?.message || 'Error submitting report')
         }
@@ -192,6 +253,7 @@ function ReportsSubmitView({
         try {
             await onSubmit(form, 'submit')
             setSuccess(true)
+            await sendReportSubmittedEmail({report, weekVerbose})
         } catch (err) {
             setError(err?.message || 'Error submitting report')
         }
@@ -216,6 +278,7 @@ function ReportsSubmitView({
             setSaveMessage('Changes saved.')
             setInitialFormSnapshot(JSON.stringify(form))
             setHasUnsavedChanges(false)
+            if (managerEditUser) await sendReportSubmittedEmail({report, weekVerbose})
         } catch (err) {
             setError(err?.message || 'Error saving draft')
         }
@@ -560,19 +623,10 @@ function ReportsSubmitView({
                                         />
                                     </div>
                                 </div>
-                                <style>
-                                    {`
-                                    .plant-prod-select:focus, .plant-prod-date:focus {
-                                        border: 1.5px solid var(--accent);
-                                        box-shadow: 0 2px 8px var(--shadow-sm);
-                                    }
-                                    .plant-prod-select:hover, .plant-prod-date:hover {
-                                        border: 1.5px solid var(--accent);
-                                    }
-                                    .plant-prod-input::placeholder {
-                                        color: var(--text-primary);
-                                        opacity: 1;
-                                    }
+                                <style>{`
+                                    .plant-prod-select:focus, .plant-prod-date:focus { border: 1.5px solid var(--accent); box-shadow: 0 2px 8px var(--shadow-sm); }
+                                    .plant-prod-select:hover, .plant-prod-date:hover { border: 1.5px solid var(--accent); }
+                                    .plant-prod-input::placeholder { color: var(--text-primary); opacity: 1; }
                                     `}
                                 </style>
                                 <div className="report-form-field-wide" style={{gridColumn: '1 / -1'}}>
@@ -624,17 +678,15 @@ function ReportsSubmitView({
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <div
-                                                    style={{
-                                                        border: '1px solid var(--divider)',
-                                                        borderRadius: 10,
-                                                        background: 'var(--background-elevated)',
-                                                        boxShadow: '0 1px 4px var(--shadow-sm)',
-                                                        padding: 0,
-                                                        color: 'var(--text-primary)',
-                                                        width: '100%'
-                                                    }}
-                                                >
+                                                <div style={{
+                                                    border: '1px solid var(--divider)',
+                                                    borderRadius: 10,
+                                                    background: 'var(--background-elevated)',
+                                                    boxShadow: '0 1px 4px var(--shadow-sm)',
+                                                    padding: 0,
+                                                    color: 'var(--text-primary)',
+                                                    width: '100%'
+                                                }}>
                                                     {form.rows[carouselIndex] && (
                                                         <div style={{
                                                             padding: '24px 24px 0 24px',
@@ -648,165 +700,9 @@ function ReportsSubmitView({
                                                                         fontWeight: 600,
                                                                         fontSize: 15
                                                                     }}>Name</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={operatorOptions.find(opt => opt.value === form.rows[carouselIndex]?.name)?.label || ''}
-                                                                        disabled
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                                <div style={{width: 120}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Truck
-                                                                        #</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
-                                                                        disabled
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Start
-                                                                        Time</label>
-                                                                    <input
-                                                                        type="time"
-                                                                        placeholder="Start Time"
-                                                                        value={form.rows[carouselIndex]?.start_time || ''}
-                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
-                                                                        disabled={!!readOnly}
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>1st
-                                                                        Load</label>
-                                                                    <input
-                                                                        type="time"
-                                                                        placeholder="1st Load"
-                                                                        value={form.rows[carouselIndex]?.first_load || ''}
-                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
-                                                                        disabled={!!readOnly}
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>EOD
-                                                                        In Yard</label>
-                                                                    <input
-                                                                        type="time"
-                                                                        placeholder="EOD"
-                                                                        value={form.rows[carouselIndex]?.eod_in_yard || ''}
-                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
-                                                                        disabled={!!readOnly}
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Punch
-                                                                        Out</label>
-                                                                    <input
-                                                                        type="time"
-                                                                        placeholder="Punch Out"
-                                                                        value={form.rows[carouselIndex]?.punch_out || ''}
-                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
-                                                                        disabled={!!readOnly}
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Total
-                                                                        Loads</label>
-                                                                    <input
-                                                                        type="number"
-                                                                        placeholder="Total Loads"
-                                                                        value={form.rows[carouselIndex]?.loads || ''}
-                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'loads')}
-                                                                        disabled={readOnly}
-                                                                        style={{
-                                                                            background: 'var(--background)',
-                                                                            border: '1px solid var(--divider)',
-                                                                            borderRadius: 6,
-                                                                            fontSize: 15,
-                                                                            width: '100%',
-                                                                            padding: '7px 10px',
-                                                                            color: 'var(--text-primary)'
-                                                                        }}
-                                                                        className="plant-prod-input"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <label style={{
-                                                                    fontWeight: 600,
-                                                                    fontSize: 15
-                                                                }}>Comments</label>
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Comments"
-                                                                    value={form.rows[carouselIndex]?.comments || ''}
-                                                                    onChange={e => handleChange(e, 'rows', carouselIndex, 'comments')}
-                                                                    disabled={readOnly}
-                                                                    style={{
+                                                                    <input type="text"
+                                                                           value={operatorOptions.find(opt => opt.value === form.rows[carouselIndex]?.name)?.label || ''}
+                                                                           disabled style={{
                                                                         background: 'var(--background)',
                                                                         border: '1px solid var(--divider)',
                                                                         borderRadius: 6,
@@ -814,9 +710,127 @@ function ReportsSubmitView({
                                                                         width: '100%',
                                                                         padding: '7px 10px',
                                                                         color: 'var(--text-primary)'
-                                                                    }}
-                                                                    className="plant-prod-input"
-                                                                />
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                                <div style={{width: 120}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Truck
+                                                                        #</label>
+                                                                    <input type="text"
+                                                                           value={getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
+                                                                           disabled style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Start
+                                                                        Time</label>
+                                                                    <input type="time" placeholder="Start Time"
+                                                                           value={form.rows[carouselIndex]?.start_time || ''}
+                                                                           onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
+                                                                           disabled={!!readOnly} style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>1st
+                                                                        Load</label>
+                                                                    <input type="time" placeholder="1st Load"
+                                                                           value={form.rows[carouselIndex]?.first_load || ''}
+                                                                           onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
+                                                                           disabled={!!readOnly} style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>EOD
+                                                                        In Yard</label>
+                                                                    <input type="time" placeholder="EOD"
+                                                                           value={form.rows[carouselIndex]?.eod_in_yard || ''}
+                                                                           onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
+                                                                           disabled={!!readOnly} style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Punch
+                                                                        Out</label>
+                                                                    <input type="time" placeholder="Punch Out"
+                                                                           value={form.rows[carouselIndex]?.punch_out || ''}
+                                                                           onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
+                                                                           disabled={!!readOnly} style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{display: 'flex', gap: 18}}>
+                                                                <div style={{flex: 1}}>
+                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Total
+                                                                        Loads</label>
+                                                                    <input type="number" placeholder="Total Loads"
+                                                                           value={form.rows[carouselIndex]?.loads || ''}
+                                                                           onChange={e => handleChange(e, 'rows', carouselIndex, 'loads')}
+                                                                           disabled={readOnly} style={{
+                                                                        background: 'var(--background)',
+                                                                        border: '1px solid var(--divider)',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 15,
+                                                                        width: '100%',
+                                                                        padding: '7px 10px',
+                                                                        color: 'var(--text-primary)'
+                                                                    }} className="plant-prod-input"/>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label style={{
+                                                                    fontWeight: 600,
+                                                                    fontSize: 15
+                                                                }}>Comments</label>
+                                                                <input type="text" placeholder="Comments"
+                                                                       value={form.rows[carouselIndex]?.comments || ''}
+                                                                       onChange={e => handleChange(e, 'rows', carouselIndex, 'comments')}
+                                                                       disabled={readOnly} style={{
+                                                                    background: 'var(--background)',
+                                                                    border: '1px solid var(--divider)',
+                                                                    borderRadius: 6,
+                                                                    fontSize: 15,
+                                                                    width: '100%',
+                                                                    padding: '7px 10px',
+                                                                    color: 'var(--text-primary)'
+                                                                }} className="plant-prod-input"/>
                                                             </div>
                                                         </div>
                                                     )}
@@ -826,60 +840,53 @@ function ReportsSubmitView({
                                                         alignItems: 'center',
                                                         padding: '18px 24px 18px 24px'
                                                     }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleExcludeOperator(carouselIndex)}
-                                                            style={{
-                                                                fontWeight: 600,
-                                                                fontSize: 15,
-                                                                background: 'var(--divider)',
-                                                                color: 'var(--text-primary)',
-                                                                border: 'none',
-                                                                borderRadius: 6,
-                                                                padding: '6px 18px',
-                                                                cursor: 'pointer',
-                                                                marginRight: 12
-                                                            }}
-                                                        >
+                                                        <button type="button"
+                                                                onClick={() => handleExcludeOperator(carouselIndex)}
+                                                                style={{
+                                                                    fontWeight: 600,
+                                                                    fontSize: 15,
+                                                                    background: 'var(--divider)',
+                                                                    color: 'var(--text-primary)',
+                                                                    border: 'none',
+                                                                    borderRadius: 6,
+                                                                    padding: '6px 18px',
+                                                                    cursor: 'pointer',
+                                                                    marginRight: 12
+                                                                }}>
                                                             Exclude Operator
                                                         </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
-                                                            disabled={carouselIndex === 0}
-                                                            style={{
-                                                                fontWeight: 600,
-                                                                fontSize: 15,
-                                                                background: 'var(--accent)',
-                                                                color: 'var(--text-light)',
-                                                                border: 'none',
-                                                                borderRadius: 6,
-                                                                padding: '6px 18px',
-                                                                cursor: carouselIndex === 0 ? 'not-allowed' : 'pointer',
-                                                                opacity: carouselIndex === 0 ? 0.5 : 1
-                                                            }}
-                                                        >
+                                                        <button type="button"
+                                                                onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
+                                                                disabled={carouselIndex === 0} style={{
+                                                            fontWeight: 600,
+                                                            fontSize: 15,
+                                                            background: 'var(--accent)',
+                                                            color: 'var(--text-light)',
+                                                            border: 'none',
+                                                            borderRadius: 6,
+                                                            padding: '6px 18px',
+                                                            cursor: carouselIndex === 0 ? 'not-allowed' : 'pointer',
+                                                            opacity: carouselIndex === 0 ? 0.5 : 1
+                                                        }}>
                                                             &#8592; Prev Operator
                                                         </button>
                                                         <span style={{fontWeight: 600, fontSize: 15}}>
                                                             Operator {carouselIndex + 1} of {form.rows.length}
                                                         </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setCarouselIndex(i => Math.min(i + 1, form.rows.length - 1))}
-                                                            disabled={carouselIndex === form.rows.length - 1}
-                                                            style={{
-                                                                fontWeight: 600,
-                                                                fontSize: 15,
-                                                                background: 'var(--accent)',
-                                                                color: 'var(--text-light)',
-                                                                border: 'none',
-                                                                borderRadius: 6,
-                                                                padding: '6px 18px',
-                                                                cursor: carouselIndex === form.rows.length - 1 ? 'not-allowed' : 'pointer',
-                                                                opacity: carouselIndex === form.rows.length - 1 ? 0.5 : 1
-                                                            }}
-                                                        >
+                                                        <button type="button"
+                                                                onClick={() => setCarouselIndex(i => Math.min(i + 1, form.rows.length - 1))}
+                                                                disabled={carouselIndex === form.rows.length - 1}
+                                                                style={{
+                                                                    fontWeight: 600,
+                                                                    fontSize: 15,
+                                                                    background: 'var(--accent)',
+                                                                    color: 'var(--text-light)',
+                                                                    border: 'none',
+                                                                    borderRadius: 6,
+                                                                    padding: '6px 18px',
+                                                                    cursor: carouselIndex === form.rows.length - 1 ? 'not-allowed' : 'pointer',
+                                                                    opacity: carouselIndex === form.rows.length - 1 ? 0.5 : 1
+                                                                }}>
                                                             Next Operator &#8594;
                                                         </button>
                                                     </div>
@@ -895,21 +902,18 @@ function ReportsSubmitView({
                                                     {excludedOperators.map(opId => {
                                                         const op = operatorOptions.find(opt => opt.value === opId)
                                                         return (
-                                                            <button
-                                                                key={opId}
-                                                                type="button"
-                                                                onClick={() => handleReincludeOperator(opId)}
-                                                                style={{
-                                                                    background: 'var(--divider)',
-                                                                    color: 'var(--text-primary)',
-                                                                    border: 'none',
-                                                                    borderRadius: 6,
-                                                                    padding: '6px 14px',
-                                                                    fontWeight: 600,
-                                                                    fontSize: 15,
-                                                                    cursor: 'pointer'
-                                                                }}
-                                                            >
+                                                            <button key={opId} type="button"
+                                                                    onClick={() => handleReincludeOperator(opId)}
+                                                                    style={{
+                                                                        background: 'var(--divider)',
+                                                                        color: 'var(--text-primary)',
+                                                                        border: 'none',
+                                                                        borderRadius: 6,
+                                                                        padding: '6px 14px',
+                                                                        fontWeight: 600,
+                                                                        fontSize: 15,
+                                                                        cursor: 'pointer'
+                                                                    }}>
                                                                 {op ? op.label : opId} (Re-include)
                                                             </button>
                                                         )
@@ -929,32 +933,22 @@ function ReportsSubmitView({
                                             {field.required && <span className="report-modal-required">*</span>}
                                         </label>
                                         {field.type === 'textarea' ? (
-                                            <textarea
-                                                value={form[field.name] || ''}
-                                                onChange={e => handleChange(e, field.name)}
-                                                required={field.required}
-                                                disabled={readOnly}
-                                            />
+                                            <textarea value={form[field.name] || ''}
+                                                      onChange={e => handleChange(e, field.name)}
+                                                      required={field.required} disabled={readOnly}/>
                                         ) : field.type === 'select' ? (
-                                            <select
-                                                value={form[field.name] || ''}
-                                                onChange={e => handleChange(e, field.name)}
-                                                required={field.required}
-                                                disabled={readOnly}
-                                            >
+                                            <select value={form[field.name] || ''}
+                                                    onChange={e => handleChange(e, field.name)}
+                                                    required={field.required} disabled={readOnly}>
                                                 <option value="">Select...</option>
                                                 {field.options?.map(opt => (
                                                     <option key={opt} value={opt}>{opt}</option>
                                                 ))}
                                             </select>
                                         ) : (
-                                            <input
-                                                type={field.type}
-                                                value={form[field.name] || ''}
-                                                onChange={e => handleChange(e, field.name)}
-                                                required={field.required}
-                                                disabled={readOnly}
-                                            />
+                                            <input type={field.type} value={form[field.name] || ''}
+                                                   onChange={e => handleChange(e, field.name)} required={field.required}
+                                                   disabled={readOnly}/>
                                         )}
                                     </div>
                                 )
@@ -991,29 +985,37 @@ function ReportsSubmitView({
                     {!readOnly && (
                         <div className="report-modal-actions-wide"
                              style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                            <button
-                                type="button"
-                                className="report-modal-cancel"
-                                onClick={handleBackClick}
-                                disabled={submitting || savingDraft}
-                                style={{
-                                    background: 'var(--divider)',
-                                    color: 'var(--text-primary)',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '10px 22px',
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    cursor: 'pointer',
-                                    height: 44
-                                }}
-                            >
+                            <button type="button" className="report-modal-cancel" onClick={handleBackClick}
+                                    disabled={submitting || savingDraft} style={{
+                                background: 'var(--divider)',
+                                color: 'var(--text-primary)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '10px 22px',
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: 'pointer',
+                                height: 44
+                            }}>
                                 Cancel
                             </button>
-                            <button
-                                type="button"
-                                className="report-modal-save"
-                                style={{
+                            <button type="button" className="report-modal-save" style={{
+                                background: 'var(--accent)',
+                                color: 'var(--text-light)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '10px 22px',
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: 'pointer',
+                                marginRight: 12,
+                                height: 44
+                            }} onClick={handleSaveDraft} disabled={submitting || savingDraft}>
+                                {savingDraft ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            {(!managerEditUser) && (
+                                <button type="submit" className="report-modal-submit"
+                                        disabled={submitting || savingDraft} style={{
                                     background: 'var(--accent)',
                                     color: 'var(--text-light)',
                                     border: 'none',
@@ -1022,31 +1024,8 @@ function ReportsSubmitView({
                                     fontWeight: 600,
                                     fontSize: 15,
                                     cursor: 'pointer',
-                                    marginRight: 12,
                                     height: 44
-                                }}
-                                onClick={handleSaveDraft}
-                                disabled={submitting || savingDraft}
-                            >
-                                {savingDraft ? 'Saving...' : 'Save Changes'}
-                            </button>
-                            {(!managerEditUser) && (
-                                <button
-                                    type="submit"
-                                    className="report-modal-submit"
-                                    disabled={submitting || savingDraft}
-                                    style={{
-                                        background: 'var(--accent)',
-                                        color: 'var(--text-light)',
-                                        border: 'none',
-                                        borderRadius: 6,
-                                        padding: '10px 22px',
-                                        fontWeight: 600,
-                                        fontSize: 15,
-                                        cursor: 'pointer',
-                                        height: 44
-                                    }}
-                                >
+                                }}>
                                     {submitting ? 'Submitting...' : 'Submit'}
                                 </button>
                             )}
@@ -1081,58 +1060,44 @@ function ReportsSubmitView({
                         </div>
                         <div style={{marginBottom: 12}}>
                             <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
-                                <input
-                                    type="checkbox"
-                                    checked={confirmationChecks[0]}
-                                    onChange={e => setConfirmationChecks([e.target.checked, confirmationChecks[1]])}
-                                />
+                                <input type="checkbox" checked={confirmationChecks[0]}
+                                       onChange={e => setConfirmationChecks([e.target.checked, confirmationChecks[1]])}/>
                                 Total yardage includes all yardage we can bill for and does not include lost yardage.
                             </label>
                         </div>
                         <div style={{marginBottom: 24}}>
                             <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
-                                <input
-                                    type="checkbox"
-                                    checked={confirmationChecks[1]}
-                                    onChange={e => setConfirmationChecks([confirmationChecks[0], e.target.checked])}
-                                />
+                                <input type="checkbox" checked={confirmationChecks[1]}
+                                       onChange={e => setConfirmationChecks([confirmationChecks[0], e.target.checked])}/>
                                 Total hours only includes hours from operators and not from plant managers, loader
                                 operators or any other roles.
                             </label>
                         </div>
                         <div style={{display: 'flex', gap: 16, justifyContent: 'center'}}>
-                            <button
-                                type="button"
-                                style={{
-                                    background: 'var(--divider)',
-                                    color: 'var(--text-primary)',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '10px 22px',
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    cursor: 'pointer'
-                                }}
-                                onClick={() => setShowConfirmationModal(false)}
-                            >
+                            <button type="button" style={{
+                                background: 'var(--divider)',
+                                color: 'var(--text-primary)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '10px 22px',
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: 'pointer'
+                            }} onClick={() => setShowConfirmationModal(false)}>
                                 Cancel
                             </button>
-                            <button
-                                type="button"
-                                style={{
-                                    background: confirmationChecks[0] && confirmationChecks[1] ? 'var(--accent)' : 'var(--divider)',
-                                    color: confirmationChecks[0] && confirmationChecks[1] ? 'var(--text-light)' : 'var(--text-secondary)',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '10px 22px',
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    cursor: confirmationChecks[0] && confirmationChecks[1] ? 'pointer' : 'not-allowed',
-                                    opacity: confirmationChecks[0] && confirmationChecks[1] ? 1 : 0.6
-                                }}
-                                disabled={!(confirmationChecks[0] && confirmationChecks[1])}
-                                onClick={handleConfirmedSubmit}
-                            >
+                            <button type="button" style={{
+                                background: confirmationChecks[0] && confirmationChecks[1] ? 'var(--accent)' : 'var(--divider)',
+                                color: confirmationChecks[0] && confirmationChecks[1] ? 'var(--text-light)' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '10px 22px',
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: confirmationChecks[0] && confirmationChecks[1] ? 'pointer' : 'not-allowed',
+                                opacity: confirmationChecks[0] && confirmationChecks[1] ? 1 : 0.6
+                            }} disabled={!(confirmationChecks[0] && confirmationChecks[1])}
+                                    onClick={handleConfirmedSubmit}>
                                 Confirm & Submit
                             </button>
                         </div>

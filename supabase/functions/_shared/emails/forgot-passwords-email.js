@@ -18,7 +18,7 @@ export function buildForgotPasswordEmail({newPassword, loginUrl, theme, logoUrl,
     const styles = {
         container: `max-width: 600px; ${css.bg(t.white)} font-family: Arial, Helvetica, sans-serif; margin: 0 auto;`.trim(),
         header: `${css.bg(t.bgDark)} padding: 20px; text-align: center;`.trim(),
-        headerText: `font-size: 20px; font-weight: 700; ${css.color(t.onBrand || "#ffffff")}`.trim(),
+        headerText: `font-size: 20px; font-weight: 700; ${css.color(t.onBrand)}`.trim(),
         section: `padding: 30px 20px; ${css.bg(t.bgLight)}`.trim(),
         h1: `font-size: 24px; ${css.color(t.text)} margin: 0 0 20px;`.trim(),
         p: `font-size: 16px; ${css.color(t.text)} line-height: 1.5; margin: 0 0 20px;`.trim(),
@@ -73,4 +73,3 @@ export function buildForgotPasswordEmail({newPassword, loginUrl, theme, logoUrl,
 </table>`;
     return {subject, text, html};
 }
-

@@ -103,6 +103,16 @@ const reportTypes = [
         assignment: ["reports.assigned.general_manager"],
         review: ["reports.review.general_manager"],
         fields: []
+    }),
+    createReportType({
+        name: "test",
+        title: "Test",
+        frequency: "weekly",
+        assignment: ["reports.assigned.test"],
+        review: ["reports.review.test"],
+        fields: [
+            {name: "test", label: "test", type: "text", required: true}
+        ]
     })
 ]
 
