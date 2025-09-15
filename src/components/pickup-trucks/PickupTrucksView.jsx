@@ -202,9 +202,21 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
         if (viewMode === 'grid') {
             return (
                 <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
-                    {filtered.map(p => (
-                        <PickupTrucksCard key={p.id} pickup={p} onSelect={() => setSelectedId(p.id)}/>
-                    ))}
+                    {filtered.map(p => {
+                        const vinKey = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
+                        const assignedKey = String(p.assigned || '').trim().toLowerCase()
+                        const isHighMileage = typeof p.mileage === 'number' && p.mileage > 300000
+                        return (
+                            <PickupTrucksCard
+                                key={p.id}
+                                pickup={p}
+                                onSelect={() => setSelectedId(p.id)}
+                                isDuplicateVin={duplicateVINs.has(vinKey)}
+                                isDuplicateAssigned={duplicateAssigned.has(assignedKey)}
+                                isHighMileage={isHighMileage}
+                            />
+                        )
+                    })}
                 </div>
             )
         }
