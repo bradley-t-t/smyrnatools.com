@@ -223,12 +223,12 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
     }, [plants, weekIso])
     return (
         <div className="rpt-card rpt-card-accent">
-            <div className="rpt-card-header" style={{justifyContent: 'space-between'}}>
+            <div className="rpt-card-header">
                 <div className="rpt-card-title">Status Overviews</div>
                 {weekRangeLabel ? <div className="rpt-badge">{weekRangeLabel}</div> : null}
             </div>
-            <div className="rpt-form-row" style={{flexDirection: 'column', gap: 12}}>
-                <div className="rpt-card" style={{padding: 12}}>
+            <div className="rpt-form-row rpt-flex-col rpt-gap-12">
+                <div className="rpt-card rpt-p-12">
                     <div className="rpt-card-header">
                         <div className="rpt-card-title">Mixers</div>
                     </div>
@@ -251,7 +251,7 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                         </div>
                     </div>
                 </div>
-                <div className="rpt-card" style={{padding: 12, marginBottom: 16}}>
+                <div className="rpt-card rpt-p-12 rpt-mb-16">
                     <div className="rpt-card-header">
                         <div className="rpt-card-title">Operators</div>
                     </div>
@@ -287,7 +287,7 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                     </div>
                 </div>
             </div>
-            <div className="rpt-card-header" style={{justifyContent: 'space-between'}}>
+            <div className="rpt-card-header">
                 <div className="rpt-card-title">Per-Plant Summary</div>
                 {count > 0 && (
                     <div className="rpt-badge">{safeIdx + 1} of {count}</div>
@@ -296,25 +296,13 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
             {count === 0 ? (
                 <div className="rpt-empty">No plants found.</div>
             ) : (
-                <div className="rpt-form-row" style={{flexDirection: 'column', gap: 16}}>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: 12
-                    }}>
+                <div className="rpt-form-row rpt-flex-col">
+                    <div className="rpt-dots-bar">
                         {plants.map((p, i) => (
                             <div
                                 key={p.plant_code}
                                 onClick={() => setIdx(i)}
-                                style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: 6,
-                                    background: i === safeIdx ? 'var(--accent)' : 'var(--divider)',
-                                    cursor: 'pointer'
-                                }}
+                                className={`rpt-dot ${i === safeIdx ? 'active' : ''}`}
                                 aria-label={`Plant ${i + 1}`}
                             />
                         ))}
@@ -334,10 +322,10 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                             notes: `notes_${code}`
                         }
                         return (
-                            <div className="rpt-card" style={{padding: 16}}>
+                            <div className="rpt-card rpt-p-16">
                                 <div className="rpt-card-header">
                                     <div className="rpt-card-title">{p.plant_name} ({code})</div>
-                                    <div className="rpt-card-actions" style={{gap: 8}}>
+                                    <div className="rpt-card-actions">
                                         <button
                                             type="button"
                                             className="rpt-secondary-btn"
@@ -396,7 +384,7 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                     })()}
                 </div>
             )}
-            <div className="rpt-card-header" style={{marginTop: 16, justifyContent: 'space-between'}}>
+            <div className="rpt-card-header rpt-mt-16">
                 <div className="rpt-card-title">Plant Efficiency Reports</div>
                 {effReports.length > 0 && (
                     <div className="rpt-badge">{effIdx + 1} of {effReports.length}</div>
@@ -405,25 +393,13 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
             {effReports.length === 0 ? (
                 <div className="rpt-empty">No plant efficiency reports found for this week.</div>
             ) : (
-                <div className="rpt-form-row" style={{flexDirection: 'column', gap: 16}}>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: 12
-                    }}>
+                <div className="rpt-form-row rpt-flex-col">
+                    <div className="rpt-dots-bar">
                         {effReports.map((r, i) => (
                             <div
                                 key={r.id}
                                 onClick={() => setEffIdx(i)}
-                                style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: 6,
-                                    background: i === effIdx ? 'var(--accent)' : 'var(--divider)',
-                                    cursor: 'pointer'
-                                }}
+                                className={`rpt-dot ${i === effIdx ? 'active' : ''}`}
                                 aria-label={`Efficiency Report ${i + 1}`}
                             />
                         ))}
@@ -432,11 +408,11 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                         const r = effReports[effIdx]
                         const insights = ReportService.getPlantProductionInsights(r.rows || [])
                         return (
-                            <div className="rpt-card" style={{padding: 16}}>
+                            <div className="rpt-card rpt-p-16">
                                 <div className="rpt-card-header">
                                     <div
                                         className="rpt-card-title">{r.plant_name} ({r.plant_code}){r.report_date ? ` - ${r.report_date}` : ''}</div>
-                                    <div className="rpt-card-actions" style={{gap: 8}}>
+                                    <div className="rpt-card-actions">
                                         <button
                                             type="button"
                                             className="rpt-secondary-btn"
@@ -498,8 +474,8 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                         const allRows = effReports.flatMap(x => Array.isArray(x.rows) ? x.rows : [])
                         const ag = ReportService.getPlantProductionInsights(allRows)
                         return (
-                            <div className="rpt-card" style={{padding: 16}}>
-                                <div className="rpt-card-header" style={{justifyContent: 'space-between'}}>
+                            <div className="rpt-card rpt-p-16">
+                                <div className="rpt-card-header">
                                     <div className="rpt-card-title">Weekly Aggregate</div>
                                     {weekRangeLabel ? <div className="rpt-badge">{weekRangeLabel}</div> : null}
                                 </div>
@@ -620,7 +596,22 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                 }
                 return
             }
-            const {data: opsData} = await supabase.from('operators').select('status, plant_code').in('plant_code', codes)
+            const {data: mxData} = await supabase.from('mixers').select('status, assigned_plant').in('assigned_plant', codes)
+            if (!cancelled) {
+                if (Array.isArray(mxData)) {
+                    const c = {Total: 0, Active: 0, Spare: 0, 'In Shop': 0}
+                    const filtered = mxData.filter(m => (m.status || '') !== 'Retired')
+                    c.Total = filtered.length
+                    filtered.forEach(m => {
+                        const s = m.status || '';
+                        if (s in c) c[s] += 1
+                    })
+                    setMxCounts(c)
+                } else {
+                    setMxCounts({Total: 0, Active: 0, Spare: 0, 'In Shop': 0})
+                }
+            }
+            const {data: opsData} = await supabase.from('operators').select('status, assigned_plant, plant_code').in('plant_code', codes)
             if (!cancelled) {
                 if (Array.isArray(opsData)) {
                     const c = {
@@ -648,21 +639,6 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                         Terminated: 0,
                         'No Hire': 0
                     })
-                }
-            }
-            const {data: mxData} = await supabase.from('mixers').select('status, assigned_plant').in('assigned_plant', codes)
-            if (!cancelled) {
-                if (Array.isArray(mxData)) {
-                    const c = {Total: 0, Active: 0, Spare: 0, 'In Shop': 0}
-                    const filtered = mxData.filter(m => (m.status || '') !== 'Retired')
-                    c.Total = filtered.length
-                    filtered.forEach(m => {
-                        const s = m.status || '';
-                        if (s in c) c[s] += 1
-                    })
-                    setMxCounts(c)
-                } else {
-                    setMxCounts({Total: 0, Active: 0, Spare: 0, 'In Shop': 0})
                 }
             }
         }
@@ -756,8 +732,8 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                 <div className="rpt-card-title">Status Overviews</div>
                 {weekRangeLabel ? <div className="rpt-badge">{weekRangeLabel}</div> : null}
             </div>
-            <div className="rpt-form-row" style={{flexDirection: 'column', gap: 12}}>
-                <div className="rpt-card" style={{padding: 12}}>
+            <div className="rpt-form-row rpt-flex-col rpt-gap-12">
+                <div className="rpt-card rpt-p-12">
                     <div className="rpt-card-header">
                         <div className="rpt-card-title">Mixers</div>
                     </div>
@@ -780,7 +756,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                         </div>
                     </div>
                 </div>
-                <div className="rpt-card" style={{padding: 12, marginBottom: 16}}>
+                <div className="rpt-card rpt-p-12 rpt-mb-16">
                     <div className="rpt-card-header">
                         <div className="rpt-card-title">Operators</div>
                     </div>
@@ -822,7 +798,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
             {included.length === 0 ? (
                 <div className="rpt-empty">No plant data in this report.</div>
             ) : (
-                <div className="rpt-form-row" style={{flexDirection: 'column', gap: 16}}>
+                <div className="rpt-form-row rpt-flex-col">
                     {included.map(p => {
                         const code = p.plant_code
                         const f = {
@@ -837,7 +813,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                             notes: `notes_${code}`
                         }
                         return (
-                            <div key={code} className="rpt-card" style={{padding: 16}}>
+                            <div key={code} className="rpt-card rpt-p-16">
                                 <div className="rpt-card-header">
                                     <div className="rpt-card-title">{p.plant_name} ({code})</div>
                                 </div>
@@ -884,7 +860,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                     })}
                 </div>
             )}
-            <div className="rpt-card-header" style={{marginTop: 16, justifyContent: 'space-between'}}>
+            <div className="rpt-card-header rpt-mt-16">
                 <div className="rpt-card-title">Plant Efficiency Reports</div>
                 {effReports.length > 0 && (
                     <div className="rpt-badge">{effIdx + 1} of {effReports.length}</div>
@@ -893,25 +869,13 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
             {effReports.length === 0 ? (
                 <div className="rpt-empty">No plant efficiency reports found for this week.</div>
             ) : (
-                <div className="rpt-form-row" style={{flexDirection: 'column', gap: 16}}>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: 12
-                    }}>
+                <div className="rpt-form-row rpt-flex-col">
+                    <div className="rpt-dots-bar">
                         {effReports.map((r, i) => (
                             <div
                                 key={r.id}
                                 onClick={() => setEffIdx(i)}
-                                style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: 6,
-                                    background: i === effIdx ? 'var(--accent)' : 'var(--divider)',
-                                    cursor: 'pointer'
-                                }}
+                                className={`rpt-dot ${i === effIdx ? 'active' : ''}`}
                                 aria-label={`Efficiency Report ${i + 1}`}
                             />
                         ))}
@@ -920,11 +884,11 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                         const r = effReports[effIdx]
                         const insights = ReportService.getPlantProductionInsights(r.rows || [])
                         return (
-                            <div className="rpt-card" style={{padding: 16}}>
+                            <div className="rpt-card rpt-p-16">
                                 <div className="rpt-card-header">
                                     <div
                                         className="rpt-card-title">{r.plant_name} ({r.plant_code}){r.report_date ? ` - ${r.report_date}` : ''}</div>
-                                    <div className="rpt-card-actions" style={{gap: 8}}>
+                                    <div className="rpt-card-actions">
                                         <button
                                             type="button"
                                             className="rpt-secondary-btn"
@@ -986,8 +950,8 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                         const allRows = effReports.flatMap(x => Array.isArray(x.rows) ? x.rows : [])
                         const ag = ReportService.getPlantProductionInsights(allRows)
                         return (
-                            <div className="rpt-card" style={{padding: 16}}>
-                                <div className="rpt-card-header" style={{justifyContent: 'space-between'}}>
+                            <div className="rpt-card rpt-p-16">
+                                <div className="rpt-card-header">
                                     <div className="rpt-card-title">Weekly Aggregate</div>
                                     {weekRangeLabel ? <div className="rpt-badge">{weekRangeLabel}</div> : null}
                                 </div>
@@ -1003,28 +967,23 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Loads</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Hours</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg L/H</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Punch In → 1st</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Washout → Punch</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
                                     </div>
                                 </div>
                             </div>

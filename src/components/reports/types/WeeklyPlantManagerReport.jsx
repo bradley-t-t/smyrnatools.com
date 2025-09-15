@@ -19,8 +19,8 @@ export function PlantManagerSubmitPlugin({
         return Number.isFinite(n) ? n.toFixed(2) : '--'
     }
     return (
-        <div className="summary-tabs-container">
-            <div className="summary-tabs">
+        <div className="rpts-summary-tabs-container">
+            <div className="rpts-summary-tabs">
                 <button
                     type="button"
                     className={summaryTab === 'summary' ? 'active' : ''}
@@ -30,35 +30,35 @@ export function PlantManagerSubmitPlugin({
                 </button>
             </div>
             {summaryTab === 'summary' && (
-                <div className="summary-content rpt-summary-row">
-                    <div className="summary-metric-card rpt-metric-card">
-                        <div className="summary-metric-title">Yards per Man-Hour</div>
+                <div className="rpts-summary-content rpt-summary-row">
+                    <div className="rpts-summary-metric-card rpt-metric-card">
+                        <div className="rpts-summary-metric-title">Yards per Man-Hour</div>
                         <div
-                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {formatYph(yph)}
                         </div>
                         <div
-                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {yphLabel}
                         </div>
-                        <div className="summary-metric-scale">
+                        <div className="rpts-summary-metric-scale">
                             <span className={yphGrade === 'excellent' ? 'active' : ''}>Excellent</span>
                             <span className={yphGrade === 'good' ? 'active' : ''}>Good</span>
                             <span className={yphGrade === 'average' ? 'active' : ''}>Average</span>
                             <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
                         </div>
                     </div>
-                    <div className="summary-metric-card rpt-metric-card">
-                        <div className="summary-metric-title">Yardage Lost</div>
+                    <div className="rpts-summary-metric-card rpt-metric-card">
+                        <div className="rpts-summary-metric-title">Yardage Lost</div>
                         <div
-                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lost !== null ? lost : '--'}
                         </div>
                         <div
-                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lostLabel}
                         </div>
-                        <div className="summary-metric-scale">
+                        <div className="rpts-summary-metric-scale">
                             <span className={lostGrade === 'excellent' ? 'active' : ''}>Excellent</span>
                             <span className={lostGrade === 'good' ? 'active' : ''}>Good</span>
                             <span className={lostGrade === 'average' ? 'active' : ''}>Average</span>
@@ -88,8 +88,8 @@ export function PlantManagerReviewPlugin({
         return Number.isFinite(n) ? n.toFixed(2) : '--'
     }
     return (
-        <div className="summary-tabs-container">
-            <div className="summary-tabs">
+        <div className="rpts-summary-tabs-container">
+            <div className="rpts-summary-tabs">
                 <button
                     type="button"
                     className={summaryTab === 'summary' ? 'active' : ''}
@@ -99,35 +99,35 @@ export function PlantManagerReviewPlugin({
                 </button>
             </div>
             {summaryTab === 'summary' && (
-                <div className="summary-content rpt-summary-row">
-                    <div className="summary-metric-card rpt-metric-card">
-                        <div className="summary-metric-title">Yards per Man-Hour</div>
+                <div className="rpts-summary-content rpt-summary-row">
+                    <div className="rpts-summary-metric-card rpt-metric-card">
+                        <div className="rpts-summary-metric-title">Yards per Man-Hour</div>
                         <div
-                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {formatYph(yph)}
                         </div>
                         <div
-                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {yphLabel}
                         </div>
-                        <div className="summary-metric-scale">
+                        <div className="rpts-summary-metric-scale">
                             <span className={yphGrade === 'excellent' ? 'active' : ''}>Excellent</span>
                             <span className={yphGrade === 'good' ? 'active' : ''}>Good</span>
                             <span className={yphGrade === 'average' ? 'active' : ''}>Average</span>
                             <span className={yphGrade === 'poor' ? 'active' : ''}>Poor</span>
                         </div>
                     </div>
-                    <div className="summary-metric-card rpt-metric-card">
-                        <div className="summary-metric-title">Yardage Lost</div>
+                    <div className="rpts-summary-metric-card rpt-metric-card">
+                        <div className="rpts-summary-metric-title">Yardage Lost</div>
                         <div
-                            className={`summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-value ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lost !== null ? lost : '--'}
                         </div>
                         <div
-                            className={`summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
+                            className={`rpts-summary-metric-grade ${isDark ? 'rpt-metric-text-light' : 'rpt-metric-text-primary'}`}>
                             {lostLabel}
                         </div>
-                        <div className="summary-metric-scale">
+                        <div className="rpts-summary-metric-scale">
                             <span className={lostGrade === 'excellent' ? 'active' : ''}>Excellent</span>
                             <span className={lostGrade === 'good' ? 'active' : ''}>Good</span>
                             <span className={lostGrade === 'average' ? 'active' : ''}>Average</span>

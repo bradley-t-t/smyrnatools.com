@@ -1,4 +1,4 @@
-.report-form-outer {
+.rpts-form-outer {
     width: 100%;
     max-width: 900px;
     margin: 56px auto 0 auto;
@@ -12,7 +12,7 @@
     padding: 0 0 32px 0;
 }
 
-.report-form-header-row {
+.rpts-form-header-row {
     display: flex;
     align-items: center;
     gap: 22px;
@@ -25,7 +25,7 @@
     letter-spacing: 0.01em;
 }
 
-.report-form-title {
+.rpts-form-title {
     flex: 1;
     text-align: left;
     font-size: 1.35em;
@@ -34,14 +34,14 @@
     letter-spacing: 0.01em;
 }
 
-.report-context {
+.rpts-context {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-.context-chip {
+.rpts-context-chip {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -54,11 +54,11 @@
     font-weight: 700;
 }
 
-.context-chip i {
+.rpts-context-chip i {
     color: var(--accent);
 }
 
-.report-form-back {
+.rpts-form-back {
     background: var(--card-bg);
     border: 1.5px solid var(--divider);
     color: var(--text-secondary);
@@ -77,41 +77,41 @@
     font-weight: 600;
 }
 
-.report-form-back:hover {
+.rpts-form-back:hover {
     background: var(--divider);
     color: var(--primary);
     border-color: var(--accent);
 }
 
-.report-form-body-wide {
+.rpts-form-body-wide {
     padding: 48px 56px 36px 56px;
     display: flex;
     flex-direction: column;
     gap: 32px;
 }
 
-.report-form-fields-grid {
+.rpts-form-fields-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 32px 36px;
 }
 
-.report-form-field-wide {
+.rpts-form-field-wide {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.report-form-field-wide label {
+.rpts-form-field-wide label {
     font-weight: 700;
     color: var(--text-primary);
     font-size: 17px;
     margin-bottom: 2px;
 }
 
-.report-form-field-wide input,
-.report-form-field-wide textarea,
-.report-form-field-wide select {
+.rpts-form-field-wide input,
+.rpts-form-field-wide textarea,
+.rpts-form-field-wide select {
     width: 100%;
     border-radius: 10px;
     border: 1.5px solid var(--divider);
@@ -123,46 +123,46 @@
     font-family: inherit;
 }
 
-.report-form-field-wide input::placeholder,
-.report-form-field-wide textarea::placeholder,
-.report-form-field-wide select::placeholder {
+.rpts-form-field-wide input::placeholder,
+.rpts-form-field-wide textarea::placeholder,
+.rpts-form-field-wide select::placeholder {
     color: var(--text-placeholder);
     opacity: 1;
 }
 
-.report-form-field-wide input:focus,
-.report-form-field-wide textarea:focus,
-.report-form-field-wide select:focus {
+.rpts-form-field-wide input:focus,
+.rpts-form-field-wide textarea:focus,
+.rpts-form-field-wide select:focus {
     outline: none;
     border-color: var(--accent);
 }
 
-.report-form-field-wide textarea {
+.rpts-form-field-wide textarea {
     min-height: 110px;
     resize: vertical;
 }
 
-.report-modal-required {
+.rpts-modal-required {
     color: var(--error);
     margin-left: 4px;
     font-size: 1.1em;
 }
 
-.report-modal-error {
+.rpts-modal-error {
     color: var(--error);
     font-size: 16px;
     margin-bottom: 8px;
     margin-top: -8px;
 }
 
-.report-modal-actions-wide {
+.rpts-modal-actions-wide {
     display: flex;
     justify-content: flex-end;
     gap: 18px;
     margin-top: 18px;
 }
 
-.report-modal-cancel {
+.rpts-modal-cancel {
     background: var(--background);
     color: var(--text-primary);
     border: 1px solid var(--divider);
@@ -174,13 +174,13 @@
     transition: background 0.18s;
 }
 
-.report-modal-cancel:hover {
+.rpts-modal-cancel:hover {
     background: var(--card-bg);
     border-color: var(--text-light);
 }
 
-.report-modal-save,
-.report-modal-submit {
+.rpts-modal-save,
+.rpts-modal-submit {
     background: var(--accent);
     color: var(--text-light);
     border: none;
@@ -192,12 +192,12 @@
     transition: background 0.18s;
 }
 
-.report-modal-save:hover,
-.report-modal-submit:hover {
+.rpts-modal-save:hover,
+.rpts-modal-submit:hover {
     background: var(--accent-dark);
 }
 
-.summary-tabs-container {
+.rpts-summary-tabs-container {
     margin-top: 32px;
     margin-bottom: 0;
     background: var(--card-bg);
@@ -210,7 +210,7 @@
     border: 1.5px solid var(--divider);
 }
 
-.summary-tabs {
+.rpts-summary-tabs {
     display: flex;
     gap: 0;
     border-bottom: 1.5px solid var(--divider);
@@ -220,7 +220,7 @@
     overflow: hidden;
 }
 
-.summary-tabs button {
+.rpts-summary-tabs button {
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -233,20 +233,20 @@
     border-bottom: 3px solid transparent;
 }
 
-.summary-tabs button.active {
+.rpts-summary-tabs button.active {
     color: var(--accent);
     border-bottom: 3px solid var(--accent);
     background: var(--card-bg);
 }
 
-.summary-content {
+.rpts-summary-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 32px 0 0 0;
 }
 
-.summary-metric-card {
+.rpts-summary-metric-card {
     min-width: 260px;
     max-width: 340px;
     width: 100%;
@@ -262,7 +262,7 @@
     transition: border-color 0.2s;
 }
 
-.summary-metric-title {
+.rpts-summary-metric-title {
     font-size: 1rem;
     font-weight: 700;
     color: var(--primary);
@@ -270,7 +270,7 @@
     letter-spacing: 0.01em;
 }
 
-.summary-metric-value {
+.rpts-summary-metric-value {
     font-size: 2.1rem;
     font-weight: 800;
     margin-bottom: 6px;
@@ -279,7 +279,7 @@
     color: var(--primary);
 }
 
-.summary-metric-grade {
+.rpts-summary-metric-grade {
     font-size: 1.05rem;
     font-weight: 700;
     margin-bottom: 12px;
@@ -288,13 +288,13 @@
     color: var(--primary);
 }
 
-.dark-mode .summary-metric-title,
-.dark-mode .summary-metric-value,
-.dark-mode .summary-metric-grade {
+.dark-mode .rpts-summary-metric-title,
+.dark-mode .rpts-summary-metric-value,
+.dark-mode .rpts-summary-metric-grade {
     color: var(--text-light);
 }
 
-.summary-metric-scale {
+.rpts-summary-metric-scale {
     display: flex;
     gap: 8px;
     margin-top: 6px;
@@ -305,7 +305,7 @@
     justify-content: space-between;
 }
 
-.summary-metric-scale span {
+.rpts-summary-metric-scale span {
     padding: 3px 9px;
     border-radius: 8px;
     background: var(--card-bg);
@@ -315,7 +315,7 @@
     transition: background 0.18s, color 0.18s, opacity 0.18s;
 }
 
-.summary-metric-scale span.active {
+.rpts-summary-metric-scale span.active {
     background: var(--accent-light-theme);
     color: var(--text-primary);
     opacity: 1;
@@ -323,25 +323,25 @@
     box-shadow: 0 1px 4px var(--shadow-sm);
 }
 
-.history-search-input::placeholder {
+.rpts-history-search-input::placeholder {
     color: var(--text-placeholder);
     opacity: 1;
 }
 
-.report-form-toolbar {
+.rpts-form-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
 }
 
-.report-export-actions {
+.rpts-export-actions {
     display: flex;
     gap: 12px;
     align-items: center;
 }
 
-.export-button {
+.rpts-export-button {
     border: none;
     border-radius: 6px;
     padding: 10px 22px;
@@ -349,31 +349,31 @@
     font-size: 15px;
 }
 
-.export-button.active {
+.rpts-export-button.active {
     background: var(--accent);
     color: var(--text-light);
     cursor: pointer;
 }
 
-.export-button.disabled {
+.rpts-export-button.disabled {
     background: var(--divider);
     color: var(--text-secondary);
     cursor: not-allowed;
     opacity: 0.6;
 }
 
-.plant-prod-row {
+.rpts-plant-prod-row {
     display: flex;
     gap: 24px;
     width: 100%;
     margin-bottom: 18px;
 }
 
-.plant-prod-col {
+.rpts-plant-prod-col {
     flex: 1;
 }
 
-.plant-prod-input {
+.rpts-plant-prod-input {
     background: var(--background);
     border: 1.5px solid var(--divider);
     border-radius: 8px;
@@ -389,16 +389,16 @@
     line-height: 1.2;
 }
 
-.plant-prod-select:focus, .plant-prod-date:focus {
+.rpts-plant-prod-select:focus, .rpts-plant-prod-date:focus {
     border: 1.5px solid var(--accent);
     box-shadow: var(--shadow-sm);
 }
 
-.plant-prod-select:hover, .plant-prod-date:hover {
+.rpts-plant-prod-select:hover, .rpts-plant-prod-date:hover {
     border: 1.5px solid var(--accent);
 }
 
-.operator-carousel {
+.rpts-operator-carousel {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -407,7 +407,7 @@
     width: 100%;
 }
 
-.operator-dot {
+.rpts-operator-dot {
     min-width: 32px;
     height: 32px;
     border-radius: 16px;
@@ -423,13 +423,13 @@
     transition: background 0.2s, color 0.2s, border 0.2s;
 }
 
-.operator-dot.active {
+.rpts-operator-dot.active {
     background: var(--accent);
     color: var(--text-light);
     border: 2px solid var(--accent);
 }
 
-.operator-card {
+.rpts-operator-card {
     border: 1px solid var(--divider);
     border-radius: 10px;
     background: var(--card-bg);
@@ -439,30 +439,30 @@
     width: 100%;
 }
 
-.operator-card-body {
+.rpts-operator-card-body {
     padding: 24px 24px 0 24px;
     display: flex;
     flex-direction: column;
     gap: 18px;
 }
 
-.operator-card-row {
+.rpts-operator-card-row {
     display: flex;
     gap: 18px;
 }
 
-.operator-card-field {
+.rpts-operator-card-field {
     flex: 1;
 }
 
-.operator-card-actions {
+.rpts-operator-card-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 18px 24px 18px 24px;
 }
 
-.btn-secondary {
+.rpts-btn-secondary {
     font-weight: 600;
     font-size: 15px;
     background: var(--divider);
@@ -473,7 +473,7 @@
     cursor: pointer;
 }
 
-.btn-primary {
+.rpts-btn-primary {
     font-weight: 600;
     font-size: 15px;
     background: var(--accent);
@@ -484,37 +484,37 @@
     cursor: pointer;
 }
 
-.btn-primary.disabled {
+.rpts-btn-primary.disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-.operator-count {
+.rpts-operator-count {
     font-weight: 600;
     font-size: 15px;
 }
 
 @media (max-width: 1100px) {
-    .report-form-outer {
+    .rpts-form-outer {
         max-width: 99vw;
     }
 
-    .report-form-header-row {
+    .rpts-form-header-row {
         padding: 24px 18px 12px 18px;
         font-size: 1.1rem;
     }
 
-    .report-form-body-wide {
+    .rpts-form-body-wide {
         padding: 18px 18px 14px 18px;
         gap: 18px;
     }
 
-    .report-form-fields-grid {
+    .rpts-form-fields-grid {
         grid-template-columns: 1fr;
         gap: 18px 0;
     }
 
-    .summary-metric-card {
+    .rpts-summary-metric-card {
         min-width: 0;
         max-width: 99vw;
         padding: 12px 4vw 12px 4vw;
@@ -522,13 +522,13 @@
 }
 
 @media (max-width: 600px) {
-    .summary-metric-card {
+    .rpts-summary-metric-card {
         min-width: 0;
         max-width: 99vw;
         padding: 10px 2vw 10px 2vw;
     }
 
-    .summary-content {
+    .rpts-summary-content {
         padding: 10px 0 0 0;
     }
 }

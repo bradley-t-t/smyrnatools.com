@@ -578,16 +578,16 @@ function ReportsView() {
 
     return (
         <>
-            <div className="reports-root">
-                {loadError && <div className="reports-load-error">{loadError}</div>}
+            <div className="rpts-root">
+                {loadError && <div className="rpts-load-error">{loadError}</div>}
                 {!showForm && !showReview && (
                     <>
-                        <div className="reports-toolbar">
-                            <div className="reports-toolbar-title">
+                        <div className="rpts-toolbar">
+                            <div className="rpts-toolbar-title">
                                 <i className="fas fa-file-alt"></i>
                                 <span>Reports</span>
                             </div>
-                            <div className="reports-tabs">
+                            <div className="rpts-tabs">
                                 <button
                                     className={tab === 'all' ? 'active' : ''}
                                     onClick={() => setTab('all')}
@@ -604,11 +604,11 @@ function ReportsView() {
                                 </button>
                             </div>
                         </div>
-                        <div className="reports-filters">
+                        <div className="rpts-filters">
                             <select
                                 value={filterReportType}
                                 onChange={e => setFilterReportType(e.target.value)}
-                                className="select-control"
+                                className="rpts-select-control"
                             >
                                 <option value="">All Report Types</option>
                                 {reportTypes
@@ -623,7 +623,7 @@ function ReportsView() {
                             <select
                                 value={filterPlant}
                                 onChange={e => setFilterPlant(e.target.value)}
-                                className="select-control"
+                                className="rpts-select-control"
                             >
                                 <option value="">All Plants</option>
                                 {plants
@@ -633,17 +633,17 @@ function ReportsView() {
                                     ))}
                             </select>
                         </div>
-                        <div className="reports-content">
+                        <div className="rpts-content">
                             {tab === 'all' && (
-                                <div className="reports-list">
+                                <div className="rpts-list">
                                     {(isLoadingUser || isLoadingMy || isLoadingPermissions) && filteredMyWeeks.length === 0 ? (
-                                        <div className="reports-loading">
+                                        <div className="rpts-loading">
                                             <LoadingScreen message="Loading your reports..." inline/>
                                         </div>
                                     ) : (
                                         <>
                                             {filteredMyWeeks.length === 0 ? (
-                                                <div className="reports-empty">
+                                                <div className="rpts-empty">
                                                     <i className="fas fa-check-circle"></i>
                                                     <div>No reports</div>
                                                 </div>
@@ -658,8 +658,8 @@ function ReportsView() {
                                                         weekEnd.setDate(weekStart.getDate() + 5)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
-                                                            <div key={weekIso} className="reports-week-group">
-                                                                <div className="reports-week-header">
+                                                            <div key={weekIso} className="rpts-week-group">
+                                                                <div className="rpts-week-header">
                                                                     {weekRange}
                                                                 </div>
                                                                 {weekItems.map(item => {
@@ -685,16 +685,16 @@ function ReportsView() {
                                                                         statusClass = 'error'
                                                                     }
                                                                     return (
-                                                                        <div className="reports-list-item"
+                                                                        <div className="rpts-list-item"
                                                                              key={item.name + item.weekIso}>
-                                                                            <div className="reports-list-title">
+                                                                            <div className="rpts-list-title">
                                                                                 {item.title}
                                                                                 <span
-                                                                                    className={`reports-status ${statusClass}`}>
+                                                                                    className={`rpts-status ${statusClass}`}>
                                                                                     {statusText}
                                                                                 </span>
                                                                             </div>
-                                                                            <button className="reports-list-action"
+                                                                            <button className="rpts-list-action"
                                                                                     onClick={() => handleShowForm(item)}>
                                                                                 {buttonLabel}
                                                                             </button>
@@ -705,11 +705,11 @@ function ReportsView() {
                                                         )
                                                     })}
                                                     {(myReportsVisibleWeeks < totalMyWeeks || myReportsVisibleWeeks > 2) && (
-                                                        <div className="reports-cta-row">
+                                                        <div className="rpts-cta-row">
                                                             {myReportsVisibleWeeks < totalMyWeeks && (
                                                                 <button
                                                                     type="button"
-                                                                    className="reports-cta-primary"
+                                                                    className="rpts-cta-primary"
                                                                     onClick={() => setMyReportsVisibleWeeks(w => w + 2)}
                                                                 >
                                                                     Show More
@@ -718,7 +718,7 @@ function ReportsView() {
                                                             {myReportsVisibleWeeks > 2 && (
                                                                 <button
                                                                     type="button"
-                                                                    className="reports-cta-secondary"
+                                                                    className="rpts-cta-secondary"
                                                                     onClick={() => setMyReportsVisibleWeeks(2)}
                                                                 >
                                                                     Show Less
@@ -733,15 +733,15 @@ function ReportsView() {
                                 </div>
                             )}
                             {tab === 'review' && (
-                                <div className="reports-list">
+                                <div className="rpts-list">
                                     {(isLoadingUser || isLoadingPermissions || loadingReporterPlants || (isLoadingReview && filteredReviewWeeks.length === 0)) ? (
-                                        <div className="reports-loading">
+                                        <div className="rpts-loading">
                                             <LoadingScreen message="Loading reports to review..." inline/>
                                         </div>
                                     ) : (
                                         <>
                                             {filteredReviewWeeks.length === 0 ? (
-                                                <div className="reports-empty">
+                                                <div className="rpts-empty">
                                                     <i className="fas fa-user-check"></i>
                                                     <div>No reports to review</div>
                                                 </div>
@@ -761,18 +761,18 @@ function ReportsView() {
                                                         weekEnd.setDate(weekStart.getDate() + 5)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
-                                                            <div key={weekIso} className="reports-week-group">
-                                                                <div className="reports-week-header">
+                                                            <div key={weekIso} className="rpts-week-group">
+                                                                <div className="rpts-week-header">
                                                                     {weekRange}
                                                                 </div>
                                                                 {weekReports.map(report => (
-                                                                    <div className="reports-list-item" key={report.id}>
-                                                                        <div className="reports-list-title">
+                                                                    <div className="rpts-list-item" key={report.id}>
+                                                                        <div className="rpts-list-title">
                                                                             {report.title}
                                                                         </div>
-                                                                        <div className="reports-list-date">Completed
+                                                                        <div className="rpts-list-date">Completed
                                                                             By: {getUserName(report.userId)}</div>
-                                                                        <button className="reports-list-action"
+                                                                        <button className="rpts-list-action"
                                                                                 onClick={() => handleReview(report)}>
                                                                             Review
                                                                         </button>
@@ -782,11 +782,11 @@ function ReportsView() {
                                                         )
                                                     })}
                                                     {(reviewVisibleWeeks < totalMyWeeks || reviewVisibleWeeks > 2) && (
-                                                        <div className="reports-cta-row">
+                                                        <div className="rpts-cta-row">
                                                             {reviewVisibleWeeks < totalMyWeeks && (
                                                                 <button
                                                                     type="button"
-                                                                    className="reports-cta-primary"
+                                                                    className="rpts-cta-primary"
                                                                     onClick={() => setReviewVisibleWeeks(w => w + 2)}
                                                                 >
                                                                     Show More
@@ -795,7 +795,7 @@ function ReportsView() {
                                                             {reviewVisibleWeeks > 2 && (
                                                                 <button
                                                                     type="button"
-                                                                    className="reports-cta-secondary"
+                                                                    className="rpts-cta-secondary"
                                                                     onClick={() => setReviewVisibleWeeks(2)}
                                                                 >
                                                                     Show Less
@@ -850,7 +850,7 @@ function ReportsView() {
                     />
                 )}
             </div>
-            <div className="reports-footer">
+            <div className="rpts-footer">
                 Weekly Reports are due Saturday by end of day.
             </div>
         </>

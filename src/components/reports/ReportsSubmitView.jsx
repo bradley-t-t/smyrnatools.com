@@ -516,44 +516,44 @@ function ReportsSubmitView({
                     </div>
                 )}
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
-                    <button className="report-form-back" onClick={handleBackClick} type="button">
+                    <button className="rpts-form-back" onClick={handleBackClick} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
                 </div>
-                <div className="report-form-header-row" style={{marginTop: 0}}>
-                    <div className="report-form-title">
+                <div className="rpts-form-header-row" style={{marginTop: 0}}>
+                    <div className="rpts-form-title">
                         {report.title || ''}
                     </div>
-                    <div className="report-context">
+                    <div className="rpts-context">
                         {weekVerbose ? (
-                            <div className="context-chip">
+                            <div className="rpts-context-chip">
                                 <i className="far fa-calendar-alt"></i>
                                 <span>{weekVerbose}</span>
                             </div>
                         ) : null}
                         {reportDateVerbose ? (
-                            <div className="context-chip">
+                            <div className="rpts-context-chip">
                                 <i className="far fa-calendar-check"></i>
                                 <span>{reportDateVerbose}</span>
                             </div>
                         ) : null}
                         {(report.name === 'plant_production' && form.plant) ? (
-                            <div className="context-chip">
+                            <div className="rpts-context-chip">
                                 <i className="fas fa-industry"></i>
                                 <span>Plant {form.plant}</span>
                             </div>
                         ) : null}
                     </div>
                 </div>
-                <form className="report-form-body-wide" onSubmit={handleSubmit}>
-                    <div className="report-form-fields-grid">
+                <form className="rpts-form-body-wide" onSubmit={handleSubmit}>
+                    <div className="rpts-form-fields-grid">
                         {report.name === 'plant_production' ? (
                             <>
                                 <div style={{display: 'flex', gap: 24, width: '100%', marginBottom: 18}}>
                                     <div style={{flex: 1}}>
                                         <label>
                                             Plant
-                                            <span className="report-modal-required">*</span>
+                                            <span className="rpts-modal-required">*</span>
                                         </label>
                                         <select
                                             value={form.plant || ''}
@@ -596,7 +596,7 @@ function ReportsSubmitView({
                                     }}>
                                         <label>
                                             Report Date
-                                            <span className="report-modal-required">*</span>
+                                            <span className="rpts-modal-required">*</span>
                                         </label>
                                         <input
                                             type="date"
@@ -629,7 +629,7 @@ function ReportsSubmitView({
                                     .plant-prod-input::placeholder { color: var(--text-primary); opacity: 1; }
                                     `}
                                 </style>
-                                <div className="report-form-field-wide" style={{gridColumn: '1 / -1'}}>
+                                <div className="rpts-form-field-wide" style={{gridColumn: '1 / -1'}}>
                                     <label>Operators</label>
                                     <div>
                                         {form.plant && (form.rows || []).length === 0 && (
@@ -927,10 +927,10 @@ function ReportsSubmitView({
                         ) : report.name === 'general_manager' ? null : report.name === 'safety_manager' ? null : (
                             report.fields.map(field => (
                                 field.name === 'issues' ? null : (
-                                    <div key={field.name} className="report-form-field-wide">
+                                    <div key={field.name} className="rpts-form-field-wide">
                                         <label>
                                             {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                            {field.required && <span className="report-modal-required">*</span>}
+                                            {field.required && <span className="rpts-modal-required">*</span>}
                                         </label>
                                         {field.type === 'textarea' ? (
                                             <textarea value={form[field.name] || ''}
@@ -978,14 +978,14 @@ function ReportsSubmitView({
                             />
                         </>
                     )}
-                    {error && <div className="report-modal-error">{error}</div>}
+                    {error && <div className="rpts-modal-error">{error}</div>}
                     {success &&
                         <div style={{color: 'var(--success)', marginBottom: 8}}>Report submitted successfully.</div>}
                     {saveMessage && <div style={{color: 'var(--success)', marginBottom: 8}}>{saveMessage}</div>}
                     {!readOnly && (
-                        <div className="report-modal-actions-wide"
+                        <div className="rpts-modal-actions-wide"
                              style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                            <button type="button" className="report-modal-cancel" onClick={handleBackClick}
+                            <button type="button" className="rpts-modal-cancel" onClick={handleBackClick}
                                     disabled={submitting || savingDraft} style={{
                                 background: 'var(--divider)',
                                 color: 'var(--text-primary)',
@@ -999,7 +999,7 @@ function ReportsSubmitView({
                             }}>
                                 Cancel
                             </button>
-                            <button type="button" className="report-modal-save" style={{
+                            <button type="button" className="rpts-modal-save" style={{
                                 background: 'var(--accent)',
                                 color: 'var(--text-light)',
                                 border: 'none',
@@ -1014,7 +1014,7 @@ function ReportsSubmitView({
                                 {savingDraft ? 'Saving...' : 'Save Changes'}
                             </button>
                             {(!managerEditUser) && (
-                                <button type="submit" className="report-modal-submit"
+                                <button type="submit" className="rpts-modal-submit"
                                         disabled={submitting || savingDraft} style={{
                                     background: 'var(--accent)',
                                     color: 'var(--text-light)',
@@ -1034,7 +1034,7 @@ function ReportsSubmitView({
                 </form>
             </div>
             {showConfirmationModal && (
-                <div className="confirmation-modal" style={{
+                <div className="rpts-confirmation-modal" style={{
                     position: 'fixed',
                     top: 0,
                     left: 0,
@@ -1046,7 +1046,7 @@ function ReportsSubmitView({
                     zIndex: 9999,
                     backgroundColor: 'rgba(0, 0, 0, 0.5)'
                 }}>
-                    <div className="confirmation-content" style={{
+                    <div className="rpts-confirmation-content" style={{
                         width: '90%',
                         maxWidth: '500px',
                         margin: '0 auto',

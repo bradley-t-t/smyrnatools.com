@@ -2,7 +2,6 @@
 import {createClient} from "npm:@supabase/supabase-js@2.45.4";
 import EmailUtility, {isValidEmail} from "../_shared/EmailUtility.js";
 import {buildReportSubmittedEmail} from "../_shared/emails/report-submitted-email.js";
-import {UserService} from '../../../src/services/UserService.js'
 
 const USERS_TABLE = 'users';
 const ROLES_TABLE = 'users_roles';
@@ -103,7 +102,8 @@ Deno.serve(async (req) => {
         let body: ReportNotifyBody = {};
         try {
             body = await req.json();
-        } catch {}
+        } catch {
+        }
 
         switch (endpoint) {
             case 'on-submitted': {
@@ -144,11 +144,14 @@ Deno.serve(async (req) => {
                 const reviewPerm = `reports.review.${reportName}`;
                 const toUserIds = await findReviewerEmailsByPermission(supabase, reviewPerm);
                 const filteredUserIds = await filterRecipientsByWeight(toUserIds, 'report_submitted', supabase);
-                if (!filteredUserIds.length) return new Response(JSON.stringify({ok: true, sent: 0}), {headers: corsHeaders});
+                if (!filteredUserIds.length) return new Response(JSON.stringify({
+                    ok: true,
+                    sent: 0
+                }), {headers: corsHeaders});
                 const theme = {};
                 const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || '';
                 const fromName = Deno.env.get('EMAIL_FROM_NAME') || 'Smyrna Tools';
-                const submittedAtCST = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
+                const submittedAtCST = new Date().toLocaleString('en-US', {timeZone: 'America/Chicago'});
                 const {subject, text, html} = buildReportSubmittedEmail({
                     reportTitle,
                     reportName,

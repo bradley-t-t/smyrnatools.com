@@ -155,7 +155,7 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     const isSubmitted = !!initialData?.completed
 
     let statusText = isSubmitted ? 'Submitted' : 'Saved (Draft)'
-    let statusColor = isSubmitted ? 'var(--success)' : 'var(--warning)'
+    let statusClass = isSubmitted ? 'rpts-status-success' : 'rpts-status-warning'
 
     const tabOptions = [
         {key: 'review', label: 'Review'},
@@ -194,17 +194,17 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     const reportDateVerbose = form.report_date ? formatVerboseDate(form.report_date) : ''
 
     return (
-        <div className="reports-review-view">
-            <div className="reports-review-container">
-                <div className="reports-review-header">
-                    <button className="report-form-back" onClick={onBack} type="button">
+        <div className="rpts-reports-review-view">
+            <div className="rpts-reports-review-container">
+                <div className="rpts-reports-review-header">
+                    <button className="rpts-report-form-back" onClick={onBack} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
-                    <div className="reports-review-actions">
+                    <div className="rpts-reports-review-actions">
                         {hasManagerEditPermission && showManagerEditButton && (
                             <button
                                 type="button"
-                                className="manager-edit-button"
+                                className="rpts-manager-edit-button"
                                 onClick={() => {
                                     if (onManagerEdit) onManagerEdit(report, initialData)
                                 }}
@@ -214,61 +214,61 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                         )}
                     </div>
                 </div>
-                <div className="reports-review-status">
-                    <div className="status-text" style={{color: statusColor}}>
+                <div className="rpts-reports-review-status">
+                    <div className={`rpts-status-text ${statusClass}`}>
                         {statusText}
                     </div>
                     {(report.name === 'plant_manager' || report.name === 'district_manager' || report.name === 'plant_production') && (
-                        <div className="owner-info">
-                            <div className="owner-name">
+                        <div className="rpts-owner-info">
+                            <div className="rpts-owner-name">
                                 {ownerName}
                             </div>
-                            <div className="assigned-plant">
+                            <div className="rpts-assigned-plant">
                                 Assigned Plant: {assignedPlant}
                             </div>
                         </div>
                     )}
                     {submittedAt && (
-                        <div className="submitted-at">
+                        <div className="rpts-submitted-at">
                             {isSubmitted ? 'Submitted at' : 'Last saved'}: {submittedAt}
                         </div>
                     )}
                 </div>
-                <div className="report-form-header-row">
-                    <div className="report-form-title">
+                <div className="rpts-form-header-row">
+                    <div className="rpts-form-title">
                         {reportTitle}
                     </div>
-                    <div className="report-context">
+                    <div className="rpts-context">
                         {weekVerbose ? (
-                            <div className="context-chip">
+                            <div className="rpts-context-chip">
                                 <i className="far fa-calendar-alt"></i>
                                 <span>{weekVerbose}</span>
                             </div>
                         ) : null}
                         {reportDateVerbose ? (
-                            <div className="context-chip">
+                            <div className="rpts-context-chip">
                                 <i className="far fa-calendar-check"></i>
                                 <span>{reportDateVerbose}</span>
                             </div>
                         ) : null}
                         {(report.name === 'plant_production' && plantCode) ? (
-                            <div className="context-chip">
+                            <div className="rpts-context-chip">
                                 <i className="fas fa-industry"></i>
                                 <span>Plant {plantCode}</span>
                             </div>
                         ) : null}
                     </div>
                 </div>
-                <div className="report-form-body-wide">
+                <div className="rpts-form-body-wide">
                     <>
                         {report.name === 'plant_production' || report.name === 'general_manager' ? null : (
-                            <div className="report-form-fields-grid">
+                            <div className="rpts-form-fields-grid">
                                 {report.fields.map(field => (
                                     (report.name === 'safety_manager' && field.name === 'issues') ? null : (
-                                        <div key={field.name} className="report-form-field-wide">
+                                        <div key={field.name} className="rpts-form-field-wide">
                                             <label>
                                                 {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                                {field.required && <span className="report-modal-required">*</span>}
+                                                {field.required && <span className="rpts-modal-required">*</span>}
                                             </label>
                                             {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
                                                 <textarea
