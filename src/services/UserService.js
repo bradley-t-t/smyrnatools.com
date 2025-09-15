@@ -50,6 +50,13 @@ class UserServiceImpl {
         const {json} = await APIUtility.post(`${USER_FUNCTION}/display-name`, {userId})
         return json
     }
+
+    async getUserWeight(userId) {
+        if (!userId) return 0
+        const {json} = await APIUtility.post(`${USER_FUNCTION}/highest-role`, {userId})
+        if (!json || typeof json.weight !== 'number') return 0
+        return json.weight
+    }
 }
 
 export const UserService = new UserServiceImpl()

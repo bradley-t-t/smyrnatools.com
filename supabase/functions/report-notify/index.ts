@@ -2,12 +2,15 @@
 import {createClient} from "npm:@supabase/supabase-js@2.45.4";
 import EmailUtility, {isValidEmail} from "../_shared/EmailUtility.js";
 import {buildReportSubmittedEmail} from "../_shared/emails/report-submitted-email.js";
+import {UserService} from '../../../src/services/UserService.js'
 
 const USERS_TABLE = 'users';
 const ROLES_TABLE = 'users_roles';
 const PERMISSIONS_TABLE = 'users_permissions';
 
-const corsHeaders: Record<string, string> = {
+const ALWAYS_SEND_EMAIL_TYPES = ['forgot_password']
+
+const corsHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
@@ -16,11 +19,20 @@ const corsHeaders: Record<string, string> = {
     "Connection": "keep-alive"
 };
 
+type ReportNotifyBody = {
+    reportName?: string
+    reportTitle?: string
+    weekVerbose?: string
+    submittedById?: string
+    submittedByName?: string
+    submittedByEmail?: string
+}
+
 function handleOptions() {
     return new Response(null, {status: 204, headers: corsHeaders});
 }
 
-async function getSupabase(req: Request) {
+async function getSupabase(req) {
     return createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -28,7 +40,18 @@ async function getSupabase(req: Request) {
     );
 }
 
-function isPlaceholderName(name: string) {
+async function getUserHighestWeight(supabase, userId) {
+    if (!userId) return 0
+    const {data} = await supabase
+        .from('users_permissions')
+        .select('role_id, users_roles(weight)')
+        .eq('user_id', userId)
+    if (!Array.isArray(data) || !data.length) return 0
+    const weights = data.map(item => item?.users_roles?.weight ?? 0)
+    return Math.max(...weights, 0)
+}
+
+function isPlaceholderName(name) {
     if (!name) return true;
     const n = String(name).trim();
     if (!n) return true;
@@ -37,28 +60,38 @@ function isPlaceholderName(name: string) {
     return false;
 }
 
-async function findReviewerEmailsByPermission(supabase: any, reviewPerm: string): Promise<string[]> {
+async function findReviewerEmailsByPermission(supabase, reviewPerm) {
     const {data: roles, error: rolesErr} = await supabase
         .from(ROLES_TABLE)
         .select('id, permissions')
         .overlaps('permissions', [reviewPerm]);
     if (rolesErr || !Array.isArray(roles) || roles.length === 0) return [];
-    const roleIds = roles.map((r: any) => r.id).filter(Boolean);
+    const roleIds = roles.map(r => r.id).filter(Boolean);
     if (!roleIds.length) return [];
     const {data: perms, error: permsErr} = await supabase
         .from(PERMISSIONS_TABLE)
         .select('user_id')
         .in('role_id', roleIds);
     if (permsErr || !Array.isArray(perms) || perms.length === 0) return [];
-    const userIds = Array.from(new Set(perms.map((p: any) => p.user_id).filter(Boolean)));
+    const userIds = Array.from(new Set(perms.map(p => p.user_id).filter(Boolean)));
     if (!userIds.length) return [];
     const {data: users, error: usersErr} = await supabase
         .from(USERS_TABLE)
         .select('id, email')
         .in('id', userIds);
     if (usersErr || !Array.isArray(users)) return [];
-    const emails = users.map(u => u?.email).filter((e: any) => typeof e === 'string' && isValidEmail(e));
+    const emails = users.map(u => u?.email).filter(e => typeof e === 'string' && isValidEmail(e));
     return Array.from(new Set(emails));
+}
+
+async function filterRecipientsByWeight(userIds, emailType, supabase) {
+    if (ALWAYS_SEND_EMAIL_TYPES.includes(emailType)) return userIds
+    const filtered = []
+    for (const userId of userIds) {
+        const weight = await getUserHighestWeight(supabase, userId)
+        if (weight <= 70) filtered.push(userId)
+    }
+    return filtered
 }
 
 Deno.serve(async (req) => {
@@ -67,11 +100,10 @@ Deno.serve(async (req) => {
         const url = new URL(req.url);
         const endpoint = url.pathname.split('/').pop();
         const supabase = await getSupabase(req);
-        let body: any = {};
+        let body: ReportNotifyBody = {};
         try {
             body = await req.json();
-        } catch {
-        }
+        } catch {}
 
         switch (endpoint) {
             case 'on-submitted': {
@@ -110,25 +142,27 @@ Deno.serve(async (req) => {
                     }
                 }
                 const reviewPerm = `reports.review.${reportName}`;
-                const to = await findReviewerEmailsByPermission(supabase, reviewPerm);
-                if (!to.length) return new Response(JSON.stringify({ok: true, sent: 0}), {headers: corsHeaders});
-                const theme = {} as any;
+                const toUserIds = await findReviewerEmailsByPermission(supabase, reviewPerm);
+                const filteredUserIds = await filterRecipientsByWeight(toUserIds, 'report_submitted', supabase);
+                if (!filteredUserIds.length) return new Response(JSON.stringify({ok: true, sent: 0}), {headers: corsHeaders});
+                const theme = {};
                 const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || '';
                 const fromName = Deno.env.get('EMAIL_FROM_NAME') || 'Smyrna Tools';
+                const submittedAtCST = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
                 const {subject, text, html} = buildReportSubmittedEmail({
                     reportTitle,
                     reportName,
                     weekVerbose,
                     submittedByName,
                     submittedByEmail,
-                    submittedAt: new Date().toISOString(),
+                    submittedAt: submittedAtCST,
                     reportUrl: '',
                     theme,
                     logoUrl,
                     fromName
                 });
                 const prep = EmailUtility.prepareMailerSend({
-                    to,
+                    to: filteredUserIds,
                     subject,
                     html,
                     text,
@@ -143,7 +177,7 @@ Deno.serve(async (req) => {
                     headers: prep.request.headers,
                     body: prep.request.body
                 });
-                return new Response(JSON.stringify({ok: true, sent: to.length}), {headers: corsHeaders});
+                return new Response(JSON.stringify({ok: true, sent: filteredUserIds.length}), {headers: corsHeaders});
             }
             default:
                 return new Response(JSON.stringify({error: 'Invalid endpoint', path: url.pathname}), {
@@ -154,7 +188,7 @@ Deno.serve(async (req) => {
     } catch (e) {
         return new Response(JSON.stringify({
             error: 'Internal server error',
-            message: (e as Error).message
+            message: e.message
         }), {status: 500, headers: corsHeaders});
     }
 });
