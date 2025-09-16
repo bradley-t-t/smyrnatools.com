@@ -6,9 +6,8 @@ import {DistrictManagerSubmitPlugin} from './types/WeeklyDistrictManagerReport'
 import {EfficiencySubmitPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerSubmitPlugin} from './types/WeeklySafetyManagerReport'
 import {GeneralManagerSubmitPlugin} from './types/WeeklyGeneralManagerReport'
-import {UserService} from '../../services/UserService'
-import {supabase} from '../../services/DatabaseService'
 import {ReportUtility} from '../../utils/ReportUtility'
+import {EmailUtility} from '../../utils/EmailUtility'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
@@ -18,63 +17,6 @@ const plugins = {
     general_manager: GeneralManagerSubmitPlugin
 }
 
-async function sendReportSubmittedEmail({report, weekVerbose}) {
-    try {
-        let submittedById = ''
-        let submittedByName = ''
-        let submittedByEmail = ''
-        try {
-            const current = await UserService.getCurrentUser()
-            submittedById = current?.id || sessionStorage.getItem('userId') || ''
-            if (submittedById) {
-                const {data: profile} = await supabase.from('users_profiles').select('first_name, last_name').eq('id', submittedById).single()
-                if (profile) {
-                    const full = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-                    submittedByName = full || ''
-                }
-                const userRec = await UserService.getUserById(submittedById)
-                if (userRec?.email) submittedByEmail = userRec.email
-                if (!submittedByName && userRec?.name) submittedByName = String(userRec.name).trim()
-            }
-        } catch {
-        }
-        if (!submittedByName) {
-            const deriveNameFromEmail = (email) => {
-                const e = String(email || '').trim()
-                const local = e.split('@')[0] || ''
-                if (!local) return ''
-                return local.split(/[._-]+/).map(p => p ? p[0].toUpperCase() + p.slice(1) : '').join(' ').trim()
-            }
-            if (submittedByEmail) submittedByName = deriveNameFromEmail(submittedByEmail)
-        }
-        let token = ''
-        try {
-            const {data} = await supabase.auth.getSession()
-            token = data?.session?.access_token || ''
-        } catch {
-        }
-        const url = `${process.env.REACT_APP_EDGE_FUNCTIONS_URL}/report-notify/on-submitted`
-        const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || ''
-        const authHeader = token ? `Bearer ${token}` : (anonKey ? `Bearer ${anonKey}` : '')
-        await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(authHeader ? {Authorization: authHeader} : {}),
-                ...(anonKey ? {apikey: anonKey} : {})
-            },
-            body: JSON.stringify({
-                reportName: report.name,
-                reportTitle: report.title,
-                weekVerbose,
-                submittedById,
-                submittedByName,
-                submittedByEmail
-            })
-        })
-    } catch {
-    }
-}
 
 function ReportsSubmitView({
                                report,
@@ -205,7 +147,7 @@ function ReportsSubmitView({
         try {
             await onSubmit(form, 'submit')
             setSuccess(true)
-            await sendReportSubmittedEmail({report, weekVerbose})
+            await EmailUtility.sendReportSubmittedEmail({report, weekVerbose})
         } catch (err) {
             setError(err?.message || 'Error submitting report')
         }
@@ -220,7 +162,7 @@ function ReportsSubmitView({
         try {
             await onSubmit(form, 'submit')
             setSuccess(true)
-            await sendReportSubmittedEmail({report, weekVerbose})
+            await EmailUtility.sendReportSubmittedEmail({report, weekVerbose})
         } catch (err) {
             setError(err?.message || 'Error submitting report')
         }
@@ -245,7 +187,7 @@ function ReportsSubmitView({
             setSaveMessage('Changes saved.')
             setInitialFormSnapshot(JSON.stringify(form))
             setHasUnsavedChanges(false)
-            if (managerEditUser) await sendReportSubmittedEmail({report, weekVerbose})
+            if (managerEditUser) await EmailUtility.sendReportSubmittedEmail({report, weekVerbose})
         } catch (err) {
             setError(err?.message || 'Error saving draft')
         }

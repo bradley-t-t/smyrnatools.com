@@ -96,6 +96,68 @@ export function prepareMailerSend(input, overrides) {
     return {ok: true, request: req, message: msg};
 }
 
+import {supabase} from '../services/DatabaseService'
+import {UserService} from '../services/UserService'
+
+function getEdgeHeaders(token, anonKey) {
+    const headers = {'Content-Type': 'application/json'}
+    if (token) headers.Authorization = `Bearer ${token}`
+    else if (anonKey) headers.Authorization = `Bearer ${anonKey}`
+    if (anonKey) headers.apikey = anonKey
+    return headers
+}
+
+export async function sendReportSubmittedEmail({report, weekVerbose}) {
+    try {
+        let submittedById = ''
+        let submittedByName = ''
+        let submittedByEmail = ''
+        try {
+            const current = await UserService.getCurrentUser()
+            submittedById = current?.id || sessionStorage.getItem('userId') || ''
+            if (submittedById) {
+                const {data: profile} = await supabase.from('users_profiles').select('first_name, last_name').eq('id', submittedById).single()
+                if (profile) {
+                    const full = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+                    submittedByName = full || ''
+                }
+                const userRec = await UserService.getUserById(submittedById)
+                if (userRec?.email) submittedByEmail = userRec.email
+                if (!submittedByName && userRec?.name) submittedByName = String(userRec.name).trim()
+            }
+        } catch {}
+        if (!submittedByName) {
+            const deriveNameFromEmail = (email) => {
+                const e = String(email || '').trim()
+                const local = e.split('@')[0] || ''
+                if (!local) return ''
+                return local.split(/[._-]+/).map(p => p ? p[0].toUpperCase() + p.slice(1) : '').join(' ').trim()
+            }
+            if (submittedByEmail) submittedByName = deriveNameFromEmail(submittedByEmail)
+        }
+        let token = ''
+        try {
+            const {data} = await supabase.auth.getSession()
+            token = data?.session?.access_token || ''
+        } catch {}
+        const url = `${process.env.REACT_APP_EDGE_FUNCTIONS_URL}/report-notify/on-submitted`
+        const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || ''
+        const headers = getEdgeHeaders(token, anonKey)
+        await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                reportName: report.name,
+                reportTitle: report.title,
+                weekVerbose,
+                submittedById,
+                submittedByName,
+                submittedByEmail
+            })
+        })
+    } catch {}
+}
+
 const EmailUtility = {
     getMailerSendConfig,
     validateMailerSendConfig,
@@ -106,6 +168,8 @@ const EmailUtility = {
     isValidEmail,
     isServer,
     canSendHere,
-    prepareMailerSend
+    prepareMailerSend,
+    sendReportSubmittedEmail
 };
+export { EmailUtility };
 export default EmailUtility;
