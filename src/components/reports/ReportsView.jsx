@@ -686,41 +686,106 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {filteredMyWeeks.map(weekIso => {
-                                                        const weekItems = (myReportsByWeek[weekIso] || []).filter(item => !filterReportType || item.name === filterReportType)
-                                                        if (weekItems.length === 0) return null
+                                                        const weekItemsAll = (myReportsByWeek[weekIso] || []).filter(item => !filterReportType || item.name === filterReportType)
+                                                        if (weekItemsAll.length === 0) return null
                                                         const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
+                                                        const pmItem = weekItemsAll.find(i => i.name === 'plant_manager')
+                                                        const peItem = weekItemsAll.find(i => i.name === 'plant_production')
+                                                        const otherItems = weekItemsAll.filter(i => i.name !== 'plant_manager' && i.name !== 'plant_production')
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
                                                                 <div className="rpts-week-header">
                                                                     {weekRange}
                                                                 </div>
-                                                                {weekItems.map(item => {
-                                                                    const today = new Date()
-                                                                    const hasSavedData = !!(item.report && item.report.data)
-                                                                    const {statusText, statusClass, buttonLabel} = ReportUtility.computeMyReportStatus({
-                                                                        completed: item.completed,
-                                                                        hasSavedData,
-                                                                        weekIso: item.weekIso,
-                                                                        today
-                                                                    })
-                                                                    return (
-                                                                        <div className="rpts-list-item"
-                                                                             key={item.name + item.weekIso}>
-                                                                            <div className="rpts-list-title">
-                                                                                {item.title}
-                                                                                <span
-                                                                                    className={`rpts-status ${statusClass}`}>
-                                                                                    {statusText}
-                                                                                </span>
-                                                                            </div>
-                                                                            <button className="rpts-list-action"
-                                                                                    onClick={() => handleShowForm(item)}>
-                                                                                {buttonLabel}
-                                                                            </button>
+                                                                {(pmItem || peItem) && (
+                                                                    <div className="rpts-pair">
+                                                                        <div className="rpts-pair-header">
+                                                                            <div>Plant Manager + Efficiency</div>
+                                                                            <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
                                                                         </div>
-                                                                    )
-                                                                })}
+                                                                        <div className={`rpts-pair-cols ${(pmItem && peItem) ? '' : 'single'}`}>
+                                                                            {pmItem && (() => {
+                                                                                const today = new Date()
+                                                                                const hasSavedData = !!(pmItem.report && pmItem.report.data)
+                                                                                const {statusText, statusClass, buttonLabel} = ReportUtility.computeMyReportStatus({
+                                                                                    completed: pmItem.completed,
+                                                                                    hasSavedData,
+                                                                                    weekIso: pmItem.weekIso,
+                                                                                    today
+                                                                                })
+                                                                                return (
+                                                                                    <div className="rpts-pair-tile">
+                                                                                        <div className="rpts-pair-title">
+                                                                                            <i className="fas fa-user-tie"></i>
+                                                                                            <span>{pmItem.title}</span>
+                                                                                            <span className={`rpts-status ${statusClass}`}>{statusText}</span>
+                                                                                        </div>
+                                                                                        <div className="rpts-pair-actions">
+                                                                                            <button className="rpts-list-action" onClick={() => handleShowForm(pmItem)}>{buttonLabel}</button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )
+                                                                            })()}
+                                                                            {peItem && (() => {
+                                                                                const today = new Date()
+                                                                                const hasSavedData = !!(peItem.report && peItem.report.data)
+                                                                                const {statusText, statusClass, buttonLabel} = ReportUtility.computeMyReportStatus({
+                                                                                    completed: peItem.completed,
+                                                                                    hasSavedData,
+                                                                                    weekIso: peItem.weekIso,
+                                                                                    today
+                                                                                })
+                                                                                return (
+                                                                                    <div className="rpts-pair-tile">
+                                                                                        <div className="rpts-pair-title">
+                                                                                            <i className="fas fa-industry"></i>
+                                                                                            <span>{peItem.title}</span>
+                                                                                            <span className={`rpts-status ${statusClass}`}>{statusText}</span>
+                                                                                        </div>
+                                                                                        <div className="rpts-pair-actions">
+                                                                                            <button className="rpts-list-action" onClick={() => handleShowForm(peItem)}>{buttonLabel}</button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )
+                                                                            })()}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {otherItems.length > 0 && (
+                                                                    <div className="rpts-pair">
+                                                                        <div className="rpts-pair-header">
+                                                                            <div>Other Reports</div>
+                                                                            <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
+                                                                        </div>
+                                                                        <div className={`rpts-pair-cols ${otherItems.length === 1 ? 'single' : ''}`}>
+                                                                            {otherItems.map(item => {
+                                                                                const today = new Date()
+                                                                                const hasSavedData = !!(item.report && item.report.data)
+                                                                                const {statusText, statusClass, buttonLabel} = ReportUtility.computeMyReportStatus({
+                                                                                    completed: item.completed,
+                                                                                    hasSavedData,
+                                                                                    weekIso: item.weekIso,
+                                                                                    today
+                                                                                })
+                                                                                return (
+                                                                                    <div className="rpts-pair-tile" key={item.name + item.weekIso}>
+                                                                                        <div className="rpts-pair-title">
+                                                                                            <i className="fas fa-file-alt"></i>
+                                                                                            <span>{item.title}</span>
+                                                                                            <span className={`rpts-status ${statusClass}`}>{statusText}</span>
+                                                                                        </div>
+                                                                                        <div className="rpts-pair-actions">
+                                                                                            <button className="rpts-list-action" onClick={() => handleShowForm(item)}>
+                                                                                                {buttonLabel}
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )
                                                     })}
@@ -768,32 +833,89 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {filteredReviewWeeks.map(weekIso => {
-                                                        const weekReports = (reviewReportsByWeek[weekIso] || []).filter(report => {
+                                                        const weekReportsAll = (reviewReportsByWeek[weekIso] || []).filter(report => {
                                                             const reporterPlant = reporterPlantMap[report.userId] || ''
                                                             const matchPlant = !filterPlant || reporterPlant === filterPlant
                                                             const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
                                                             return (!filterReportType || report.name === filterReportType) && matchPlant && matchRegion
                                                         })
-                                                        if (weekReports.length === 0) return null
+                                                        if (weekReportsAll.length === 0) return null
                                                         const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
+                                                        const byUser = new Map()
+                                                        weekReportsAll.forEach(r => {
+                                                            const list = byUser.get(r.userId) || []
+                                                            list.push(r)
+                                                            byUser.set(r.userId, list)
+                                                        })
+                                                        const pairs = []
+                                                        const singles = []
+                                                        byUser.forEach(list => {
+                                                            const pm = list.find(r => r.name === 'plant_manager')
+                                                            const pe = list.find(r => r.name === 'plant_production')
+                                                            if (pm || pe) pairs.push({pm, pe})
+                                                            const remaining = list.filter(r => r.name !== 'plant_manager' && r.name !== 'plant_production')
+                                                            remaining.forEach(r => singles.push(r))
+                                                        })
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
                                                                 <div className="rpts-week-header">
                                                                     {weekRange}
                                                                 </div>
-                                                                {weekReports.map(report => (
-                                                                    <div className="rpts-list-item" key={report.id}>
-                                                                        <div className="rpts-list-title">
-                                                                            {report.title}
+                                                                {pairs.map((pair, idx) => (
+                                                                    <div className="rpts-pair" key={`pair-${weekIso}-${idx}`}>
+                                                                        <div className="rpts-pair-header">
+                                                                            <div>Plant Manager + Efficiency</div>
+                                                                            <div className="rpts-pair-meta">Completed By {getUserName((pair.pm || pair.pe).userId)}</div>
                                                                         </div>
-                                                                        <div className="rpts-list-date">Completed By: {getUserName(report.userId)}</div>
-                                                                        <button className="rpts-list-action"
-                                                                                onClick={() => handleReview(report)}>
-                                                                            Review
-                                                                        </button>
+                                                                        <div className={`rpts-pair-cols ${(pair.pm && pair.pe) ? '' : 'single'}`}>
+                                                                            {pair.pm && (
+                                                                                <div className="rpts-pair-tile">
+                                                                                    <div className="rpts-pair-title">
+                                                                                        <i className="fas fa-user-tie"></i>
+                                                                                        <span>{pair.pm.title}</span>
+                                                                                    </div>
+                                                                                    <div className="rpts-pair-actions">
+                                                                                        <button className="rpts-list-action" onClick={() => handleReview(pair.pm)}>Review</button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                            {pair.pe && (
+                                                                                <div className="rpts-pair-tile">
+                                                                                    <div className="rpts-pair-title">
+                                                                                        <i className="fas fa-industry"></i>
+                                                                                        <span>{pair.pe.title}</span>
+                                                                                    </div>
+                                                                                    <div className="rpts-pair-actions">
+                                                                                        <button className="rpts-list-action" onClick={() => handleReview(pair.pe)}>Review</button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 ))}
+                                                                {singles.length > 0 && (
+                                                                    <div className="rpts-pair">
+                                                                        <div className="rpts-pair-header">
+                                                                            <div>Other Reports</div>
+                                                                            <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
+                                                                        </div>
+                                                                        <div className={`rpts-pair-cols ${singles.length === 1 ? 'single' : ''}`}>
+                                                                            {singles.map(report => (
+                                                                                <div className="rpts-pair-tile" key={report.id}>
+                                                                                    <div className="rpts-pair-title">
+                                                                                        <i className="fas fa-file-alt"></i>
+                                                                                        <span>{report.title}</span>
+                                                                                        <span className="rpts-pair-meta">Completed By: {getUserName(report.userId)}</span>
+                                                                                    </div>
+                                                                                    <div className="rpts-pair-actions">
+                                                                                        <button className="rpts-list-action" onClick={() => handleReview(report)}>Review</button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )
                                                     })}
@@ -841,25 +963,77 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {sortedOverdueWeeks.map(weekIso => {
-                                                        const items = overdueByWeek[weekIso] || []
-                                                        if (items.length === 0) return null
+                                                        const itemsAll = overdueByWeek[weekIso] || []
+                                                        if (itemsAll.length === 0) return null
                                                         const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
+                                                        const byUser = new Map()
+                                                        itemsAll.forEach(i => {
+                                                            const list = byUser.get(i.userId) || []
+                                                            list.push(i)
+                                                            byUser.set(i.userId, list)
+                                                        })
+                                                        const pairs = []
+                                                        const singles = []
+                                                        byUser.forEach(list => {
+                                                            const pm = list.find(r => r.report_name === 'plant_manager')
+                                                            const pe = list.find(r => r.report_name === 'plant_production')
+                                                            if (pm || pe) pairs.push({pm, pe})
+                                                            const remaining = list.filter(r => r.report_name !== 'plant_manager' && r.report_name !== 'plant_production')
+                                                            remaining.forEach(r => singles.push(r))
+                                                        })
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
                                                                 <div className="rpts-week-header">
                                                                     {weekRange}
                                                                 </div>
-                                                                {items
-                                                                    .sort((a, b) => a.report_name.localeCompare(b.report_name))
-                                                                    .map((item, idx) => (
-                                                                        <div className="rpts-list-item" key={`${item.userId}-${item.report_name}-${item.week}-${idx}`}>
-                                                                            <div className="rpts-list-title">
-                                                                                {(reportTypeMap[item.report_name] || {}).title || item.report_name}
-                                                                            </div>
-                                                                            <div className="rpts-list-date">Owed By: {(item.first_name || '') + ' ' + (item.last_name || '')}</div>
+                                                                {pairs.map((pair, idx) => (
+                                                                    <div className="rpts-pair" key={`od-pair-${weekIso}-${idx}`}>
+                                                                        <div className="rpts-pair-header">
+                                                                            <div>Plant Manager + Efficiency</div>
+                                                                            <div className="rpts-pair-meta">Owed By {(pair.pm || pair.pe) ? `${(pair.pm?.first_name || pair.pe?.first_name || '')} ${(pair.pm?.last_name || pair.pe?.last_name || '')}`.trim() : ''}</div>
                                                                         </div>
-                                                                    ))}
+                                                                        <div className={`rpts-pair-cols ${(pair.pm && pair.pe) ? '' : 'single'}`}>
+                                                                            {pair.pm && (
+                                                                                <div className="rpts-pair-tile">
+                                                                                    <div className="rpts-pair-title">
+                                                                                        <i className="fas fa-user-tie"></i>
+                                                                                        <span>{(reportTypeMap[pair.pm.report_name] || {}).title || pair.pm.report_name}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                            {pair.pe && (
+                                                                                <div className="rpts-pair-tile">
+                                                                                    <div className="rpts-pair-title">
+                                                                                        <i className="fas fa-industry"></i>
+                                                                                        <span>{(reportTypeMap[pair.pe.report_name] || {}).title || pair.pe.report_name}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                {singles.length > 0 && (
+                                                                    <div className="rpts-pair">
+                                                                        <div className="rpts-pair-header">
+                                                                            <div>Other Reports</div>
+                                                                            <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
+                                                                        </div>
+                                                                        <div className={`rpts-pair-cols ${singles.length === 1 ? 'single' : ''}`}>
+                                                                            {singles
+                                                                                .sort((a, b) => a.report_name.localeCompare(b.report_name))
+                                                                                .map((item, idx) => (
+                                                                                    <div className="rpts-pair-tile" key={`${item.userId}-${item.report_name}-${item.week}-${idx}`}>
+                                                                                        <div className="rpts-pair-title">
+                                                                                            <i className="fas fa-file-alt"></i>
+                                                                                            <span>{(reportTypeMap[item.report_name] || {}).title || item.report_name}</span>
+                                                                                            <span className="rpts-pair-meta">Owed By: {(item.first_name || '') + ' ' + (item.last_name || '')}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )
                                                     })}
