@@ -386,7 +386,7 @@ function ReportsSubmitView({
             <div className="rpts-sbmt-container">
                 {managerEditUser && (
                     <div className="rpts-sbmt-edit-banner">
-                        Editing report for: {editingUserName}
+                        Editing {editingUserName}s Report
                     </div>
                 )}
                 <div className="rpts-sbmt-toolbar">

@@ -2,9 +2,12 @@ import {supabase} from './DatabaseService'
 import CacheUtility from '../utils/CacheUtility'
 import {UserService} from './UserService'
 import {RegionService} from './RegionService'
+import {reportTypes} from '../config/types/ReportTypes'
+import {ReportUtility} from '../utils/ReportUtility'
 
 const TTL_SHORT = 5 * 60 * 1000
 const TTL_MED = 10 * 60 * 1000
+const REPORTS_START_DATE = new Date('2025-07-20')
 
 function sortPlants(plants) {
     return (plants || []).filter(p => p.plant_code && p.plant_name).sort((a, b) => {
@@ -333,6 +336,173 @@ class ReportServiceImpl {
         const items = !error && Array.isArray(data) ? data : []
         CacheUtility.set(key, items, TTL_SHORT)
         return items
+    }
+
+    async fetchOverdueAssignments(today = new Date(), options = {}) {
+        const force = !!options.force
+        const allowedReview = Array.isArray(options.allowedReview) ? options.allowedReview.filter(Boolean) : null
+        const cacheKey = `overdue:${today.toISOString().slice(0,10)}:${(allowedReview||[]).join(',')}`
+        const cached = !force ? CacheUtility.get(cacheKey) : null
+        if (cached) return cached
+        const candidateWeeks = ReportUtility.getLastNWeekIsos(3, today)
+        const weekIsos = candidateWeeks.filter(iso => {
+            const {saturday} = ReportUtility.getWeekDatesFromIso(iso)
+            return saturday && saturday < today
+        }).slice(0, 2)
+        if (weekIsos.length === 0) {
+            CacheUtility.set(cacheKey, [], TTL_SHORT)
+            return []
+        }
+        const {data: profiles, error: profilesError} = await supabase
+            .from('users_profiles')
+            .select('id, first_name, last_name')
+        if (profilesError || !Array.isArray(profiles) || profiles.length === 0) {
+            CacheUtility.set(cacheKey, [], TTL_SHORT)
+            return []
+        }
+        const assignedMap = new Map()
+        await Promise.all(profiles.map(async p => {
+            const userId = p.id
+            const userPerms = await UserService.getUserPermissions(userId)
+            const permsSet = new Set(Array.isArray(userPerms) ? userPerms : [])
+            const names = []
+            reportTypes.forEach(rt => {
+                if (allowedReview && allowedReview.length > 0 && !allowedReview.includes(rt.name)) return
+                const perms = Array.isArray(rt.assignment) ? rt.assignment : []
+                if (perms.length === 0) return
+                const has = perms.some(perm => permsSet.has(perm))
+                if (has) names.push(rt.name)
+            })
+            if (names.length > 0) assignedMap.set(userId, {user: p, reportNames: names})
+        }))
+        const candidateUserIds = Array.from(assignedMap.keys())
+        if (candidateUserIds.length === 0) {
+            CacheUtility.set(cacheKey, [], TTL_SHORT)
+            return []
+        }
+        const mondayFullIsoList = weekIsos.map(d => new Date(d).toISOString())
+        const mondayDateStrList = weekIsos
+        const saturdayFullIsoList = weekIsos.map(iso => ReportUtility.getWeekDatesFromIso(iso).saturday.toISOString())
+        const saturdayDateStrList = weekIsos.map(iso => ReportUtility.getWeekDatesFromIso(iso).saturday.toISOString().slice(0, 10))
+        const weekFieldList = Array.from(new Set([...mondayFullIsoList, ...mondayDateStrList]))
+        const startFieldList = weekFieldList
+        const endFieldList = Array.from(new Set([...saturdayFullIsoList, ...saturdayDateStrList]))
+        const dataWeekList = mondayDateStrList
+        let weekEq = supabase
+            .from('reports')
+            .select('user_id, report_name, completed, week')
+            .in('user_id', candidateUserIds)
+            .in('week', weekFieldList)
+            .eq('completed', true)
+        let rangeEq = supabase
+            .from('reports')
+            .select('user_id, report_name, completed, report_date_range_start')
+            .in('user_id', candidateUserIds)
+            .in('report_date_range_start', startFieldList)
+            .eq('completed', true)
+        let endEq = supabase
+            .from('reports')
+            .select('user_id, report_name, completed, report_date_range_end')
+            .in('user_id', candidateUserIds)
+            .in('report_date_range_end', endFieldList)
+            .eq('completed', true)
+        let dataWeekEq = supabase
+            .from('reports')
+            .select('user_id, report_name, completed, data')
+            .in('user_id', candidateUserIds)
+            .in('data->>week', dataWeekList)
+            .eq('completed', true)
+        if (allowedReview && allowedReview.length > 0) {
+            weekEq = weekEq.in('report_name', allowedReview)
+            rangeEq = rangeEq.in('report_name', allowedReview)
+            endEq = endEq.in('report_name', allowedReview)
+            dataWeekEq = dataWeekEq.in('report_name', allowedReview)
+        }
+        const [reportsWeekEqRes, reportsRangeEqRes, reportsEndEqRes, reportsDataWeekEqRes] = await Promise.all([weekEq, rangeEq, endEq, dataWeekEq])
+        const reportsWeekEq = reportsWeekEqRes.data
+        const reportsWeekEqError = reportsWeekEqRes.error
+        const reportsRangeEq = reportsRangeEqRes.data
+        const reportsRangeEqError = reportsRangeEqRes.error
+        const reportsEndEq = reportsEndEqRes.data
+        const reportsEndEqError = reportsEndEqRes.error
+        const reportsDataWeekEq = reportsDataWeekEqRes.data
+        const reportsDataWeekEqError = reportsDataWeekEqRes.error
+        const weekRanges = weekIsos.map(iso => {
+            const {monday, saturday} = ReportUtility.getWeekDatesFromIso(iso)
+            const startIso = monday ? monday.toISOString() : null
+            const endIso = saturday ? new Date(saturday.getTime() + 86399999).toISOString() : null
+            return {iso, startIso, endIso}
+        })
+        const submittedQueries = await Promise.all(weekRanges.map(async wr => {
+            if (!wr.startIso || !wr.endIso) return {data: [], error: null}
+            let q = supabase
+                .from('reports')
+                .select('user_id, report_name, completed, submitted_at')
+                .in('user_id', candidateUserIds)
+                .gte('submitted_at', wr.startIso)
+                .lte('submitted_at', wr.endIso)
+                .eq('completed', true)
+            if (allowedReview && allowedReview.length > 0) q = q.in('report_name', allowedReview)
+            return q
+        }))
+        const submittedResults = await Promise.all(submittedQueries)
+        if (reportsWeekEqError && reportsRangeEqError && reportsEndEqError && reportsDataWeekEqError && submittedResults.every(r => r.error)) {
+            CacheUtility.set(cacheKey, [], TTL_SHORT)
+            return []
+        }
+        const allReports = ([])
+            .concat(Array.isArray(reportsWeekEq) ? reportsWeekEq : [])
+            .concat(Array.isArray(reportsRangeEq) ? reportsRangeEq : [])
+            .concat(Array.isArray(reportsEndEq) ? reportsEndEq : [])
+            .concat(Array.isArray(reportsDataWeekEq) ? reportsDataWeekEq : [])
+        const existing = new Map()
+        ;(allReports || []).forEach(r => {
+            let rawDay = ''
+            if (r.week) rawDay = new Date(r.week).toISOString().slice(0, 10)
+            else if (r.report_date_range_start) rawDay = new Date(r.report_date_range_start).toISOString().slice(0, 10)
+            else if (r.report_date_range_end) rawDay = new Date(r.report_date_range_end).toISOString().slice(0, 10)
+            else if (r.data && r.data.week) rawDay = new Date(r.data.week).toISOString().slice(0, 10)
+            if (!rawDay) return
+            const mondayKey = ReportUtility.getMondayISO(rawDay)
+            if (!mondayKey) return
+            const k = `${r.user_id}::${r.report_name}::${mondayKey}`
+            const prev = existing.get(k) || false
+            const isCompleted = !!r.completed
+            existing.set(k, prev || isCompleted)
+        })
+        submittedResults.forEach(res => {
+            const rows = Array.isArray(res.data) ? res.data : []
+            rows.forEach(r => {
+                const submittedDay = r.submitted_at ? new Date(r.submitted_at).toISOString().slice(0, 10) : ''
+                if (!submittedDay) return
+                const mondayKey = ReportUtility.getMondayISO(submittedDay)
+                if (!mondayKey) return
+                const k = `${r.user_id}::${r.report_name}::${mondayKey}`
+                const prev = existing.get(k) || false
+                const isCompleted = !!r.completed
+                existing.set(k, prev || isCompleted)
+            })
+        })
+        const overdue = []
+        for (const [userId, info] of assignedMap.entries()) {
+            for (const rtName of info.reportNames) {
+                for (const day of weekIsos) {
+                    const key = `${userId}::${rtName}::${day}`
+                    const done = existing.get(key)
+                    if (!done) {
+                        overdue.push({
+                            userId,
+                            first_name: info.user.first_name || '',
+                            last_name: info.user.last_name || '',
+                            report_name: rtName,
+                            week: day
+                        })
+                    }
+                }
+            }
+        }
+        CacheUtility.set(cacheKey, overdue, TTL_SHORT)
+        return overdue
     }
 }
 

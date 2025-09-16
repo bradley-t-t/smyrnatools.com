@@ -46,6 +46,9 @@ function ReportsView() {
     const [reporterPlantMap, setReporterPlantMap] = useState({})
     const [loadingReporterPlants, setLoadingReporterPlants] = useState(false)
 
+    const [overdueItems, setOverdueItems] = useState([])
+    const [isLoadingOverdue, setIsLoadingOverdue] = useState(false)
+
     async function fetchProfilesFor(userIds) {
         const missing = userIds.filter(id => !userProfiles[id])
         if (missing.length === 0) return
@@ -135,7 +138,7 @@ function ReportsView() {
             const assigned = {}
             const review = {}
             await Promise.all(reportTypes.map(async rt => {
-                const a = await UserService.hasPermission(user.id, rt.assignment[0])
+                const a = await UserService.hasAnyPermission(user.id, rt.assignment)
                 assigned[rt.name] = !!a
                 review[rt.name] = false
                 const checks = await Promise.all(rt.review.map(perm => UserService.hasPermission(user.id, perm)))
@@ -245,7 +248,9 @@ function ReportsView() {
     }, [preferences.selectedRegion?.code])
 
     useEffect(() => {
-        const ids = Array.from(new Set(localReports.filter(r => r.completed && r.userId && r.userId !== user?.id).map(r => r.userId)))
+        const idsFromReview = Array.from(new Set(localReports.filter(r => r.completed && r.userId && r.userId !== user?.id).map(r => r.userId)))
+        const idsFromOverdue = Array.from(new Set((overdueItems || []).map(o => o.userId).filter(Boolean)))
+        const ids = Array.from(new Set([...idsFromReview, ...idsFromOverdue]))
         const missing = ids.filter(id => !(id in reporterPlantMap))
         if (missing.length === 0) return
         let cancelled = false
@@ -278,7 +283,30 @@ function ReportsView() {
         return () => {
             cancelled = true
         }
-    }, [localReports, user])
+    }, [localReports, user, overdueItems])
+
+    useEffect(() => {
+        if (tab !== 'overdue' || isLoadingPermissions) return
+        let cancelled = false
+        async function loadOverdue() {
+            setIsLoadingOverdue(true)
+            try {
+                const allowedReview = reportTypes.filter(rt => hasReviewPermission[rt.name]).map(rt => rt.name)
+                const items = await ReportService.fetchOverdueAssignments(HARDCODED_TODAY, {force: true, allowedReview})
+                if (!cancelled) setOverdueItems(items || [])
+                const ids = Array.from(new Set((items || []).map(i => i.userId).filter(Boolean)))
+                if (ids.length > 0) await fetchProfilesFor(ids)
+            } catch (e) {
+                if (!cancelled) setOverdueItems([])
+            } finally {
+                if (!cancelled) setIsLoadingOverdue(false)
+            }
+        }
+        loadOverdue()
+        return () => {
+            cancelled = true
+        }
+    }, [tab, isLoadingPermissions, hasReviewPermission])
 
     const totalMyWeeks = ReportUtility.getTotalWeeksSince(REPORTS_START_DATE, HARDCODED_TODAY)
     const weeksToShow = useMemo(() => ReportUtility.getLastNWeekIsos(Math.min(myReportsVisibleWeeks, totalMyWeeks), HARDCODED_TODAY), [myReportsVisibleWeeks, totalMyWeeks])
@@ -554,6 +582,28 @@ function ReportsView() {
         })
     }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reviewReportsByWeek, filterReportType, filterPlant, reviewVisibleWeeks, preferences.selectedRegion?.code, regionPlantCodes, reporterPlantMap])
 
+    const filteredOverdueItems = useMemo(() => {
+        return (overdueItems || []).filter(item => {
+            const matchType = !filterReportType || item.report_name === filterReportType
+            const reporterPlant = reporterPlantMap[item.userId] || ''
+            const matchPlant = !filterPlant || reporterPlant === filterPlant
+            const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
+            return matchType && matchPlant && matchRegion
+        })
+    }, [overdueItems, filterReportType, filterPlant, preferences.selectedRegion?.code, regionPlantCodes, reporterPlantMap])
+
+    const overdueByWeek = useMemo(() => {
+        const grouped = {}
+        filteredOverdueItems.forEach(item => {
+            const key = item.week
+            if (!grouped[key]) grouped[key] = []
+            grouped[key].push(item)
+        })
+        return grouped
+    }, [filteredOverdueItems])
+
+    const sortedOverdueWeeks = useMemo(() => Object.keys(overdueByWeek).sort((a, b) => new Date(b) - new Date(a)), [overdueByWeek])
+
     return (
         <>
             <div className="rpts-root">
@@ -580,6 +630,13 @@ function ReportsView() {
                                 >
                                     Review
                                 </button>
+                                <button
+                                    className={tab === 'overdue' ? 'active' : ''}
+                                    onClick={() => setTab('overdue')}
+                                    type="button"
+                                >
+                                    Overdue
+                                </button>
                             </div>
                         </div>
                         <div className="rpts-filters">
@@ -592,7 +649,8 @@ function ReportsView() {
                                 {reportTypes
                                     .filter(rt =>
                                         (tab === 'all' && hasAssigned[rt.name]) ||
-                                        (tab === 'review' && hasReviewPermission[rt.name])
+                                        (tab === 'review' && hasReviewPermission[rt.name]) ||
+                                        tab === 'overdue'
                                     )
                                     .map(rt => (
                                         <option key={rt.name} value={rt.name}>{rt.title}</option>
@@ -614,13 +672,13 @@ function ReportsView() {
                         <div className="rpts-content">
                             {tab === 'all' && (
                                 <div className="rpts-list">
-                                    {(isLoadingUser || isLoadingMy || isLoadingPermissions) && filteredMyWeeks.length === 0 ? (
+                                    {(isLoadingUser || isLoadingMy || isLoadingPermissions) && weeksToShow.length === 0 ? (
                                         <div className="rpts-loading">
                                             <LoadingScreen message="Loading your reports..." inline/>
                                         </div>
                                     ) : (
                                         <>
-                                            {filteredMyWeeks.length === 0 ? (
+                                            {weeksToShow.length === 0 ? (
                                                 <div className="rpts-empty">
                                                     <i className="fas fa-check-circle"></i>
                                                     <div>No reports</div>
@@ -729,8 +787,7 @@ function ReportsView() {
                                                                         <div className="rpts-list-title">
                                                                             {report.title}
                                                                         </div>
-                                                                        <div className="rpts-list-date">Completed
-                                                                            By: {getUserName(report.userId)}</div>
+                                                                        <div className="rpts-list-date">Completed By: {getUserName(report.userId)}</div>
                                                                         <button className="rpts-list-action"
                                                                                 onClick={() => handleReview(report)}>
                                                                             Review
@@ -762,6 +819,50 @@ function ReportsView() {
                                                             )}
                                                         </div>
                                                     )}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            {tab === 'overdue' && (
+                                <div className="rpts-list">
+                                    {(isLoadingUser || isLoadingPermissions || isLoadingOverdue || loadingReporterPlants) ? (
+                                        <div className="rpts-loading">
+                                            <LoadingScreen message="Loading overdue reports..." inline/>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {filteredOverdueItems.length === 0 ? (
+                                                <div className="rpts-empty">
+                                                    <i className="fas fa-exclamation-circle"></i>
+                                                    <div>No overdue reports</div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {sortedOverdueWeeks.map(weekIso => {
+                                                        const items = overdueByWeek[weekIso] || []
+                                                        if (items.length === 0) return null
+                                                        const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
+                                                        const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
+                                                        return (
+                                                            <div key={weekIso} className="rpts-week-group">
+                                                                <div className="rpts-week-header">
+                                                                    {weekRange}
+                                                                </div>
+                                                                {items
+                                                                    .sort((a, b) => a.report_name.localeCompare(b.report_name))
+                                                                    .map((item, idx) => (
+                                                                        <div className="rpts-list-item" key={`${item.userId}-${item.report_name}-${item.week}-${idx}`}>
+                                                                            <div className="rpts-list-title">
+                                                                                {(reportTypeMap[item.report_name] || {}).title || item.report_name}
+                                                                            </div>
+                                                                            <div className="rpts-list-date">Owed By: {(item.first_name || '') + ' ' + (item.last_name || '')}</div>
+                                                                        </div>
+                                                                    ))}
+                                                            </div>
+                                                        )
+                                                    })}
                                                 </>
                                             )}
                                         </>
