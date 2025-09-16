@@ -8,6 +8,7 @@ import {SafetyManagerSubmitPlugin} from './types/WeeklySafetyManagerReport'
 import {GeneralManagerSubmitPlugin} from './types/WeeklyGeneralManagerReport'
 import {UserService} from '../../services/UserService'
 import {supabase} from '../../services/DatabaseService'
+import {ReportUtility} from '../../utils/ReportUtility'
 
 const plugins = {
     plant_manager: PlantManagerSubmitPlugin,
@@ -15,14 +16,6 @@ const plugins = {
     plant_production: EfficiencySubmitPlugin,
     safety_manager: SafetyManagerSubmitPlugin,
     general_manager: GeneralManagerSubmitPlugin
-}
-
-function getTruckNumberForOperator(row, mixers) {
-    if (row && row.truck_number) return row.truck_number
-    if (!row || !row.name) return ''
-    const mixer = mixers.find(m => m.assigned_operator === row.name)
-    if (mixer && mixer.truck_number) return mixer.truck_number
-    return ''
 }
 
 async function sendReportSubmittedEmail({report, weekVerbose}) {
@@ -129,32 +122,6 @@ function ReportsSubmitView({
 
     const PluginComponent = plugins[report.name]
 
-    function validatePlantProduction() {
-        if (!form.plant) return 'Please select a plant before submitting.'
-        if (!form.report_date) return 'Please select a report date before submitting.'
-        const rows = Array.isArray(form.rows) ? form.rows : []
-        for (let i = 0; i < rows.length; i++) {
-            const r = rows[i]
-            const nameLabel = operatorOptions.find(o => o.value === r.name)?.label || `Operator ${i + 1}`
-            const start = ReportService.parseTimeToMinutes(r.start_time)
-            const first = ReportService.parseTimeToMinutes(r.first_load)
-            const eod = ReportService.parseTimeToMinutes(r.eod_in_yard)
-            const punch = ReportService.parseTimeToMinutes(r.punch_out)
-            if (!r.start_time || start === null) return `${nameLabel}: Start Time is required and must be a valid time.`
-            if (!r.first_load || first === null) return `${nameLabel}: 1st Load time is required and must be a valid time.`
-            if (!r.eod_in_yard || eod === null) return `${nameLabel}: EOD In Yard time is required and must be a valid time.`
-            if (!r.punch_out || punch === null) return `${nameLabel}: Punch Out time is required and must be a valid time.`
-            if (first - start < 0) return `${nameLabel}: 1st Load time must be after Start Time.`
-            if (punch - eod < 0) return `${nameLabel}: Punch Out time must be after EOD In Yard.`
-            if (start !== null && punch !== null && punch - start <= 0) return `${nameLabel}: Total hours must be greater than 0.`
-            const loadsVal = r.loads
-            if (loadsVal === undefined || loadsVal === null || String(loadsVal) === '') return `${nameLabel}: Total Loads is required.`
-            const loadsNum = Number(loadsVal)
-            if (!Number.isFinite(loadsNum) || loadsNum < 0 || !Number.isInteger(loadsNum)) return `${nameLabel}: Total Loads must be a non-negative whole number.`
-        }
-        return ''
-    }
-
     function handleChange(e, name, idx, colName) {
         if (report.name === 'plant_production' && name === 'rows') {
             const updatedRows = [...(form.rows || [])]
@@ -228,7 +195,7 @@ function ReportsSubmitView({
             }
         }
         if (report.name === 'plant_production') {
-            const v = validatePlantProduction()
+            const v = ReportUtility.validatePlantProduction(form, operatorOptions)
             if (v) {
                 setError(v)
                 return
@@ -266,7 +233,7 @@ function ReportsSubmitView({
         setSuccess(false)
         setSaveMessage('')
         if (managerEditUser && report.name === 'plant_production') {
-            const v = validatePlantProduction()
+            const v = ReportUtility.validatePlantProduction(form, operatorOptions)
             if (v) {
                 setError(v)
                 return
@@ -369,11 +336,7 @@ function ReportsSubmitView({
                 setForm(f => ({...f, rows: []}))
                 return
             }
-            const {
-                operatorOptions,
-                mixers,
-                activeOperators
-            } = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
+            const {operatorOptions, mixers, activeOperators} = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
             setOperatorOptions(operatorOptions)
             setMixers(mixers)
             if (report.name === 'plant_production' && !readOnly) {
@@ -437,9 +400,7 @@ function ReportsSubmitView({
 
     useEffect(() => {
         if (report.name === 'plant_production' && Array.isArray(form.rows) && Array.isArray(operatorOptions)) {
-            const excluded = operatorOptions
-                .filter(opt => !(form.rows || []).some(row => row.name === opt.value))
-                .map(opt => opt.value)
+            const excluded = ReportUtility.getExcludedOperators(form.rows, operatorOptions)
             setExcludedOperators(excluded)
         }
     }, [form.rows, operatorOptions, report.name])
@@ -475,85 +436,56 @@ function ReportsSubmitView({
         editingUserName = managerEditUser.slice(0, 8)
     }
 
-    function formatVerboseDate(dateInput) {
-        if (!dateInput) return ''
-        const d = new Date(dateInput)
-        return d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
-    }
-
-    function getWeekVerbose(weekIso) {
-        if (!weekIso) return ''
-        const monday = new Date(weekIso)
-        monday.setDate(monday.getDate() + 1)
-        monday.setHours(0, 0, 0, 0)
-        const saturday = new Date(monday)
-        saturday.setDate(monday.getDate() + 5)
-        const left = monday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
-        const right = saturday.toLocaleDateString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        })
-        return `${left} – ${right}`
-    }
-
-    const weekVerbose = getWeekVerbose(report.weekIso)
-    const reportDateVerbose = form.report_date ? formatVerboseDate(form.report_date) : ''
+    const weekVerbose = ReportUtility.getWeekVerbose(report.weekIso)
+    const reportDateVerbose = form.report_date ? ReportUtility.formatVerboseDate(form.report_date) : ''
 
     return (
-        <div style={{width: '100%', minHeight: '100vh', background: 'var(--background)'}}>
-            <div style={{maxWidth: 900, margin: '56px auto 0 auto', padding: '0 0 32px 0'}}>
+        <div className="rpts-sbmt-root">
+            <div className="rpts-sbmt-container">
                 {managerEditUser && (
-                    <div style={{
-                        fontWeight: 700,
-                        fontSize: 18,
-                        color: 'var(--accent)',
-                        marginBottom: 18,
-                        textAlign: 'center'
-                    }}>
+                    <div className="rpts-sbmt-edit-banner">
                         Editing report for: {editingUserName}
                     </div>
                 )}
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
-                    <button className="rpts-form-back" onClick={handleBackClick} type="button">
+                <div className="rpts-sbmt-toolbar">
+                    <button className="rpts-sbmt-back" onClick={handleBackClick} type="button">
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
                 </div>
-                <div className="rpts-form-header-row" style={{marginTop: 0}}>
-                    <div className="rpts-form-title">
+                <div className="rpts-sbmt-header-row">
+                    <div className="rpts-sbmt-title">
                         {report.title || ''}
                     </div>
-                    <div className="rpts-context">
+                    <div className="rpts-sbmt-context">
                         {weekVerbose ? (
-                            <div className="rpts-context-chip">
+                            <div className="rpts-sbmt-context-chip">
                                 <i className="far fa-calendar-alt"></i>
                                 <span>{weekVerbose}</span>
                             </div>
                         ) : null}
                         {reportDateVerbose ? (
-                            <div className="rpts-context-chip">
+                            <div className="rpts-sbmt-context-chip">
                                 <i className="far fa-calendar-check"></i>
                                 <span>{reportDateVerbose}</span>
                             </div>
                         ) : null}
                         {(report.name === 'plant_production' && form.plant) ? (
-                            <div className="rpts-context-chip">
+                            <div className="rpts-sbmt-context-chip">
                                 <i className="fas fa-industry"></i>
                                 <span>Plant {form.plant}</span>
                             </div>
                         ) : null}
                     </div>
                 </div>
-                <form className="rpts-form-body-wide" onSubmit={handleSubmit}>
-                    <div className="rpts-form-fields-grid">
+                <form className="rpts-sbmt-body" onSubmit={handleSubmit}>
+                    <div className="rpts-sbmt-grid">
                         {report.name === 'plant_production' ? (
                             <>
-                                <div style={{display: 'flex', gap: 24, width: '100%', marginBottom: 18}}>
-                                    <div style={{flex: 1}}>
+                                <div className="rpts-sbmt-pp-row">
+                                    <div className="rpts-sbmt-col">
                                         <label>
                                             Plant
-                                            <span className="rpts-modal-required">*</span>
+                                            <span className="rpts-sbmt-required">*</span>
                                         </label>
                                         <select
                                             value={form.plant || ''}
@@ -564,23 +496,7 @@ function ReportsSubmitView({
                                             }}
                                             required
                                             disabled={readOnly}
-                                            style={{
-                                                background: 'var(--background)',
-                                                border: '1.5px solid var(--divider)',
-                                                borderRadius: 8,
-                                                fontSize: 16,
-                                                width: '100%',
-                                                height: 44,
-                                                padding: '0 16px',
-                                                color: 'var(--text-primary)',
-                                                boxShadow: '0 1px 4px var(--shadow-xs)',
-                                                transition: 'border 0.2s, box-shadow 0.2s',
-                                                outline: 'none',
-                                                appearance: 'none',
-                                                cursor: readOnly ? 'not-allowed' : 'pointer',
-                                                lineHeight: 1.2
-                                            }}
-                                            className="plant-prod-input plant-prod-select"
+                                            className="rpts-sbmt-input rpts-sbmt-select"
                                         >
                                             <option value="">Select Plant...</option>
                                             {plants.map(p => (
@@ -588,15 +504,10 @@ function ReportsSubmitView({
                                             ))}
                                         </select>
                                     </div>
-                                    <div style={{
-                                        flex: 1,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-end'
-                                    }}>
+                                    <div className="rpts-sbmt-right-col">
                                         <label>
                                             Report Date
-                                            <span className="rpts-modal-required">*</span>
+                                            <span className="rpts-sbmt-required">*</span>
                                         </label>
                                         <input
                                             type="date"
@@ -604,289 +515,123 @@ function ReportsSubmitView({
                                             onChange={e => setForm(f => ({...f, report_date: e.target.value}))}
                                             required
                                             disabled={readOnly}
-                                            style={{
-                                                background: 'var(--background)',
-                                                border: '1.5px solid var(--divider)',
-                                                borderRadius: 8,
-                                                fontSize: 16,
-                                                width: 180,
-                                                height: 44,
-                                                padding: '0 16px',
-                                                color: 'var(--text-primary)',
-                                                boxShadow: '0 1px 4px var(--shadow-xs)',
-                                                transition: 'border 0.2s, box-shadow 0.2s',
-                                                outline: 'none',
-                                                cursor: readOnly ? 'not-allowed' : 'pointer',
-                                                lineHeight: 1.2
-                                            }}
-                                            className="plant-prod-input plant-prod-date"
+                                            className="rpts-sbmt-input rpts-sbmt-date"
                                         />
                                     </div>
                                 </div>
-                                <style>{`
-                                    .plant-prod-select:focus, .plant-prod-date:focus { border: 1.5px solid var(--accent); box-shadow: 0 2px 8px var(--shadow-sm); }
-                                    .plant-prod-select:hover, .plant-prod-date:hover { border: 1.5px solid var(--accent); }
-                                    .plant-prod-input::placeholder { color: var(--text-primary); opacity: 1; }
-                                    `}
-                                </style>
-                                <div className="rpts-form-field-wide" style={{gridColumn: '1 / -1'}}>
+                                <div className="rpts-sbmt-field-wide rpts-sbmt-grid-col-span-all">
                                     <label>Operators</label>
                                     <div>
                                         {form.plant && (form.rows || []).length === 0 && (
-                                            <div style={{color: 'var(--text-secondary)', margin: '16px 0'}}>
+                                            <div className="rpts-sbmt-muted">
                                                 No active operators for this plant.
                                             </div>
                                         )}
                                         {!form.plant && (
-                                            <div style={{color: 'var(--text-secondary)', margin: '16px 0'}}>
+                                            <div className="rpts-sbmt-muted">
                                                 Please wait, loading plant assignment...
                                             </div>
                                         )}
                                         {(form.rows || []).length > 0 && (
-                                            <div style={{marginBottom: 18}}>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    gap: 8,
-                                                    marginBottom: 16,
-                                                    width: '100%'
-                                                }}>
+                                            <div className="rpts-sbmt-mb-18">
+                                                <div className="rpts-sbmt-op-carousel">
                                                     {form.rows.map((row, idx) => (
                                                         <div
                                                             key={idx}
                                                             onClick={() => {
                                                                 setCarouselIndex(idx)
                                                             }}
-                                                            style={{
-                                                                minWidth: 32,
-                                                                height: 32,
-                                                                borderRadius: 16,
-                                                                background: idx === carouselIndex ? 'var(--accent)' : 'var(--divider)',
-                                                                color: idx === carouselIndex ? 'var(--text-light)' : 'var(--text-secondary)',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                fontWeight: 600,
-                                                                fontSize: 15,
-                                                                cursor: 'pointer',
-                                                                border: idx === carouselIndex ? '2px solid var(--accent)' : '1px solid var(--divider)',
-                                                                transition: 'background 0.2s'
-                                                            }}
+                                                            className={`rpts-sbmt-op-dot ${idx === carouselIndex ? 'active' : ''}`}
                                                         >
                                                             {idx + 1}
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <div style={{
-                                                    border: '1px solid var(--divider)',
-                                                    borderRadius: 10,
-                                                    background: 'var(--background-elevated)',
-                                                    boxShadow: '0 1px 4px var(--shadow-sm)',
-                                                    padding: 0,
-                                                    color: 'var(--text-primary)',
-                                                    width: '100%'
-                                                }}>
+                                                <div className="rpts-sbmt-op-card">
                                                     {form.rows[carouselIndex] && (
-                                                        <div style={{
-                                                            padding: '24px 24px 0 24px',
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            gap: 18
-                                                        }}>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15
-                                                                    }}>Name</label>
+                                                        <div className="rpts-sbmt-op-card-body">
+                                                            <div className="rpts-sbmt-row">
+                                                                <div className="rpts-sbmt-col">
+                                                                    <label className="rpts-sbmt-label">Name</label>
                                                                     <input type="text"
                                                                            value={operatorOptions.find(opt => opt.value === form.rows[carouselIndex]?.name)?.label || ''}
-                                                                           disabled style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           disabled className="rpts-sbmt-field"/>
                                                                 </div>
-                                                                <div style={{width: 120}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Truck
-                                                                        #</label>
+                                                                <div className="rpts-sbmt-w-120">
+                                                                    <label className="rpts-sbmt-label">Truck #</label>
                                                                     <input type="text"
-                                                                           value={getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
-                                                                           disabled style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           value={ReportUtility.getTruckNumberForOperator(form.rows[carouselIndex], mixers)}
+                                                                           disabled className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Start
-                                                                        Time</label>
+                                                            <div className="rpts-sbmt-row">
+                                                                <div className="rpts-sbmt-col">
+                                                                    <label className="rpts-sbmt-label">Start Time</label>
                                                                     <input type="time" placeholder="Start Time"
                                                                            value={form.rows[carouselIndex]?.start_time || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
-                                                                           disabled={!!readOnly} style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
                                                                 </div>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>1st
-                                                                        Load</label>
+                                                                <div className="rpts-sbmt-col">
+                                                                    <label className="rpts-sbmt-label">1st Load</label>
                                                                     <input type="time" placeholder="1st Load"
                                                                            value={form.rows[carouselIndex]?.first_load || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
-                                                                           disabled={!!readOnly} style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>EOD
-                                                                        In Yard</label>
+                                                            <div className="rpts-sbmt-row">
+                                                                <div className="rpts-sbmt-col">
+                                                                    <label className="rpts-sbmt-label">EOD In Yard</label>
                                                                     <input type="time" placeholder="EOD"
                                                                            value={form.rows[carouselIndex]?.eod_in_yard || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
-                                                                           disabled={!!readOnly} style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
                                                                 </div>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Punch
-                                                                        Out</label>
+                                                                <div className="rpts-sbmt-col">
+                                                                    <label className="rpts-sbmt-label">Punch Out</label>
                                                                     <input type="time" placeholder="Punch Out"
                                                                            value={form.rows[carouselIndex]?.punch_out || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
-                                                                           disabled={!!readOnly} style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
-                                                            <div style={{display: 'flex', gap: 18}}>
-                                                                <div style={{flex: 1}}>
-                                                                    <label style={{fontWeight: 600, fontSize: 15}}>Total
-                                                                        Loads</label>
+                                                            <div className="rpts-sbmt-row">
+                                                                <div className="rpts-sbmt-col">
+                                                                    <label className="rpts-sbmt-label">Total Loads</label>
                                                                     <input type="number" placeholder="Total Loads"
                                                                            value={form.rows[carouselIndex]?.loads || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'loads')}
-                                                                           disabled={readOnly} style={{
-                                                                        background: 'var(--background)',
-                                                                        border: '1px solid var(--divider)',
-                                                                        borderRadius: 6,
-                                                                        fontSize: 15,
-                                                                        width: '100%',
-                                                                        padding: '7px 10px',
-                                                                        color: 'var(--text-primary)'
-                                                                    }} className="plant-prod-input"/>
+                                                                           disabled={readOnly} className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
                                                             <div>
-                                                                <label style={{
-                                                                    fontWeight: 600,
-                                                                    fontSize: 15
-                                                                }}>Comments</label>
+                                                                <label className="rpts-sbmt-label">Comments</label>
                                                                 <input type="text" placeholder="Comments"
                                                                        value={form.rows[carouselIndex]?.comments || ''}
                                                                        onChange={e => handleChange(e, 'rows', carouselIndex, 'comments')}
-                                                                       disabled={readOnly} style={{
-                                                                    background: 'var(--background)',
-                                                                    border: '1px solid var(--divider)',
-                                                                    borderRadius: 6,
-                                                                    fontSize: 15,
-                                                                    width: '100%',
-                                                                    padding: '7px 10px',
-                                                                    color: 'var(--text-primary)'
-                                                                }} className="plant-prod-input"/>
+                                                                       disabled={readOnly} className="rpts-sbmt-field"/>
                                                             </div>
                                                         </div>
                                                     )}
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        padding: '18px 24px 18px 24px'
-                                                    }}>
+                                                    <div className="rpts-sbmt-op-card-actions">
                                                         <button type="button"
                                                                 onClick={() => handleExcludeOperator(carouselIndex)}
-                                                                style={{
-                                                                    fontWeight: 600,
-                                                                    fontSize: 15,
-                                                                    background: 'var(--divider)',
-                                                                    color: 'var(--text-primary)',
-                                                                    border: 'none',
-                                                                    borderRadius: 6,
-                                                                    padding: '6px 18px',
-                                                                    cursor: 'pointer',
-                                                                    marginRight: 12
-                                                                }}>
+                                                                className="rpts-sbmt-btn-secondary">
                                                             Exclude Operator
                                                         </button>
                                                         <button type="button"
                                                                 onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
-                                                                disabled={carouselIndex === 0} style={{
-                                                            fontWeight: 600,
-                                                            fontSize: 15,
-                                                            background: 'var(--accent)',
-                                                            color: 'var(--text-light)',
-                                                            border: 'none',
-                                                            borderRadius: 6,
-                                                            padding: '6px 18px',
-                                                            cursor: carouselIndex === 0 ? 'not-allowed' : 'pointer',
-                                                            opacity: carouselIndex === 0 ? 0.5 : 1
-                                                        }}>
+                                                                disabled={carouselIndex === 0} className="rpts-sbmt-btn-primary">
                                                             &#8592; Prev Operator
                                                         </button>
-                                                        <span style={{fontWeight: 600, fontSize: 15}}>
+                                                        <span className="rpts-sbmt-operator-count">
                                                             Operator {carouselIndex + 1} of {form.rows.length}
                                                         </span>
                                                         <button type="button"
                                                                 onClick={() => setCarouselIndex(i => Math.min(i + 1, form.rows.length - 1))}
                                                                 disabled={carouselIndex === form.rows.length - 1}
-                                                                style={{
-                                                                    fontWeight: 600,
-                                                                    fontSize: 15,
-                                                                    background: 'var(--accent)',
-                                                                    color: 'var(--text-light)',
-                                                                    border: 'none',
-                                                                    borderRadius: 6,
-                                                                    padding: '6px 18px',
-                                                                    cursor: carouselIndex === form.rows.length - 1 ? 'not-allowed' : 'pointer',
-                                                                    opacity: carouselIndex === form.rows.length - 1 ? 0.5 : 1
-                                                                }}>
+                                                                className="rpts-sbmt-btn-primary">
                                                             Next Operator &#8594;
                                                         </button>
                                                     </div>
@@ -894,26 +639,17 @@ function ReportsSubmitView({
                                             </div>
                                         )}
                                         {excludedOperators.length > 0 && (
-                                            <div style={{marginTop: 18, marginBottom: 18}}>
-                                                <div style={{fontWeight: 600, fontSize: 15, marginBottom: 8}}>
+                                            <div className="rpts-sbmt-my-18">
+                                                <div className="rpts-sbmt-section-title">
                                                     Excluded Operators
                                                 </div>
-                                                <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
+                                                <div className="rpts-sbmt-flex-wrap">
                                                     {excludedOperators.map(opId => {
                                                         const op = operatorOptions.find(opt => opt.value === opId)
                                                         return (
                                                             <button key={opId} type="button"
                                                                     onClick={() => handleReincludeOperator(opId)}
-                                                                    style={{
-                                                                        background: 'var(--divider)',
-                                                                        color: 'var(--text-primary)',
-                                                                        border: 'none',
-                                                                        borderRadius: 6,
-                                                                        padding: '6px 14px',
-                                                                        fontWeight: 600,
-                                                                        fontSize: 15,
-                                                                        cursor: 'pointer'
-                                                                    }}>
+                                                                    className="rpts-sbmt-chip-btn">
                                                                 {op ? op.label : opId} (Re-include)
                                                             </button>
                                                         )
@@ -927,10 +663,10 @@ function ReportsSubmitView({
                         ) : report.name === 'general_manager' ? null : report.name === 'safety_manager' ? null : (
                             report.fields.map(field => (
                                 field.name === 'issues' ? null : (
-                                    <div key={field.name} className="rpts-form-field-wide">
+                                    <div key={field.name} className="rpts-sbmt-field-wide">
                                         <label>
                                             {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                            {field.required && <span className="rpts-modal-required">*</span>}
+                                            {field.required && <span className="rpts-sbmt-required">*</span>}
                                         </label>
                                         {field.type === 'textarea' ? (
                                             <textarea value={form[field.name] || ''}
@@ -978,54 +714,22 @@ function ReportsSubmitView({
                             />
                         </>
                     )}
-                    {error && <div className="rpts-modal-error">{error}</div>}
+                    {error && <div className="rpts-sbmt-error">{error}</div>}
                     {success &&
-                        <div style={{color: 'var(--success)', marginBottom: 8}}>Report submitted successfully.</div>}
-                    {saveMessage && <div style={{color: 'var(--success)', marginBottom: 8}}>{saveMessage}</div>}
+                        <div className="rpts-sbmt-success">Report submitted successfully.</div>}
+                    {saveMessage && <div className="rpts-sbmt-success">{saveMessage}</div>}
                     {!readOnly && (
-                        <div className="rpts-modal-actions-wide"
-                             style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                            <button type="button" className="rpts-modal-cancel" onClick={handleBackClick}
-                                    disabled={submitting || savingDraft} style={{
-                                background: 'var(--divider)',
-                                color: 'var(--text-primary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: 'pointer',
-                                height: 44
-                            }}>
+                        <div className="rpts-sbmt-actions-wide rpts-sbmt-actions">
+                            <button type="button" className="rpts-sbmt-cancel" onClick={handleBackClick}
+                                    disabled={submitting || savingDraft}>
                                 Cancel
                             </button>
-                            <button type="button" className="rpts-modal-save" style={{
-                                background: 'var(--accent)',
-                                color: 'var(--text-light)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: 'pointer',
-                                marginRight: 12,
-                                height: 44
-                            }} onClick={handleSaveDraft} disabled={submitting || savingDraft}>
+                            <button type="button" className="rpts-sbmt-save" onClick={handleSaveDraft} disabled={submitting || savingDraft}>
                                 {savingDraft ? 'Saving...' : 'Save Changes'}
                             </button>
                             {(!managerEditUser) && (
-                                <button type="submit" className="rpts-modal-submit"
-                                        disabled={submitting || savingDraft} style={{
-                                    background: 'var(--accent)',
-                                    color: 'var(--text-light)',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '10px 22px',
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    cursor: 'pointer',
-                                    height: 44
-                                }}>
+                                <button type="submit" className="rpts-sbmt-submit"
+                                        disabled={submitting || savingDraft}>
                                     {submitting ? 'Submitting...' : 'Submit'}
                                 </button>
                             )}
@@ -1034,69 +738,29 @@ function ReportsSubmitView({
                 </form>
             </div>
             {showConfirmationModal && (
-                <div className="rpts-confirmation-modal" style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 9999,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)'
-                }}>
-                    <div className="rpts-confirmation-content" style={{
-                        width: '90%',
-                        maxWidth: '500px',
-                        margin: '0 auto',
-                        background: 'var(--background)',
-                        borderRadius: 10,
-                        padding: 32
-                    }}>
-                        <h2 style={{marginBottom: 18}}>Confirm Submission</h2>
-                        <div style={{marginBottom: 18, fontWeight: 500, color: 'var(--text-primary)'}}>Please confirm
-                            the following before submitting:
-                        </div>
-                        <div style={{marginBottom: 12}}>
-                            <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
+                <div className="rpts-sbmt-modal-backdrop">
+                    <div className="rpts-sbmt-modal-content">
+                        <h2 className="rpts-sbmt-modal-title">Confirm Submission</h2>
+                        <div className="rpts-sbmt-modal-text">Please confirm the following before submitting:</div>
+                        <div>
+                            <label className="rpts-sbmt-checkbox-label">
                                 <input type="checkbox" checked={confirmationChecks[0]}
                                        onChange={e => setConfirmationChecks([e.target.checked, confirmationChecks[1]])}/>
                                 Total yardage includes all yardage we can bill for and does not include lost yardage.
                             </label>
                         </div>
-                        <div style={{marginBottom: 24}}>
-                            <label style={{display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500}}>
+                        <div>
+                            <label className="rpts-sbmt-checkbox-label">
                                 <input type="checkbox" checked={confirmationChecks[1]}
                                        onChange={e => setConfirmationChecks([confirmationChecks[0], e.target.checked])}/>
-                                Total hours only includes hours from operators and not from plant managers, loader
-                                operators or any other roles.
+                                Total hours only includes hours from operators and not from plant managers, loader operators or any other roles.
                             </label>
                         </div>
-                        <div style={{display: 'flex', gap: 16, justifyContent: 'center'}}>
-                            <button type="button" style={{
-                                background: 'var(--divider)',
-                                color: 'var(--text-primary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: 'pointer'
-                            }} onClick={() => setShowConfirmationModal(false)}>
+                        <div className="rpts-sbmt-modal-actions">
+                            <button type="button" className="rpts-sbmt-btn-secondary" onClick={() => setShowConfirmationModal(false)}>
                                 Cancel
                             </button>
-                            <button type="button" style={{
-                                background: confirmationChecks[0] && confirmationChecks[1] ? 'var(--accent)' : 'var(--divider)',
-                                color: confirmationChecks[0] && confirmationChecks[1] ? 'var(--text-light)' : 'var(--text-secondary)',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 22px',
-                                fontWeight: 600,
-                                fontSize: 15,
-                                cursor: confirmationChecks[0] && confirmationChecks[1] ? 'pointer' : 'not-allowed',
-                                opacity: confirmationChecks[0] && confirmationChecks[1] ? 1 : 0.6
-                            }} disabled={!(confirmationChecks[0] && confirmationChecks[1])}
+                            <button type="button" className="rpts-sbmt-btn-confirm" disabled={!(confirmationChecks[0] && confirmationChecks[1])}
                                     onClick={handleConfirmedSubmit}>
                                 Confirm & Submit
                             </button>

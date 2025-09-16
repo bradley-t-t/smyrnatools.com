@@ -2,6 +2,7 @@ import React from 'react'
 import '../styles/ReportTypes.css'
 import {supabase} from '../../../services/DatabaseService'
 import {ReportService} from '../../../services/ReportService'
+import {ReportUtility} from '../../../utils/ReportUtility'
 
 function Field({label, type = 'number', value, onChange, required, disabled}) {
     return (
@@ -63,7 +64,7 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
     React.useEffect(() => {
         const w = weekIso || form?.week
         if (w) {
-            const iso = new Date(w).toISOString().slice(0, 10)
+            const iso = ReportUtility.getMondayISO(w)
             const label = ReportService.getWeekRangeFromIso(iso)
             setWeekRangeLabel(label)
             console.log('GM Report Week (Submit):', w, 'Range:', label)
@@ -153,8 +154,8 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                 if (!cancelled) setEffReports([]);
                 return
             }
-            const monday = new Date(weekIso)
-            const start = new Date(monday);
+            const iso = ReportUtility.getMondayISO(weekIso)
+            const start = new Date(iso);
             start.setUTCHours(0, 0, 0, 0)
             const end = new Date(start);
             end.setUTCDate(start.getUTCDate() + 1)
@@ -491,28 +492,23 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Loads</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Hours</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg L/H</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Punch In → 1st</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Washout → Punch</div>
-                                        <div
-                                            className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
+                                        <div className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
                                     </div>
                                 </div>
                             </div>
@@ -567,7 +563,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
     React.useEffect(() => {
         const w = weekIso || form?.week
         if (w) {
-            const iso = new Date(w).toISOString().slice(0, 10)
+            const iso = ReportUtility.getMondayISO(w)
             const label = ReportService.getWeekRangeFromIso(iso)
             setWeekRangeLabel(label)
             console.log('GM Report Week (Review):', w, 'Range:', label)
@@ -611,7 +607,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                     setMxCounts({Total: 0, Active: 0, Spare: 0, 'In Shop': 0})
                 }
             }
-            const {data: opsData} = await supabase.from('operators').select('status, assigned_plant, plant_code').in('plant_code', codes)
+            const {data: opsData} = await supabase.from('operators').select('status, position, plant_code').in('plant_code', codes)
             if (!cancelled) {
                 if (Array.isArray(opsData)) {
                     const c = {
@@ -653,17 +649,16 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
 
         async function loadEff() {
             const codes = Array.isArray(plants) ? plants.map(p => p.plant_code).filter(Boolean) : []
-            const wf = weekIso || form?.week
-            if (!wf || codes.length === 0) {
-                if (!cancelled) setEffReports([]);
+            if (!weekIso || codes.length === 0) {
+                if (!cancelled) setEffReports([])
                 return
             }
-            const monday = new Date(wf)
-            const start = new Date(monday);
+            const iso = ReportUtility.getMondayISO(weekIso)
+            const start = new Date(iso)
             start.setUTCHours(0, 0, 0, 0)
-            const end = new Date(start);
+            const end = new Date(start)
             end.setUTCDate(start.getUTCDate() + 1)
-            console.log('GM Plant Efficiency fetch (Review): weekIso=', wf, 'range=', start.toISOString(), '→', end.toISOString(), 'plants=', codes.join(','))
+            console.log('GM Plant Efficiency fetch (Review): weekIso=', weekIso, 'range=', start.toISOString(), '→', end.toISOString(), 'plants=', codes.join(','))
             let {data} = await supabase
                 .from('reports')
                 .select('id, data, week, submitted_at, report_date_range_start')
@@ -693,16 +688,16 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                     data = resp3.data || []
                 }
                 if (!Array.isArray(data)) {
-                    setEffReports([]);
+                    setEffReports([])
                     return
                 }
-                const u = new Set(codes.map(normUpper));
-                const n = new Set(codes.map(normNumeric))
+                const codeSetU = new Set(codes.map(normUpper));
+                const codeSetN = new Set(codes.map(normNumeric))
                 const filtered = data.filter(r => {
                     const pc = r?.data?.plant;
                     const uu = normUpper(pc);
                     const nn = normNumeric(pc);
-                    return u.has(uu) || n.has(nn)
+                    return codeSetU.has(uu) || codeSetN.has(nn)
                 }).map(r => {
                     const pc = r?.data?.plant;
                     const plant = plants.find(p => normUpper(p.plant_code) === normUpper(pc) || normNumeric(p.plant_code) === normNumeric(pc))
@@ -716,7 +711,7 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                     }
                 })
                 console.log('GM Plant Efficiency results (Review): raw=', Array.isArray(data) ? data.length : 0, 'filtered=', filtered.length)
-                setEffReports(filtered);
+                setEffReports(filtered)
                 setEffIdx(0)
             }
         }
@@ -726,6 +721,9 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
             cancelled = true
         }
     }, [plants, weekIso])
+    if (included.length === 0 && effReports.length === 0) return (
+        <div className="rpt-empty">No data in this report.</div>
+    )
     return (
         <div className="rpt-card rpt-card-accent">
             <div className="rpt-card-header">
@@ -792,12 +790,13 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                     </div>
                 </div>
             </div>
-            <div className="rpt-card-header">
-                <div className="rpt-card-title">Per-Plant Summary</div>
-            </div>
-            {included.length === 0 ? (
-                <div className="rpt-empty">No plant data in this report.</div>
-            ) : (
+            {included.length > 0 && (
+                <div className="rpt-card-header">
+                    <div className="rpt-card-title">Per-Plant Summary</div>
+                    <div className="rpt-badge">{included.length} plants</div>
+                </div>
+            )}
+            {included.length === 0 ? null : (
                 <div className="rpt-form-row rpt-flex-col">
                     {included.map(p => {
                         const code = p.plant_code
@@ -813,48 +812,38 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                             notes: `notes_${code}`
                         }
                         return (
-                            <div key={code} className="rpt-card rpt-p-16">
+                            <div className="rpt-card rpt-p-16" key={code}>
                                 <div className="rpt-card-header">
                                     <div className="rpt-card-title">{p.plant_name} ({code})</div>
                                 </div>
-                                <div className="rpt-detail-grid">
-                                    <div>
-                                        <div className="rpt-field-label"># of Operators</div>
-                                        <div className="rpt-field-value">{form[f.ops] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label"># of Runnable Trucks</div>
-                                        <div className="rpt-field-value">{form[f.runnable] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label">Down Trucks</div>
-                                        <div className="rpt-field-value">{form[f.down] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label">Operators Starting</div>
-                                        <div className="rpt-field-value">{form[f.starting] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label">Operators Leaving</div>
-                                        <div className="rpt-field-value">{form[f.leaving] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label">New Operators Training</div>
-                                        <div className="rpt-field-value">{form[f.training] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label">Total Yardage</div>
-                                        <div className="rpt-field-value">{form[f.yardage] || 0}</div>
-                                    </div>
-                                    <div>
-                                        <div className="rpt-field-label">Total Hours</div>
-                                        <div className="rpt-field-value">{form[f.hours] || 0}</div>
-                                    </div>
-                                    <div className="rpt-detail-grid-full">
-                                        <div className="rpt-field-label">Notes</div>
-                                        <div className="rpt-comment-text">{form[f.notes] || ''}</div>
-                                    </div>
+                                <div className="rpt-form-row">
+                                    <Field label="# of Operators" value={form[f.ops] || ''} onChange={() => {}}
+                                           required disabled/>
+                                    <Field label="# of Runnable Trucks" value={form[f.runnable] || ''} onChange={() => {}}
+                                           required disabled/>
+                                    <Field label="Down Trucks" value={form[f.down] || ''} onChange={() => {}}
+                                           required disabled/>
                                 </div>
+                                <div className="rpt-form-row">
+                                    <Field label="Operators Starting" value={form[f.starting] || ''} onChange={() => {}}
+                                           required disabled/>
+                                    <Field label="Operators Leaving" value={form[f.leaving] || ''} onChange={() => {}}
+                                           required disabled/>
+                                    <Field label="New Operators Training" value={form[f.training] || ''} onChange={() => {}}
+                                           required disabled/>
+                                    <Field label="Total Yardage" value={form[f.yardage] || ''} onChange={() => {}}
+                                           required disabled/>
+                                </div>
+                                <div className="rpt-form-row">
+                                    <Field label="Total Hours" value={form[f.hours] || ''} onChange={() => {}}
+                                           required disabled/>
+                                </div>
+                                {form[f.notes] ? (
+                                    <div className="rpt-form-row">
+                                        <Field label="Notes" type="textarea" value={form[f.notes] || ''}
+                                               onChange={() => {}} required={false} disabled/>
+                                    </div>
+                                ) : null}
                             </div>
                         )
                     })}

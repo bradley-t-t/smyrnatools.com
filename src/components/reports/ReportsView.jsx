@@ -9,6 +9,7 @@ import {ReportService} from '../../services/ReportService'
 import LoadingScreen from '../common/LoadingScreen'
 import {usePreferences} from '../../app/context/PreferencesContext'
 import {RegionService} from '../../services/RegionService'
+import {ReportUtility} from '../../utils/ReportUtility'
 
 const HARDCODED_TODAY = new Date()
 const REPORTS_START_DATE = new Date('2025-07-20')
@@ -44,25 +45,6 @@ function ReportsView() {
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const [reporterPlantMap, setReporterPlantMap] = useState({})
     const [loadingReporterPlants, setLoadingReporterPlants] = useState(false)
-
-    function getLastNWeekIsos(n) {
-        const weeks = []
-        const currentMonday = ReportService.getMondayAndSaturday(HARDCODED_TODAY).monday
-        let ptr = new Date(currentMonday)
-        for (let i = 0; i < n; i++) {
-            weeks.push(ReportService.getMondayISO(ptr))
-            ptr.setDate(ptr.getDate() - 7)
-        }
-        return weeks
-    }
-
-    function getTotalWeeksSinceStart() {
-        const currentMonday = ReportService.getMondayAndSaturday(HARDCODED_TODAY).monday
-        const startMonday = ReportService.getMondayAndSaturday(REPORTS_START_DATE).monday
-        const diffMs = currentMonday.getTime() - startMonday.getTime()
-        const weeks = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1
-        return Math.max(weeks, 0)
-    }
 
     async function fetchProfilesFor(userIds) {
         const missing = userIds.filter(id => !userProfiles[id])
@@ -184,7 +166,7 @@ function ReportsView() {
 
     useEffect(() => {
         if (!user || isLoadingPermissions) return
-        const initialMyWeeks = getLastNWeekIsos(2)
+        const initialMyWeeks = ReportUtility.getLastNWeekIsos(2, HARDCODED_TODAY)
 
         async function loadInitial() {
             setIsLoadingMy(true)
@@ -198,7 +180,7 @@ function ReportsView() {
 
     useEffect(() => {
         if (!user || isLoadingPermissions || tab !== 'review') return
-        const desiredWeeks = new Set(getLastNWeekIsos(reviewVisibleWeeks))
+        const desiredWeeks = new Set(ReportUtility.getLastNWeekIsos(reviewVisibleWeeks, HARDCODED_TODAY))
         const toLoad = Array.from(desiredWeeks).filter(w => !reviewLoadedWeeks.has(w))
         if (toLoad.length === 0) return
         let cancelled = false
@@ -218,7 +200,7 @@ function ReportsView() {
 
     useEffect(() => {
         if (!user || isLoadingPermissions) return
-        const desiredWeeks = new Set(getLastNWeekIsos(myReportsVisibleWeeks))
+        const desiredWeeks = new Set(ReportUtility.getLastNWeekIsos(myReportsVisibleWeeks, HARDCODED_TODAY))
         const toLoad = Array.from(desiredWeeks).filter(w => !myLoadedWeeks.has(w))
         if (toLoad.length === 0) return
         let cancelled = false
@@ -298,19 +280,15 @@ function ReportsView() {
         }
     }, [localReports, user])
 
-    const totalMyWeeks = getTotalWeeksSinceStart()
-    const weeksToShow = useMemo(() => getLastNWeekIsos(Math.min(myReportsVisibleWeeks, totalMyWeeks)), [myReportsVisibleWeeks, totalMyWeeks])
+    const totalMyWeeks = ReportUtility.getTotalWeeksSince(REPORTS_START_DATE, HARDCODED_TODAY)
+    const weeksToShow = useMemo(() => ReportUtility.getLastNWeekIsos(Math.min(myReportsVisibleWeeks, totalMyWeeks), HARDCODED_TODAY), [myReportsVisibleWeeks, totalMyWeeks])
 
     const myReportsByWeek = useMemo(() => {
         const grouped = {}
         weeksToShow.forEach(weekIso => {
             reportTypes.forEach(rt => {
                 if (!user || !hasAssigned[rt.name]) return
-                const monday = new Date(weekIso)
-                const dividerMonday = new Date(monday)
-                dividerMonday.setDate(dividerMonday.getDate() + 1)
-                const dividerSaturday = new Date(dividerMonday)
-                dividerSaturday.setDate(dividerMonday.getDate() + 5)
+                const {monday: dividerMonday, saturday: dividerSaturday} = ReportUtility.getWeekDatesFromIso(weekIso)
                 const existing = localReports.find(r =>
                     r.name === rt.name &&
                     r.userId === user.id &&
@@ -652,10 +630,7 @@ function ReportsView() {
                                                     {filteredMyWeeks.map(weekIso => {
                                                         const weekItems = (myReportsByWeek[weekIso] || []).filter(item => !filterReportType || item.name === filterReportType)
                                                         if (weekItems.length === 0) return null
-                                                        const weekStart = new Date(weekIso)
-                                                        weekStart.setDate(weekStart.getDate() + 1)
-                                                        const weekEnd = new Date(weekStart)
-                                                        weekEnd.setDate(weekStart.getDate() + 5)
+                                                        const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
@@ -664,26 +639,13 @@ function ReportsView() {
                                                                 </div>
                                                                 {weekItems.map(item => {
                                                                     const today = new Date()
-                                                                    const endDateStr = item.range.split(' through ')[1]
-                                                                    const [mm, dd, yy] = endDateStr.split('-')
-                                                                    const endDate = new Date(`20${yy.length === 2 ? yy : yy.slice(-2)}`, mm - 1, dd)
-                                                                    let statusText
-                                                                    let statusClass
                                                                     const hasSavedData = !!(item.report && item.report.data)
-                                                                    const buttonLabel = item.completed ? 'View' : (hasSavedData ? 'Edit' : 'Submit')
-                                                                    if (item.completed) {
-                                                                        statusText = 'Completed'
-                                                                        statusClass = 'success'
-                                                                    } else if (hasSavedData) {
-                                                                        statusText = 'Continue Editing'
-                                                                        statusClass = 'info'
-                                                                    } else if (endDate >= today) {
-                                                                        statusText = 'Current Week'
-                                                                        statusClass = 'info'
-                                                                    } else {
-                                                                        statusText = 'Past Due'
-                                                                        statusClass = 'error'
-                                                                    }
+                                                                    const {statusText, statusClass, buttonLabel} = ReportUtility.computeMyReportStatus({
+                                                                        completed: item.completed,
+                                                                        hasSavedData,
+                                                                        weekIso: item.weekIso,
+                                                                        today
+                                                                    })
                                                                     return (
                                                                         <div className="rpts-list-item"
                                                                              key={item.name + item.weekIso}>
@@ -755,10 +717,7 @@ function ReportsView() {
                                                             return (!filterReportType || report.name === filterReportType) && matchPlant && matchRegion
                                                         })
                                                         if (weekReports.length === 0) return null
-                                                        const weekStart = new Date(weekIso)
-                                                        weekStart.setDate(weekStart.getDate() + 1)
-                                                        const weekEnd = new Date(weekStart)
-                                                        weekEnd.setDate(weekStart.getDate() + 5)
+                                                        const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">

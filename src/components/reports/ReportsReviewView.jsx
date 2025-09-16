@@ -8,6 +8,7 @@ import {DistrictManagerReviewPlugin} from './types/WeeklyDistrictManagerReport'
 import {EfficiencyReviewPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerReviewPlugin} from './types/WeeklySafetyManagerReport'
 import {GeneralManagerReviewPlugin} from './types/WeeklyGeneralManagerReport'
+import {ReportUtility} from '../../utils/ReportUtility'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,
@@ -15,12 +16,6 @@ const plugins = {
     plant_production: EfficiencyReviewPlugin,
     safety_manager: SafetyManagerReviewPlugin,
     general_manager: GeneralManagerReviewPlugin
-}
-
-function formatDateTime(dt) {
-    if (!dt) return ''
-    const date = new Date(dt)
-    return date.toLocaleString()
 }
 
 function ReportsReviewView({report, initialData, onBack, user, completedByUser, onManagerEdit}) {
@@ -66,7 +61,7 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     }, [report.weekIso, initialData?.week])
 
     useEffect(() => {
-        setSubmittedAt(initialData?.submitted_at ? formatDateTime(initialData.submitted_at) : '')
+        setSubmittedAt(initialData?.submitted_at ? ReportUtility.formatDateTime(initialData.submitted_at) : '')
     }, [initialData])
 
     useEffect(() => {
@@ -167,31 +162,8 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
         setActiveTab(tabOptions[0].key)
     }, [report.name])
 
-    function formatVerboseDate(dateInput) {
-        if (!dateInput) return ''
-        const d = new Date(dateInput)
-        return d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
-    }
-
-    function getWeekVerbose(weekIso) {
-        if (!weekIso) return ''
-        const monday = new Date(weekIso)
-        monday.setDate(monday.getDate() + 1)
-        monday.setHours(0, 0, 0, 0)
-        const saturday = new Date(monday)
-        saturday.setDate(monday.getDate() + 5)
-        const left = monday.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
-        const right = saturday.toLocaleDateString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        })
-        return `${left} – ${right}`
-    }
-
-    const weekVerbose = getWeekVerbose(report.weekIso || initialData?.week)
-    const reportDateVerbose = form.report_date ? formatVerboseDate(form.report_date) : ''
+    const weekVerbose = ReportUtility.getWeekVerbose(report.weekIso || initialData?.week)
+    const reportDateVerbose = form.report_date ? ReportUtility.formatVerboseDate(form.report_date) : ''
 
     return (
         <div className="rpts-reports-review-view">

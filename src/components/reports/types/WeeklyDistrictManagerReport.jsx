@@ -1,5 +1,6 @@
 import React from 'react'
 import '../styles/ReportTypes.css'
+import {ReportUtility} from '../../../utils/ReportUtility'
 
 export function DistrictManagerSubmitPlugin({maintenanceItems}) {
     if (!maintenanceItems || maintenanceItems.length === 0) return null
@@ -41,10 +42,10 @@ export function DistrictManagerSubmitPlugin({maintenanceItems}) {
                                 {truncateText(getPlantName(item.plant_code), 20)}
                             </td>
                             <td>
-                                {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
+                                {item.deadline ? ReportUtility.formatDate(item.deadline) : ''}
                             </td>
                             <td>
-                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : ''}
+                                {item.completed_at ? ReportUtility.formatDate(item.completed_at) : ''}
                             </td>
                         </tr>
                     ))}
@@ -95,10 +96,10 @@ export function DistrictManagerReviewPlugin({maintenanceItems}) {
                                 {truncateText(getPlantName(item.plant_code), 20)}
                             </td>
                             <td>
-                                {item.deadline ? new Date(item.deadline).toLocaleDateString() : ''}
+                                {item.deadline ? ReportUtility.formatDate(item.deadline) : ''}
                             </td>
                             <td>
-                                {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : ''}
+                                {item.completed_at ? ReportUtility.formatDate(item.completed_at) : ''}
                             </td>
                         </tr>
                     ))}

@@ -663,3 +663,157 @@
 .rpt-dot.active {
     background: var(--accent);
 }
+
+.rpts-summary-tabs-container {
+    margin-top: 32px;
+    margin-bottom: 0;
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: var(--shadow-md);
+    padding: 0 0 32px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    border: 1.5px solid var(--divider);
+}
+
+.rpts-summary-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1.5px solid var(--divider);
+    background: var(--background);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    overflow: hidden;
+}
+
+.rpts-summary-tabs button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 18px 38px 12px 38px;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    border-bottom: 3px solid transparent;
+}
+
+.rpts-summary-tabs button.active {
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    background: var(--card-bg);
+}
+
+.rpts-summary-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 0 0 0;
+}
+
+.rpts-summary-content.rpt-summary-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.rpts-summary-metric-card {
+    min-width: 260px;
+    max-width: 340px;
+    width: 100%;
+    background: var(--background);
+    border-radius: 14px;
+    border: 3px solid var(--divider);
+    box-shadow: var(--shadow-md);
+    padding: 22px 18px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0;
+    transition: border-color 0.2s;
+}
+
+.rpts-summary-metric-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 7px;
+    letter-spacing: 0.01em;
+}
+
+.rpts-summary-metric-value {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+    color: var(--primary);
+}
+
+.rpts-summary-metric-grade {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+    color: var(--primary);
+}
+
+.dark-mode .rpts-summary-metric-title,
+.dark-mode .rpts-summary-metric-value,
+.dark-mode .rpts-summary-metric-grade {
+    color: var(--text-light);
+}
+
+.rpts-summary-metric-scale {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    width: 100%;
+    justify-content: space-between;
+}
+
+.rpts-summary-metric-scale span {
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    opacity: 0.7;
+    font-weight: 600;
+    transition: background 0.18s, color 0.18s, opacity 0.18s;
+}
+
+.rpts-summary-metric-scale span.active {
+    background: var(--accent-light-theme);
+    color: var(--text-primary);
+    opacity: 1;
+    font-weight: 800;
+    box-shadow: 0 1px 4px var(--shadow-sm);
+}
+
+@media (max-width: 1100px) {
+    .rpts-summary-metric-card {
+        min-width: 0;
+        max-width: 99vw;
+        padding: 12px 4vw 12px 4vw;
+    }
+}
+
+@media (max-width: 600px) {
+    .rpts-summary-metric-card {
+        min-width: 0;
+        max-width: 99vw;
+        padding: 10px 2vw 10px 2vw;
+    }
+
+    .rpts-summary-content {
+        padding: 10px 0 0 0;
+    }
+}

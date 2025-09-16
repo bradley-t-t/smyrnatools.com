@@ -1,7 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react'
 import '../styles/ReportTypes.css'
+import {ReportUtility} from '../../../utils/ReportUtility'
 
-const TAG_OPTIONS = ['Accident', 'Injury', 'Non-DOT', 'DOT', 'Compliance', 'Environmental', 'Reprimand']
+const TAG_OPTIONS = ['Accident', 'Injury', 'Non-DOT', 'DOT', 'Compliance', 'Environmental', 'Reprimand', 'Safety']
 
 function TagPicker({value, options, disabled, placeholder, onChange}) {
     const [open, setOpen] = useState(false)
@@ -127,7 +128,7 @@ export function SafetyManagerSubmitPlugin({form, setForm, plants, readOnly}) {
     }
 
     function addIssue() {
-        const today = new Date().toISOString().slice(0, 10)
+        const today = ReportUtility.getTodayISODate()
         const newIssue = {id: Date.now(), description: '', plant: '', tag: '', tags: [], date: today}
         setForm(f => ({...f, issues: [...(f.issues || []), newIssue]}))
     }

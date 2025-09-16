@@ -1,19 +1,10 @@
 import React, {useEffect, useMemo, useState} from 'react'
 import {ReportService} from '../../../services/ReportService'
+import {ReportUtility} from '../../../utils/ReportUtility'
 import '../styles/ReportTypes.css'
 
 function getRows(form) {
     return Array.isArray(form.rows) ? form.rows : []
-}
-
-function getOperatorName(row, operatorOptions) {
-    if (!row || !row.name) return ''
-    if (Array.isArray(operatorOptions)) {
-        const found = operatorOptions.find(opt => opt.value === row.name)
-        if (found) return found.label
-    }
-    if (row.displayName) return row.displayName
-    return row.name
 }
 
 function StatsBar({insights}) {
@@ -103,14 +94,14 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
     const [expanded, setExpanded] = useState(new Set())
 
     function minutes(timeStr) {
-        return ReportService.parseTimeToMinutes(timeStr)
+        return ReportUtility.parseTimeToMinutes(timeStr)
     }
 
     const processed = useMemo(() => {
         const lower = (filterText || '').toLowerCase().trim()
         const filtered = rows.filter(r => {
             if (!lower) return true
-            const name = getOperatorName(r, operatorOptions).toLowerCase()
+            const name = ReportService.getOperatorName(r, operatorOptions).toLowerCase()
             const truck = String(r.truck_number || '').toLowerCase()
             return name.includes(lower) || truck.includes(lower)
         })
@@ -131,7 +122,7 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
         function cmp(a, b) {
             const A = a.r
             const B = b.r
-            if (sortKey === 'operator') return getOperatorName(A, operatorOptions).localeCompare(getOperatorName(B, operatorOptions)) * dir
+            if (sortKey === 'operator') return ReportService.getOperatorName(A, operatorOptions).localeCompare(ReportService.getOperatorName(B, operatorOptions)) * dir
             if (sortKey === 'loads') return ((Number(A.loads) || 0) - (Number(B.loads) || 0)) * dir
             if (sortKey === 'hours') return (((a.hours ?? -Infinity)) - ((b.hours ?? -Infinity))) * dir
             if (sortKey === 'lph') return (((a.lph ?? -Infinity)) - ((b.lph ?? -Infinity))) * dir
@@ -190,8 +181,8 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                     return (
                         <React.Fragment key={key}>
                             <tr className="rpt-row">
-                                <td className="rpt-td emphasis" title={getOperatorName(r, operatorOptions)}>
-                                    {getOperatorName(r, operatorOptions) || 'No Name'}
+                                <td className="rpt-td emphasis" title={ReportService.getOperatorName(r, operatorOptions)}>
+                                    {ReportService.getOperatorName(r, operatorOptions) || 'No Name'}
                                 </td>
                                 <td className="rpt-td secondary">{r.truck_number || '--'}</td>
                                 <td className={`rpt-td ${warnStart ? 'warn' : ''}`}>{dStart !== null ? `${dStart} min` : '--'}</td>
