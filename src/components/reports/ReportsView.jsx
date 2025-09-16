@@ -49,6 +49,8 @@ function ReportsView() {
     const [overdueItems, setOverdueItems] = useState([])
     const [isLoadingOverdue, setIsLoadingOverdue] = useState(false)
 
+    const [hasAnyReviewPermissionPrefix, setHasAnyReviewPermissionPrefix] = useState(false)
+
     async function fetchProfilesFor(userIds) {
         const missing = userIds.filter(id => !userProfiles[id])
         if (missing.length === 0) return
@@ -132,6 +134,7 @@ function ReportsView() {
             if (!user || !user.id) {
                 setHasAssigned({})
                 setHasReviewPermission({})
+                setHasAnyReviewPermissionPrefix(false)
                 setIsLoadingPermissions(false)
                 return
             }
@@ -146,6 +149,13 @@ function ReportsView() {
             }))
             setHasAssigned(assigned)
             setHasReviewPermission(review)
+            try {
+                const permissions = await UserService.getUserPermissions(user.id)
+                const anyReview = Array.isArray(permissions) && permissions.some(p => typeof p === 'string' && p.startsWith('reports.review.'))
+                setHasAnyReviewPermissionPrefix(!!anyReview)
+            } catch {
+                setHasAnyReviewPermissionPrefix(false)
+            }
             setIsLoadingPermissions(false)
         }
 
@@ -307,6 +317,10 @@ function ReportsView() {
             cancelled = true
         }
     }, [tab, isLoadingPermissions, hasReviewPermission])
+
+    useEffect(() => {
+        if (tab === 'overdue' && !hasAnyReviewPermissionPrefix) setTab('all')
+    }, [tab, hasAnyReviewPermissionPrefix])
 
     const totalMyWeeks = ReportUtility.getTotalWeeksSince(REPORTS_START_DATE, HARDCODED_TODAY)
     const weeksToShow = useMemo(() => ReportUtility.getLastNWeekIsos(Math.min(myReportsVisibleWeeks, totalMyWeeks), HARDCODED_TODAY), [myReportsVisibleWeeks, totalMyWeeks])
@@ -580,7 +594,7 @@ function ReportsView() {
             const matchRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(reporterPlant)
             return (!filterReportType || report.name === filterReportType) && matchPlant && matchRegion
         })
-    }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reviewReportsByWeek, filterReportType, filterPlant, reviewVisibleWeeks, preferences.selectedRegion?.code, regionPlantCodes, reporterPlantMap])
+    }).slice(0, reviewVisibleWeeks), [sortedReviewWeeks, reportTypes, filterReportType, filterPlant, reviewVisibleWeeks, preferences.selectedRegion?.code, regionPlantCodes, reporterPlantMap])
 
     const filteredOverdueItems = useMemo(() => {
         return (overdueItems || []).filter(item => {
@@ -630,13 +644,15 @@ function ReportsView() {
                                 >
                                     Review
                                 </button>
-                                <button
-                                    className={tab === 'overdue' ? 'active' : ''}
-                                    onClick={() => setTab('overdue')}
-                                    type="button"
-                                >
-                                    Overdue
-                                </button>
+                                {hasAnyReviewPermissionPrefix && (
+                                    <button
+                                        className={tab === 'overdue' ? 'active' : ''}
+                                        onClick={() => setTab('overdue')}
+                                        type="button"
+                                    >
+                                        Overdue
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="rpts-filters">
@@ -650,7 +666,7 @@ function ReportsView() {
                                     .filter(rt =>
                                         (tab === 'all' && hasAssigned[rt.name]) ||
                                         (tab === 'review' && hasReviewPermission[rt.name]) ||
-                                        tab === 'overdue'
+                                        (tab === 'overdue' && hasReviewPermission[rt.name])
                                     )
                                     .map(rt => (
                                         <option key={rt.name} value={rt.name}>{rt.title}</option>
@@ -701,7 +717,7 @@ function ReportsView() {
                                                                 {(pmItem || peItem) && (
                                                                     <div className="rpts-pair">
                                                                         <div className="rpts-pair-header">
-                                                                            <div>Plant Manager + Efficiency</div>
+                                                                            <div>{[pmItem?.title, peItem?.title].filter(Boolean).join(' & ')}</div>
                                                                             <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
                                                                         </div>
                                                                         <div className={`rpts-pair-cols ${(pmItem && peItem) ? '' : 'single'}`}>
@@ -755,7 +771,7 @@ function ReportsView() {
                                                                 {otherItems.length > 0 && (
                                                                     <div className="rpts-pair">
                                                                         <div className="rpts-pair-header">
-                                                                            <div>Other Reports</div>
+                                                                            <div>{otherItems.map(i => i.title).join(' & ')}</div>
                                                                             <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
                                                                         </div>
                                                                         <div className={`rpts-pair-cols ${otherItems.length === 1 ? 'single' : ''}`}>
@@ -865,7 +881,7 @@ function ReportsView() {
                                                                 {pairs.map((pair, idx) => (
                                                                     <div className="rpts-pair" key={`pair-${weekIso}-${idx}`}>
                                                                         <div className="rpts-pair-header">
-                                                                            <div>Plant Manager + Efficiency</div>
+                                                                            <div>{[pair.pm?.title, pair.pe?.title].filter(Boolean).join(' & ')}</div>
                                                                             <div className="rpts-pair-meta">Completed By {getUserName((pair.pm || pair.pe).userId)}</div>
                                                                         </div>
                                                                         <div className={`rpts-pair-cols ${(pair.pm && pair.pe) ? '' : 'single'}`}>
@@ -897,7 +913,7 @@ function ReportsView() {
                                                                 {singles.length > 0 && (
                                                                     <div className="rpts-pair">
                                                                         <div className="rpts-pair-header">
-                                                                            <div>Other Reports</div>
+                                                                            <div>{Array.from(new Set(singles.map(r => r.title))).join(' & ')}</div>
                                                                             <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
                                                                         </div>
                                                                         <div className={`rpts-pair-cols ${singles.length === 1 ? 'single' : ''}`}>
@@ -990,7 +1006,7 @@ function ReportsView() {
                                                                 {pairs.map((pair, idx) => (
                                                                     <div className="rpts-pair" key={`od-pair-${weekIso}-${idx}`}>
                                                                         <div className="rpts-pair-header">
-                                                                            <div>Plant Manager + Efficiency</div>
+                                                                            <div>{[pair.pm ? (reportTypeMap[pair.pm.report_name]?.title || pair.pm.report_name) : null, pair.pe ? (reportTypeMap[pair.pe.report_name]?.title || pair.pe.report_name) : null].filter(Boolean).join(' & ')}</div>
                                                                             <div className="rpts-pair-meta">Owed By {(pair.pm || pair.pe) ? `${(pair.pm?.first_name || pair.pe?.first_name || '')} ${(pair.pm?.last_name || pair.pe?.last_name || '')}`.trim() : ''}</div>
                                                                         </div>
                                                                         <div className={`rpts-pair-cols ${(pair.pm && pair.pe) ? '' : 'single'}`}>
@@ -1016,7 +1032,7 @@ function ReportsView() {
                                                                 {singles.length > 0 && (
                                                                     <div className="rpts-pair">
                                                                         <div className="rpts-pair-header">
-                                                                            <div>Other Reports</div>
+                                                                            <div>{Array.from(new Set(singles.map(item => (reportTypeMap[item.report_name]?.title || item.report_name)))).join(' & ')}</div>
                                                                             <div className="rpts-pair-meta">Week of {weekStart.toLocaleDateString()}</div>
                                                                         </div>
                                                                         <div className={`rpts-pair-cols ${singles.length === 1 ? 'single' : ''}`}>
