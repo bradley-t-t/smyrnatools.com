@@ -492,23 +492,28 @@ export function GeneralManagerSubmitPlugin({form, setForm, plants = [], readOnly
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Loads</div>
-                                        <div className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Hours</div>
-                                        <div className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg L/H</div>
-                                        <div className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Punch In → 1st</div>
-                                        <div className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Washout → Punch</div>
-                                        <div className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
                                     </div>
                                 </div>
                             </div>
@@ -817,31 +822,41 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                                     <div className="rpt-card-title">{p.plant_name} ({code})</div>
                                 </div>
                                 <div className="rpt-form-row">
-                                    <Field label="# of Operators" value={form[f.ops] || ''} onChange={() => {}}
+                                    <Field label="# of Operators" value={form[f.ops] || ''} onChange={() => {
+                                    }}
                                            required disabled/>
-                                    <Field label="# of Runnable Trucks" value={form[f.runnable] || ''} onChange={() => {}}
+                                    <Field label="# of Runnable Trucks" value={form[f.runnable] || ''} onChange={() => {
+                                    }}
                                            required disabled/>
-                                    <Field label="Down Trucks" value={form[f.down] || ''} onChange={() => {}}
-                                           required disabled/>
-                                </div>
-                                <div className="rpt-form-row">
-                                    <Field label="Operators Starting" value={form[f.starting] || ''} onChange={() => {}}
-                                           required disabled/>
-                                    <Field label="Operators Leaving" value={form[f.leaving] || ''} onChange={() => {}}
-                                           required disabled/>
-                                    <Field label="New Operators Training" value={form[f.training] || ''} onChange={() => {}}
-                                           required disabled/>
-                                    <Field label="Total Yardage" value={form[f.yardage] || ''} onChange={() => {}}
+                                    <Field label="Down Trucks" value={form[f.down] || ''} onChange={() => {
+                                    }}
                                            required disabled/>
                                 </div>
                                 <div className="rpt-form-row">
-                                    <Field label="Total Hours" value={form[f.hours] || ''} onChange={() => {}}
+                                    <Field label="Operators Starting" value={form[f.starting] || ''} onChange={() => {
+                                    }}
+                                           required disabled/>
+                                    <Field label="Operators Leaving" value={form[f.leaving] || ''} onChange={() => {
+                                    }}
+                                           required disabled/>
+                                    <Field label="New Operators Training" value={form[f.training] || ''}
+                                           onChange={() => {
+                                           }}
+                                           required disabled/>
+                                    <Field label="Total Yardage" value={form[f.yardage] || ''} onChange={() => {
+                                    }}
+                                           required disabled/>
+                                </div>
+                                <div className="rpt-form-row">
+                                    <Field label="Total Hours" value={form[f.hours] || ''} onChange={() => {
+                                    }}
                                            required disabled/>
                                 </div>
                                 {form[f.notes] ? (
                                     <div className="rpt-form-row">
                                         <Field label="Notes" type="textarea" value={form[f.notes] || ''}
-                                               onChange={() => {}} required={false} disabled/>
+                                               onChange={() => {
+                                               }} required={false} disabled/>
                                     </div>
                                 ) : null}
                             </div>
@@ -956,23 +971,28 @@ export function GeneralManagerReviewPlugin({form, plants = [], weekIso}) {
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Loads</div>
-                                        <div className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgLoads !== null ? ag.avgLoads.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg Hours</div>
-                                        <div className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgHours !== null ? ag.avgHours.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Avg L/H</div>
-                                        <div className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgLoadsPerHour !== null ? ag.avgLoadsPerHour.toFixed(2) : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Punch In → 1st</div>
-                                        <div className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgElapsedStart !== null ? `${ag.avgElapsedStart.toFixed(1)} min` : '--'}</div>
                                     </div>
                                     <div className="rpt-stat-card">
                                         <div className="rpt-stat-label">Washout → Punch</div>
-                                        <div className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
+                                        <div
+                                            className="rpt-stat-value">{ag.avgElapsedEnd !== null ? `${ag.avgElapsedEnd.toFixed(1)} min` : '--'}</div>
                                     </div>
                                 </div>
                             </div>

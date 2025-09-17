@@ -127,7 +127,8 @@ export async function sendReportSubmittedEmail({report, weekVerbose}) {
                 if (userRec?.email) submittedByEmail = userRec.email
                 if (!submittedByName && userRec?.name) submittedByName = String(userRec.name).trim()
             }
-        } catch {}
+        } catch {
+        }
         if (!submittedByName) {
             const deriveNameFromEmail = (email) => {
                 const e = String(email || '').trim()
@@ -141,7 +142,8 @@ export async function sendReportSubmittedEmail({report, weekVerbose}) {
         try {
             const {data} = await supabase.auth.getSession()
             token = data?.session?.access_token || ''
-        } catch {}
+        } catch {
+        }
         const url = `${process.env.REACT_APP_EDGE_FUNCTIONS_URL}/report-notify/on-submitted`
         const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || ''
         const headers = getEdgeHeaders(token, anonKey)
@@ -157,7 +159,8 @@ export async function sendReportSubmittedEmail({report, weekVerbose}) {
                 submittedByEmail
             })
         })
-    } catch {}
+    } catch {
+    }
 }
 
 const EmailUtility = {
@@ -173,5 +176,5 @@ const EmailUtility = {
     prepareMailerSend,
     sendReportSubmittedEmail
 };
-export { EmailUtility };
+export {EmailUtility};
 export default EmailUtility;

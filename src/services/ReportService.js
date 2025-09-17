@@ -341,7 +341,7 @@ class ReportServiceImpl {
     async fetchOverdueAssignments(today = new Date(), options = {}) {
         const force = !!options.force
         const allowedReview = Array.isArray(options.allowedReview) ? options.allowedReview.filter(Boolean) : null
-        const cacheKey = `overdue:${today.toISOString().slice(0,10)}:${(allowedReview||[]).join(',')}`
+        const cacheKey = `overdue:${today.toISOString().slice(0, 10)}:${(allowedReview || []).join(',')}`
         const cached = !force ? CacheUtility.get(cacheKey) : null
         if (cached) return cached
         const candidateWeeks = ReportUtility.getLastNWeekIsos(3, today)

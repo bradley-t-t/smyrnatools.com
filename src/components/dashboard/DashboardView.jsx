@@ -1,6 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react'
 import './styles/DashboardView.css'
-import {usePreferences} from '../../app/context/PreferencesContext'
 import {RegionService} from '../../services/RegionService'
 import {MixerService} from '../../services/MixerService'
 import {TractorService} from '../../services/TractorService'
@@ -14,7 +13,6 @@ import VerifiedUtility from '../../utils/VerifiedUtility'
 import {UserService} from '../../services/UserService'
 
 export default function DashboardView() {
-    const {preferences} = usePreferences()
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState('')
@@ -32,11 +30,6 @@ export default function DashboardView() {
     const [pickups, setPickups] = useState([])
     const [operators, setOperators] = useState([])
     const [managersCount, setManagersCount] = useState(0)
-    const [uncompletedListCount, setUncompletedListCount] = useState(0)
-    const [overdueListCount, setOverdueListCount] = useState(0)
-    const [reportsCompletedCount, setReportsCompletedCount] = useState(0)
-    const [reportsPastDueCount, setReportsPastDueCount] = useState(0)
-    const [reportsWeekLabel, setReportsWeekLabel] = useState('')
     const [mixersIssuesTotal, setMixersIssuesTotal] = useState(0)
     const [mixersCommentsTotal, setMixersCommentsTotal] = useState(0)
     const [tractorsIssuesTotal, setTractorsIssuesTotal] = useState(0)
@@ -143,53 +136,6 @@ export default function DashboardView() {
                     mgrCount = 0
                 }
                 setManagersCount(mgrCount)
-                try {
-                    const listBase = supabase.from('list_items')
-                    let uncompletedQuery = listBase.select('id,deadline', {count: 'exact'}).eq('completed', false)
-                    let overdueQuery = listBase.select('id', {count: 'exact'}).eq('completed', false)
-                    if (effectivePlantCodes && effectivePlantCodes.size > 0) {
-                        const codes = Array.from(effectivePlantCodes)
-                        uncompletedQuery = uncompletedQuery.in('plant_code', codes)
-                        overdueQuery = overdueQuery.in('plant_code', codes)
-                    }
-                    const nowIso = new Date().toISOString()
-                    overdueQuery = overdueQuery.lt('deadline', nowIso)
-                    const [uncompletedRes, overdueRes] = await Promise.all([uncompletedQuery, overdueQuery])
-                    setUncompletedListCount(uncompletedRes?.count || 0)
-                    setOverdueListCount(overdueRes?.count || 0)
-                } catch {
-                    setUncompletedListCount(0)
-                    setOverdueListCount(0)
-                }
-                try {
-                    const {monday: currMon} = ReportService.getMondayAndSaturday(new Date())
-                    const prevMonday = new Date(currMon)
-                    prevMonday.setDate(prevMonday.getDate() - 7)
-                    const prevSaturday = new Date(prevMonday)
-                    prevSaturday.setDate(prevMonday.getDate() + 5)
-                    setReportsWeekLabel(ReportService.getWeekRangeString(prevMonday, prevSaturday))
-                    const prevMonStr = prevMonday.toISOString().slice(0, 10)
-                    const prevSatStr = prevSaturday.toISOString().slice(0, 10)
-                    let userIds = null
-                    if (effectivePlantCodes && effectivePlantCodes.size > 0) {
-                        const {data: profiles} = await supabase.from('users_profiles').select('id, plant_code')
-                        const codes = Array.from(effectivePlantCodes)
-                        userIds = (profiles || []).filter(pr => pr.plant_code && codes.includes(String(pr.plant_code).trim())).map(pr => pr.id)
-                    }
-                    let reportsCompleted = supabase.from('reports').select('id', {count: 'exact'}).eq('completed', true).gte('week', prevMonStr).lte('week', prevSatStr)
-                    let reportsPastDue = supabase.from('reports').select('id', {count: 'exact'}).eq('completed', false).gte('week', prevMonStr).lte('week', prevSatStr)
-                    if (userIds && userIds.length > 0) {
-                        reportsCompleted = reportsCompleted.in('user_id', userIds)
-                        reportsPastDue = reportsPastDue.in('user_id', userIds)
-                    }
-                    const [completedQuery, pastDueQuery] = await Promise.all([reportsCompleted, reportsPastDue])
-                    setReportsCompletedCount(completedQuery?.count || 0)
-                    setReportsPastDueCount(pastDueQuery?.count || 0)
-                } catch {
-                    setReportsCompletedCount(0)
-                    setReportsPastDueCount(0)
-                    setReportsWeekLabel('')
-                }
                 try {
                     const mixerIds = (fMix || []).map(m => m.id).filter(Boolean)
                     const tractorIds = (fTrac || []).map(t => t.id).filter(Boolean)
@@ -317,17 +263,16 @@ export default function DashboardView() {
     const onRegionChange = e => {
         const code = e.target.value
         if (!code && !hasAllRegionsPermission) return
-        let name = ''
         if (!code && hasAllRegionsPermission) {
-            setDashboardRegionCode('')
-            setDashboardRegionName('')
-            setDashboardPlant('')
+            setDashboardRegionCode('');
+            setDashboardRegionName('');
+            setDashboardPlant('');
             return
         }
         const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code)
         if (r) {
-            name = r.regionName || r.region_name || ''
-            setDashboardRegionCode(r.regionCode || r.region_code)
+            const name = r.regionName || r.region_name || '';
+            setDashboardRegionCode(r.regionCode || r.region_code);
             setDashboardRegionName(name)
         }
         setDashboardPlant('')
@@ -375,10 +320,9 @@ export default function DashboardView() {
                         <div className="updated-at"><span
                             className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span>
                         </div>
-                        <button className="btn ghost" onClick={onRefresh} aria-label="Refresh" disabled={refreshing}>
-                            {refreshing ? <span className="mini-loader"/> : null}
-                            <span>Refresh</span>
-                        </button>
+                        <button className="btn ghost" onClick={onRefresh} aria-label="Refresh"
+                                disabled={refreshing}>{refreshing ?
+                            <span className="mini-loader"/> : null}<span>Refresh</span></button>
                     </div>
                 </div>
             </div>
@@ -489,22 +433,6 @@ export default function DashboardView() {
                         <div className="kpi-card">
                             <div className="kpi-title">Managers</div>
                             <div className="kpi-value">{managersCount}</div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">List Items</div>
-                            <div className="kpi-value">{uncompletedListCount}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Overdue {overdueListCount}</div>
-                            </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Reports</div>
-                            <div className="kpi-value">{reportsCompletedCount + reportsPastDueCount}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Completed {reportsCompletedCount}</div>
-                                <div className="kpi-pill">Past Due {reportsPastDueCount}</div>
-                                <div className="kpi-pill">{reportsWeekLabel || ''}</div>
-                            </div>
                         </div>
                     </div>
                 )}

@@ -48,7 +48,12 @@ const ReportUtility = {
         const {monday, saturday} = this.getWeekDatesFromIso(weekIso)
         if (!monday || !saturday) return ''
         const left = monday.toLocaleDateString(locale, {weekday: 'short', month: 'short', day: 'numeric'})
-        const right = saturday.toLocaleDateString(locale, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})
+        const right = saturday.toLocaleDateString(locale, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        })
         return `${left}  – ${right}`
     },
     formatVerboseDate(dateInput, locale) {
