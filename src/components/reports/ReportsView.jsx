@@ -330,7 +330,6 @@ function ReportsView() {
         weeksToShow.forEach(weekIso => {
             reportTypes.forEach(rt => {
                 if (!user || !hasAssigned[rt.name]) return
-                const {monday: dividerMonday, saturday: dividerSaturday} = ReportUtility.getWeekDatesFromIso(weekIso)
                 const existing = localReports.find(r =>
                     r.name === rt.name &&
                     r.userId === user.id &&
@@ -341,7 +340,6 @@ function ReportsView() {
                 grouped[weekIso].push({
                     ...rt,
                     weekIso,
-                    range: ReportService.getWeekRangeString(dividerMonday, dividerSaturday),
                     completed: !!(existing && existing.completed),
                     report: existing || null
                 })
@@ -581,10 +579,9 @@ function ReportsView() {
         setShowForm(item)
     }
 
-    const filteredMyWeeks = sortedMyWeeks.filter(weekIso => {
-        const weekItems = myReportsByWeek[weekIso] || []
-        return weekItems.some(item => !filterReportType || item.name === filterReportType)
-    }).slice(0, myReportsVisibleWeeks)
+    const filteredMyWeeks = sortedMyWeeks
+        .filter(weekIso => (myReportsByWeek[weekIso] || []).length > 0)
+        .slice(0, myReportsVisibleWeeks)
 
     const filteredReviewWeeks = useMemo(() => sortedReviewWeeks.filter(weekIso => {
         const weekReports = reviewReportsByWeek[weekIso] || []
@@ -618,6 +615,17 @@ function ReportsView() {
 
     const sortedOverdueWeeks = useMemo(() => Object.keys(overdueByWeek).sort((a, b) => new Date(b) - new Date(a)), [overdueByWeek])
 
+    const myCounts = useMemo(() => {
+        const items = []
+        weeksToShow.forEach(w => (myReportsByWeek[w] || []).forEach(i => items.push(i)))
+        const completed = items.filter(i => i.completed).length
+        const pending = items.filter(i => !i.completed).length
+        return {total: items.length, completed, pending}
+    }, [weeksToShow, myReportsByWeek])
+
+    const reviewCount = reviewableReports.length
+    const overdueCount = overdueItems.length
+
     return (
         <>
             <div className="rpts-root">
@@ -625,65 +633,86 @@ function ReportsView() {
                 {!showForm && !showReview && (
                     <>
                         <div className="rpts-toolbar">
-                            <div className="rpts-toolbar-title">
-                                <i className="fas fa-file-alt"></i>
-                                <span>Reports</span>
-                            </div>
-                            <div className="rpts-tabs">
-                                <button
-                                    className={tab === 'all' ? 'active' : ''}
-                                    onClick={() => setTab('all')}
-                                    type="button"
-                                >
-                                    My Reports
-                                </button>
-                                <button
-                                    className={tab === 'review' ? 'active' : ''}
-                                    onClick={() => setTab('review')}
-                                    type="button"
-                                >
-                                    Review
-                                </button>
-                                {hasAnyReviewPermissionPrefix && (
-                                    <button
-                                        className={tab === 'overdue' ? 'active' : ''}
-                                        onClick={() => setTab('overdue')}
-                                        type="button"
-                                    >
-                                        Overdue
-                                    </button>
+                            <div className="rpts-toolbar-left">
+                                <div className="rpts-toolbar-title">
+                                    <i className="fas fa-file-alt"></i>
+                                    <span>Reports</span>
+                                </div>
+                                {tab === 'all' && (
+                                    <div className="rpts-metrics">
+                                        <div className="rpts-metric">
+                                            <div className="rpts-metric-value">{myCounts.completed}</div>
+                                            <div className="rpts-metric-label">Completed</div>
+                                        </div>
+                                        <div className="rpts-metric">
+                                            <div className="rpts-metric-value">{myCounts.pending}</div>
+                                            <div className="rpts-metric-label">Pending</div>
+                                        </div>
+                                        <div className="rpts-metric">
+                                            <div className="rpts-metric-value">{myCounts.total}</div>
+                                            <div className="rpts-metric-label">Total</div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
-                        </div>
-                        <div className="rpts-filters">
-                            <select
-                                value={filterReportType}
-                                onChange={e => setFilterReportType(e.target.value)}
-                                className="rpts-select-control"
-                            >
-                                <option value="">All Report Types</option>
-                                {reportTypes
-                                    .filter(rt =>
-                                        (tab === 'all' && hasAssigned[rt.name]) ||
-                                        (tab === 'review' && hasReviewPermission[rt.name]) ||
-                                        (tab === 'overdue' && hasReviewPermission[rt.name])
-                                    )
-                                    .map(rt => (
-                                        <option key={rt.name} value={rt.name}>{rt.title}</option>
-                                    ))}
-                            </select>
-                            <select
-                                value={filterPlant}
-                                onChange={e => setFilterPlant(e.target.value)}
-                                className="rpts-select-control"
-                            >
-                                <option value="">All Plants</option>
-                                {plants
-                                    .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
-                                    .map(p => (
-                                        <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
-                                    ))}
-                            </select>
+                            <div className="rpts-toolbar-right">
+                                <div className="rpts-tabs">
+                                    <button
+                                        className={tab === 'all' ? 'active' : ''}
+                                        onClick={() => setTab('all')}
+                                        type="button"
+                                    >
+                                        My Reports {myCounts.pending > 0 && <span className="rpts-badge" aria-label={`${myCounts.pending} pending`}>{myCounts.pending}</span>}
+                                    </button>
+                                    <button
+                                        className={tab === 'review' ? 'active' : ''}
+                                        onClick={() => setTab('review')}
+                                        type="button"
+                                    >
+                                        Review {reviewCount > 0 && <span className="rpts-badge" aria-label={`${reviewCount} to review`}>{reviewCount}</span>}
+                                    </button>
+                                    {hasAnyReviewPermissionPrefix && (
+                                        <button
+                                            className={tab === 'overdue' ? 'active' : ''}
+                                            onClick={() => setTab('overdue')}
+                                            type="button"
+                                        >
+                                            Overdue {overdueCount > 0 && <span className="rpts-badge" aria-label={`${overdueCount} overdue`}>{overdueCount}</span>}
+                                        </button>
+                                    )}
+                                </div>
+                                {tab !== 'all' && (
+                                    <div className="rpts-filters">
+                                        <select
+                                            value={filterReportType}
+                                            onChange={e => setFilterReportType(e.target.value)}
+                                            className="rpts-select-control"
+                                        >
+                                            <option value="">All Report Types</option>
+                                            {reportTypes
+                                                .filter(rt =>
+                                                    (tab === 'review' && hasReviewPermission[rt.name]) ||
+                                                    (tab === 'overdue' && hasReviewPermission[rt.name])
+                                                )
+                                                .map(rt => (
+                                                    <option key={rt.name} value={rt.name}>{rt.title}</option>
+                                                ))}
+                                        </select>
+                                        <select
+                                            value={filterPlant}
+                                            onChange={e => setFilterPlant(e.target.value)}
+                                            className="rpts-select-control"
+                                        >
+                                            <option value="">All Plants</option>
+                                            {plants
+                                                .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                                .map(p => (
+                                                    <option key={p.plant_code} value={p.plant_code}>{p.plant_name}</option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="rpts-content">
                             {tab === 'all' && (
@@ -702,7 +731,7 @@ function ReportsView() {
                                             ) : (
                                                 <>
                                                     {filteredMyWeeks.map(weekIso => {
-                                                        const weekItemsAll = (myReportsByWeek[weekIso] || []).filter(item => !filterReportType || item.name === filterReportType)
+                                                        const weekItemsAll = (myReportsByWeek[weekIso] || [])
                                                         if (weekItemsAll.length === 0) return null
                                                         const {monday: weekStart, saturday: weekEnd} = ReportUtility.getWeekDatesFromIso(weekIso)
                                                         const weekRange = ReportService.getWeekRangeString(weekStart, weekEnd)
@@ -711,9 +740,7 @@ function ReportsView() {
                                                         const otherItems = weekItemsAll.filter(i => i.name !== 'plant_manager' && i.name !== 'plant_production')
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
-                                                                <div className="rpts-week-header">
-                                                                    {weekRange}
-                                                                </div>
+                                                                <div className="rpts-week-header" data-range={weekRange}>{weekRange}</div>
                                                                 {(pmItem || peItem) && (
                                                                     <div className="rpts-pair">
                                                                         <div className="rpts-pair-header">
@@ -875,9 +902,7 @@ function ReportsView() {
                                                         })
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
-                                                                <div className="rpts-week-header">
-                                                                    {weekRange}
-                                                                </div>
+                                                                <div className="rpts-week-header" data-range={weekRange}>{weekRange}</div>
                                                                 {pairs.map((pair, idx) => (
                                                                     <div className="rpts-pair" key={`pair-${weekIso}-${idx}`}>
                                                                         <div className="rpts-pair-header">
@@ -1000,9 +1025,7 @@ function ReportsView() {
                                                         })
                                                         return (
                                                             <div key={weekIso} className="rpts-week-group">
-                                                                <div className="rpts-week-header">
-                                                                    {weekRange}
-                                                                </div>
+                                                                <div className="rpts-week-header" data-range={weekRange}>{weekRange}</div>
                                                                 {pairs.map((pair, idx) => (
                                                                     <div className="rpts-pair" key={`od-pair-${weekIso}-${idx}`}>
                                                                         <div className="rpts-pair-header">

@@ -70,6 +70,18 @@
     --bg-content: var(--background);
     --bg-navbar-hover: var(--badge-bg-hover);
     --status-badge-text: #000000;
+    --radius-sm: 6px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-xxl: 28px;
+    --gradient-accent: linear-gradient(120deg, var(--accent) 0%, var(--accent-light) 55%, var(--accent-secondary) 100%);
+    --gradient-accent-soft: linear-gradient(135deg, rgba(var(--accent-primary-rgb),0.12) 0%, rgba(var(--accent-primary-rgb),0.04) 100%);
+    --gradient-surface: linear-gradient(180deg, var(--card-bg) 0%, var(--bg-secondary) 180%);
+    --focus-ring: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.32);
+    --transition: 0.25s cubic-bezier(.4,.0,.2,1);
+    --elevation-1: var(--shadow-sm);
+    --elevation-2: var(--shadow-md);
+    --elevation-3: var(--shadow-lg);
 }
 
 .dark-mode {
@@ -137,6 +149,9 @@
     --bg-content: var(--background);
     --bg-navbar-hover: var(--bg-secondary);
     --status-badge-text: #ffffff;
+    --gradient-accent: linear-gradient(120deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
+    --gradient-accent-soft: linear-gradient(135deg, rgba(var(--accent-primary-rgb),0.3) 0%, rgba(var(--accent-primary-rgb),0.08) 100%);
+    --gradient-surface: linear-gradient(180deg, var(--card-bg) 0%, var(--bg-secondary) 140%);
 }
 
 .accent-red {
