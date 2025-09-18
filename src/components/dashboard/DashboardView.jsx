@@ -230,15 +230,18 @@ export default function DashboardView() {
     const soldPickups = useMemo(() => pickups.filter(p => p.status === 'Sold'), [pickups])
     const sparePickups = useMemo(() => pickups.filter(p => p.status === 'Spare'), [pickups])
     const retiredPickups = useMemo(() => pickups.filter(p => p.status === 'Retired'), [pickups])
-    const assignedOperatorIds = useMemo(() => new Set(activeMixers.map(m => m.assignedOperator).filter(Boolean)), [activeMixers])
-    const assignedMixerOperatorIds = useMemo(() => new Set(activeMixers.map(m => m.assignedOperator).filter(Boolean)), [activeMixers])
-    const assignedTractorOperatorIds = useMemo(() => new Set(activeTractors.map(t => t.assignedOperator).filter(Boolean)), [activeTractors])
+    const assignedMixerOperatorIds = useMemo(() => new Set(mixers.map(m => m.assignedOperator).filter(Boolean)), [mixers])
+    const assignedTractorOperatorIds = useMemo(() => new Set(tractors.map(t => t.assignedOperator).filter(Boolean)), [tractors])
     const activeOperators = useMemo(() => operators.filter(o => o.status === 'Active'), [operators])
-    const assignedOperators = useMemo(() => activeOperators.filter(o => assignedOperatorIds.has(o.employeeId)), [activeOperators, assignedOperatorIds])
+    const assignedOperatorIdsUnion = useMemo(() => new Set([
+        ...assignedMixerOperatorIds,
+        ...assignedTractorOperatorIds
+    ]), [assignedMixerOperatorIds, assignedTractorOperatorIds])
+    const assignedOperators = useMemo(() => activeOperators.filter(o => assignedOperatorIdsUnion.has(o.employeeId)), [activeOperators, assignedOperatorIdsUnion])
     const assignedMixerOperators = useMemo(() => activeOperators.filter(o => assignedMixerOperatorIds.has(o.employeeId)), [activeOperators, assignedMixerOperatorIds])
     const assignedTractorOperators = useMemo(() => activeOperators.filter(o => assignedTractorOperatorIds.has(o.employeeId)), [activeOperators, assignedTractorOperatorIds])
     const pendingStartOperators = useMemo(() => operators.filter(o => o.status === 'Pending Start'), [operators])
-    const unassignedActiveOperators = useMemo(() => Math.max(0, activeOperators.length - assignedOperators.length), [activeOperators, assignedOperators])
+    const unassignedActiveOperators = useMemo(() => activeOperators.filter(o => !assignedOperatorIdsUnion.has(o.employeeId)).length, [activeOperators, assignedOperatorIdsUnion])
     const daysSince = d => d ? Math.ceil((Date.now() - new Date(d).getTime()) / 86400000) : null
     const overdueDays = 90
     const isServiceOverdue = d => {
@@ -271,8 +274,8 @@ export default function DashboardView() {
         }
         const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code)
         if (r) {
-            const name = r.regionName || r.region_name || '';
-            setDashboardRegionCode(r.regionCode || r.region_code);
+            const name = r.regionName || r.region_name || ''
+            setDashboardRegionCode(r.regionCode || r.region_code)
             setDashboardRegionName(name)
         }
         setDashboardPlant('')
