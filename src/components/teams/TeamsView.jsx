@@ -106,36 +106,48 @@ function TeamsView() {
     }, [currentUserId]);
 
     useEffect(() => {
-        const code = preferences.selectedRegion?.code || '';
+        const prefCode = preferences.selectedRegion?.code || '';
         let cancelled = false;
-
         async function loadRegionPlants() {
-            if (!code) {
-                setRegionPlantCodes(null);
-                return;
-            }
+            let regionCode = prefCode;
             try {
-                const regionPlants = await RegionService.fetchRegionPlants(code);
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser();
+                    const uid = user?.id || '';
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid);
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '');
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode);
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null;
+                            regionCode = r ? (r.regionCode || r.region_code || '') : '';
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    setRegionPlantCodes(null);
+                    return;
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode);
                 if (cancelled) return;
-                const codes = new Set(regionPlants.map(p => p.plantCode));
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean));
                 setRegionPlantCodes(codes);
-                if (selectedPlant && !codes.has(selectedPlant)) {
+                const sel = String(selectedPlant || '').trim().toUpperCase();
+                if (sel && !codes.has(sel)) {
                     setSelectedPlant('');
                 }
             } catch {
-                setRegionPlantCodes(new Set());
+                if (!cancelled) setRegionPlantCodes(null);
             }
         }
-
         loadRegionPlants();
         return () => {
             cancelled = true;
-        }
+        };
     }, [preferences.selectedRegion?.code]);
 
     useEffect(() => {
         setLoading(true);
-
         async function fetchOperatorsAndTeams() {
             let ops;
             if (!selectedPlant) {
@@ -151,7 +163,7 @@ function TeamsView() {
                 ops = data || [];
             }
             if (preferences.selectedRegion?.code && regionPlantCodes && regionPlantCodes.size > 0) {
-                ops = ops.filter(op => regionPlantCodes.has(op.plant_code));
+                ops = ops.filter(op => regionPlantCodes.has(String(op.plant_code || '').trim().toUpperCase()));
             }
             const filteredOps = ops
                 .filter(op => (!statusFilter || op.status === statusFilter))
@@ -179,7 +191,6 @@ function TeamsView() {
             setOperators(filteredOps);
             setLoading(false);
         }
-
         function buildTeams(ops, teamData) {
             const teamsObj = {A: [], B: []};
             ops.forEach(op => {
@@ -192,7 +203,6 @@ function TeamsView() {
             });
             setTeams(teamsObj);
         }
-
         fetchOperatorsAndTeams();
     }, [selectedPlant, statusFilter, preferences.selectedRegion?.code, regionPlantCodes]);
 
@@ -207,7 +217,6 @@ function TeamsView() {
             });
             setScheduledOff(offMap);
         }
-
         fetchScheduledOff();
     }, [selectedPlant]);
 
@@ -218,7 +227,6 @@ function TeamsView() {
             const root = document.querySelector('.dashboard-container.teams-view');
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px');
         }
-
         updateStickyCoverHeight();
         window.addEventListener('resize', updateStickyCoverHeight);
         return () => window.removeEventListener('resize', updateStickyCoverHeight);
@@ -261,7 +269,7 @@ function TeamsView() {
             ops = data || [];
         }
         if (preferences.selectedRegion?.code && regionPlantCodes && regionPlantCodes.size > 0) {
-            ops = ops.filter(op => regionPlantCodes.has(op.plant_code));
+            ops = ops.filter(op => regionPlantCodes.has(String(op.plant_code || '').trim().toUpperCase()));
         }
         const filteredOps = ops
             .filter(op => (!statusFilter || op.status === statusFilter))
@@ -313,7 +321,7 @@ function TeamsView() {
         }
     }
 
-    const headerColumns = ['12%', '58%', '30%']
+    const headerColumns = ['12%', '58%', '30%'];
 
     return (
         <div className="dashboard-container teams-view">
@@ -376,7 +384,10 @@ function TeamsView() {
                             >
                                 <option value="">All Plants</option>
                                 {plants
-                                    .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                    .filter(p => {
+                                        const code = String(p.plant_code || '').trim().toUpperCase();
+                                        return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false;
+                                    })
                                     .sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'))
                                     .map(plant => (
                                         <option key={plant.plant_code} value={plant.plant_code}>

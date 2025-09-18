@@ -26,7 +26,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const [selectedItem, setSelectedItem] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState(null)
     const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false)
-    const [regionPlantCodes, setRegionPlantCodes] = useState([])
+    const [regionPlantCodes, setRegionPlantCodes] = useState(null)
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -44,7 +44,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 }
             }
         }
-
         fetchCurrentUser()
     }, [])
 
@@ -60,39 +59,55 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     }, [])
 
     useEffect(() => {
-        const code = preferences?.selectedRegion?.code || ''
-        let mounted = true
-
+        let cancelled = false
         async function loadRegionPlants() {
-            if (!code) {
-                if (mounted) setRegionPlantCodes([])
-                return
-            }
+            let regionCode = preferences?.selectedRegion?.code || ''
             try {
-                const regionPlants = await RegionService.fetchRegionPlants(code)
-                const codes = Array.isArray(regionPlants) ? regionPlants.map(p => p.plantCode).filter(Boolean) : []
-                if (mounted) setRegionPlantCodes(codes)
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    if (!cancelled) setRegionPlantCodes(null)
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
+                if (cancelled) return
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
+                setRegionPlantCodes(codes)
+                const sel = String(selectedPlant || '').trim().toUpperCase()
+                if (sel && !codes.has(sel)) {
+                    setSelectedPlant('')
+                    updateListFilter?.('selectedPlant', '')
+                }
             } catch {
-                if (mounted) setRegionPlantCodes([])
+                if (!cancelled) setRegionPlantCodes(null)
             }
         }
-
         loadRegionPlants()
         return () => {
-            mounted = false
+            cancelled = true
         }
     }, [preferences?.selectedRegion?.code])
 
     useEffect(() => {
         if (!selectedPlant) return
-        const code = preferences?.selectedRegion?.code || ''
-        if (!code) return
-        const allowed = new Set(regionPlantCodes)
-        if (selectedPlant && !allowed.has(selectedPlant)) {
+        if (!regionPlantCodes || regionPlantCodes.size === 0) return
+        const sel = String(selectedPlant || '').trim().toUpperCase()
+        if (sel && !regionPlantCodes.has(sel)) {
             setSelectedPlant('')
             updateListFilter?.('selectedPlant', '')
         }
-    }, [regionPlantCodes, preferences?.selectedRegion?.code, selectedPlant, updateListFilter])
+    }, [regionPlantCodes, selectedPlant, updateListFilter])
 
     async function fetchAllData() {
         setIsLoading(true)
@@ -108,9 +123,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         }
     }
 
-    const regionCode = preferences?.selectedRegion?.code || ''
-    const regionCodeSet = new Set(regionPlantCodes)
-
     const baseFilteredItems = ListService.getFilteredItems({
         filterType: '',
         plantCode: selectedPlant,
@@ -119,7 +131,9 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         statusFilter
     })
 
-    const filteredItems = regionCode ? baseFilteredItems.filter(item => regionCodeSet.has(item.plant_code)) : baseFilteredItems
+    const filteredItems = regionPlantCodes && regionPlantCodes.size > 0
+        ? baseFilteredItems.filter(item => regionPlantCodes.has(String(item.plant_code || '').trim().toUpperCase()))
+        : baseFilteredItems
 
     const getPlantName = plantCode => ListService.getPlantName(plantCode)
     const truncateText = (text, maxLength, byWords = false) => ListService.truncateText(text, maxLength, byWords)
@@ -159,7 +173,9 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         </div>
     )
 
-    const visiblePlants = regionCode ? plants.filter(p => regionCodeSet.has(p.plant_code)) : plants
+    const visiblePlants = regionPlantCodes && regionPlantCodes.size > 0
+        ? plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase()))
+        : plants
 
     const headerColumns = statusFilter === 'completed'
         ? ['38%', '14%', '12%', '12%', '16%', '8%']

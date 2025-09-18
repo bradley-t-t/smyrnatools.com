@@ -76,28 +76,41 @@ function OperatorsView({
     }, [initialStatusFilter])
 
     useEffect(() => {
-        const code = preferences.selectedRegion?.code || ''
+        const prefCode = preferences.selectedRegion?.code || ''
         let cancelled = false
-
         async function loadRegionPlants() {
-            if (!code) {
-                setRegionPlantCodes(null)
-                return
-            }
+            let regionCode = prefCode
             try {
-                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    setRegionPlantCodes(null)
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
                 if (cancelled) return
-                const codes = new Set(regionPlants.map(p => p.plantCode))
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
                 setRegionPlantCodes(codes)
-                if (selectedPlant && !codes.has(selectedPlant)) {
+                const sel = String(selectedPlant || '').trim().toUpperCase()
+                if (sel && !codes.has(sel)) {
                     setSelectedPlant('')
                     updateOperatorFilter('selectedPlant', '')
                 }
             } catch {
-                setRegionPlantCodes(new Set())
+                if (!cancelled) setRegionPlantCodes(null)
             }
         }
-
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -221,7 +234,7 @@ function OperatorsView({
                 operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
                 operator.employeeId.toLowerCase().includes(searchText.toLowerCase())
             const matchesPlant = selectedPlant === '' || operator.plantCode === selectedPlant
-            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(operator.plantCode)
+            const matchesRegion = !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(String(operator.plantCode || '').trim().toUpperCase())
             let matchesStatus = true
             if (statusFilter && statusFilter !== 'All Statuses') {
                 if (statuses.includes(statusFilter)) {
@@ -433,10 +446,13 @@ function OperatorsView({
                                     >
                                         <option value="">All Plants</option>
                                         {plants
-                                            .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                            .filter(p => {
+                                                const code = String(p.plant_code || '').trim().toUpperCase()
+                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
+                                            })
                                             .sort((a, b) => {
-                                                const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
-                                                const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')
+                                                const aCode = parseInt((a.plant_code || '').replace(/\D/g, '') || '0')
+                                                const bCode = parseInt((b.plant_code || '').replace(/\D/g, '') || '0')
                                                 return aCode - bCode
                                             }).map(plant => (
                                                 <option key={plant.plant_code} value={plant.plant_code}>

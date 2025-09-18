@@ -116,8 +116,6 @@ export async function sendReportSubmittedEmail({report, weekVerbose}) {
             const current = await UserService.getCurrentUser()
             submittedById = current?.id || sessionStorage.getItem('userId') || ''
             if (submittedById) {
-                const weight = await UserService.getUserWeight(submittedById)
-                if (typeof weight === 'number' && weight > 70) return
                 const {data: profile} = await supabase.from('users_profiles').select('first_name, last_name').eq('id', submittedById).single()
                 if (profile) {
                     const full = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()

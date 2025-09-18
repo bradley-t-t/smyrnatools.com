@@ -59,7 +59,7 @@ function isPlaceholderName(name) {
     return false;
 }
 
-async function findReviewerEmailsByPermission(supabase, reviewPerm) {
+async function findReviewerUsersByPermission(supabase, reviewPerm) {
     const {data: roles, error: rolesErr} = await supabase
         .from(ROLES_TABLE)
         .select('id, permissions')
@@ -79,16 +79,17 @@ async function findReviewerEmailsByPermission(supabase, reviewPerm) {
         .select('id, email')
         .in('id', userIds);
     if (usersErr || !Array.isArray(users)) return [];
-    const emails = users.map(u => u?.email).filter(e => typeof e === 'string' && isValidEmail(e));
-    return Array.from(new Set(emails));
+    return users
+        .filter(u => typeof u?.email === 'string' && isValidEmail(u.email))
+        .map(u => ({id: u.id, email: u.email}));
 }
 
-async function filterRecipientsByWeight(userIds, emailType, supabase) {
-    if (ALWAYS_SEND_EMAIL_TYPES.includes(emailType)) return userIds
+async function filterRecipientsByWeight(users, emailType, supabase) {
+    if (ALWAYS_SEND_EMAIL_TYPES.includes(emailType)) return users
     const filtered = []
-    for (const userId of userIds) {
-        const weight = await getUserHighestWeight(supabase, userId)
-        if (weight <= 70) filtered.push(userId)
+    for (const u of users) {
+        const weight = await getUserHighestWeight(supabase, u.id)
+        if (weight <= 70) filtered.push(u)
     }
     return filtered
 }
@@ -142,9 +143,10 @@ Deno.serve(async (req) => {
                     }
                 }
                 const reviewPerm = `reports.review.${reportName}`;
-                const toUserIds = await findReviewerEmailsByPermission(supabase, reviewPerm);
-                const filteredUserIds = await filterRecipientsByWeight(toUserIds, 'report_submitted', supabase);
-                if (!filteredUserIds.length) return new Response(JSON.stringify({
+                const toUsers = await findReviewerUsersByPermission(supabase, reviewPerm);
+                const filteredUsers = await filterRecipientsByWeight(toUsers, 'report_submitted', supabase);
+                const toEmails = Array.from(new Set(filteredUsers.map(u => u.email).filter(e => typeof e === 'string' && isValidEmail(e))));
+                if (!toEmails.length) return new Response(JSON.stringify({
                     ok: true,
                     sent: 0
                 }), {headers: corsHeaders});
@@ -165,7 +167,7 @@ Deno.serve(async (req) => {
                     fromName
                 });
                 const prep = EmailUtility.prepareMailerSend({
-                    to: filteredUserIds,
+                    to: toEmails,
                     subject,
                     html,
                     text,
@@ -180,7 +182,7 @@ Deno.serve(async (req) => {
                     headers: prep.request.headers,
                     body: prep.request.body
                 });
-                return new Response(JSON.stringify({ok: true, sent: filteredUserIds.length}), {headers: corsHeaders});
+                return new Response(JSON.stringify({ok: true, sent: toEmails.length}), {headers: corsHeaders});
             }
             default:
                 return new Response(JSON.stringify({error: 'Invalid endpoint', path: url.pathname}), {

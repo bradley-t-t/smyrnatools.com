@@ -34,7 +34,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
             const user = await UserService.getCurrentUser();
             if (user) setCurrentUserId(user.id);
         }
-
         fetchCurrentUser();
     }, []);
 
@@ -63,28 +62,41 @@ function ManagersView({title = 'Managers', onSelectManager}) {
     }, [preferences.managerFilters?.viewMode, preferences.defaultViewMode])
 
     useEffect(() => {
-        const code = preferences.selectedRegion?.code || ''
+        const prefCode = preferences.selectedRegion?.code || ''
         let cancelled = false
-
         async function loadRegionPlants() {
-            if (!code) {
-                setRegionPlantCodes(null)
-                return
-            }
+            let regionCode = prefCode
             try {
-                const regionPlants = await RegionService.fetchRegionPlants(code)
+                if (!regionCode) {
+                    const user = await UserService.getCurrentUser()
+                    const uid = user?.id || ''
+                    if (uid) {
+                        const profilePlant = await UserService.getUserPlant(uid)
+                        const plantCode = typeof profilePlant === 'string' ? profilePlant : (profilePlant?.plant_code || profilePlant?.plantCode || '')
+                        if (plantCode) {
+                            const regions = await RegionService.fetchRegionsByPlantCode(plantCode)
+                            const r = Array.isArray(regions) && regions.length ? regions[0] : null
+                            regionCode = r ? (r.regionCode || r.region_code || '') : ''
+                        }
+                    }
+                }
+                if (!regionCode) {
+                    setRegionPlantCodes(null)
+                    return
+                }
+                const regionPlants = await RegionService.fetchRegionPlants(regionCode)
                 if (cancelled) return
-                const codes = new Set(regionPlants.map(p => p.plantCode))
+                const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
                 setRegionPlantCodes(codes)
-                if (selectedPlant && !codes.has(selectedPlant)) {
+                const sel = String(selectedPlant || '').trim().toUpperCase()
+                if (sel && !codes.has(sel)) {
                     setSelectedPlant('')
                     updateManagerFilter('selectedPlant', '')
                 }
             } catch {
-                setRegionPlantCodes(new Set())
+                if (!cancelled) setRegionPlantCodes(null)
             }
         }
-
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -115,10 +127,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
 
     async function fetchManagers() {
         try {
-            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {
-                data: permissions,
-                error: permissionsError
-            }, {data: rolesList, error: rolesError}] = await Promise.all([
+            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {data: permissions, error: permissionsError}, {data: rolesList, error: rolesError}] = await Promise.all([
                 supabase.from('users').select('id, email, created_at, updated_at'),
                 supabase.from('users_profiles').select('id, first_name, last_name, plant_code, created_at, updated_at'),
                 supabase.from('users_permissions').select('user_id, role_id'),
@@ -185,7 +194,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
             const matchesSearch = !searchText.trim() || `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchText.toLowerCase()) || manager.email.toLowerCase().includes(searchText.toLowerCase());
             const matchesPlant = !selectedPlant || manager.plantCode === selectedPlant;
             const matchesRole = !roleFilter || (manager.roleName && manager.roleName.toLowerCase() === roleFilter.toLowerCase());
-            const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(manager.plantCode);
+            const matchesRegion = !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(String(manager.plantCode || '').trim().toUpperCase());
             return matchesSearch && matchesPlant && matchesRole && matchesRegion;
         })
         .sort((a, b) => {
@@ -275,11 +284,14 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                                     >
                                         <option value="">All Plants</option>
                                         {plants
-                                            .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
-                                            .sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'))
+                                            .filter(p => {
+                                                const code = String(p.plant_code || p.plantCode || '').trim().toUpperCase()
+                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
+                                            })
+                                            .sort((a, b) => parseInt((a.plant_code || a.plantCode || '').replace(/\D/g, '') || '0') - parseInt((b.plant_code || b.plantCode || '').replace(/\D/g, '') || '0'))
                                             .map(plant => (
-                                                <option key={plant.plant_code} value={plant.plant_code}>
-                                                    ({plant.plant_code}) {plant.plant_name}
+                                                <option key={plant.plant_code || plant.plantCode} value={plant.plant_code || plant.plantCode}>
+                                                    ({plant.plant_code || plant.plantCode}) {plant.plant_name || plant.plantName}
                                                 </option>
                                             ))}
                                     </select>
