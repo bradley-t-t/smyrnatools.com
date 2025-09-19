@@ -21,14 +21,53 @@ import ListView from '../components/list/ListView';
 import GuestView from '../components/guest/GuestView';
 import DesktopOnly from '../components/desktop-only/DesktopOnly';
 import ParticleBackground from '../components/common/ParticleBackground'
+import OfflineView from '../components/offline/OfflineView'
+import {NetworkUtility} from '../utils/NetworkUtility'
 
 function App() {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [offlineMode, setOfflineMode] = useState(false)
+
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    useEffect(() => {
+        let intervalId
+        const check = async () => {
+            const ok = await NetworkUtility.checkConnection()
+            setOfflineMode(!ok)
+        }
+        const handleOnline = () => { check() }
+        const handleOffline = () => { setOfflineMode(true) }
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+        check()
+        intervalId = setInterval(() => { check() }, 10000)
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+            if (intervalId) clearInterval(intervalId)
+        }
+    }, [])
+
+    const handleRetryConnection = async () => {
+        const ok = await NetworkUtility.checkConnection()
+        if (ok) {
+            setOfflineMode(false)
+            window.location.reload()
+        }
+    }
+
+    const handleReloadIfOnline = async () => {
+        const ok = await NetworkUtility.checkConnection()
+        if (ok) {
+            setOfflineMode(false)
+            window.location.reload()
+        }
+    }
 
     if (isMobile) return (
         <PreferencesProvider>
@@ -38,6 +77,15 @@ function App() {
             </AccountProvider>
         </PreferencesProvider>
     );
+
+    if (offlineMode) return (
+        <PreferencesProvider>
+            <AccountProvider>
+                <ParticleBackground/>
+                <OfflineView onRetry={handleRetryConnection} onReload={handleReloadIfOnline}/>
+            </AccountProvider>
+        </PreferencesProvider>
+    )
 
     return (
         <PreferencesProvider>

@@ -1,0 +1,42 @@
+.offline-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--bg-secondary);
+}
+
+.offline-content {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 40px;
+    text-align: center;
+    max-width: 560px;
+    width: 90%;
+}
+
+.offline-logo {
+    width: 150px;
+    margin-bottom: 30px;
+}
+
+.offline-content h1 {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.offline-message {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.offline-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+

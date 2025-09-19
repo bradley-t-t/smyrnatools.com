@@ -30,17 +30,29 @@ const NetworkUtility = {
         }
     },
     async checkConnection() {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT)
         try {
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT)
-            const response = await fetch('/ping', {
-                method: 'HEAD',
+            await fetch('https://clients3.google.com/generate_204', {
+                method: 'GET',
+                mode: 'no-cors',
+                cache: 'no-store',
                 signal: controller.signal,
-                cache: 'no-store'
+                credentials: 'omit'
             })
             clearTimeout(timeoutId)
-            return response.ok
-        } catch (error) {
+            return true
+        } catch {}
+        try {
+            const res = await fetch(`/version.json?cb=${Date.now()}`, {
+                method: 'GET',
+                cache: 'reload',
+                signal: controller.signal
+            })
+            clearTimeout(timeoutId)
+            return !!res?.ok
+        } catch {
+            clearTimeout(timeoutId)
             return false
         }
     }

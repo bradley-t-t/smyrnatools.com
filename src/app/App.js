@@ -32,6 +32,8 @@ import DesktopOnly from '../components/desktop-only/DesktopOnly'
 import PickupTrucksView from '../components/pickup-trucks/PickupTrucksView'
 import ParticleBackground from '../components/common/ParticleBackground'
 import DashboardView from '../components/dashboard/DashboardView'
+import OfflineView from '../components/offline/OfflineView'
+import {NetworkUtility} from '../utils/NetworkUtility'
 
 function VersionPopup({version}) {
     if (!version) return null
@@ -166,6 +168,10 @@ function AppContent() {
     const scheduledTimeoutRef = useRef(null)
     const [showScheduledBanner, setShowScheduledBanner] = useState(false)
     const [remainingMs, setRemainingMs] = useState(0)
+    const [offlineMode, setOfflineMode] = useState(false)
+    const onlineStreakRef = useRef(0)
+    const offlineStreakRef = useRef(0)
+    const offlineSinceRef = useRef(null)
 
     useEffect(() => {
         fetch('/version.json', {cache: 'no-store'}).then(res => res.json()).then(data => setCurrentVersion(data.version || '')).catch(() => setCurrentVersion(''))
@@ -214,24 +220,50 @@ function AppContent() {
     }, [])
 
     useEffect(() => {
-        let timeoutId
-
-        function updateOnlineStatus() {
-            if (!navigator.onLine) {
-                timeoutId = setTimeout(() => {
-                }, 5000)
+        const OFFLINE_THRESHOLD = 2
+        const ONLINE_THRESHOLD = 3
+        const MIN_OFFLINE_MS = 10000
+        const POLL_MS = 4000
+        let cancelled = false
+        const evalStatus = (ok) => {
+            const browserOnline = navigator.onLine
+            if (ok && browserOnline) {
+                offlineStreakRef.current = 0
+                onlineStreakRef.current += 1
+                const dwellMet = !offlineSinceRef.current || (Date.now() - offlineSinceRef.current) >= MIN_OFFLINE_MS
+                if (onlineStreakRef.current >= ONLINE_THRESHOLD && dwellMet) {
+                    offlineSinceRef.current = null
+                    setOfflineMode(false)
+                }
             } else {
-                clearTimeout(timeoutId)
+                onlineStreakRef.current = 0
+                offlineStreakRef.current += 1
+                if (offlineStreakRef.current >= OFFLINE_THRESHOLD) {
+                    if (!offlineSinceRef.current) offlineSinceRef.current = Date.now()
+                    setOfflineMode(true)
+                }
             }
         }
-
-        window.addEventListener('online', updateOnlineStatus)
-        window.addEventListener('offline', updateOnlineStatus)
-        updateOnlineStatus()
+        const check = async () => {
+            const ok = await NetworkUtility.checkConnection()
+            if (!cancelled) evalStatus(ok)
+        }
+        const handleOnline = () => { check() }
+        const handleOffline = () => {
+            onlineStreakRef.current = 0
+            offlineStreakRef.current = OFFLINE_THRESHOLD
+            if (!offlineSinceRef.current) offlineSinceRef.current = Date.now()
+            setOfflineMode(true)
+        }
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+        check()
+        const intervalId = setInterval(check, POLL_MS)
         return () => {
-            window.removeEventListener('online', updateOnlineStatus)
-            window.removeEventListener('offline', updateOnlineStatus)
-            clearTimeout(timeoutId)
+            cancelled = true
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+            clearInterval(intervalId)
         }
     }, [])
 
@@ -457,7 +489,34 @@ function AppContent() {
 
     const dismissScheduledBanner = () => setShowScheduledBanner(false)
 
+    const handleRetryConnection = async () => {
+        const browserOnline = navigator.onLine
+        if (!browserOnline) return
+        const ok = await NetworkUtility.checkConnection()
+        if (ok) {
+            onlineStreakRef.current = 0
+            offlineStreakRef.current = 0
+            offlineSinceRef.current = null
+            setOfflineMode(false)
+            window.location.reload()
+        }
+    }
+
+    const handleReloadIfOnline = async () => {
+        const browserOnline = navigator.onLine
+        if (!browserOnline) return
+        const ok = await NetworkUtility.checkConnection()
+        if (ok) {
+            onlineStreakRef.current = 0
+            offlineStreakRef.current = 0
+            offlineSinceRef.current = null
+            setOfflineMode(false)
+            window.location.reload()
+        }
+    }
+
     if (isMobile) return <><ParticleBackground/><DesktopOnly/></>
+    if (offlineMode) return <><ParticleBackground/><OfflineView onRetry={handleRetryConnection} onReload={handleReloadIfOnline}/></>
     if (updateMode) return <><ParticleBackground/><UpdateLoadingScreen version={latestVersion || currentVersion}/></>
     if (!userId) return (<div className="App"><ParticleBackground/>{renderCurrentView()}</div>)
     if (!rolesLoaded) return null
