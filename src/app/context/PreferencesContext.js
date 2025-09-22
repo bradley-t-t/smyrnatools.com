@@ -57,7 +57,8 @@ const defaultPreferences = {
     },
     lastViewedFilters: null,
     selectedRegion: {code: '', name: ''},
-    regionOverlayMinimized: true
+    regionOverlayMinimized: true,
+    acceptReportSubmittedEmails: true
 }
 
 export const PreferencesProvider = ({children}) => {
@@ -157,7 +158,8 @@ export const PreferencesProvider = ({children}) => {
             } : {...defaultPreferences.equipmentFilters},
             lastViewedFilters: data.last_viewed_filters,
             selectedRegion: data.selected_region || defaultPreferences.selectedRegion,
-            regionOverlayMinimized: data.region_overlay_minimized === undefined ? defaultPreferences.regionOverlayMinimized : data.region_overlay_minimized
+            regionOverlayMinimized: data.region_overlay_minimized === undefined ? defaultPreferences.regionOverlayMinimized : data.region_overlay_minimized,
+            acceptReportSubmittedEmails: data.accept_report_submitted_emails === undefined ? true : data.accept_report_submitted_emails
         }
         setPreferences(newPreferences)
     }
@@ -188,6 +190,7 @@ export const PreferencesProvider = ({children}) => {
                 trailer_filters: updatedPreferences.trailerFilters,
                 equipment_filters: updatedPreferences.equipmentFilters,
                 last_viewed_filters: updatedPreferences.lastViewedFilters,
+                accept_report_submitted_emails: updatedPreferences.acceptReportSubmittedEmails,
                 updated_at: now,
                 created_at: now
             }
@@ -304,6 +307,8 @@ export const PreferencesProvider = ({children}) => {
         }
     }
 
+    const toggleAcceptReportSubmittedEmails = () => updatePreferences('acceptReportSubmittedEmails', !preferences.acceptReportSubmittedEmails)
+
     return (
         <PreferencesContext.Provider
             value={{
@@ -330,7 +335,8 @@ export const PreferencesProvider = ({children}) => {
                 resetOperatorFilters,
                 saveLastViewedFilters,
                 setSelectedRegion,
-                setRegionOverlayMinimized
+                setRegionOverlayMinimized,
+                toggleAcceptReportSubmittedEmails
             }}
         >
             {!loading && children}
@@ -348,7 +354,8 @@ export const debugForceCreatePreferences = async userId => {
                 navbar_minimized: false,
                 theme_mode: 'light',
                 accent_color: 'blue',
-                default_view_mode: 'grid'
+                default_view_mode: 'grid',
+                accept_report_submitted_emails: true
             }])
     } catch {
         return false

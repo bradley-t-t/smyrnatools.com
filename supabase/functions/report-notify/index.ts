@@ -7,8 +7,6 @@ const USERS_TABLE = 'users';
 const ROLES_TABLE = 'users_roles';
 const PERMISSIONS_TABLE = 'users_permissions';
 
-const ALWAYS_SEND_EMAIL_TYPES = ['forgot_password']
-
 const corsHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -37,17 +35,6 @@ async function getSupabase(req) {
         Deno.env.get("SUPABASE_ANON_KEY") ?? "",
         {global: {headers: {Authorization: req.headers.get("Authorization") || ""}}}
     );
-}
-
-async function getUserHighestWeight(supabase, userId) {
-    if (!userId) return 0
-    const {data} = await supabase
-        .from('users_permissions')
-        .select('role_id, users_roles(weight)')
-        .eq('user_id', userId)
-    if (!Array.isArray(data) || !data.length) return 0
-    const weights = data.map(item => item?.users_roles?.weight ?? 0)
-    return Math.max(...weights, 0)
 }
 
 function isPlaceholderName(name) {
@@ -84,14 +71,21 @@ async function findReviewerUsersByPermission(supabase, reviewPerm) {
         .map(u => ({id: u.id, email: u.email}));
 }
 
-async function filterRecipientsByWeight(users, emailType, supabase) {
-    if (ALWAYS_SEND_EMAIL_TYPES.includes(emailType)) return users
-    const filtered = []
-    for (const u of users) {
-        const weight = await getUserHighestWeight(supabase, u.id)
-        if (weight <= 70) filtered.push(u)
-    }
-    return filtered
+async function filterRecipientsByEmailPreference(users, supabase) {
+    if (!Array.isArray(users) || users.length === 0) return []
+    const ids = users.map(u => u.id).filter(Boolean)
+    if (!ids.length) return []
+    const {data, error} = await supabase
+        .from('users_preferences')
+        .select('user_id, accept_report_submitted_emails')
+        .in('user_id', ids)
+    if (error) return users
+    const prefMap = new Map((data || []).map(r => [r.user_id, r.accept_report_submitted_emails]))
+    return users.filter(u => {
+        const pref = prefMap.has(u.id) ? prefMap.get(u.id) : undefined
+        if (pref === undefined || pref === null) return true
+        return !!pref
+    })
 }
 
 Deno.serve(async (req) => {
@@ -144,8 +138,8 @@ Deno.serve(async (req) => {
                 }
                 const reviewPerm = `reports.review.${reportName}`;
                 const toUsers = await findReviewerUsersByPermission(supabase, reviewPerm);
-                const filteredUsers = await filterRecipientsByWeight(toUsers, 'report_submitted', supabase);
-                const toEmails = Array.from(new Set(filteredUsers.map(u => u.email).filter(e => typeof e === 'string' && isValidEmail(e))));
+                const prefUsers = await filterRecipientsByEmailPreference(toUsers, supabase)
+                const toEmails = Array.from(new Set(prefUsers.map(u => u.email).filter(e => typeof e === 'string' && isValidEmail(e))));
                 if (!toEmails.length) return new Response(JSON.stringify({
                     ok: true,
                     sent: 0

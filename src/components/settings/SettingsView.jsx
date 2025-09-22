@@ -18,7 +18,8 @@ function SettingsView() {
         toggleShowOnlineOverlay,
         toggleAutoOverview,
         setThemeMode,
-        setAccentColor
+        setAccentColor,
+        toggleAcceptReportSubmittedEmails
     } = usePreferences()
     const [showFeedback, setShowFeedback] = useState(false)
 
@@ -137,6 +138,26 @@ function SettingsView() {
                                 <span className="slider round"></span>
                             </label>
                             <span className="toggle-state">{preferences.autoOverview ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="settings-card">
+                    <div className="settings-card-header">
+                        <h2>
+                            <i className="fas fa-bell"></i> Notifications
+                        </h2>
+                        <p>Control what you get notified about</p>
+                    </div>
+                    <div className="settings-section">
+                        <h3>Emails</h3>
+                        <div className="toggle-setting">
+                            <span className="toggle-label">Report Submitted Emails</span>
+                            <label className="switch">
+                                <input type="checkbox" checked={preferences.acceptReportSubmittedEmails}
+                                       onChange={() => save(toggleAcceptReportSubmittedEmails)}/>
+                                <span className="slider round"></span>
+                            </label>
+                            <span className="toggle-state">{preferences.acceptReportSubmittedEmails ? 'Enabled' : 'Disabled'}</span>
                         </div>
                     </div>
                 </div>
