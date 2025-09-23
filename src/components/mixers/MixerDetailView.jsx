@@ -49,6 +49,8 @@ function MixerDetailView({mixerId, onClose}) {
     const [comments, setComments] = useState([])
     const [issues, setIssues] = useState([])
     const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
+    const [showMissingFieldsModal, setShowMissingFieldsModal] = useState(false)
+    const [missingFields, setMissingFields] = useState([])
 
     useEffect(() => {
         async function fetchData() {
@@ -283,7 +285,16 @@ function MixerDetailView({mixerId, onClose}) {
     }
 
     async function handleVerifyMixer() {
-        if (!mixer) return
+        if (!mixer.vin || !mixer.make || !mixer.model || !mixer.year) {
+            let missing = []
+            if (!mixer.vin) missing.push('VIN')
+            if (!mixer.make) missing.push('Make')
+            if (!mixer.model) missing.push('Model')
+            if (!mixer.year) missing.push('Year')
+            setMissingFields(missing)
+            setShowMissingFieldsModal(true)
+            return
+        }
         const operatorName = getOperatorName(assignedOperator)
         if (
             status === 'Active' &&
@@ -325,6 +336,70 @@ function MixerDetailView({mixerId, onClose}) {
             alert(`Error verifying mixer: ${error.message}`)
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    async function handleSaveMissingFields() {
+        try {
+            const needVin = !mixer.vin
+            const needMake = !mixer.make
+            const needModel = !mixer.model
+            const needYear = !mixer.year
+            const vinOk = needVin ? !!String(vin).trim() : true
+            const makeOk = needMake ? !!String(make).trim() : true
+            const modelOk = needModel ? !!String(model).trim() : true
+            const yearOk = needYear ? !!String(year).trim() : true
+            if (!(vinOk && makeOk && modelOk && yearOk)) {
+                setMessage('Please fill all required fields before verifying.')
+                setTimeout(() => setMessage(''), 4000)
+                return
+            }
+            const overrides = {}
+            if (needVin) overrides.vin = String(vin).trim()
+            if (needMake) overrides.make = String(make).trim()
+            if (needModel) overrides.model = String(model).trim()
+            if (needYear) overrides.year = String(year).trim()
+            await handleSave(overrides)
+            const candidateMixer = {
+                ...mixer,
+                vin: overrides.vin ?? mixer.vin,
+                make: overrides.make ?? mixer.make,
+                model: overrides.model ?? mixer.model,
+                year: overrides.year ?? mixer.year
+            }
+            const operatorName = getOperatorName(assignedOperator)
+            if (
+                status === 'Active' &&
+                (
+                    assignedOperator === null ||
+                    assignedOperator === undefined ||
+                    assignedOperator === '0' ||
+                    (assignedOperator && operatorName === 'Unknown')
+                )
+            ) {
+                setMessage('Cannot verify: Assigned operator is missing or invalid.')
+                setTimeout(() => setMessage(''), 4000)
+                return
+            }
+            let userObj = await UserService.getCurrentUser()
+            let userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
+            const verified = await MixerService.verifyMixer(candidateMixer.id, userId)
+            setMixer(verified)
+            setMessage('Mixer verified successfully!')
+            setTimeout(() => setMessage(''), 3000)
+            setHasUnsavedChanges(false)
+            setShowMissingFieldsModal(false)
+            setMissingFields([])
+            if (verified.updatedBy) {
+                try {
+                    const userName = await UserService.getUserDisplayName(verified.updatedBy)
+                    setUpdatedByEmail(userName)
+                } catch {
+                    setUpdatedByEmail('Unknown User')
+                }
+            }
+        } catch (error) {
+            alert('Failed to save missing fields. Please try again.')
         }
     }
 
@@ -454,6 +529,14 @@ function MixerDetailView({mixerId, onClose}) {
 
     const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
 
+    const canSubmitMissing = missingFields.every(f => {
+        if (f === 'VIN') return !!String(vin).trim()
+        if (f === 'Make') return !!String(make).trim()
+        if (f === 'Model') return !!String(model).trim()
+        if (f === 'Year') return !!String(year).trim()
+        return true
+    })
+
     return (
         <div className="mixer-detail-view">
             {showComments && <MixerCommentModal mixerId={mixerId} mixerNumber={mixer?.truckNumber}
@@ -566,6 +649,23 @@ function MixerDetailView({mixerId, onClose}) {
                         <button className="verify-now-button" onClick={handleVerifyMixer} disabled={!canEditMixer}>
                             <i className="fas fa-check-circle"></i> Verify Now
                         </button>
+                        {showMissingFieldsModal && (
+                            <div className="modal-overlay">
+                                <div className="modal-content">
+                                    <h3>Missing Required Information</h3>
+                                    <p>Please enter the following missing fields to verify this asset:</p>
+                                    <ul>
+                                        {missingFields.map(field => <li key={field}>{field}</li>)}
+                                    </ul>
+                                    {!mixer.vin && <input type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)} />}
+                                    {!mixer.make && <input type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)} />}
+                                    {!mixer.model && <input type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)} />}
+                                    {!mixer.year && <input type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} />}
+                                    <button type="button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button>
+                                    <button type="button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button>
+                                </div>
+                            </div>
+                        )}
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
                             <p>Assets require verification after any changes are made and are reset weekly. <strong>Due:

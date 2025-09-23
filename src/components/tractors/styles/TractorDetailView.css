@@ -918,3 +918,15 @@ input[type="date"].form-control {
 .rating-label {
     color: var(--rating-label-color) !important;
 }
+
+.modal-content button:disabled {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.modal-content button:first-of-type:disabled {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}

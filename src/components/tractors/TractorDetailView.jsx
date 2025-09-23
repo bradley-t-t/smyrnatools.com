@@ -50,6 +50,8 @@ function TractorDetailView({tractorId, onClose}) {
     const [comments, setComments] = useState([]);
     const [issues, setIssues] = useState([]);
     const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
+    const [showMissingFieldsModal, setShowMissingFieldsModal] = useState(false);
+    const [missingFields, setMissingFields] = useState([]);
 
     useEffect(() => {
         async function fetchData() {
@@ -316,6 +318,16 @@ function TractorDetailView({tractorId, onClose}) {
     }
 
     async function handleVerifyTractor() {
+        if (!tractor.vin || !tractor.make || !tractor.model || !tractor.year) {
+            let missing = [];
+            if (!tractor.vin) missing.push('VIN');
+            if (!tractor.make) missing.push('Make');
+            if (!tractor.model) missing.push('Model');
+            if (!tractor.year) missing.push('Year');
+            setMissingFields(missing);
+            setShowMissingFieldsModal(true);
+            return;
+        }
         if (!tractor) return
         const operatorName = getOperatorName(assignedOperator)
         if (
@@ -361,6 +373,32 @@ function TractorDetailView({tractorId, onClose}) {
         } finally {
             setIsSaving(false)
         }
+    }
+
+    async function handleSaveMissingFields() {
+        const needVin = !tractor.vin
+        const needMake = !tractor.make
+        const needModel = !tractor.model
+        const needYear = !tractor.year
+        const vinOk = needVin ? !!String(vin).trim() : true
+        const makeOk = needMake ? !!String(make).trim() : true
+        const modelOk = needModel ? !!String(model).trim() : true
+        const yearOk = needYear ? !!String(year).trim() : true
+        if (!(vinOk && makeOk && modelOk && yearOk)) {
+            setMessage('Please fill all required fields before verifying.')
+            setTimeout(() => setMessage(''), 4000)
+            return
+        }
+        const overrides = {}
+        if (needVin) overrides.vin = String(vin).trim()
+        if (needMake) overrides.make = String(make).trim()
+        if (needModel) overrides.model = String(model).trim()
+        if (needYear) overrides.year = String(year).trim()
+        await handleSave(overrides)
+        const refreshed = await TractorService.fetchTractorById(tractorId)
+        setTractor(refreshed)
+        setShowMissingFieldsModal(false)
+        await handleVerifyTractor()
     }
 
     function handleBackClick() {
@@ -500,6 +538,14 @@ ${openIssues.length > 0
     }
 
     const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
+
+    const canSubmitMissing = missingFields.every(f => {
+        if (f === 'VIN') return !!String(vin).trim()
+        if (f === 'Make') return !!String(make).trim()
+        if (f === 'Model') return !!String(model).trim()
+        if (f === 'Year') return !!String(year).trim()
+        return true
+    })
 
     return (
         <div className="tractor-detail-view">
@@ -953,6 +999,23 @@ ${openIssues.length > 0
                             </button>
                             <button className="danger-button" onClick={handleDelete}>Delete</button>
                         </div>
+                    </div>
+                </div>
+            )}
+            {showMissingFieldsModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Missing Required Information</h3>
+                        <p>Please enter the following missing fields to verify this asset:</p>
+                        <ul>
+                            {missingFields.map(field => <li key={field}>{field}</li>)}
+                        </ul>
+                        {!tractor.vin && <input type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)} />}
+                        {!tractor.make && <input type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)} />}
+                        {!tractor.model && <input type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)} />}
+                        {!tractor.year && <input type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} />}
+                        <button type="button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button>
+                        <button type="button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button>
                     </div>
                 </div>
             )}
