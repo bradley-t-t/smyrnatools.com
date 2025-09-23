@@ -168,14 +168,42 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             const processedData = data.map(tractor => {
                 const t = {...tractor}
                 t.isVerified = () => TractorUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy, t.latestHistoryDate)
+                if (typeof t.openIssuesCount !== 'number') t.openIssuesCount = 0
+                if (typeof t.commentsCount !== 'number') t.commentsCount = 0
                 return t
             })
             setTractors(processedData)
             setTractorsLoaded(true)
             setTimeout(() => {
-                fixActiveTractorsWithoutOperator(processedData).catch(() => {
-                })
+                fixActiveTractorsWithoutOperator(processedData).catch(() => {})
             }, 0)
+            ;(async () => {
+                const items = processedData.slice()
+                let index = 0
+                const concurrency = 6
+                async function worker() {
+                    while (index < items.length) {
+                        const current = index++
+                        const tr = items[current]
+                        try {
+                            const [comments, issues] = await Promise.all([
+                                TractorService.fetchComments(tr.id).catch(() => []),
+                                TractorService.fetchIssues(tr.id).catch(() => [])
+                            ])
+                            const openIssuesCount = Array.isArray(issues) ? issues.filter(i => !i.time_completed).length : 0
+                            const commentsCount = Array.isArray(comments) ? comments.length : 0
+                            setTractors(prev => {
+                                const arr = prev.slice()
+                                const idx = arr.findIndex(x => x.id === tr.id)
+                                if (idx >= 0) arr[idx] = {...arr[idx], comments, issues, openIssuesCount, commentsCount}
+                                return arr
+                            })
+                        } catch (e) {
+                        }
+                    }
+                }
+                await Promise.all(Array.from({length: concurrency}, () => worker()))
+            })()
         } catch (error) {
             console.error('Error fetching tractors:', error)
         }
@@ -553,7 +581,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                         {plants
                                             .filter(p => {
                                                 const code = String(p.plantCode || p.plant_code || '').trim().toUpperCase()
-                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
+                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : true
                                             })
                                             .sort((a, b) => parseInt((a.plantCode || a.plant_code || '').replace(/\D/g, '') || '0') - parseInt((b.plantCode || b.plant_code || '').replace(/\D/g, '') || '0')).map(plant => (
                                                 <option key={plant.plantCode || plant.plant_code}

@@ -124,14 +124,41 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     async function fetchTrailers() {
         try {
             const data = await TrailerService.fetchTrailers()
-            const processed = data.map(t => {
+            const base = data.map(t => {
                 const trailer = {...t}
                 trailer.isVerified = () => TrailerUtility.isVerified(trailer.updatedLast, trailer.updatedAt, trailer.updatedBy, trailer.latestHistoryDate)
+                if (typeof trailer.openIssuesCount !== 'number') trailer.openIssuesCount = 0
+                if (typeof trailer.commentsCount !== 'number') trailer.commentsCount = 0
                 return trailer
             })
-            setTrailers(processed)
-        } catch {
-        }
+            setTrailers(base)
+            ;(async () => {
+                const items = base.slice()
+                let index = 0
+                const concurrency = 6
+                async function worker() {
+                    while (index < items.length) {
+                        const current = index++
+                        const tr = items[current]
+                        try {
+                            const [comments, issues] = await Promise.all([
+                                TrailerService.fetchComments(tr.id).catch(() => []),
+                                TrailerService.fetchIssues(tr.id).catch(() => [])
+                            ])
+                            const openIssuesCount = Array.isArray(issues) ? issues.filter(i => !i.time_completed).length : 0
+                            const commentsCount = Array.isArray(comments) ? comments.length : 0
+                            setTrailers(prev => {
+                                const arr = prev.slice()
+                                const idx = arr.findIndex(x => x.id === tr.id)
+                                if (idx >= 0) arr[idx] = {...arr[idx], comments, issues, openIssuesCount, commentsCount}
+                                return arr
+                            })
+                        } catch (e) {}
+                    }
+                }
+                await Promise.all(Array.from({length: concurrency}, () => worker()))
+            })()
+        } catch {}
     }
 
     async function fetchTractors() {
