@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react'
+import React, {useCallback, useEffect, useRef, useState, useTransition} from 'react'
 import './styles/DashboardView.css'
 import {RegionService} from '../../services/RegionService'
 import {MixerService} from '../../services/MixerService'
@@ -23,32 +23,295 @@ export default function DashboardView() {
     const [dashboardRegionCode, setDashboardRegionCode] = useState('')
     const [dashboardRegionName, setDashboardRegionName] = useState('')
     const [dashboardPlant, setDashboardPlant] = useState('')
-    const [mixers, setMixers] = useState([])
-    const [tractors, setTractors] = useState([])
-    const [trailers, setTrailers] = useState([])
-    const [equipment, setEquipment] = useState([])
-    const [pickups, setPickups] = useState([])
-    const [operators, setOperators] = useState([])
-    const [managersCount, setManagersCount] = useState(0)
-    const [mixersIssuesTotal, setMixersIssuesTotal] = useState(0)
-    const [mixersCommentsTotal, setMixersCommentsTotal] = useState(0)
-    const [tractorsIssuesTotal, setTractorsIssuesTotal] = useState(0)
-    const [tractorsCommentsTotal, setTractorsCommentsTotal] = useState(0)
-    const [trailersIssuesTotal, setTrailersIssuesTotal] = useState(0)
-    const [trailersCommentsTotal, setTrailersCommentsTotal] = useState(0)
-    const [equipmentIssuesTotal, setEquipmentIssuesTotal] = useState(0)
-    const [equipmentCommentsTotal, setEquipmentCommentsTotal] = useState(0)
-    const [refreshKey, setRefreshKey] = useState(0)
     const [lastUpdated, setLastUpdated] = useState(null)
+    const [refreshKey, setRefreshKey] = useState(0)
+    const [stats, setStats] = useState({
+        mixers: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0},
+        tractors: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0},
+        trailers: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0},
+        equipment: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0},
+        pickups: {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0},
+        operators: {total: 0, active: 0, assigned: 0, mixerAssigned: 0, tractorAssigned: 0, unassigned: 0, pending: 0},
+        managers: 0,
+        fleetTotal: 0,
+        openIssuesTotal: 0,
+        overdueTotal: 0,
+        verificationAverage: 0
+    })
+
+    const allMixersRef = useRef([])
+    const allTractorsRef = useRef([])
+    const allTrailersRef = useRef([])
+    const allEquipmentRef = useRef([])
+    const allPickupsRef = useRef([])
+    const allOperatorsRef = useRef([])
+    const prevSnapshotRef = useRef(null)
+    const initialLoadRef = useRef(true)
+    const [isFiltering, startTransition] = useTransition()
+    const filterTimeoutRef = useRef(null)
+    const plantSetRef = useRef(new Set())
+    const lastManagersFetchRef = useRef(0)
+
+    const slimMixer = m => ({
+        id: m.id,
+        status: m.status,
+        assignedOperator: m.assignedOperator,
+        lastServiceDate: m.lastServiceDate,
+        updatedLast: m.updatedLast,
+        updatedAt: m.updatedAt,
+        updatedBy: m.updatedBy,
+        plantCode: m.assignedPlant || m.plantCode
+    })
+    const slimTractor = t => ({
+        id: t.id,
+        status: t.status,
+        assignedOperator: t.assignedOperator,
+        lastServiceDate: t.lastServiceDate,
+        updatedLast: t.updatedLast,
+        updatedAt: t.updatedAt,
+        updatedBy: t.updatedBy,
+        plantCode: t.assignedPlant || t.plantCode
+    })
+    const slimTrailer = t => ({
+        id: t.id,
+        status: t.status,
+        lastServiceDate: t.lastServiceDate,
+        plantCode: t.assignedPlant || t.plantCode
+    })
+    const slimEquipment = e => ({
+        id: e.id,
+        status: e.status,
+        lastServiceDate: e.lastServiceDate,
+        plantCode: e.assignedPlant || e.plantCode
+    })
+    const slimPickup = p => ({id: p.id, status: p.status, plantCode: p.assignedPlant || p.plantCode})
+    const slimOperator = o => ({id: o.id, employeeId: o.employeeId, status: o.status, plantCode: o.plantCode})
+
+    const isServiceOverdue = date => {
+        if (!date) return true
+        const diff = Math.ceil((Date.now() - new Date(date).getTime()) / 86400000)
+        return diff > 90
+    }
+
+    const computeStats = useCallback(() => {
+        const plantSet = new Set()
+        if (dashboardPlant) plantSet.add(String(dashboardPlant).trim())
+        else (regionPlants || []).forEach(p => {
+            const c = p.plantCode || p.plant_code;
+            if (c) plantSet.add(String(c).trim())
+        })
+        plantSetRef.current = plantSet
+        const filterActive = plantSet.size > 0
+        let mixersTotals = {
+            total: 0,
+            active: 0,
+            shop: 0,
+            verified: 0,
+            issues: stats.mixers.issues,
+            comments: stats.mixers.comments,
+            overdue: 0
+        }
+        let tractorsTotals = {
+            total: 0,
+            active: 0,
+            shop: 0,
+            verified: 0,
+            issues: stats.tractors.issues,
+            comments: stats.tractors.comments,
+            overdue: 0
+        }
+        let trailersTotals = {
+            total: 0,
+            active: 0,
+            shop: 0,
+            issues: stats.trailers.issues,
+            comments: stats.trailers.comments,
+            overdue: 0
+        }
+        let equipmentTotals = {
+            total: 0,
+            active: 0,
+            shop: 0,
+            issues: stats.equipment.issues,
+            comments: stats.equipment.comments,
+            overdue: 0
+        }
+        let pickupsTotals = {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0}
+        let operatorsTotals = {
+            total: 0,
+            active: 0,
+            assigned: 0,
+            mixerAssigned: 0,
+            tractorAssigned: 0,
+            unassigned: 0,
+            pending: 0
+        }
+        const mixerAssignedIds = new Set()
+        const tractorAssignedIds = new Set()
+        const consider = (plantCode) => !filterActive || plantSet.has(String(plantCode || '').trim())
+        for (const m of allMixersRef.current) {
+            if (!consider(m.plantCode)) continue;
+            mixersTotals.total++;
+            if (m.status === 'Active') mixersTotals.active++; else if (m.status === 'In Shop') mixersTotals.shop++;
+            if (isServiceOverdue(m.lastServiceDate)) mixersTotals.overdue++;
+            if (VerifiedUtility.isVerified(m.updatedLast, m.updatedAt, m.updatedBy)) mixersTotals.verified++;
+            if (m.assignedOperator) mixerAssignedIds.add(m.assignedOperator)
+        }
+        for (const t of allTractorsRef.current) {
+            if (!consider(t.plantCode)) continue;
+            tractorsTotals.total++;
+            if (t.status === 'Active') tractorsTotals.active++; else if (t.status === 'In Shop') tractorsTotals.shop++;
+            if (isServiceOverdue(t.lastServiceDate)) tractorsTotals.overdue++;
+            if (VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)) tractorsTotals.verified++;
+            if (t.assignedOperator) tractorAssignedIds.add(t.assignedOperator)
+        }
+        for (const r of allTrailersRef.current) {
+            if (!consider(r.plantCode)) continue;
+            trailersTotals.total++;
+            if (r.status === 'Active') trailersTotals.active++; else if (r.status === 'In Shop') trailersTotals.shop++;
+            if (isServiceOverdue(r.lastServiceDate)) trailersTotals.overdue++
+        }
+        for (const e of allEquipmentRef.current) {
+            if (!consider(e.plantCode)) continue;
+            equipmentTotals.total++;
+            if (e.status === 'Active') equipmentTotals.active++; else if (e.status === 'In Shop') equipmentTotals.shop++;
+            if (isServiceOverdue(e.lastServiceDate)) equipmentTotals.overdue++
+        }
+        for (const p of allPickupsRef.current) {
+            if (!consider(p.plantCode)) continue;
+            pickupsTotals.total++;
+            if (p.status === 'Active') pickupsTotals.active++; else if (p.status === 'In Shop') pickupsTotals.shop++; else if (p.status === 'Stationary') pickupsTotals.stationary++; else if (p.status === 'Spare') pickupsTotals.spare++; else if (p.status === 'Sold') pickupsTotals.sold++; else if (p.status === 'Retired') pickupsTotals.retired++
+        }
+        for (const o of allOperatorsRef.current) {
+            if (!consider(o.plantCode)) continue;
+            operatorsTotals.total++;
+            if (o.status === 'Active') {
+                operatorsTotals.active++;
+                if (mixerAssignedIds.has(o.employeeId)) {
+                    operatorsTotals.assigned++;
+                    operatorsTotals.mixerAssigned++
+                } else if (tractorAssignedIds.has(o.employeeId)) {
+                    operatorsTotals.assigned++;
+                    operatorsTotals.tractorAssigned++
+                } else operatorsTotals.unassigned++
+            } else if (o.status === 'Pending Start') operatorsTotals.pending++
+        }
+        const mixersVerifiedPercent = mixersTotals.total ? Math.round((mixersTotals.verified / mixersTotals.total) * 100) : 0
+        const tractorsVerifiedPercent = tractorsTotals.total ? Math.round((tractorsTotals.verified / tractorsTotals.total) * 100) : 0
+        const verificationAverage = [mixersTotals.total ? mixersVerifiedPercent : null, tractorsTotals.total ? tractorsVerifiedPercent : null].filter(v => v !== null)
+            .reduce((a, b) => a + b, 0)
+        const verificationAvg = verificationAverage.length ? Math.round(verificationAverage / verificationAverage.length) : 0
+        const openIssuesTotal = mixersTotals.issues + tractorsTotals.issues + trailersTotals.issues + equipmentTotals.issues
+        const overdueTotal = mixersTotals.overdue + tractorsTotals.overdue + trailersTotals.overdue + equipmentTotals.overdue
+        const fleetTotal = mixersTotals.total + tractorsTotals.total + trailersTotals.total + equipmentTotals.total + pickupsTotals.total
+        setStats(s => ({
+            mixers: {...mixersTotals, verifiedPercent: mixersVerifiedPercent},
+            tractors: {...tractorsTotals, verifiedPercent: tractorsVerifiedPercent},
+            trailers: trailersTotals,
+            equipment: equipmentTotals,
+            pickups: pickupsTotals,
+            operators: operatorsTotals,
+            managers: s.managers,
+            fleetTotal,
+            openIssuesTotal,
+            overdueTotal,
+            verificationAverage: verificationAvg
+        }))
+        prevSnapshotRef.current = {fleet: fleetTotal}
+    }, [dashboardPlant, regionPlants, stats.mixers.issues, stats.mixers.comments, stats.tractors.issues, stats.tractors.comments, stats.trailers.issues, stats.trailers.comments, stats.equipment.issues, stats.equipment.comments])
+
+    const applyFilters = useCallback(() => {
+        if (loading) {
+            computeStats();
+            return
+        }
+        if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current)
+        filterTimeoutRef.current = setTimeout(() => startTransition(() => computeStats()), 30)
+    }, [computeStats, loading])
+
+    useEffect(() => () => {
+        if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current)
+    }, [])
+
+    const fetchIssueCommentCounts = useCallback(async () => {
+        try {
+            const mixerIds = allMixersRef.current.map(m => m.id).filter(Boolean)
+            const tractorIds = allTractorsRef.current.map(t => t.id).filter(Boolean)
+            const trailerIds = allTrailersRef.current.map(t => t.id).filter(Boolean)
+            const equipmentIds = allEquipmentRef.current.map(e => e.id).filter(Boolean)
+            const queries = []
+            if (mixerIds.length) {
+                queries.push(Promise.all([
+                    supabase.from('mixers_maintenance').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('mixer_id', mixerIds).is('time_completed', null),
+                    supabase.from('mixers_comments').select('id', {count: 'exact', head: true}).in('mixer_id', mixerIds)
+                ]).then(([i, c]) => ({key: 'mixers', issues: i?.count || 0, comments: c?.count || 0})))
+            }
+            if (tractorIds.length) {
+                queries.push(Promise.all([
+                    supabase.from('tractors_maintenance').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('tractor_id', tractorIds).is('time_completed', null),
+                    supabase.from('tractors_comments').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('tractor_id', tractorIds)
+                ]).then(([i, c]) => ({key: 'tractors', issues: i?.count || 0, comments: c?.count || 0})))
+            }
+            if (trailerIds.length) {
+                queries.push(Promise.all([
+                    supabase.from('trailers_maintenance').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('trailer_id', trailerIds).is('time_completed', null),
+                    supabase.from('trailers_comments').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('trailer_id', trailerIds)
+                ]).then(([i, c]) => ({key: 'trailers', issues: i?.count || 0, comments: c?.count || 0})))
+            }
+            if (equipmentIds.length) {
+                queries.push(Promise.all([
+                    supabase.from('heavy_equipment_maintenance').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('equipment_id', equipmentIds).is('time_completed', null),
+                    supabase.from('heavy_equipment_comments').select('id', {
+                        count: 'exact',
+                        head: true
+                    }).in('equipment_id', equipmentIds)
+                ]).then(([i, c]) => ({key: 'equipment', issues: i?.count || 0, comments: c?.count || 0})))
+            }
+            if (!queries.length) {
+                return
+            }
+            const results = await Promise.all(queries)
+            setStats(s => {
+                const updated = {...s}
+                results.forEach(r => {
+                    updated[r.key] = {...updated[r.key], issues: r.issues, comments: r.comments}
+                })
+                updated.openIssuesTotal = updated.mixers.issues + updated.tractors.issues + updated.trailers.issues + updated.equipment.issues
+                return updated
+            })
+        } catch {
+        }
+    }, [])
 
     useEffect(() => {
-        let cancelled = false
+        let cancelled = false;
         let intervalId
 
-        async function init() {
-            const isInitial = !lastUpdated
-            if (isInitial) setLoading(true)
-            else setRefreshing(true)
+        async function initBase() {
+            const isInitial = initialLoadRef.current
+            if (isInitial) {
+                setLoading(true)
+            } else {
+                setRefreshing(true)
+            }
             setError('')
             try {
                 const allPlants = await ReportService.fetchPlantsSorted().catch(() => [])
@@ -56,39 +319,116 @@ export default function DashboardView() {
                 setAllPlantsCount(Array.isArray(allPlants) ? allPlants.length : 0)
                 const {data: sessionData} = await supabase.auth.getSession()
                 const uid = sessionData?.session?.user?.id || sessionStorage.getItem('userId') || ''
-                const allPerm = await UserService.hasPermission(uid, 'region.select.all').catch(() => false)
+                let allPerm = false
+                try {
+                    allPerm = await UserService.hasPermission(uid, 'region.select.all').catch(() => false)
+                } catch {
+                }
                 if (cancelled) return
                 setHasAllRegionsPermission(!!allPerm)
+                let allFetched
+                try {
+                    allFetched = await RegionService.fetchRegions().catch(() => [])
+                } catch {
+                    allFetched = []
+                }
                 let regionsList = []
-                if (allPerm) {
-                    regionsList = await RegionService.fetchRegions().catch(() => [])
-                } else {
+                if (allPerm) regionsList = allFetched
+                else {
                     const {data: profile} = await supabase.from('users_profiles').select('plant_code, regions').eq('id', uid).maybeSingle()
                     const profileRegions = Array.isArray(profile?.regions) ? profile.regions.filter(r => typeof r === 'string' && r.trim()) : []
                     if (profileRegions.length) {
-                        const allRegs = await RegionService.fetchRegions().catch(() => [])
-                        const codeSet = new Set(profileRegions.map(c => c.toLowerCase()))
-                        regionsList = allRegs.filter(r => codeSet.has(String(((r.regionCode || r.region_code) || '')).toLowerCase()))
+                        const codeSet = new Set(profileRegions.map(c => c.toLowerCase()));
+                        regionsList = allFetched.filter(r => codeSet.has(String((r.regionCode || '').toLowerCase())))
                     }
-                    if ((!regionsList || regionsList.length === 0) && profile?.plant_code) {
-                        regionsList = await RegionService.fetchRegionsByPlantCode(profile.plant_code).catch(() => [])
+                    if ((!regionsList || !regionsList.length) && profile?.plant_code) {
+                        try {
+                            regionsList = await RegionService.fetchRegionsByPlantCode(profile.plant_code).catch(() => [])
+                        } catch {
+                        }
                     }
                 }
+                if ((!regionsList || !regionsList.length) && allFetched.length) regionsList = allFetched
                 if (cancelled) return
                 setPermittedRegions(regionsList)
-                let nextRegionCode = dashboardRegionCode
-                let nextRegionName = dashboardRegionName
-                if (!nextRegionCode && regionsList.length > 0) {
-                    nextRegionCode = regionsList[0].regionCode || regionsList[0].region_code || ''
-                    nextRegionName = regionsList[0].regionName || regionsList[0].region_name || ''
-                    setDashboardRegionCode(nextRegionCode)
-                    setDashboardRegionName(nextRegionName)
+                if (!dashboardRegionCode && regionsList.length) {
+                    const first = regionsList[0];
+                    setDashboardRegionCode(first.regionCode);
+                    setDashboardRegionName(first.regionName)
                 }
-                const plantsForRegion = nextRegionCode ? await RegionService.fetchRegionPlants(nextRegionCode).catch(() => []) : []
-                if (cancelled) return
-                setRegionPlants(plantsForRegion)
-                const basePlantCodes = new Set((plantsForRegion || []).map(p => String(((p.plantCode || p.plant_code) || '')).trim()).filter(Boolean))
-                const effectivePlantCodes = dashboardPlant ? new Set([String(dashboardPlant).trim()]) : basePlantCodes
+            } catch {
+                if (!cancelled) setError('Failed to load dashboard data')
+            } finally {
+                if (!cancelled) {
+                    initialLoadRef.current = false;
+                    setLoading(false);
+                    setRefreshing(false)
+                }
+            }
+        }
+
+        initBase();
+        intervalId = setInterval(() => setRefreshKey(v => v + 1), 600000)
+        return () => {
+            cancelled = true;
+            if (intervalId) clearInterval(intervalId)
+        }
+    }, [dashboardRegionCode])
+
+    useEffect(() => {
+        let cancelled = false
+
+        async function fetchRegionPlants() {
+            if (!dashboardRegionCode) {
+                setRegionPlants([]);
+                return
+            }
+            setRefreshing(true);
+            try {
+                const list = await RegionService.fetchRegionPlants(dashboardRegionCode).catch(() => []);
+                if (cancelled) return;
+                setRegionPlants(list)
+            } finally {
+                if (!cancelled) setRefreshing(false)
+            }
+        }
+
+        fetchRegionPlants();
+        return () => {
+            cancelled = true
+        }
+    }, [dashboardRegionCode])
+
+    useEffect(() => {
+        let cancelled = false
+
+        async function fetchAssets() {
+            const CACHE_KEY = 'dashboard_assets_cache_v1'
+            const CACHE_TTL_MS = 120000
+            setError('')
+            const now = Date.now()
+            if (initialLoadRef.current) {
+                try {
+                    const raw = sessionStorage.getItem(CACHE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && (now - (parsed.savedAt || 0)) < CACHE_TTL_MS) {
+                            allMixersRef.current = (parsed.mixers || []).map(slimMixer);
+                            allTractorsRef.current = (parsed.tractors || []).map(slimTractor);
+                            allTrailersRef.current = (parsed.trailers || []).map(slimTrailer);
+                            allEquipmentRef.current = (parsed.equipment || []).map(slimEquipment);
+                            allPickupsRef.current = (parsed.pickups || []).map(slimPickup);
+                            allOperatorsRef.current = (parsed.operators || []).map(slimOperator);
+                            computeStats();
+                            setLastUpdated(parsed.lastUpdated ? new Date(parsed.lastUpdated) : new Date(parsed.savedAt || now));
+                            setLoading(false)
+                        }
+                    }
+                } catch {
+                }
+            }
+            setRefreshing(true)
+            try {
                 const [mix, trac, trail, equip, pick, ops] = await Promise.all([
                     MixerService.getAllMixers().catch(() => []),
                     TractorService.getAllTractors().catch(() => []),
@@ -98,344 +438,309 @@ export default function DashboardView() {
                     OperatorService.getAllOperators().catch(() => [])
                 ])
                 if (cancelled) return
-                const filterByPlants = arr => {
-                    if (!effectivePlantCodes || effectivePlantCodes.size === 0) return arr || []
-                    return (arr || []).filter(a => {
-                        const code = a.assignedPlant || a.plantCode || ''
-                        return code && effectivePlantCodes.has(String(code).trim())
-                    })
-                }
-                const fMix = filterByPlants(mix)
-                const fTrac = filterByPlants(trac)
-                const fTrail = filterByPlants(trail)
-                const fEquip = filterByPlants(equip)
-                const fPick = filterByPlants(pick)
-                const fOps = (ops || []).filter(o => {
-                    if (!effectivePlantCodes || effectivePlantCodes.size === 0) return true
-                    const code = o.plantCode || ''
-                    return code && effectivePlantCodes.has(String(code).trim())
-                })
-                setMixers(fMix)
-                setTractors(fTrac)
-                setTrailers(fTrail)
-                setEquipment(fEquip)
-                setPickups(fPick)
-                setOperators(fOps)
-                let mgrCount
+                allMixersRef.current = mix.map(slimMixer)
+                allTractorsRef.current = trac.map(slimTractor)
+                allTrailersRef.current = trail.map(slimTrailer)
+                allEquipmentRef.current = equip.map(slimEquipment)
+                allPickupsRef.current = pick.map(slimPickup)
+                allOperatorsRef.current = ops.map(slimOperator)
+                computeStats()
+                const fetchedAt = new Date();
+                setLastUpdated(fetchedAt)
                 try {
-                    const [{data: permissions}, {data: roles}, {data: profiles}] = await Promise.all([
-                        supabase.from('users_permissions').select('user_id, role_id'),
-                        supabase.from('users_roles').select('id, name'),
-                        supabase.from('users_profiles').select('id, plant_code')
-                    ])
-                    const managerRoleIds = new Set((roles || []).filter(r => String(r.name || '').toLowerCase().includes('manager')).map(r => r.id))
-                    const userIdsWithManagerRole = new Set((permissions || []).filter(p => managerRoleIds.has(p.role_id)).map(p => p.user_id))
-                    const plantCodesSet = (effectivePlantCodes && effectivePlantCodes.size > 0) ? effectivePlantCodes : null
-                    mgrCount = (profiles || []).filter(pr => userIdsWithManagerRole.has(pr.id) && (!plantCodesSet || plantCodesSet.has(String(pr.plant_code || '').trim()))).length
+                    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+                        savedAt: Date.now(),
+                        lastUpdated: fetchedAt.toISOString(),
+                        mixers: allMixersRef.current,
+                        tractors: allTractorsRef.current,
+                        trailers: allTrailersRef.current,
+                        equipment: allEquipmentRef.current,
+                        pickups: allPickupsRef.current,
+                        operators: allOperatorsRef.current
+                    }))
                 } catch {
-                    mgrCount = 0
                 }
-                setManagersCount(mgrCount)
-                try {
-                    const mixerIds = (fMix || []).map(m => m.id).filter(Boolean)
-                    const tractorIds = (fTrac || []).map(t => t.id).filter(Boolean)
-                    const trailerIds = (fTrail || []).map(t => t.id).filter(Boolean)
-                    const equipmentIds = (fEquip || []).map(e => e.id).filter(Boolean)
-                    if (mixerIds.length > 0) {
-                        const [issuesRes, commentsRes] = await Promise.all([
-                            supabase.from('mixers_maintenance').select('id', {count: 'exact'}).in('mixer_id', mixerIds).is('time_completed', null),
-                            supabase.from('mixers_comments').select('id', {count: 'exact'}).in('mixer_id', mixerIds)
-                        ])
-                        setMixersIssuesTotal(issuesRes?.count || 0)
-                        setMixersCommentsTotal(commentsRes?.count || 0)
-                    } else {
-                        setMixersIssuesTotal(0)
-                        setMixersCommentsTotal(0)
-                    }
-                    if (tractorIds.length > 0) {
-                        const [tIssues, tComments] = await Promise.all([
-                            supabase.from('tractors_maintenance').select('id', {count: 'exact'}).in('tractor_id', tractorIds).is('time_completed', null),
-                            supabase.from('tractors_comments').select('id', {count: 'exact'}).in('tractor_id', tractorIds)
-                        ])
-                        setTractorsIssuesTotal(tIssues?.count || 0)
-                        setTractorsCommentsTotal(tComments?.count || 0)
-                    } else {
-                        setTractorsIssuesTotal(0)
-                        setTractorsCommentsTotal(0)
-                    }
-                    if (trailerIds.length > 0) {
-                        const [rIssues, rComments] = await Promise.all([
-                            supabase.from('trailers_maintenance').select('id', {count: 'exact'}).in('trailer_id', trailerIds).is('time_completed', null),
-                            supabase.from('trailers_comments').select('id', {count: 'exact'}).in('trailer_id', trailerIds)
-                        ])
-                        setTrailersIssuesTotal(rIssues?.count || 0)
-                        setTrailersCommentsTotal(rComments?.count || 0)
-                    } else {
-                        setTrailersIssuesTotal(0)
-                        setTrailersCommentsTotal(0)
-                    }
-                    if (equipmentIds.length > 0) {
-                        const [eIssues, eComments] = await Promise.all([
-                            supabase.from('heavy_equipment_maintenance').select('id', {count: 'exact'}).in('equipment_id', equipmentIds).is('time_completed', null),
-                            supabase.from('heavy_equipment_comments').select('id', {count: 'exact'}).in('equipment_id', equipmentIds)
-                        ])
-                        setEquipmentIssuesTotal(eIssues?.count || 0)
-                        setEquipmentCommentsTotal(eComments?.count || 0)
-                    } else {
-                        setEquipmentIssuesTotal(0)
-                        setEquipmentCommentsTotal(0)
-                    }
-                } catch {
-                    setMixersIssuesTotal(0)
-                    setMixersCommentsTotal(0)
-                    setTractorsIssuesTotal(0)
-                    setTractorsCommentsTotal(0)
-                    setTrailersIssuesTotal(0)
-                    setTrailersCommentsTotal(0)
-                    setEquipmentIssuesTotal(0)
-                    setEquipmentCommentsTotal(0)
-                }
-                setLastUpdated(new Date())
-            } catch (e) {
-                setError('Failed to load dashboard data')
+            } catch {
+                if (!cancelled && !lastUpdated) setError('Failed to load dashboard data')
             } finally {
                 if (!cancelled) {
-                    setLoading(false)
+                    setLoading(false);
                     setRefreshing(false)
                 }
             }
         }
 
-        init()
-        intervalId = setInterval(() => {
-            setRefreshKey(v => v + 1)
-        }, 600000)
+        fetchAssets();
         return () => {
             cancelled = true
-            if (intervalId) clearInterval(intervalId)
         }
-    }, [dashboardRegionCode, dashboardPlant, refreshKey])
+    }, [refreshKey, computeStats])
 
-    const activeMixers = useMemo(() => mixers.filter(m => m.status === 'Active'), [mixers])
-    const shopMixers = useMemo(() => mixers.filter(m => m.status === 'In Shop'), [mixers])
-    const activeTractors = useMemo(() => tractors.filter(t => t.status === 'Active'), [tractors])
-    const shopTractors = useMemo(() => tractors.filter(t => t.status === 'In Shop'), [tractors])
-    const activeTrailers = useMemo(() => trailers.filter(t => t.status === 'Active'), [trailers])
-    const shopTrailers = useMemo(() => trailers.filter(t => t.status === 'In Shop'), [trailers])
-    const activeEquipment = useMemo(() => equipment.filter(e => e.status === 'Active'), [equipment])
-    const shopEquipment = useMemo(() => equipment.filter(e => e.status === 'In Shop'), [equipment])
-    const activePickups = useMemo(() => pickups.filter(p => p.status === 'Active'), [pickups])
-    const inShopPickups = useMemo(() => pickups.filter(p => p.status === 'In Shop'), [pickups])
-    const stationaryPickups = useMemo(() => pickups.filter(p => p.status === 'Stationary'), [pickups])
-    const soldPickups = useMemo(() => pickups.filter(p => p.status === 'Sold'), [pickups])
-    const sparePickups = useMemo(() => pickups.filter(p => p.status === 'Spare'), [pickups])
-    const retiredPickups = useMemo(() => pickups.filter(p => p.status === 'Retired'), [pickups])
-    const assignedMixerOperatorIds = useMemo(() => new Set(mixers.map(m => m.assignedOperator).filter(Boolean)), [mixers])
-    const assignedTractorOperatorIds = useMemo(() => new Set(tractors.map(t => t.assignedOperator).filter(Boolean)), [tractors])
-    const activeOperators = useMemo(() => operators.filter(o => o.status === 'Active'), [operators])
-    const assignedOperatorIdsUnion = useMemo(() => new Set([
-        ...assignedMixerOperatorIds,
-        ...assignedTractorOperatorIds
-    ]), [assignedMixerOperatorIds, assignedTractorOperatorIds])
-    const assignedOperators = useMemo(() => activeOperators.filter(o => assignedOperatorIdsUnion.has(o.employeeId)), [activeOperators, assignedOperatorIdsUnion])
-    const assignedMixerOperators = useMemo(() => activeOperators.filter(o => assignedMixerOperatorIds.has(o.employeeId)), [activeOperators, assignedMixerOperatorIds])
-    const assignedTractorOperators = useMemo(() => activeOperators.filter(o => assignedTractorOperatorIds.has(o.employeeId)), [activeOperators, assignedTractorOperatorIds])
-    const pendingStartOperators = useMemo(() => operators.filter(o => o.status === 'Pending Start'), [operators])
-    const unassignedActiveOperators = useMemo(() => activeOperators.filter(o => !assignedOperatorIdsUnion.has(o.employeeId)).length, [activeOperators, assignedOperatorIdsUnion])
-    const daysSince = d => d ? Math.ceil((Date.now() - new Date(d).getTime()) / 86400000) : null
-    const overdueDays = 90
-    const isServiceOverdue = d => {
-        if (!d) return true
-        const diff = daysSince(d)
-        return typeof diff === 'number' ? diff > overdueDays : true
+    useEffect(() => {
+        applyFilters()
+    }, [dashboardPlant, regionPlants, applyFilters])
+    useEffect(() => {
+        if (!loading) fetchIssueCommentCounts()
+    }, [stats.fleetTotal, loading, fetchIssueCommentCounts])
+
+    useEffect(() => {
+        if (loading) return
+        const now = Date.now()
+        if (now - lastManagersFetchRef.current < 60000) return
+        lastManagersFetchRef.current = now
+        let cancelled = false
+
+        async function loadManagers() {
+            try {
+                const [permRes, roleRes, profRes] = await Promise.all([
+                    supabase.from('users_permissions').select('user_id, role_id'),
+                    supabase.from('users_roles').select('id, name'),
+                    supabase.from('users_profiles').select('id, plant_code')
+                ])
+                if (cancelled) return
+                const managerRoleIds = new Set((roleRes.data || []).filter(r => String(r.name || '').toLowerCase().includes('manager')).map(r => r.id))
+                const userIds = new Set((permRes.data || []).filter(p => managerRoleIds.has(p.role_id)).map(p => p.user_id))
+                const plantSet = plantSetRef.current
+                const managersCount = (profRes.data || []).filter(pr => userIds.has(pr.id) && (plantSet.size === 0 || plantSet.has(String(pr.plant_code || '').trim()))).length
+                setStats(s => ({...s, managers: managersCount}))
+            } catch {
+            }
+        }
+
+        loadManagers()
+        return () => {
+            cancelled = true
+        }
+    }, [stats.fleetTotal, dashboardPlant, regionPlants, loading])
+
+    const regionDisplayName = dashboardRegionCode ? (dashboardRegionName || dashboardRegionCode) : (hasAllRegionsPermission ? 'All Regions' : (permittedRegions[0]?.regionName || 'Region'))
+    const diffBadge = (current) => {
+        const prev = prevSnapshotRef.current?.fleet;
+        if (prev == null) return null;
+        const diff = current - prev;
+        if (!diff) return null;
+        const up = diff > 0;
+        return <span className={up ? 'delta-indicator up' : 'delta-indicator down'}
+                     title={`Change since last refresh: ${diff}`}>{up ? '▲' : '▼'}{Math.abs(diff)}</span>
     }
-    const countOverdue = arr => (arr || []).reduce((s, x) => s + (isServiceOverdue(x.lastServiceDate) ? 1 : 0), 0)
-    const verifiedFor = arr => {
-        const total = arr.length
-        if (!total) return {count: 0, percent: 0}
-        const verifiedCount = arr.filter(a => VerifiedUtility.isVerified(a.updatedLast, a.updatedAt, a.updatedBy)).length
-        return {count: verifiedCount, percent: Math.round((verifiedCount / total) * 100)}
-    }
-    const mixersVerified = useMemo(() => verifiedFor(mixers), [mixers])
-    const tractorsVerified = useMemo(() => verifiedFor(tractors), [tractors])
-    const mixersOverdue = useMemo(() => countOverdue(mixers), [mixers])
-    const tractorsOverdue = useMemo(() => countOverdue(tractors), [tractors])
-    const trailersOverdue = useMemo(() => countOverdue(trailers), [trailers])
-    const equipmentOverdue = useMemo(() => countOverdue(equipment), [equipment])
-    const plantCount = dashboardPlant ? 1 : (dashboardRegionCode ? regionPlants.length : allPlantsCount)
+
     const onRegionChange = e => {
-        const code = e.target.value
-        if (!code && !hasAllRegionsPermission) return
+        const code = e.target.value;
+        if (!code && !hasAllRegionsPermission) return;
         if (!code && hasAllRegionsPermission) {
             setDashboardRegionCode('');
             setDashboardRegionName('');
             setDashboardPlant('');
             return
         }
-        const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code)
+        const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code);
         if (r) {
-            const name = r.regionName || r.region_name || ''
-            setDashboardRegionCode(r.regionCode || r.region_code)
-            setDashboardRegionName(name)
+            setDashboardRegionCode(r.regionCode || r.region_code);
+            setDashboardRegionName(r.regionName || r.region_name || '')
         }
         setDashboardPlant('')
     }
-    const onPlantChange = e => {
-        setDashboardPlant(e.target.value)
-    }
+    const onPlantChange = e => setDashboardPlant(e.target.value)
     const onRetry = () => setRefreshKey(v => v + 1)
     const onRefresh = () => setRefreshKey(v => v + 1)
     const timeAgo = d => {
-        if (!d) return ''
-        const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000)
-        if (diff < 60) return 'just now'
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+        if (!d) return '';
+        const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
         return `${Math.floor(diff / 86400)}d ago`
     }
+    const showSkeleton = loading
+
     return (
-        <div className="dashboard-container">
+        <div className="dashboard-container" data-filtering={isFiltering || undefined}>
             <div className="dashboard-header">
                 <h1>Dashboard</h1>
                 <div className="dashboard-actions">
                     <div className="toolbar-group">
-                        <select className="ios-select" value={dashboardRegionCode} onChange={onRegionChange}
-                                aria-label="Region">
-                            {hasAllRegionsPermission && <option value="">All Regions</option>}
-                            {permittedRegions.map(r => (
-                                <option key={r.regionCode || r.region_code}
-                                        value={r.regionCode || r.region_code}>{(r.regionName || r.region_name || '')} ({r.regionCode || r.region_code})</option>
-                            ))}
-                        </select>
-                        {dashboardRegionCode ? (
-                            <select className="ios-select" value={dashboardPlant} onChange={onPlantChange}
-                                    aria-label="Plant">
-                                <option value="">All Plants</option>
-                                {regionPlants.map(p => {
-                                    const code = p.plantCode || p.plant_code
-                                    const name = p.plantName || p.plant_name || code
-                                    return <option key={code} value={code}>{name} ({code})</option>
-                                })}
-                            </select>
-                        ) : null}
-                    </div>
-                    <div className="toolbar-group">
                         <div className="updated-at"><span
                             className="live-dot"></span><span>{lastUpdated ? `Updated ${timeAgo(lastUpdated)}` : 'Never updated'}</span>
                         </div>
-                        <button className="btn ghost" onClick={onRefresh} aria-label="Refresh"
-                                disabled={refreshing}>{refreshing ?
+                        <select className="ios-select" value={dashboardRegionCode} onChange={onRegionChange}
+                                disabled={refreshing} aria-label="Region">
+                            {hasAllRegionsPermission && <option value="">All Regions</option>}
+                            {permittedRegions.map(r => <option key={r.regionCode}
+                                                               value={r.regionCode}>{r.regionName} ({r.regionCode})</option>)}
+                        </select>
+                        {dashboardRegionCode && (
+                            <select className="ios-select" value={dashboardPlant} onChange={onPlantChange}
+                                    disabled={refreshing} aria-label="Plant">
+                                <option value="">All Plants</option>
+                                {regionPlants.map(p => {
+                                    const code = p.plantCode || p.plant_code;
+                                    const name = p.plantName || p.plant_name || code;
+                                    return <option key={code} value={code}>{name} ({code})</option>
+                                })}
+                            </select>
+                        )}
+                    </div>
+                    <div className="toolbar-group">
+                        <button className="btn ghost" onClick={onRefresh} disabled={refreshing}
+                                aria-label="Refresh">{refreshing ?
                             <span className="mini-loader"/> : null}<span>Refresh</span></button>
+                        {isFiltering && <div className="filtering-indicator">Filtering</div>}
                     </div>
                 </div>
             </div>
-            {error && (
-                <div className="error-banner" role="alert">
-                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
-                        <span>{error}</span>
-                        <button className="btn danger ghost" onClick={onRetry}>Retry</button>
+            <div className="dashboard-hero simple">
+                <div className="hero-left">
+                    <div className="hero-region">
+                        <div className="hero-region-name">{regionDisplayName}</div>
+                        <div
+                            className="hero-region-sub">{dashboardPlant ? `Plant ${dashboardPlant}` : (dashboardRegionCode ? `${regionPlants.length} Plants` : `${allPlantsCount} Plants`)}</div>
+                    </div>
+                    <div className="hero-metrics compact">
+                        <div className="hero-metric">
+                            <div className="metric-label">Fleet</div>
+                            <div className="metric-value">{stats.fleetTotal}{diffBadge(stats.fleetTotal)}</div>
+                            <div className="metric-sub">Assets</div>
+                        </div>
+                        <div className="hero-metric">
+                            <div className="metric-label">Issues</div>
+                            <div className="metric-value">{stats.openIssuesTotal}</div>
+                            <div className="metric-sub">Open</div>
+                        </div>
+                        <div className="hero-metric">
+                            <div className="metric-label">Overdue</div>
+                            <div className="metric-value warn">{stats.overdueTotal}</div>
+                            <div className="metric-sub">Service</div>
+                        </div>
+                        <div className="hero-metric wide"><div className="metric-label">Verified</div><div className="metric-value accent">{stats.verificationAverage}%</div><div className="metric-sub">Overall Verification</div></div>
                     </div>
                 </div>
-            )}
-            <div className="content-container">
-                {loading ? (
-                    <div className="loading-container">
-                        <div className="loader"/>
-                    </div>
+            </div>
+            {error && <div className="error-banner">
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
+                    <span>{error}</span>
+                    <button className="btn danger ghost" onClick={onRetry}>Retry</button>
+                </div>
+            </div>}
+            <div className="content-container" aria-busy={showSkeleton}>
+                {showSkeleton ? (
+                    <div className="dashboard-grid skeleton-grid">{Array.from({length: 8}).map((_, i) => <div
+                        className="kpi-card skeleton-card" key={i}>
+                        <div className="skeleton-line w40"/>
+                        <div className="skeleton-line w60 tall"/>
+                        <div className="skeleton-row">
+                            <div className="skeleton-pill w30"/>
+                            <div className="skeleton-pill w20"/>
+                            <div className="skeleton-pill w25"/>
+                        </div>
+                    </div>)}</div>
                 ) : (
-                    <div className="dashboard-grid">
-                        <div className="kpi-card">
-                            <div className="kpi-title">Region</div>
-                            <div
-                                className="kpi-value">{dashboardRegionCode ? `${dashboardRegionName || dashboardRegionCode}` : 'All Regions'}</div>
-                            <div
-                                className="kpi-sub">Plants {plantCount}{dashboardPlant ? ` • Plant ${dashboardPlant}` : ''}</div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Mixers</div>
-                            <div className="kpi-value">{mixers.length}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Active {activeMixers.length}</div>
-                                <div className="kpi-pill">In Shop {shopMixers.length}</div>
-                            </div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Verified {mixersVerified.percent}%
-                                    ({mixersVerified.count}/{mixers.length})
+                    <div className="group-grid">
+                        <div className="group-section">
+                            <div className="section-title">Fleet</div>
+                            <div className="dashboard-grid inner-grid">
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Mixers</div>
+                                    <div className="kpi-value">{stats.mixers.total}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Active {stats.mixers.active}</div>
+                                        <div className="kpi-pill">In Shop {stats.mixers.shop}</div>
+                                        <div className="kpi-pill">Verified {stats.mixers.verifiedPercent}%</div>
+                                        <div className="kpi-pill">Issues {stats.mixers.issues}</div>
+                                        <div className="kpi-pill">Comments {stats.mixers.comments}</div>
+                                    </div>
                                 </div>
-                                <div className="kpi-pill">Needing Service {mixersOverdue}</div>
-                                <div className="kpi-pill">Open Issues {mixersIssuesTotal}</div>
-                                <div className="kpi-pill">Comments {mixersCommentsTotal}</div>
-                            </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Tractors</div>
-                            <div className="kpi-value">{tractors.length}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Active {activeTractors.length}</div>
-                                <div className="kpi-pill">In Shop {shopTractors.length}</div>
-                            </div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Verified {tractorsVerified.percent}%
-                                    ({tractorsVerified.count}/{tractors.length})
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Tractors</div>
+                                    <div className="kpi-value">{stats.tractors.total}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Active {stats.tractors.active}</div>
+                                        <div className="kpi-pill">In Shop {stats.tractors.shop}</div>
+                                        <div className="kpi-pill">Verified {stats.tractors.verifiedPercent}%</div>
+                                        <div className="kpi-pill">Issues {stats.tractors.issues}</div>
+                                        <div className="kpi-pill">Comments {stats.tractors.comments}</div>
+                                    </div>
                                 </div>
-                                <div className="kpi-pill">Needing Service {tractorsOverdue}</div>
-                                <div className="kpi-pill">Open Issues {tractorsIssuesTotal}</div>
-                                <div className="kpi-pill">Comments {tractorsCommentsTotal}</div>
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Trailers</div>
+                                    <div className="kpi-value">{stats.trailers.total}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Active {stats.trailers.active}</div>
+                                        <div className="kpi-pill">In Shop {stats.trailers.shop}</div>
+                                        <div className="kpi-pill">Issues {stats.trailers.issues}</div>
+                                        <div className="kpi-pill">Overdue {stats.trailers.overdue}</div>
+                                        <div className="kpi-pill">Comments {stats.trailers.comments}</div>
+                                    </div>
+                                </div>
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Equipment</div>
+                                    <div className="kpi-value">{stats.equipment.total}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Active {stats.equipment.active}</div>
+                                        <div className="kpi-pill">In Shop {stats.equipment.shop}</div>
+                                        <div className="kpi-pill">Issues {stats.equipment.issues}</div>
+                                        <div className="kpi-pill">Overdue {stats.equipment.overdue}</div>
+                                        <div className="kpi-pill">Comments {stats.equipment.comments}</div>
+                                    </div>
+                                </div>
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Pickup Trucks</div>
+                                    <div className="kpi-value">{stats.pickups.total}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Active {stats.pickups.active}</div>
+                                        <div className="kpi-pill">In Shop {stats.pickups.shop}</div>
+                                        <div className="kpi-pill">Stationary {stats.pickups.stationary}</div>
+                                        <div className="kpi-pill">Spare {stats.pickups.spare}</div>
+                                        <div className="kpi-pill">Sold {stats.pickups.sold}</div>
+                                        <div className="kpi-pill">Retired {stats.pickups.retired}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Trailers</div>
-                            <div className="kpi-value">{trailers.length}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Active {activeTrailers.length}</div>
-                                <div className="kpi-pill">In Shop {shopTrailers.length}</div>
-                            </div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Needing Service {trailersOverdue}</div>
-                                <div className="kpi-pill">Open Issues {trailersIssuesTotal}</div>
-                                <div className="kpi-pill">Comments {trailersCommentsTotal}</div>
-                            </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Equipment</div>
-                            <div className="kpi-value">{equipment.length}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Active {activeEquipment.length}</div>
-                                <div className="kpi-pill">In Shop {shopEquipment.length}</div>
-                            </div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Needing Service {equipmentOverdue}</div>
-                                <div className="kpi-pill">Open Issues {equipmentIssuesTotal}</div>
-                                <div className="kpi-pill">Comments {equipmentCommentsTotal}</div>
+                        <div className="group-section">
+                            <div className="section-title">People</div>
+                            <div className="dashboard-grid inner-grid">
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Operators</div>
+                                    <div className="kpi-value">{stats.operators.total}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Active {stats.operators.active}</div>
+                                        <div className="kpi-pill">Assigned {stats.operators.assigned}</div>
+                                        <div className="kpi-pill">Mixer Assign {stats.operators.mixerAssigned}</div>
+                                        <div className="kpi-pill">Tractor Assign {stats.operators.tractorAssigned}</div>
+                                        <div className="kpi-pill">Unassigned {stats.operators.unassigned}</div>
+                                        <div className="kpi-pill">Pending {stats.operators.pending}</div>
+                                    </div>
+                                </div>
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Managers</div>
+                                    <div className="kpi-value">{stats.managers}</div>
+                                </div>
                             </div>
                         </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Pickup Trucks</div>
-                            <div className="kpi-value">{pickups.length}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Active {activePickups.length}</div>
-                                <div className="kpi-pill">In Shop {inShopPickups.length}</div>
-                                <div className="kpi-pill">Stationary {stationaryPickups.length}</div>
-                                <div className="kpi-pill">Sold {soldPickups.length}</div>
-                                <div className="kpi-pill">Spare {sparePickups.length}</div>
-                                <div className="kpi-pill">Retired {retiredPickups.length}</div>
+                        <div className="group-section">
+                            <div className="section-title">Maintenance & Quality</div>
+                            <div className="dashboard-grid inner-grid">
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Service Overdue</div>
+                                    <div className="kpi-value warn">{stats.overdueTotal}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Mixers {stats.mixers.overdue}</div>
+                                        <div className="kpi-pill">Tractors {stats.tractors.overdue}</div>
+                                        <div className="kpi-pill">Trailers {stats.trailers.overdue}</div>
+                                        <div className="kpi-pill">Equipment {stats.equipment.overdue}</div>
+                                    </div>
+                                </div>
+                                <div className="kpi-card">
+                                    <div className="kpi-title">Open Issues</div>
+                                    <div className="kpi-value">{stats.openIssuesTotal}</div>
+                                    <div className="kpi-row">
+                                        <div className="kpi-pill">Mixers {stats.mixers.issues}</div>
+                                        <div className="kpi-pill">Tractors {stats.tractors.issues}</div>
+                                        <div className="kpi-pill">Trailers {stats.trailers.issues}</div>
+                                        <div className="kpi-pill">Equipment {stats.equipment.issues}</div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Operators</div>
-                            <div className="kpi-value">{operators.length}</div>
-                            <div className="kpi-row">
-                                <div className="kpi-pill">Active {activeOperators.length}</div>
-                                <div className="kpi-pill">Assigned {assignedOperators.length}</div>
-                                <div className="kpi-pill">Unassigned {unassignedActiveOperators}</div>
-                                <div className="kpi-pill">Assigned to Mixers {assignedMixerOperators.length}</div>
-                                <div className="kpi-pill">Assigned to Tractors {assignedTractorOperators.length}</div>
-                                <div className="kpi-pill">Pending Start {pendingStartOperators.length}</div>
-                            </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-title">Managers</div>
-                            <div className="kpi-value">{managersCount}</div>
                         </div>
                     </div>
                 )}
