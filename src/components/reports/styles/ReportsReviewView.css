@@ -236,7 +236,9 @@
     font-weight: 700;
 }
 
-.rpts-context-chip i { color: var(--accent); }
+.rpts-context-chip i {
+    color: var(--accent);
+}
 
 .rpts-form-body-wide {
     padding: 48px 56px 36px 56px;
@@ -251,9 +253,18 @@
     gap: 32px 36px;
 }
 
-.rpts-form-field-wide { display: flex; flex-direction: column; gap: 10px; }
+.rpts-form-field-wide {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 
-.rpts-form-field-wide label { font-weight: 700; color: var(--text-primary); font-size: 17px; margin-bottom: 2px; }
+.rpts-form-field-wide label {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 17px;
+    margin-bottom: 2px;
+}
 
 .rpts-form-field-wide input,
 .rpts-form-field-wide textarea,
@@ -271,18 +282,43 @@
 
 .rpts-form-field-wide input::placeholder,
 .rpts-form-field-wide textarea::placeholder,
-.rpts-form-field-wide select::placeholder { color: var(--text-placeholder); opacity: 1; }
+.rpts-form-field-wide select::placeholder {
+    color: var(--text-placeholder);
+    opacity: 1;
+}
 
 .rpts-form-field-wide input:focus,
 .rpts-form-field-wide textarea:focus,
-.rpts-form-field-wide select:focus { outline: none; border-color: var(--accent); }
+.rpts-form-field-wide select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
 
-.rpts-modal-required { color: var(--error); margin-left: 4px; font-size: 1.1em; }
+.rpts-modal-required {
+    color: var(--error);
+    margin-left: 4px;
+    font-size: 1.1em;
+}
 
-.rpts-modal-error { color: var(--error); font-size: 16px; margin-bottom: 8px; margin-top: -8px; }
+.rpts-modal-error {
+    color: var(--error);
+    font-size: 16px;
+    margin-bottom: 8px;
+    margin-top: -8px;
+}
 
 @media (max-width: 1100px) {
-    .rpts-form-header-row { padding: 24px 18px 12px 18px; }
-    .rpts-form-body-wide { padding: 18px 18px 14px 18px; gap: 18px; }
-    .rpts-form-fields-grid { grid-template-columns: 1fr; gap: 18px 0; }
+    .rpts-form-header-row {
+        padding: 24px 18px 12px 18px;
+    }
+
+    .rpts-form-body-wide {
+        padding: 18px 18px 14px 18px;
+        gap: 18px;
+    }
+
+    .rpts-form-fields-grid {
+        grid-template-columns: 1fr;
+        gap: 18px 0;
+    }
 }

@@ -657,12 +657,19 @@ function MixerDetailView({mixerId, onClose}) {
                                     <ul>
                                         {missingFields.map(field => <li key={field}>{field}</li>)}
                                     </ul>
-                                    {!mixer.vin && <input type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)} />}
-                                    {!mixer.make && <input type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)} />}
-                                    {!mixer.model && <input type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)} />}
-                                    {!mixer.year && <input type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} />}
-                                    <button type="button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button>
-                                    <button type="button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button>
+                                    {!mixer.vin && <input type="text" placeholder="VIN" value={vin}
+                                                          onChange={e => setVin(e.target.value)}/>}
+                                    {!mixer.make && <input type="text" placeholder="Make" value={make}
+                                                           onChange={e => setMake(e.target.value)}/>}
+                                    {!mixer.model && <input type="text" placeholder="Model" value={model}
+                                                            onChange={e => setModel(e.target.value)}/>}
+                                    {!mixer.year && <input type="text" placeholder="Year" value={year}
+                                                           onChange={e => setYear(e.target.value)}/>}
+                                    <button type="button" onClick={handleSaveMissingFields}
+                                            disabled={!canSubmitMissing}>Save & Verify
+                                    </button>
+                                    <button type="button" onClick={() => setShowMissingFieldsModal(false)}>Cancel
+                                    </button>
                                 </div>
                             </div>
                         )}

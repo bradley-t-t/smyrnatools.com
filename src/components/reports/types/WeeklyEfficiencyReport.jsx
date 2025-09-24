@@ -181,7 +181,8 @@ function DetailTable({rows, operatorOptions, sortKey, sortDir, filterText, expan
                     return (
                         <React.Fragment key={key}>
                             <tr className="rpt-row">
-                                <td className="rpt-td emphasis" title={ReportService.getOperatorName(r, operatorOptions)}>
+                                <td className="rpt-td emphasis"
+                                    title={ReportService.getOperatorName(r, operatorOptions)}>
                                     {ReportService.getOperatorName(r, operatorOptions) || 'No Name'}
                                 </td>
                                 <td className="rpt-td secondary">{r.truck_number || '--'}</td>

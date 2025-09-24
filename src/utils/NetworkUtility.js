@@ -42,7 +42,8 @@ const NetworkUtility = {
             })
             clearTimeout(timeoutId)
             return true
-        } catch {}
+        } catch {
+        }
         try {
             const res = await fetch(`/version.json?cb=${Date.now()}`, {
                 method: 'GET',

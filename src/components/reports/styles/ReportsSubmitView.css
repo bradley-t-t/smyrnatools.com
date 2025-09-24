@@ -470,7 +470,7 @@
     cursor: pointer;
 }
 
-.rpts-sbmt-edit-banner{
+.rpts-sbmt-edit-banner {
     background: var(--accent-light-theme);
     color: var(--text-primary);
     border: 1px solid var(--accent-border);

@@ -33,6 +33,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
             const user = await UserService.getCurrentUser();
             if (user) setCurrentUserId(user.id);
         }
+
         fetchCurrentUser();
     }, []);
 
@@ -63,6 +64,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
     useEffect(() => {
         const prefCode = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             let regionCode = prefCode
             try {
@@ -96,6 +98,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                 if (!cancelled) setRegionPlantCodes(null)
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -126,7 +129,10 @@ function ManagersView({title = 'Managers', onSelectManager}) {
 
     async function fetchManagers() {
         try {
-            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {data: permissions, error: permissionsError}, {data: rolesList, error: rolesError}] = await Promise.all([
+            const [{data: users, error: usersError}, {data: profiles, error: profilesError}, {
+                data: permissions,
+                error: permissionsError
+            }, {data: rolesList, error: rolesError}] = await Promise.all([
                 supabase.from('users').select('id, email, created_at, updated_at'),
                 supabase.from('users_profiles').select('id, first_name, last_name, plant_code, created_at, updated_at'),
                 supabase.from('users_permissions').select('user_id, role_id'),
@@ -289,7 +295,8 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                                             })
                                             .sort((a, b) => parseInt((a.plant_code || a.plantCode || '').replace(/\D/g, '') || '0') - parseInt((b.plant_code || b.plantCode || '').replace(/\D/g, '') || '0'))
                                             .map(plant => (
-                                                <option key={plant.plant_code || plant.plantCode} value={plant.plant_code || plant.plantCode}>
+                                                <option key={plant.plant_code || plant.plantCode}
+                                                        value={plant.plant_code || plant.plantCode}>
                                                     ({plant.plant_code || plant.plantCode}) {plant.plant_name || plant.plantName}
                                                 </option>
                                             ))}

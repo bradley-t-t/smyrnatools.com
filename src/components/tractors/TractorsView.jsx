@@ -170,12 +170,14 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             setTractors(processedData)
             setTractorsLoaded(true)
             setTimeout(() => {
-                fixActiveTractorsWithoutOperator(processedData).catch(() => {})
+                fixActiveTractorsWithoutOperator(processedData).catch(() => {
+                })
             }, 0)
             ;(async () => {
                 const items = processedData.slice()
                 let index = 0
                 const concurrency = 6
+
                 async function worker() {
                     while (index < items.length) {
                         const current = index++
@@ -197,6 +199,7 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                         }
                     }
                 }
+
                 await Promise.all(Array.from({length: concurrency}, () => worker()))
             })()
         } catch (error) {

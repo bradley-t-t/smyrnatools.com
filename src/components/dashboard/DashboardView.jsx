@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState, useTransition} from 'react'
+import React, {useCallback, useEffect, useMemo, useRef, useState, useTransition} from 'react'
 import './styles/DashboardView.css'
 import {RegionService} from '../../services/RegionService'
 import {MixerService} from '../../services/MixerService'
@@ -11,6 +11,7 @@ import {ReportService} from '../../services/ReportService'
 import {supabase} from '../../services/DatabaseService'
 import VerifiedUtility from '../../utils/VerifiedUtility'
 import {UserService} from '../../services/UserService'
+import GrammarUtility from '../../utils/GrammarUtility'
 
 export default function DashboardView() {
     const [loading, setLoading] = useState(true)
@@ -31,13 +32,30 @@ export default function DashboardView() {
         trailers: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0},
         equipment: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0},
         pickups: {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0},
-        operators: {total: 0, active: 0, assigned: 0, mixerAssigned: 0, tractorAssigned: 0, unassigned: 0, pending: 0},
+        operators: {
+            total: 0,
+            active: 0,
+            lightDuty: 0,
+            assigned: 0,
+            mixerAssigned: 0,
+            tractorAssigned: 0,
+            unassigned: 0,
+            pending: 0
+        },
         managers: 0,
         fleetTotal: 0,
         openIssuesTotal: 0,
         overdueTotal: 0,
         verificationAverage: 0
     })
+    const [trainingOperators, setTrainingOperators] = useState([])
+    const [trainingCollapsed, setTrainingCollapsed] = useState(true)
+    const [pendingStartOperators, setPendingStartOperators] = useState([])
+    const [pendingCollapsed, setPendingCollapsed] = useState(true)
+    const [lightDutyOperators, setLightDutyOperators] = useState([])
+    const [lightDutyCollapsed, setLightDutyCollapsed] = useState(true)
+    const [issuesCollapsed, setIssuesCollapsed] = useState(true)
+    const [assetIssueDetails, setAssetIssueDetails] = useState([])
 
     const allMixersRef = useRef([])
     const allTractorsRef = useRef([])
@@ -45,6 +63,7 @@ export default function DashboardView() {
     const allEquipmentRef = useRef([])
     const allPickupsRef = useRef([])
     const allOperatorsRef = useRef([])
+    const allOperatorsFullRef = useRef([])
     const prevSnapshotRef = useRef(null)
     const initialLoadRef = useRef(true)
     const [isFiltering, startTransition] = useTransition()
@@ -61,7 +80,9 @@ export default function DashboardView() {
         updatedLast: m.updatedLast,
         updatedAt: m.updatedAt,
         updatedBy: m.updatedBy,
-        plantCode: m.assignedPlant || m.plantCode
+        plantCode: m.assignedPlant || m.plantCode,
+        truckNumber: m.truckNumber || m.truck_number || '',
+        vin: m.vin || ''
     })
     const slimTractor = t => ({
         id: t.id,
@@ -71,19 +92,23 @@ export default function DashboardView() {
         updatedLast: t.updatedLast,
         updatedAt: t.updatedAt,
         updatedBy: t.updatedBy,
-        plantCode: t.assignedPlant || t.plantCode
+        plantCode: t.assignedPlant || t.plantCode,
+        truckNumber: t.truckNumber || t.truck_number || '',
+        vin: t.vin || ''
     })
     const slimTrailer = t => ({
         id: t.id,
         status: t.status,
         lastServiceDate: t.lastServiceDate,
-        plantCode: t.assignedPlant || t.plantCode
+        plantCode: t.assignedPlant || t.plantCode,
+        identifyingNumber: t.trailerNumber || t.trailer_number || t.truck_number || t.asset_number || ''
     })
     const slimEquipment = e => ({
         id: e.id,
         status: e.status,
         lastServiceDate: e.lastServiceDate,
-        plantCode: e.assignedPlant || e.plantCode
+        plantCode: e.assignedPlant || e.plantCode,
+        identifyingNumber: e.identifyingNumber || e.identifying_number || e.asset_number || e.truck_number || ''
     })
     const slimPickup = p => ({id: p.id, status: p.status, plantCode: p.assignedPlant || p.plantCode})
     const slimOperator = o => ({id: o.id, employeeId: o.employeeId, status: o.status, plantCode: o.plantCode})
@@ -108,10 +133,19 @@ export default function DashboardView() {
         let trailersTotals = {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0}
         let equipmentTotals = {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0}
         let pickupsTotals = {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0}
-        let operatorsTotals = {total: 0, active: 0, assigned: 0, mixerAssigned: 0, tractorAssigned: 0, unassigned: 0, pending: 0}
+        let operatorsTotals = {
+            total: 0,
+            active: 0,
+            lightDuty: 0,
+            assigned: 0,
+            mixerAssigned: 0,
+            tractorAssigned: 0,
+            unassigned: 0,
+            pending: 0
+        }
         const mixerAssignedIds = new Set()
         const tractorAssignedIds = new Set()
-        const consider = (plantCode) => !filterActive || plantSet.has(String(plantCode || '').trim())
+        const consider = plantCode => !filterActive || plantSet.has(String(plantCode || '').trim())
         const counts = countsRef.current
         for (const m of allMixersRef.current) {
             if (!consider(m.plantCode)) continue
@@ -121,7 +155,10 @@ export default function DashboardView() {
             if (VerifiedUtility.isVerified(m.updatedLast, m.updatedAt, m.updatedBy)) mixersTotals.verified++
             if (m.assignedOperator) mixerAssignedIds.add(m.assignedOperator)
             const mc = counts.mixers[m.id]
-            if (mc) { mixersTotals.issues += mc.issues || 0; mixersTotals.comments += mc.comments || 0 }
+            if (mc) {
+                mixersTotals.issues += mc.issues || 0;
+                mixersTotals.comments += mc.comments || 0
+            }
         }
         for (const t of allTractorsRef.current) {
             if (!consider(t.plantCode)) continue
@@ -131,7 +168,10 @@ export default function DashboardView() {
             if (VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)) tractorsTotals.verified++
             if (t.assignedOperator) tractorAssignedIds.add(t.assignedOperator)
             const tc = counts.tractors[t.id]
-            if (tc) { tractorsTotals.issues += tc.issues || 0; tractorsTotals.comments += tc.comments || 0 }
+            if (tc) {
+                tractorsTotals.issues += tc.issues || 0;
+                tractorsTotals.comments += tc.comments || 0
+            }
         }
         for (const r of allTrailersRef.current) {
             if (!consider(r.plantCode)) continue
@@ -139,7 +179,10 @@ export default function DashboardView() {
             if (r.status === 'Active') trailersTotals.active++; else if (r.status === 'In Shop') trailersTotals.shop++
             if (isServiceOverdue(r.lastServiceDate)) trailersTotals.overdue++
             const rc = counts.trailers[r.id]
-            if (rc) { trailersTotals.issues += rc.issues || 0; trailersTotals.comments += rc.comments || 0 }
+            if (rc) {
+                trailersTotals.issues += rc.issues || 0;
+                trailersTotals.comments += rc.comments || 0
+            }
         }
         for (const e of allEquipmentRef.current) {
             if (!consider(e.plantCode)) continue
@@ -147,7 +190,10 @@ export default function DashboardView() {
             if (e.status === 'Active') equipmentTotals.active++; else if (e.status === 'In Shop') equipmentTotals.shop++
             if (isServiceOverdue(e.lastServiceDate)) equipmentTotals.overdue++
             const ec = counts.equipment[e.id]
-            if (ec) { equipmentTotals.issues += ec.issues || 0; equipmentTotals.comments += ec.comments || 0 }
+            if (ec) {
+                equipmentTotals.issues += ec.issues || 0;
+                equipmentTotals.comments += ec.comments || 0
+            }
         }
         for (const p of allPickupsRef.current) {
             if (!consider(p.plantCode)) continue
@@ -167,6 +213,7 @@ export default function DashboardView() {
                     operatorsTotals.tractorAssigned++
                 } else operatorsTotals.unassigned++
             } else if (o.status === 'Pending Start') operatorsTotals.pending++
+            else if (o.status === 'Light Duty') operatorsTotals.lightDuty++
         }
         const mixersVerifiedPercent = mixersTotals.total ? Math.round((mixersTotals.verified / mixersTotals.total) * 100) : 0
         const tractorsVerifiedPercent = tractorsTotals.total ? Math.round((tractorsTotals.verified / tractorsTotals.total) * 100) : 0
@@ -214,25 +261,99 @@ export default function DashboardView() {
             const equipmentIds = allEquipmentRef.current.map(e => e.id).filter(Boolean)
             if (!mixerIds.length && !tractorIds.length && !trailerIds.length && !equipmentIds.length) return
             const [mMaint, mCom, tMaint, tCom, trMaint, trCom, eMaint, eCom] = await Promise.all([
-                mixerIds.length ? supabase.from('mixers_maintenance').select('id,mixer_id,time_completed').in('mixer_id', mixerIds).is('time_completed', null) : Promise.resolve({data: []}),
+                mixerIds.length ? supabase.from('mixers_maintenance').select('*').in('mixer_id', mixerIds).is('time_completed', null) : Promise.resolve({data: []}),
                 mixerIds.length ? supabase.from('mixers_comments').select('id,mixer_id').in('mixer_id', mixerIds) : Promise.resolve({data: []}),
-                tractorIds.length ? supabase.from('tractors_maintenance').select('id,tractor_id,time_completed').in('tractor_id', tractorIds).is('time_completed', null) : Promise.resolve({data: []}),
+                tractorIds.length ? supabase.from('tractors_maintenance').select('*').in('tractor_id', tractorIds).is('time_completed', null) : Promise.resolve({data: []}),
                 tractorIds.length ? supabase.from('tractors_comments').select('id,tractor_id').in('tractor_id', tractorIds) : Promise.resolve({data: []}),
-                trailerIds.length ? supabase.from('trailers_maintenance').select('id,trailer_id,time_completed').in('trailer_id', trailerIds).is('time_completed', null) : Promise.resolve({data: []}),
+                trailerIds.length ? supabase.from('trailers_maintenance').select('*').in('trailer_id', trailerIds).is('time_completed', null) : Promise.resolve({data: []}),
                 trailerIds.length ? supabase.from('trailers_comments').select('id,trailer_id').in('trailer_id', trailerIds) : Promise.resolve({data: []}),
-                equipmentIds.length ? supabase.from('heavy_equipment_maintenance').select('id,equipment_id,time_completed').in('equipment_id', equipmentIds).is('time_completed', null) : Promise.resolve({data: []}),
+                equipmentIds.length ? supabase.from('heavy_equipment_maintenance').select('*').in('equipment_id', equipmentIds).is('time_completed', null) : Promise.resolve({data: []}),
                 equipmentIds.length ? supabase.from('heavy_equipment_comments').select('id,equipment_id').in('equipment_id', equipmentIds) : Promise.resolve({data: []})
             ])
             const counts = {mixers: {}, tractors: {}, trailers: {}, equipment: {}}
-            ;(mMaint.data || []).forEach(r => { counts.mixers[r.mixer_id] = counts.mixers[r.mixer_id] || {issues: 0, comments: 0}; counts.mixers[r.mixer_id].issues++ })
-            ;(mCom.data || []).forEach(r => { counts.mixers[r.mixer_id] = counts.mixers[r.mixer_id] || {issues: 0, comments: 0}; counts.mixers[r.mixer_id].comments++ })
-            ;(tMaint.data || []).forEach(r => { counts.tractors[r.tractor_id] = counts.tractors[r.tractor_id] || {issues: 0, comments: 0}; counts.tractors[r.tractor_id].issues++ })
-            ;(tCom.data || []).forEach(r => { counts.tractors[r.tractor_id] = counts.tractors[r.tractor_id] || {issues: 0, comments: 0}; counts.tractors[r.tractor_id].comments++ })
-            ;(trMaint.data || []).forEach(r => { counts.trailers[r.trailer_id] = counts.trailers[r.trailer_id] || {issues: 0, comments: 0}; counts.trailers[r.trailer_id].issues++ })
-            ;(trCom.data || []).forEach(r => { counts.trailers[r.trailer_id] = counts.trailers[r.trailer_id] || {issues: 0, comments: 0}; counts.trailers[r.trailer_id].comments++ })
-            ;(eMaint.data || []).forEach(r => { counts.equipment[r.equipment_id] = counts.equipment[r.equipment_id] || {issues: 0, comments: 0}; counts.equipment[r.equipment_id].issues++ })
-            ;(eCom.data || []).forEach(r => { counts.equipment[r.equipment_id] = counts.equipment[r.equipment_id] || {issues: 0, comments: 0}; counts.equipment[r.equipment_id].comments++ })
+            const issueDetails = []
+            const mixersMap = new Map(allMixersRef.current.map(a => [a.id, a]))
+            const tractorsMap = new Map(allTractorsRef.current.map(a => [a.id, a]))
+            const trailersMap = new Map(allTrailersRef.current.map(a => [a.id, a]))
+            const equipmentMap = new Map(allEquipmentRef.current.map(a => [a.id, a]))
+            ;(mMaint.data || []).forEach(r => {
+                counts.mixers[r.mixer_id] = counts.mixers[r.mixer_id] || {issues: 0, comments: 0};
+                counts.mixers[r.mixer_id].issues++;
+                const a = mixersMap.get(r.mixer_id);
+                const ident = a?.truckNumber || a?.vin || '';
+                const raw = r.description || r.issue || r.details || r.notes || r.note || r.text || r.comment || '';
+                const desc = GrammarUtility.cleanDescription(raw || 'Issue');
+                issueDetails.push({
+                    type: 'Mixer',
+                    assetId: r.mixer_id,
+                    identifier: ident,
+                    plant: a?.plantCode || '',
+                    description: desc || 'Issue'
+                });
+            })
+            ;(mCom.data || []).forEach(r => {
+                counts.mixers[r.mixer_id] = counts.mixers[r.mixer_id] || {issues: 0, comments: 0};
+                counts.mixers[r.mixer_id].comments++
+            })
+            ;(tMaint.data || []).forEach(r => {
+                counts.tractors[r.tractor_id] = counts.tractors[r.tractor_id] || {issues: 0, comments: 0};
+                counts.tractors[r.tractor_id].issues++;
+                const a = tractorsMap.get(r.tractor_id);
+                const ident = a?.truckNumber || a?.vin || '';
+                const raw = r.description || r.issue || r.details || r.notes || r.note || r.text || r.comment || '';
+                const desc = GrammarUtility.cleanDescription(raw || 'Issue');
+                issueDetails.push({
+                    type: 'Tractor',
+                    assetId: r.tractor_id,
+                    identifier: ident,
+                    plant: a?.plantCode || '',
+                    description: desc || 'Issue'
+                });
+            })
+            ;(tCom.data || []).forEach(r => {
+                counts.tractors[r.tractor_id] = counts.tractors[r.tractor_id] || {issues: 0, comments: 0};
+                counts.tractors[r.tractor_id].comments++
+            })
+            ;(trMaint.data || []).forEach(r => {
+                counts.trailers[r.trailer_id] = counts.trailers[r.trailer_id] || {issues: 0, comments: 0};
+                counts.trailers[r.trailer_id].issues++;
+                const a = trailersMap.get(r.trailer_id);
+                const ident = a?.identifyingNumber || '';
+                const raw = r.description || r.issue || r.details || r.notes || r.note || r.text || r.comment || '';
+                const desc = GrammarUtility.cleanDescription(raw || 'Issue');
+                issueDetails.push({
+                    type: 'Trailer',
+                    assetId: r.trailer_id,
+                    identifier: ident,
+                    plant: a?.plantCode || '',
+                    description: desc || 'Issue'
+                });
+            })
+            ;(trCom.data || []).forEach(r => {
+                counts.trailers[r.trailer_id] = counts.trailers[r.trailer_id] || {issues: 0, comments: 0};
+                counts.trailers[r.trailer_id].comments++
+            })
+            ;(eMaint.data || []).forEach(r => {
+                counts.equipment[r.equipment_id] = counts.equipment[r.equipment_id] || {issues: 0, comments: 0};
+                counts.equipment[r.equipment_id].issues++;
+                const a = equipmentMap.get(r.equipment_id);
+                const ident = a?.identifyingNumber || '';
+                const raw = r.description || r.issue || r.details || r.notes || r.note || r.text || r.comment || '';
+                const desc = GrammarUtility.cleanDescription(raw || 'Issue');
+                issueDetails.push({
+                    type: 'Equipment',
+                    assetId: r.equipment_id,
+                    identifier: ident,
+                    plant: a?.plantCode || '',
+                    description: desc || 'Issue'
+                });
+            })
+            ;(eCom.data || []).forEach(r => {
+                counts.equipment[r.equipment_id] = counts.equipment[r.equipment_id] || {issues: 0, comments: 0};
+                counts.equipment[r.equipment_id].comments++
+            })
             countsRef.current = counts
+            setAssetIssueDetails(issueDetails)
             computeStats()
         } catch {
         }
@@ -241,6 +362,7 @@ export default function DashboardView() {
     useEffect(() => {
         let cancelled = false
         let intervalId
+
         async function initBase() {
             const isInitial = initialLoadRef.current
             if (isInitial) {
@@ -302,6 +424,7 @@ export default function DashboardView() {
                 }
             }
         }
+
         initBase()
         intervalId = setInterval(() => setRefreshKey(v => v + 1), 600000)
         return () => {
@@ -312,6 +435,7 @@ export default function DashboardView() {
 
     useEffect(() => {
         let cancelled = false
+
         async function fetchRegionPlants() {
             if (!dashboardRegionCode) {
                 setRegionPlants([])
@@ -326,6 +450,7 @@ export default function DashboardView() {
                 if (!cancelled) setRefreshing(false)
             }
         }
+
         fetchRegionPlants()
         return () => {
             cancelled = true
@@ -334,6 +459,7 @@ export default function DashboardView() {
 
     useEffect(() => {
         let cancelled = false
+
         async function fetchAssets() {
             const CACHE_KEY = 'dashboard_assets_cache_v1'
             const CACHE_TTL_MS = 120000
@@ -375,7 +501,33 @@ export default function DashboardView() {
                 allTrailersRef.current = trail.map(slimTrailer)
                 allEquipmentRef.current = equip.map(slimEquipment)
                 allPickupsRef.current = pick.map(slimPickup)
+                allOperatorsFullRef.current = ops
                 allOperatorsRef.current = ops.map(slimOperator)
+                const byId = new Map(ops.map(o => [o.employeeId, o]))
+                const training = ops.filter(o => o.status === 'Training').map(o => {
+                    const trainer = o.assignedTrainer ? byId.get(o.assignedTrainer) : null
+                    return {
+                        id: o.employeeId,
+                        operatorName: o.name || '',
+                        trainerName: trainer?.name || '',
+                        trainerPlant: trainer?.plantCode || '',
+                        operatorPlant: o.plantCode || ''
+                    }
+                })
+                setTrainingOperators(training)
+                const pending = ops.filter(o => o.status === 'Pending Start').map(o => ({
+                    id: o.employeeId,
+                    operatorName: o.name || '',
+                    plant: o.plantCode || '',
+                    pendingDate: o.pendingStartDate || ''
+                }))
+                setPendingStartOperators(pending)
+                const lightDuty = ops.filter(o => o.status === 'Light Duty').map(o => ({
+                    id: o.employeeId,
+                    operatorName: o.name || '',
+                    plant: o.plantCode || ''
+                }))
+                setLightDutyOperators(lightDuty)
                 computeStats()
                 const fetchedAt = new Date()
                 setLastUpdated(fetchedAt)
@@ -401,6 +553,7 @@ export default function DashboardView() {
                 }
             }
         }
+
         fetchAssets()
         return () => {
             cancelled = true
@@ -420,6 +573,7 @@ export default function DashboardView() {
         if (now - lastManagersFetchRef.current < 60000) return
         lastManagersFetchRef.current = now
         let cancelled = false
+
         async function loadManagers() {
             try {
                 const [permRes, roleRes, profRes] = await Promise.all([
@@ -436,6 +590,7 @@ export default function DashboardView() {
             } catch {
             }
         }
+
         loadManagers()
         return () => {
             cancelled = true
@@ -443,7 +598,7 @@ export default function DashboardView() {
     }, [stats.fleetTotal, dashboardPlant, regionPlants, loading])
 
     const regionDisplayName = dashboardRegionCode ? (dashboardRegionName || dashboardRegionCode) : (hasAllRegionsPermission ? 'All Regions' : (permittedRegions[0]?.regionName || 'Region'))
-    const diffBadge = (current) => {
+    const diffBadge = current => {
         const prev = prevSnapshotRef.current?.fleet
         if (prev == null) return null
         const diff = current - prev
@@ -481,6 +636,43 @@ export default function DashboardView() {
         return `${Math.floor(diff / 86400)}d ago`
     }
     const showSkeleton = loading
+
+    const filteredTrainingOperators = (() => {
+        const plantSet = plantSetRef.current
+        const active = plantSet.size > 0
+        if (!active) return trainingOperators
+        return trainingOperators.filter(r => plantSet.has(String(r.trainerPlant || '').trim()) || plantSet.has(String(r.operatorPlant || '').trim()))
+    })()
+    const filteredPendingStartOperators = (() => {
+        const plantSet = plantSetRef.current
+        const active = plantSet.size > 0
+        if (!active) return pendingStartOperators
+        return pendingStartOperators.filter(r => plantSet.has(String(r.plant || '').trim()))
+    })()
+    const filteredLightDutyOperators = (() => {
+        const plantSet = plantSetRef.current
+        const active = plantSet.size > 0
+        if (!active) return lightDutyOperators
+        return lightDutyOperators.filter(r => plantSet.has(String(r.plant || '').trim()))
+    })()
+    const formatPendingDate = d => {
+        if (!d) return '-'
+        if (d.length === 10 && /\d{4}-\d{2}-\d{2}/.test(d)) return d
+        try {
+            return (new Date(d)).toISOString().slice(0, 10)
+        } catch {
+            return d
+        }
+    }
+    const assetIssuesRows = useMemo(() => {
+        const plantSet = plantSetRef.current
+        const filterActive = plantSet.size > 0
+        const list = assetIssueDetails.filter(r => !filterActive || plantSet.has(String(r.plant || '').trim()))
+        list.forEach(r => {
+            if (!r.identifier) r.identifier = '-'
+        })
+        return list.sort((a, b) => a.type.localeCompare(b.type) || String(a.identifier).localeCompare(String(b.identifier)) || String(a.assetId).localeCompare(String(b.assetId)))
+    }, [assetIssueDetails, dashboardPlant, regionPlants, refreshKey])
 
     return (
         <div className="dashboard-container" data-filtering={isFiltering || undefined}>
@@ -540,7 +732,11 @@ export default function DashboardView() {
                             <div className="metric-value warn">{stats.overdueTotal}</div>
                             <div className="metric-sub">Service</div>
                         </div>
-                        <div className="hero-metric wide"><div className="metric-label">Verified</div><div className="metric-value accent">{stats.verificationAverage}%</div><div className="metric-sub">Overall Verification</div></div>
+                        <div className="hero-metric wide">
+                            <div className="metric-label">Verified</div>
+                            <div className="metric-value accent">{stats.verificationAverage}%</div>
+                            <div className="metric-sub">Overall Verification</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -633,6 +829,7 @@ export default function DashboardView() {
                                     <div className="kpi-value">{stats.operators.total}</div>
                                     <div className="kpi-row">
                                         <div className="kpi-pill">Active {stats.operators.active}</div>
+                                        <div className="kpi-pill">Light Duty {stats.operators.lightDuty}</div>
                                         <div className="kpi-pill">Assigned {stats.operators.assigned}</div>
                                         <div className="kpi-pill">Mixer Assign {stats.operators.mixerAssigned}</div>
                                         <div className="kpi-pill">Tractor Assign {stats.operators.tractorAssigned}</div>
@@ -644,6 +841,109 @@ export default function DashboardView() {
                                     <div className="kpi-title">Managers</div>
                                     <div className="kpi-value">{stats.managers}</div>
                                 </div>
+                            </div>
+                            <div className="training-table-wrapper">
+                                <div className="training-table-header">
+                                    <div className="training-table-title">Operators In Training
+                                        ({filteredTrainingOperators.length})
+                                    </div>
+                                    <button type="button" className="training-toggle" aria-expanded={!trainingCollapsed}
+                                            onClick={() => setTrainingCollapsed(v => !v)}
+                                            disabled={!filteredTrainingOperators.length}>{trainingCollapsed ? 'Expand' : 'Collapse'}</button>
+                                </div>
+                                {!trainingCollapsed && (
+                                    filteredTrainingOperators.length > 0 ? (
+                                        <div className="training-table-scroll">
+                                            <table className="training-table">
+                                                <thead>
+                                                <tr>
+                                                    <th>Plant (Training At)</th>
+                                                    <th>Operator</th>
+                                                    <th>Trainer</th>
+                                                    <th>Plant (Training For)</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {filteredTrainingOperators.map(r => <tr key={r.id}>
+                                                    <td>{r.trainerPlant || '-'}</td>
+                                                    <td>{r.operatorName || '-'}</td>
+                                                    <td>{r.trainerName || '-'}</td>
+                                                    <td>{r.operatorPlant || '-'}</td>
+                                                </tr>)}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="training-empty">None</div>
+                                    )
+                                )}
+                            </div>
+                            <div className="training-table-wrapper">
+                                <div className="training-table-header">
+                                    <div className="training-table-title">Pending Start Operators
+                                        ({filteredPendingStartOperators.length})
+                                    </div>
+                                    <button type="button" className="training-toggle" aria-expanded={!pendingCollapsed}
+                                            onClick={() => setPendingCollapsed(v => !v)}
+                                            disabled={!filteredPendingStartOperators.length}>{pendingCollapsed ? 'Expand' : 'Collapse'}</button>
+                                </div>
+                                {!pendingCollapsed && (
+                                    filteredPendingStartOperators.length > 0 ? (
+                                        <div className="training-table-scroll">
+                                            <table className="training-table">
+                                                <thead>
+                                                <tr>
+                                                    <th>Plant</th>
+                                                    <th>Operator</th>
+                                                    <th>Pending Start Date</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {filteredPendingStartOperators.map(r => <tr key={r.id}>
+                                                    <td>{r.plant || '-'}</td>
+                                                    <td>{r.operatorName || '-'}</td>
+                                                    <td>{formatPendingDate(r.pendingDate)}</td>
+                                                </tr>)}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="training-empty">None</div>
+                                    )
+                                )}
+                            </div>
+                            <div className="training-table-wrapper">
+                                <div className="training-table-header">
+                                    <div className="training-table-title">Light Duty Operators
+                                        ({filteredLightDutyOperators.length})
+                                    </div>
+                                    <button type="button" className="training-toggle"
+                                            aria-expanded={!lightDutyCollapsed}
+                                            onClick={() => setLightDutyCollapsed(v => !v)}
+                                            disabled={!filteredLightDutyOperators.length}>{lightDutyCollapsed ? 'Expand' : 'Collapse'}</button>
+                                </div>
+                                {!lightDutyCollapsed && (
+                                    filteredLightDutyOperators.length > 0 ? (
+                                        <div className="training-table-scroll">
+                                            <table className="training-table">
+                                                <thead>
+                                                <tr>
+                                                    <th>Plant</th>
+                                                    <th>Operator</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {filteredLightDutyOperators.map(r => <tr key={r.id}>
+                                                    <td>{r.plant || '-'}</td>
+                                                    <td>{r.operatorName || '-'}</td>
+                                                </tr>)}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="training-empty">None</div>
+                                    )
+                                )}
                             </div>
                         </div>
                         <div className="group-section">
@@ -669,6 +969,42 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Equipment {stats.equipment.issues}</div>
                                     </div>
                                 </div>
+                            </div>
+                            <div className="training-table-wrapper">
+                                <div className="training-table-header">
+                                    <div className="training-table-title">Asset Issues ({assetIssuesRows.length})</div>
+                                    <button type="button" className="training-toggle" aria-expanded={!issuesCollapsed}
+                                            onClick={() => setIssuesCollapsed(v => !v)}
+                                            disabled={!assetIssuesRows.length}>{issuesCollapsed ? 'Expand' : 'Collapse'}</button>
+                                </div>
+                                {!issuesCollapsed && (
+                                    assetIssuesRows.length > 0 ? (
+                                        <div className="training-table-scroll">
+                                            <table className="training-table asset-issues-table">
+                                                <thead>
+                                                <tr>
+                                                    <th>Asset Type</th>
+                                                    <th>Truck/VIN</th>
+                                                    <th>Plant</th>
+                                                    <th className="issue-desc-col">Issue</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {assetIssuesRows.map(r => <tr
+                                                    key={r.type + ':' + r.assetId + ':' + r.description.slice(0, 30)}>
+                                                    <td>{r.type}</td>
+                                                    <td>{r.identifier || '-'}</td>
+                                                    <td>{r.plant || '-'}</td>
+                                                    <td className="issue-desc"
+                                                        title={r.description || 'Issue'}>{r.description || 'Issue'}</td>
+                                                </tr>)}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="training-empty">None</div>
+                                    )
+                                )}
                             </div>
                         </div>
                     </div>

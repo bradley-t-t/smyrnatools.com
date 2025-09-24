@@ -1010,11 +1010,17 @@ ${openIssues.length > 0
                         <ul>
                             {missingFields.map(field => <li key={field}>{field}</li>)}
                         </ul>
-                        {!tractor.vin && <input type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)} />}
-                        {!tractor.make && <input type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)} />}
-                        {!tractor.model && <input type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)} />}
-                        {!tractor.year && <input type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} />}
-                        <button type="button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button>
+                        {!tractor.vin &&
+                            <input type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)}/>}
+                        {!tractor.make && <input type="text" placeholder="Make" value={make}
+                                                 onChange={e => setMake(e.target.value)}/>}
+                        {!tractor.model && <input type="text" placeholder="Model" value={model}
+                                                  onChange={e => setModel(e.target.value)}/>}
+                        {!tractor.year && <input type="text" placeholder="Year" value={year}
+                                                 onChange={e => setYear(e.target.value)}/>}
+                        <button type="button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save &
+                            Verify
+                        </button>
                         <button type="button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button>
                     </div>
                 </div>

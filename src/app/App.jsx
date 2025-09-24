@@ -40,12 +40,18 @@ function App() {
             const ok = await NetworkUtility.checkConnection()
             setOfflineMode(!ok)
         }
-        const handleOnline = () => { check() }
-        const handleOffline = () => { setOfflineMode(true) }
+        const handleOnline = () => {
+            check()
+        }
+        const handleOffline = () => {
+            setOfflineMode(true)
+        }
         window.addEventListener('online', handleOnline)
         window.addEventListener('offline', handleOffline)
         check()
-        intervalId = setInterval(() => { check() }, 10000)
+        intervalId = setInterval(() => {
+            check()
+        }, 10000)
         return () => {
             window.removeEventListener('online', handleOnline)
             window.removeEventListener('offline', handleOffline)

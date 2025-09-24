@@ -76,6 +76,7 @@ function OperatorsView({
     useEffect(() => {
         const prefCode = preferences.selectedRegion?.code || ''
         let cancelled = false
+
         async function loadRegionPlants() {
             let regionCode = prefCode
             try {
@@ -109,6 +110,7 @@ function OperatorsView({
                 if (!cancelled) setRegionPlantCodes(null)
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -521,7 +523,8 @@ function OperatorsView({
                                                 style={{cursor: 'pointer'}}>
                                                 <td>{operator.plantCode || '—'}</td>
                                                 <td>
-                                                    <span className={`name-cell${duplicate ? ' duplicate' : ''}`}>{operator.name}</span>
+                                                    <span
+                                                        className={`name-cell${duplicate ? ' duplicate' : ''}`}>{operator.name}</span>
                                                 </td>
                                                 <td>{operator.phone || '—'}</td>
                                                 <td>{operator.status || '—'}</td>

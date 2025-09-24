@@ -211,7 +211,10 @@ Deno.serve(async (req) => {
                     vin: tractor?.vin ?? null,
                     make: tractor?.make ?? null,
                     model: tractor?.model ?? null,
-                    year: (() => { const y = normalize("year", tractor?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : null; })(),
+                    year: (() => {
+                        const y = normalize("year", tractor?.year);
+                        return y != null && Number.isFinite(Number(y)) ? Number(y) : null;
+                    })(),
                     freight: typeof tractor?.freight === "string" ? tractor.freight : null,
                     status: tractor?.status ?? "Active",
                     created_at: now,
@@ -273,7 +276,10 @@ Deno.serve(async (req) => {
                     vin: tractor?.vin ?? current.vin,
                     make: tractor?.make ?? current.make,
                     model: tractor?.model ?? current.model,
-                    year: (() => { const y = normalize("year", tractor?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : current.year; })(),
+                    year: (() => {
+                        const y = normalize("year", tractor?.year);
+                        return y != null && Number.isFinite(Number(y)) ? Number(y) : current.year;
+                    })(),
                     freight: typeof tractor?.freight === "string" ? tractor.freight : current.freight,
                     status,
                     updated_at: nowIso(),

@@ -133,14 +133,17 @@ Deno.serve(async (req) => {
                 const input = body?.operator ?? body;
                 const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
                 let employee_id = typeof input?.employee_id === "string" && input.employee_id ? input.employee_id : crypto.randomUUID();
+                const rawStatus = typeof input?.status === "string" ? input.status.trim() : "Active";
+                const status = rawStatus;
+                const isActive = rawStatus.toLowerCase() === "active";
                 const row = {
                     employee_id,
                     smyrna_id: input?.smyrna_id ?? null,
                     name: typeof input?.name === "string" ? input.name.trim() : "",
                     plant_code: input?.plant_code ?? null,
-                    status: input?.status ?? "Active",
+                    status,
                     is_trainer: input?.is_trainer === true || String(input?.is_trainer).toLowerCase() === "true",
-                    assigned_trainer: input?.assigned_trainer ?? null,
+                    assigned_trainer: isActive ? null : input?.assigned_trainer ?? null,
                     position: input?.position ?? null,
                     created_at: input?.created_at ?? now,
                     updated_at: now,
@@ -168,13 +171,16 @@ Deno.serve(async (req) => {
                     headers: corsHeaders
                 });
                 const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+                const rawStatus = typeof input?.status === "string" ? input.status.trim() : "Active";
+                const status = rawStatus;
+                const isActive = rawStatus.toLowerCase() === "active";
                 const updateObj: Record<string, any> = {
                     smyrna_id: input?.smyrna_id ?? null,
                     name: typeof input?.name === "string" ? input.name.trim() : "",
                     plant_code: input?.plant_code ?? null,
-                    status: input?.status ?? "Active",
+                    status,
                     is_trainer: input?.is_trainer === true || String(input?.is_trainer).toLowerCase() === "true",
-                    assigned_trainer: input?.assigned_trainer ?? null,
+                    assigned_trainer: isActive ? null : input?.assigned_trainer ?? null,
                     position: input?.position ?? null,
                     created_at: input?.created_at ?? undefined,
                     updated_at: now,

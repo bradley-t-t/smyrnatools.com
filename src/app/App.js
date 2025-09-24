@@ -246,7 +246,9 @@ function AppContent() {
             const ok = await NetworkUtility.checkConnection()
             if (!cancelled) evalStatus(ok)
         }
-        const handleOnline = () => { check() }
+        const handleOnline = () => {
+            check()
+        }
         const handleOffline = () => {
             onlineStreakRef.current = 0
             offlineStreakRef.current = OFFLINE_THRESHOLD
@@ -510,7 +512,8 @@ function AppContent() {
     }
 
     if (isMobile) return <><ParticleBackground/><DesktopOnly/></>
-    if (offlineMode) return <><ParticleBackground/><OfflineView onRetry={handleRetryConnection} onReload={handleReloadIfOnline}/></>
+    if (offlineMode) return <><ParticleBackground/><OfflineView onRetry={handleRetryConnection}
+                                                                onReload={handleReloadIfOnline}/></>
     if (updateMode) return <><ParticleBackground/><UpdateLoadingScreen version={latestVersion || currentVersion}/></>
     if (!userId) return (<div className="App"><ParticleBackground/>{renderCurrentView()}</div>)
     if (!rolesLoaded) return null

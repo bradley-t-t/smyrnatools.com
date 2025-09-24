@@ -133,6 +133,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 const items = base.slice()
                 let index = 0
                 const concurrency = 6
+
                 async function worker() {
                     while (index < items.length) {
                         const current = index++
@@ -150,12 +151,15 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                 if (idx >= 0) arr[idx] = {...arr[idx], comments, issues, openIssuesCount, commentsCount}
                                 return arr
                             })
-                        } catch (e) {}
+                        } catch (e) {
+                        }
                     }
                 }
+
                 await Promise.all(Array.from({length: concurrency}, () => worker()))
             })()
-        } catch {}
+        } catch {
+        }
     }
 
     async function fetchTractors() {

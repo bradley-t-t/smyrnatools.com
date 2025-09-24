@@ -105,6 +105,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                 const items = base.slice()
                 let index = 0
                 const concurrency = 6
+
                 async function worker() {
                     while (index < items.length) {
                         const current = index++
@@ -126,6 +127,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                         }
                     }
                 }
+
                 await Promise.all(Array.from({length: concurrency}, () => worker()))
             })()
         } catch {

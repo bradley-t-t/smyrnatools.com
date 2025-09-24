@@ -278,7 +278,11 @@ function ReportsSubmitView({
                 setForm(f => ({...f, rows: []}))
                 return
             }
-            const {operatorOptions, mixers, activeOperators} = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
+            const {
+                operatorOptions,
+                mixers,
+                activeOperators
+            } = await ReportService.fetchActiveOperatorsAndMixers(plantCode)
             setOperatorOptions(operatorOptions)
             setMixers(mixers)
             if (report.name === 'plant_production' && !readOnly) {
@@ -508,43 +512,51 @@ function ReportsSubmitView({
                                                             </div>
                                                             <div className="rpts-sbmt-row">
                                                                 <div className="rpts-sbmt-col">
-                                                                    <label className="rpts-sbmt-label">Start Time</label>
+                                                                    <label className="rpts-sbmt-label">Start
+                                                                        Time</label>
                                                                     <input type="time" placeholder="Start Time"
                                                                            value={form.rows[carouselIndex]?.start_time || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'start_time')}
-                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
+                                                                           disabled={!!readOnly}
+                                                                           className="rpts-sbmt-field"/>
                                                                 </div>
                                                                 <div className="rpts-sbmt-col">
                                                                     <label className="rpts-sbmt-label">1st Load</label>
                                                                     <input type="time" placeholder="1st Load"
                                                                            value={form.rows[carouselIndex]?.first_load || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'first_load')}
-                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
+                                                                           disabled={!!readOnly}
+                                                                           className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
                                                             <div className="rpts-sbmt-row">
                                                                 <div className="rpts-sbmt-col">
-                                                                    <label className="rpts-sbmt-label">EOD In Yard</label>
+                                                                    <label className="rpts-sbmt-label">EOD In
+                                                                        Yard</label>
                                                                     <input type="time" placeholder="EOD"
                                                                            value={form.rows[carouselIndex]?.eod_in_yard || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'eod_in_yard')}
-                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
+                                                                           disabled={!!readOnly}
+                                                                           className="rpts-sbmt-field"/>
                                                                 </div>
                                                                 <div className="rpts-sbmt-col">
                                                                     <label className="rpts-sbmt-label">Punch Out</label>
                                                                     <input type="time" placeholder="Punch Out"
                                                                            value={form.rows[carouselIndex]?.punch_out || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'punch_out')}
-                                                                           disabled={!!readOnly} className="rpts-sbmt-field"/>
+                                                                           disabled={!!readOnly}
+                                                                           className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
                                                             <div className="rpts-sbmt-row">
                                                                 <div className="rpts-sbmt-col">
-                                                                    <label className="rpts-sbmt-label">Total Loads</label>
+                                                                    <label className="rpts-sbmt-label">Total
+                                                                        Loads</label>
                                                                     <input type="number" placeholder="Total Loads"
                                                                            value={form.rows[carouselIndex]?.loads || ''}
                                                                            onChange={e => handleChange(e, 'rows', carouselIndex, 'loads')}
-                                                                           disabled={readOnly} className="rpts-sbmt-field"/>
+                                                                           disabled={readOnly}
+                                                                           className="rpts-sbmt-field"/>
                                                                 </div>
                                                             </div>
                                                             <div>
@@ -564,7 +576,8 @@ function ReportsSubmitView({
                                                         </button>
                                                         <button type="button"
                                                                 onClick={() => setCarouselIndex(i => Math.max(i - 1, 0))}
-                                                                disabled={carouselIndex === 0} className="rpts-sbmt-btn-primary">
+                                                                disabled={carouselIndex === 0}
+                                                                className="rpts-sbmt-btn-primary">
                                                             &#8592; Prev Operator
                                                         </button>
                                                         <span className="rpts-sbmt-operator-count">
@@ -666,7 +679,8 @@ function ReportsSubmitView({
                                     disabled={submitting || savingDraft}>
                                 Cancel
                             </button>
-                            <button type="button" className="rpts-sbmt-save" onClick={handleSaveDraft} disabled={submitting || savingDraft}>
+                            <button type="button" className="rpts-sbmt-save" onClick={handleSaveDraft}
+                                    disabled={submitting || savingDraft}>
                                 {savingDraft ? 'Saving...' : 'Save Changes'}
                             </button>
                             {(!managerEditUser) && (
@@ -695,14 +709,17 @@ function ReportsSubmitView({
                             <label className="rpts-sbmt-checkbox-label">
                                 <input type="checkbox" checked={confirmationChecks[1]}
                                        onChange={e => setConfirmationChecks([confirmationChecks[0], e.target.checked])}/>
-                                Total hours only includes hours from operators and not from plant managers, loader operators or any other roles.
+                                Total hours only includes hours from operators and not from plant managers, loader
+                                operators or any other roles.
                             </label>
                         </div>
                         <div className="rpts-sbmt-modal-actions">
-                            <button type="button" className="rpts-sbmt-btn-secondary" onClick={() => setShowConfirmationModal(false)}>
+                            <button type="button" className="rpts-sbmt-btn-secondary"
+                                    onClick={() => setShowConfirmationModal(false)}>
                                 Cancel
                             </button>
-                            <button type="button" className="rpts-sbmt-btn-confirm" disabled={!(confirmationChecks[0] && confirmationChecks[1])}
+                            <button type="button" className="rpts-sbmt-btn-confirm"
+                                    disabled={!(confirmationChecks[0] && confirmationChecks[1])}
                                     onClick={handleConfirmedSubmit}>
                                 Confirm & Submit
                             </button>

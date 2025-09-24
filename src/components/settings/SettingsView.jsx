@@ -147,7 +147,8 @@ function SettingsView() {
                                        onChange={() => save(toggleAcceptReportSubmittedEmails)}/>
                                 <span className="slider round"></span>
                             </label>
-                            <span className="toggle-state">{preferences.acceptReportSubmittedEmails ? 'Enabled' : 'Disabled'}</span>
+                            <span
+                                className="toggle-state">{preferences.acceptReportSubmittedEmails ? 'Enabled' : 'Disabled'}</span>
                         </div>
                     </div>
                 </div>

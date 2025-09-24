@@ -190,7 +190,10 @@ Deno.serve(async (req) => {
                     vin: mixer?.vin ?? null,
                     make: mixer?.make ?? null,
                     model: mixer?.model ?? null,
-                    year: (() => { const y = normalize("year", mixer?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : null; })(),
+                    year: (() => {
+                        const y = normalize("year", mixer?.year);
+                        return y != null && Number.isFinite(Number(y)) ? Number(y) : null;
+                    })(),
                     status: mixer?.status ?? "Active",
                     created_at: now,
                     updated_at: now,
@@ -251,7 +254,10 @@ Deno.serve(async (req) => {
                     vin: mixer?.vin ?? current.vin,
                     make: mixer?.make ?? current.make,
                     model: mixer?.model ?? current.model,
-                    year: (() => { const y = normalize("year", mixer?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : current.year; })(),
+                    year: (() => {
+                        const y = normalize("year", mixer?.year);
+                        return y != null && Number.isFinite(Number(y)) ? Number(y) : current.year;
+                    })(),
                     status,
                     updated_at: nowIso(),
                     updated_by: userId,
