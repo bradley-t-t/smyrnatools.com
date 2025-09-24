@@ -862,11 +862,10 @@
 
 .operators-list-header-row {
     display: grid;
-    grid-template-columns: 10% 22% 16% 12% 20% 10% 10%;
+    grid-template-columns: 11% 35% 21% 20% 10%;
     gap: 0;
     width: 100%;
     box-sizing: border-box;
-    padding: 0;
     background: var(--accent-header-bg);
     color: var(--accent-header-text);
     font-weight: 700;
@@ -881,7 +880,6 @@
 }
 
 .operators-list-header-row.pending {
-    grid-template-columns: 9% 20% 14% 12% 14% 16% 9% 6%;
 }
 
 .operators-list-header-row > div {
