@@ -6,7 +6,6 @@ import {PlantService} from '../../services/PlantService';
 import LoadingScreen from '../common/LoadingScreen';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import EquipmentCard from './EquipmentCard';
-import EquipmentOverview from './EquipmentOverview';
 import EquipmentDetailView from './EquipmentDetailView';
 import '../../styles/FilterStyles.css';
 import './styles/EquipmentsView.css';
@@ -29,7 +28,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     const [selectedPlant, setSelectedPlant] = useState(preferences.equipmentFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.equipmentFilters?.statusFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
-    const [showOverview, setShowOverview] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState(null);
     const [viewMode, setViewMode] = useState(() => {
         if (preferences.equipmentFilters?.viewMode !== undefined && preferences.equipmentFilters?.viewMode !== null) return preferences.equipmentFilters.viewMode
@@ -62,7 +60,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             setStatusFilter(preferences.equipmentFilters.statusFilter || '');
             setViewMode(preferences.equipmentFilters.viewMode || preferences.defaultViewMode || 'grid');
         }
-        if (preferences?.autoOverview) setShowOverview(true);
     }, [preferences]);
 
     useEffect(() => {
@@ -160,7 +157,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             setStatusFilter(status);
             safeUpdateEquipmentFilter('statusFilter', status);
         }
-        setShowOverview(false);
     }
 
     const debouncedSetSearchText = useCallback(debounce((value) => {
@@ -190,29 +186,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
             })
             .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'identifyingNumber'));
     }, [equipments, selectedPlant, searchText, statusFilter, preferences.selectedRegion?.code, regionPlantCodes]);
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Equipment Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    <EquipmentOverview
-                        filteredEquipments={filteredEquipments}
-                        selectedPlant={selectedPlant}
-                        onStatusClick={handleStatusClick}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close</button>
-                </div>
-            </div>
-        </div>
-    );
 
     useEffect(() => {
         if (preferences.equipmentFilters?.viewMode !== undefined && preferences.equipmentFilters?.viewMode !== null) {
@@ -507,9 +480,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i> Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode === 'list' && (
@@ -532,7 +502,6 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                             onEquipmentAdded={newEquipment => setEquipments([...equipments, newEquipment])}
                         />
                     )}
-                    {showOverview && <OverviewPopup/>}
                     {showCommentModal && (
                         <EquipmentCommentModal
                             equipmentId={modalEquipmentId}

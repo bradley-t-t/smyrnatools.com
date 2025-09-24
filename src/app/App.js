@@ -16,8 +16,6 @@ import WebView from "../components/common/WebView"
 import {UserService} from "../services/UserService"
 import OnlineUsersOverlay from '../components/common/OnlineUsersOverlay'
 import TipBanner from '../components/common/TipBanner'
-import TeamsView from '../components/teams/TeamsView'
-import OperatorScheduledOffView from '../components/operators/OperatorScheduledOffView'
 import ReportsView from '../components/reports/ReportsView'
 import TractorsView from '../components/tractors/TractorsView'
 import TrailersView from '../components/trailers/TrailersView'
@@ -444,10 +442,6 @@ function AppContent() {
             }
             case 'Settings':
                 return <SettingsView/>
-            case 'Teams':
-                return <TeamsView/>
-            case 'ScheduledOff':
-                return <OperatorScheduledOffView operatorId={userId}/>
             case 'Reports':
                 return <ReportsView/>
             case 'Tractors':

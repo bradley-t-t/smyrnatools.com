@@ -51,6 +51,7 @@ export default function DashboardView() {
     const filterTimeoutRef = useRef(null)
     const plantSetRef = useRef(new Set())
     const lastManagersFetchRef = useRef(0)
+    const countsRef = useRef({mixers: {}, tractors: {}, trailers: {}, equipment: {}})
 
     const slimMixer = m => ({
         id: m.id,
@@ -97,110 +98,82 @@ export default function DashboardView() {
         const plantSet = new Set()
         if (dashboardPlant) plantSet.add(String(dashboardPlant).trim())
         else (regionPlants || []).forEach(p => {
-            const c = p.plantCode || p.plant_code;
+            const c = p.plantCode || p.plant_code
             if (c) plantSet.add(String(c).trim())
         })
         plantSetRef.current = plantSet
         const filterActive = plantSet.size > 0
-        let mixersTotals = {
-            total: 0,
-            active: 0,
-            shop: 0,
-            verified: 0,
-            issues: stats.mixers.issues,
-            comments: stats.mixers.comments,
-            overdue: 0
-        }
-        let tractorsTotals = {
-            total: 0,
-            active: 0,
-            shop: 0,
-            verified: 0,
-            issues: stats.tractors.issues,
-            comments: stats.tractors.comments,
-            overdue: 0
-        }
-        let trailersTotals = {
-            total: 0,
-            active: 0,
-            shop: 0,
-            issues: stats.trailers.issues,
-            comments: stats.trailers.comments,
-            overdue: 0
-        }
-        let equipmentTotals = {
-            total: 0,
-            active: 0,
-            shop: 0,
-            issues: stats.equipment.issues,
-            comments: stats.equipment.comments,
-            overdue: 0
-        }
+        let mixersTotals = {total: 0, active: 0, shop: 0, verified: 0, issues: 0, comments: 0, overdue: 0}
+        let tractorsTotals = {total: 0, active: 0, shop: 0, verified: 0, issues: 0, comments: 0, overdue: 0}
+        let trailersTotals = {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0}
+        let equipmentTotals = {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0}
         let pickupsTotals = {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0}
-        let operatorsTotals = {
-            total: 0,
-            active: 0,
-            assigned: 0,
-            mixerAssigned: 0,
-            tractorAssigned: 0,
-            unassigned: 0,
-            pending: 0
-        }
+        let operatorsTotals = {total: 0, active: 0, assigned: 0, mixerAssigned: 0, tractorAssigned: 0, unassigned: 0, pending: 0}
         const mixerAssignedIds = new Set()
         const tractorAssignedIds = new Set()
         const consider = (plantCode) => !filterActive || plantSet.has(String(plantCode || '').trim())
+        const counts = countsRef.current
         for (const m of allMixersRef.current) {
-            if (!consider(m.plantCode)) continue;
-            mixersTotals.total++;
-            if (m.status === 'Active') mixersTotals.active++; else if (m.status === 'In Shop') mixersTotals.shop++;
-            if (isServiceOverdue(m.lastServiceDate)) mixersTotals.overdue++;
-            if (VerifiedUtility.isVerified(m.updatedLast, m.updatedAt, m.updatedBy)) mixersTotals.verified++;
+            if (!consider(m.plantCode)) continue
+            mixersTotals.total++
+            if (m.status === 'Active') mixersTotals.active++; else if (m.status === 'In Shop') mixersTotals.shop++
+            if (isServiceOverdue(m.lastServiceDate)) mixersTotals.overdue++
+            if (VerifiedUtility.isVerified(m.updatedLast, m.updatedAt, m.updatedBy)) mixersTotals.verified++
             if (m.assignedOperator) mixerAssignedIds.add(m.assignedOperator)
+            const mc = counts.mixers[m.id]
+            if (mc) { mixersTotals.issues += mc.issues || 0; mixersTotals.comments += mc.comments || 0 }
         }
         for (const t of allTractorsRef.current) {
-            if (!consider(t.plantCode)) continue;
-            tractorsTotals.total++;
-            if (t.status === 'Active') tractorsTotals.active++; else if (t.status === 'In Shop') tractorsTotals.shop++;
-            if (isServiceOverdue(t.lastServiceDate)) tractorsTotals.overdue++;
-            if (VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)) tractorsTotals.verified++;
+            if (!consider(t.plantCode)) continue
+            tractorsTotals.total++
+            if (t.status === 'Active') tractorsTotals.active++; else if (t.status === 'In Shop') tractorsTotals.shop++
+            if (isServiceOverdue(t.lastServiceDate)) tractorsTotals.overdue++
+            if (VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)) tractorsTotals.verified++
             if (t.assignedOperator) tractorAssignedIds.add(t.assignedOperator)
+            const tc = counts.tractors[t.id]
+            if (tc) { tractorsTotals.issues += tc.issues || 0; tractorsTotals.comments += tc.comments || 0 }
         }
         for (const r of allTrailersRef.current) {
-            if (!consider(r.plantCode)) continue;
-            trailersTotals.total++;
-            if (r.status === 'Active') trailersTotals.active++; else if (r.status === 'In Shop') trailersTotals.shop++;
+            if (!consider(r.plantCode)) continue
+            trailersTotals.total++
+            if (r.status === 'Active') trailersTotals.active++; else if (r.status === 'In Shop') trailersTotals.shop++
             if (isServiceOverdue(r.lastServiceDate)) trailersTotals.overdue++
+            const rc = counts.trailers[r.id]
+            if (rc) { trailersTotals.issues += rc.issues || 0; trailersTotals.comments += rc.comments || 0 }
         }
         for (const e of allEquipmentRef.current) {
-            if (!consider(e.plantCode)) continue;
-            equipmentTotals.total++;
-            if (e.status === 'Active') equipmentTotals.active++; else if (e.status === 'In Shop') equipmentTotals.shop++;
+            if (!consider(e.plantCode)) continue
+            equipmentTotals.total++
+            if (e.status === 'Active') equipmentTotals.active++; else if (e.status === 'In Shop') equipmentTotals.shop++
             if (isServiceOverdue(e.lastServiceDate)) equipmentTotals.overdue++
+            const ec = counts.equipment[e.id]
+            if (ec) { equipmentTotals.issues += ec.issues || 0; equipmentTotals.comments += ec.comments || 0 }
         }
         for (const p of allPickupsRef.current) {
-            if (!consider(p.plantCode)) continue;
-            pickupsTotals.total++;
+            if (!consider(p.plantCode)) continue
+            pickupsTotals.total++
             if (p.status === 'Active') pickupsTotals.active++; else if (p.status === 'In Shop') pickupsTotals.shop++; else if (p.status === 'Stationary') pickupsTotals.stationary++; else if (p.status === 'Spare') pickupsTotals.spare++; else if (p.status === 'Sold') pickupsTotals.sold++; else if (p.status === 'Retired') pickupsTotals.retired++
         }
         for (const o of allOperatorsRef.current) {
-            if (!consider(o.plantCode)) continue;
-            operatorsTotals.total++;
+            if (!consider(o.plantCode)) continue
+            operatorsTotals.total++
             if (o.status === 'Active') {
-                operatorsTotals.active++;
+                operatorsTotals.active++
                 if (mixerAssignedIds.has(o.employeeId)) {
-                    operatorsTotals.assigned++;
+                    operatorsTotals.assigned++
                     operatorsTotals.mixerAssigned++
                 } else if (tractorAssignedIds.has(o.employeeId)) {
-                    operatorsTotals.assigned++;
+                    operatorsTotals.assigned++
                     operatorsTotals.tractorAssigned++
                 } else operatorsTotals.unassigned++
             } else if (o.status === 'Pending Start') operatorsTotals.pending++
         }
         const mixersVerifiedPercent = mixersTotals.total ? Math.round((mixersTotals.verified / mixersTotals.total) * 100) : 0
         const tractorsVerifiedPercent = tractorsTotals.total ? Math.round((tractorsTotals.verified / tractorsTotals.total) * 100) : 0
-        const verificationAverage = [mixersTotals.total ? mixersVerifiedPercent : null, tractorsTotals.total ? tractorsVerifiedPercent : null].filter(v => v !== null)
-            .reduce((a, b) => a + b, 0)
-        const verificationAvg = verificationAverage.length ? Math.round(verificationAverage / verificationAverage.length) : 0
+        const verifiedValues = []
+        if (mixersTotals.total) verifiedValues.push(mixersVerifiedPercent)
+        if (tractorsTotals.total) verifiedValues.push(tractorsVerifiedPercent)
+        const verificationAvg = verifiedValues.length ? Math.round(verifiedValues.reduce((a, b) => a + b, 0) / verifiedValues.length) : 0
         const openIssuesTotal = mixersTotals.issues + tractorsTotals.issues + trailersTotals.issues + equipmentTotals.issues
         const overdueTotal = mixersTotals.overdue + tractorsTotals.overdue + trailersTotals.overdue + equipmentTotals.overdue
         const fleetTotal = mixersTotals.total + tractorsTotals.total + trailersTotals.total + equipmentTotals.total + pickupsTotals.total
@@ -218,11 +191,11 @@ export default function DashboardView() {
             verificationAverage: verificationAvg
         }))
         prevSnapshotRef.current = {fleet: fleetTotal}
-    }, [dashboardPlant, regionPlants, stats.mixers.issues, stats.mixers.comments, stats.tractors.issues, stats.tractors.comments, stats.trailers.issues, stats.trailers.comments, stats.equipment.issues, stats.equipment.comments])
+    }, [dashboardPlant, regionPlants])
 
     const applyFilters = useCallback(() => {
         if (loading) {
-            computeStats();
+            computeStats()
             return
         }
         if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current)
@@ -239,72 +212,35 @@ export default function DashboardView() {
             const tractorIds = allTractorsRef.current.map(t => t.id).filter(Boolean)
             const trailerIds = allTrailersRef.current.map(t => t.id).filter(Boolean)
             const equipmentIds = allEquipmentRef.current.map(e => e.id).filter(Boolean)
-            const queries = []
-            if (mixerIds.length) {
-                queries.push(Promise.all([
-                    supabase.from('mixers_maintenance').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('mixer_id', mixerIds).is('time_completed', null),
-                    supabase.from('mixers_comments').select('id', {count: 'exact', head: true}).in('mixer_id', mixerIds)
-                ]).then(([i, c]) => ({key: 'mixers', issues: i?.count || 0, comments: c?.count || 0})))
-            }
-            if (tractorIds.length) {
-                queries.push(Promise.all([
-                    supabase.from('tractors_maintenance').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('tractor_id', tractorIds).is('time_completed', null),
-                    supabase.from('tractors_comments').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('tractor_id', tractorIds)
-                ]).then(([i, c]) => ({key: 'tractors', issues: i?.count || 0, comments: c?.count || 0})))
-            }
-            if (trailerIds.length) {
-                queries.push(Promise.all([
-                    supabase.from('trailers_maintenance').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('trailer_id', trailerIds).is('time_completed', null),
-                    supabase.from('trailers_comments').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('trailer_id', trailerIds)
-                ]).then(([i, c]) => ({key: 'trailers', issues: i?.count || 0, comments: c?.count || 0})))
-            }
-            if (equipmentIds.length) {
-                queries.push(Promise.all([
-                    supabase.from('heavy_equipment_maintenance').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('equipment_id', equipmentIds).is('time_completed', null),
-                    supabase.from('heavy_equipment_comments').select('id', {
-                        count: 'exact',
-                        head: true
-                    }).in('equipment_id', equipmentIds)
-                ]).then(([i, c]) => ({key: 'equipment', issues: i?.count || 0, comments: c?.count || 0})))
-            }
-            if (!queries.length) {
-                return
-            }
-            const results = await Promise.all(queries)
-            setStats(s => {
-                const updated = {...s}
-                results.forEach(r => {
-                    updated[r.key] = {...updated[r.key], issues: r.issues, comments: r.comments}
-                })
-                updated.openIssuesTotal = updated.mixers.issues + updated.tractors.issues + updated.trailers.issues + updated.equipment.issues
-                return updated
-            })
+            if (!mixerIds.length && !tractorIds.length && !trailerIds.length && !equipmentIds.length) return
+            const [mMaint, mCom, tMaint, tCom, trMaint, trCom, eMaint, eCom] = await Promise.all([
+                mixerIds.length ? supabase.from('mixers_maintenance').select('id,mixer_id,time_completed').in('mixer_id', mixerIds).is('time_completed', null) : Promise.resolve({data: []}),
+                mixerIds.length ? supabase.from('mixers_comments').select('id,mixer_id').in('mixer_id', mixerIds) : Promise.resolve({data: []}),
+                tractorIds.length ? supabase.from('tractors_maintenance').select('id,tractor_id,time_completed').in('tractor_id', tractorIds).is('time_completed', null) : Promise.resolve({data: []}),
+                tractorIds.length ? supabase.from('tractors_comments').select('id,tractor_id').in('tractor_id', tractorIds) : Promise.resolve({data: []}),
+                trailerIds.length ? supabase.from('trailers_maintenance').select('id,trailer_id,time_completed').in('trailer_id', trailerIds).is('time_completed', null) : Promise.resolve({data: []}),
+                trailerIds.length ? supabase.from('trailers_comments').select('id,trailer_id').in('trailer_id', trailerIds) : Promise.resolve({data: []}),
+                equipmentIds.length ? supabase.from('heavy_equipment_maintenance').select('id,equipment_id,time_completed').in('equipment_id', equipmentIds).is('time_completed', null) : Promise.resolve({data: []}),
+                equipmentIds.length ? supabase.from('heavy_equipment_comments').select('id,equipment_id').in('equipment_id', equipmentIds) : Promise.resolve({data: []})
+            ])
+            const counts = {mixers: {}, tractors: {}, trailers: {}, equipment: {}}
+            ;(mMaint.data || []).forEach(r => { counts.mixers[r.mixer_id] = counts.mixers[r.mixer_id] || {issues: 0, comments: 0}; counts.mixers[r.mixer_id].issues++ })
+            ;(mCom.data || []).forEach(r => { counts.mixers[r.mixer_id] = counts.mixers[r.mixer_id] || {issues: 0, comments: 0}; counts.mixers[r.mixer_id].comments++ })
+            ;(tMaint.data || []).forEach(r => { counts.tractors[r.tractor_id] = counts.tractors[r.tractor_id] || {issues: 0, comments: 0}; counts.tractors[r.tractor_id].issues++ })
+            ;(tCom.data || []).forEach(r => { counts.tractors[r.tractor_id] = counts.tractors[r.tractor_id] || {issues: 0, comments: 0}; counts.tractors[r.tractor_id].comments++ })
+            ;(trMaint.data || []).forEach(r => { counts.trailers[r.trailer_id] = counts.trailers[r.trailer_id] || {issues: 0, comments: 0}; counts.trailers[r.trailer_id].issues++ })
+            ;(trCom.data || []).forEach(r => { counts.trailers[r.trailer_id] = counts.trailers[r.trailer_id] || {issues: 0, comments: 0}; counts.trailers[r.trailer_id].comments++ })
+            ;(eMaint.data || []).forEach(r => { counts.equipment[r.equipment_id] = counts.equipment[r.equipment_id] || {issues: 0, comments: 0}; counts.equipment[r.equipment_id].issues++ })
+            ;(eCom.data || []).forEach(r => { counts.equipment[r.equipment_id] = counts.equipment[r.equipment_id] || {issues: 0, comments: 0}; counts.equipment[r.equipment_id].comments++ })
+            countsRef.current = counts
+            computeStats()
         } catch {
         }
-    }, [])
+    }, [computeStats])
 
     useEffect(() => {
-        let cancelled = false;
+        let cancelled = false
         let intervalId
-
         async function initBase() {
             const isInitial = initialLoadRef.current
             if (isInitial) {
@@ -338,7 +274,7 @@ export default function DashboardView() {
                     const {data: profile} = await supabase.from('users_profiles').select('plant_code, regions').eq('id', uid).maybeSingle()
                     const profileRegions = Array.isArray(profile?.regions) ? profile.regions.filter(r => typeof r === 'string' && r.trim()) : []
                     if (profileRegions.length) {
-                        const codeSet = new Set(profileRegions.map(c => c.toLowerCase()));
+                        const codeSet = new Set(profileRegions.map(c => c.toLowerCase()))
                         regionsList = allFetched.filter(r => codeSet.has(String((r.regionCode || '').toLowerCase())))
                     }
                     if ((!regionsList || !regionsList.length) && profile?.plant_code) {
@@ -352,48 +288,45 @@ export default function DashboardView() {
                 if (cancelled) return
                 setPermittedRegions(regionsList)
                 if (!dashboardRegionCode && regionsList.length) {
-                    const first = regionsList[0];
-                    setDashboardRegionCode(first.regionCode);
+                    const first = regionsList[0]
+                    setDashboardRegionCode(first.regionCode)
                     setDashboardRegionName(first.regionName)
                 }
             } catch {
                 if (!cancelled) setError('Failed to load dashboard data')
             } finally {
                 if (!cancelled) {
-                    initialLoadRef.current = false;
-                    setLoading(false);
+                    initialLoadRef.current = false
+                    setLoading(false)
                     setRefreshing(false)
                 }
             }
         }
-
-        initBase();
+        initBase()
         intervalId = setInterval(() => setRefreshKey(v => v + 1), 600000)
         return () => {
-            cancelled = true;
+            cancelled = true
             if (intervalId) clearInterval(intervalId)
         }
     }, [dashboardRegionCode])
 
     useEffect(() => {
         let cancelled = false
-
         async function fetchRegionPlants() {
             if (!dashboardRegionCode) {
-                setRegionPlants([]);
+                setRegionPlants([])
                 return
             }
-            setRefreshing(true);
+            setRefreshing(true)
             try {
-                const list = await RegionService.fetchRegionPlants(dashboardRegionCode).catch(() => []);
-                if (cancelled) return;
+                const list = await RegionService.fetchRegionPlants(dashboardRegionCode).catch(() => [])
+                if (cancelled) return
                 setRegionPlants(list)
             } finally {
                 if (!cancelled) setRefreshing(false)
             }
         }
-
-        fetchRegionPlants();
+        fetchRegionPlants()
         return () => {
             cancelled = true
         }
@@ -401,7 +334,6 @@ export default function DashboardView() {
 
     useEffect(() => {
         let cancelled = false
-
         async function fetchAssets() {
             const CACHE_KEY = 'dashboard_assets_cache_v1'
             const CACHE_TTL_MS = 120000
@@ -409,18 +341,18 @@ export default function DashboardView() {
             const now = Date.now()
             if (initialLoadRef.current) {
                 try {
-                    const raw = sessionStorage.getItem(CACHE_KEY);
+                    const raw = sessionStorage.getItem(CACHE_KEY)
                     if (raw) {
-                        const parsed = JSON.parse(raw);
+                        const parsed = JSON.parse(raw)
                         if (parsed && (now - (parsed.savedAt || 0)) < CACHE_TTL_MS) {
-                            allMixersRef.current = (parsed.mixers || []).map(slimMixer);
-                            allTractorsRef.current = (parsed.tractors || []).map(slimTractor);
-                            allTrailersRef.current = (parsed.trailers || []).map(slimTrailer);
-                            allEquipmentRef.current = (parsed.equipment || []).map(slimEquipment);
-                            allPickupsRef.current = (parsed.pickups || []).map(slimPickup);
-                            allOperatorsRef.current = (parsed.operators || []).map(slimOperator);
-                            computeStats();
-                            setLastUpdated(parsed.lastUpdated ? new Date(parsed.lastUpdated) : new Date(parsed.savedAt || now));
+                            allMixersRef.current = (parsed.mixers || []).map(slimMixer)
+                            allTractorsRef.current = (parsed.tractors || []).map(slimTractor)
+                            allTrailersRef.current = (parsed.trailers || []).map(slimTrailer)
+                            allEquipmentRef.current = (parsed.equipment || []).map(slimEquipment)
+                            allPickupsRef.current = (parsed.pickups || []).map(slimPickup)
+                            allOperatorsRef.current = (parsed.operators || []).map(slimOperator)
+                            computeStats()
+                            setLastUpdated(parsed.lastUpdated ? new Date(parsed.lastUpdated) : new Date(parsed.savedAt || now))
                             setLoading(false)
                         }
                     }
@@ -445,7 +377,7 @@ export default function DashboardView() {
                 allPickupsRef.current = pick.map(slimPickup)
                 allOperatorsRef.current = ops.map(slimOperator)
                 computeStats()
-                const fetchedAt = new Date();
+                const fetchedAt = new Date()
                 setLastUpdated(fetchedAt)
                 try {
                     sessionStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -464,13 +396,12 @@ export default function DashboardView() {
                 if (!cancelled && !lastUpdated) setError('Failed to load dashboard data')
             } finally {
                 if (!cancelled) {
-                    setLoading(false);
+                    setLoading(false)
                     setRefreshing(false)
                 }
             }
         }
-
-        fetchAssets();
+        fetchAssets()
         return () => {
             cancelled = true
         }
@@ -489,7 +420,6 @@ export default function DashboardView() {
         if (now - lastManagersFetchRef.current < 60000) return
         lastManagersFetchRef.current = now
         let cancelled = false
-
         async function loadManagers() {
             try {
                 const [permRes, roleRes, profRes] = await Promise.all([
@@ -506,7 +436,6 @@ export default function DashboardView() {
             } catch {
             }
         }
-
         loadManagers()
         return () => {
             cancelled = true
@@ -515,27 +444,27 @@ export default function DashboardView() {
 
     const regionDisplayName = dashboardRegionCode ? (dashboardRegionName || dashboardRegionCode) : (hasAllRegionsPermission ? 'All Regions' : (permittedRegions[0]?.regionName || 'Region'))
     const diffBadge = (current) => {
-        const prev = prevSnapshotRef.current?.fleet;
-        if (prev == null) return null;
-        const diff = current - prev;
-        if (!diff) return null;
-        const up = diff > 0;
+        const prev = prevSnapshotRef.current?.fleet
+        if (prev == null) return null
+        const diff = current - prev
+        if (!diff) return null
+        const up = diff > 0
         return <span className={up ? 'delta-indicator up' : 'delta-indicator down'}
                      title={`Change since last refresh: ${diff}`}>{up ? '▲' : '▼'}{Math.abs(diff)}</span>
     }
 
     const onRegionChange = e => {
-        const code = e.target.value;
-        if (!code && !hasAllRegionsPermission) return;
+        const code = e.target.value
+        if (!code && !hasAllRegionsPermission) return
         if (!code && hasAllRegionsPermission) {
-            setDashboardRegionCode('');
-            setDashboardRegionName('');
-            setDashboardPlant('');
+            setDashboardRegionCode('')
+            setDashboardRegionName('')
+            setDashboardPlant('')
             return
         }
-        const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code);
+        const r = permittedRegions.find(x => (x.regionCode || x.region_code) === code)
         if (r) {
-            setDashboardRegionCode(r.regionCode || r.region_code);
+            setDashboardRegionCode(r.regionCode || r.region_code)
             setDashboardRegionName(r.regionName || r.region_name || '')
         }
         setDashboardPlant('')
@@ -544,11 +473,11 @@ export default function DashboardView() {
     const onRetry = () => setRefreshKey(v => v + 1)
     const onRefresh = () => setRefreshKey(v => v + 1)
     const timeAgo = d => {
-        if (!d) return '';
-        const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-        if (diff < 60) return 'just now';
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        if (!d) return ''
+        const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000)
+        if (diff < 60) return 'just now'
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
         return `${Math.floor(diff / 86400)}d ago`
     }
     const showSkeleton = loading
@@ -573,8 +502,8 @@ export default function DashboardView() {
                                     disabled={refreshing} aria-label="Plant">
                                 <option value="">All Plants</option>
                                 {regionPlants.map(p => {
-                                    const code = p.plantCode || p.plant_code;
-                                    const name = p.plantName || p.plant_name || code;
+                                    const code = p.plantCode || p.plant_code
+                                    const name = p.plantName || p.plant_name || code
                                     return <option key={code} value={code}>{name} ({code})</option>
                                 })}
                             </select>

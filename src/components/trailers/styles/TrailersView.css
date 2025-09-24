@@ -235,16 +235,16 @@
 .search-filters {
     background-color: var(--card-bg);
     padding: var(--spacing-lg);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     margin-bottom: var(--spacing-md);
-    border: 1px solid var(--card-border);
+    border: 1px solid rgba(0, 0, 0, 0.04);
     border-radius: 8px;
     display: flex;
-    flex-direction: row;
-    align-items: center;
     gap: var(--spacing-lg);
+    align-items: center;
+    flex-wrap: wrap;
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
     z-index: 99;
     transition: all 0.3s ease;
     position: relative;
@@ -433,6 +433,8 @@
     display: flex;
     gap: var(--spacing-md);
     align-items: center;
+    margin-left: auto;
+    justify-content: flex-end;
 }
 
 .filter-group {
@@ -1343,7 +1345,24 @@
 .trailers-view {
     overscroll-behavior-y: none;
     padding-top: 0;
-    --sticky-cover-height: 18px;
+    --sticky-cover-height: 14px;
+}
+
+/* Align container paddings with mixers view */
+.dashboard-container.trailers-view {
+    padding-top: 0 !important;
+    padding-right: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    padding-left: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .dashboard-container.trailers-view {
+        padding-top: 0 !important;
+        padding-right: var(--spacing-md);
+        padding-bottom: var(--spacing-md);
+        padding-left: var(--spacing-md);
+    }
 }
 
 .trailers-view::before {

@@ -16,7 +16,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
     const [searchText, setSearchText] = useState(preferences.managerFilters?.searchText || '')
     const [selectedPlant, setSelectedPlant] = useState(preferences.managerFilters?.selectedPlant || '')
     const [roleFilter, setRoleFilter] = useState(preferences.managerFilters?.roleFilter || '')
-    const [showOverview, setShowOverview] = useState(false)
     const [showDetailView, setShowDetailView] = useState(false)
     const [selectedManager, setSelectedManager] = useState(null)
     const [, setCurrentUserId] = useState(null)
@@ -286,7 +285,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                                         {plants
                                             .filter(p => {
                                                 const code = String(p.plant_code || p.plantCode || '').trim().toUpperCase()
-                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
+                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : true
                                             })
                                             .sort((a, b) => parseInt((a.plant_code || a.plantCode || '').replace(/\D/g, '') || '0') - parseInt((b.plant_code || b.plantCode || '').replace(/\D/g, '') || '0'))
                                             .map(plant => (
@@ -322,9 +321,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i> Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode === 'list' && (
@@ -408,49 +404,6 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                             </div>
                         )}
                     </div>
-                    {showOverview && (
-                        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-                            <div
-                                className="modal-content overview-modal managers-overview-modal"
-                                onClick={e => e.stopPropagation()}
-                            >
-                                <div className="modal-header">
-                                    <h2>Managers Overview</h2>
-                                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="overview-grid">
-                                    <div className="overview-card plant-card">
-                                        <h2 style={{marginLeft: 10}}>Plant Distribution</h2>
-                                        <div className="plant-distribution-table">
-                                            <table className="distribution-table">
-                                                <thead>
-                                                <tr>
-                                                    <th>Plant</th>
-                                                    <th>Managers</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                {plants.map(plant => (
-                                                    <tr key={plant.plant_code}>
-                                                        <td className="plant-name">{plant.plant_name}</td>
-                                                        <td>{managers.filter(m => m.plantCode === plant.plant_code).length}</td>
-                                                    </tr>
-                                                ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer" style={{marginTop: 24, textAlign: 'right'}}>
-                                    <button className="primary-button" onClick={() => setShowOverview(false)}>
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </>
             )}
         </div>

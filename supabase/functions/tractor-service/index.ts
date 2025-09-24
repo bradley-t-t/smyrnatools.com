@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
                     vin: tractor?.vin ?? null,
                     make: tractor?.make ?? null,
                     model: tractor?.model ?? null,
-                    year: tractor?.year ?? null,
+                    year: (() => { const y = normalize("year", tractor?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : null; })(),
                     freight: typeof tractor?.freight === "string" ? tractor.freight : null,
                     status: tractor?.status ?? "Active",
                     created_at: now,
@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
                     vin: tractor?.vin ?? current.vin,
                     make: tractor?.make ?? current.make,
                     model: tractor?.model ?? current.model,
-                    year: typeof tractor?.year === "number" ? tractor.year : current.year,
+                    year: (() => { const y = normalize("year", tractor?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : current.year; })(),
                     freight: typeof tractor?.freight === "string" ? tractor.freight : current.freight,
                     status,
                     updated_at: nowIso(),
@@ -742,10 +742,15 @@ Deno.serve(async (req) => {
                     status: 400,
                     headers: corsHeaders
                 });
-                const {data, error} = await supabase.from("tractors").update({
+                const patch: Record<string, any> = {
                     updated_last: nowIso(),
                     updated_by: userId
-                }).eq("id", id).select().maybeSingle();
+                };
+                const y = normalize("year", body?.year ?? body?.data?.year);
+                if (y != null && Number.isFinite(Number(y))) {
+                    patch.year = Number(y);
+                }
+                const {data, error} = await supabase.from("tractors").update(patch).eq("id", id).select().maybeSingle();
                 if (error) return new Response(JSON.stringify({error: error.message}), {
                     status: 400,
                     headers: corsHeaders

@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import supabase, {DatabaseService} from '../../services/DatabaseService';
 import './styles/OperatorDetailView.css';
-import OperatorScheduledOffButton from './OperatorScheduledOffView';
 
 function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [operator, setOperator] = useState(null);
@@ -180,15 +179,6 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                     <h1>{operator && operator.name ? operator.name : 'Operator Details'}</h1>
                 </div>
                 <div className="header-right">
-                    <OperatorScheduledOffButton
-                        operator={operator}
-                        daysOff={scheduledOffDays}
-                        onSave={days => {
-                            setScheduledOffDays(days);
-                            if (typeof onScheduledOffSaved === 'function') onScheduledOffSaved();
-                        }}
-                        refreshScheduledOff={fetchScheduledOff}
-                    />
                 </div>
             </div>
             <div className="detail-content">

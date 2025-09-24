@@ -7,8 +7,6 @@ import {OperatorService} from '../../services/OperatorService';
 import LoadingScreen from '../common/LoadingScreen';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import MixerCard from './MixerCard';
-import MixerOverview from './MixerOverview';
-import OperatorsView from '../operators/OperatorsView'
 import '../../styles/FilterStyles.css';
 import './styles/MixersView.css';
 import MixerDetailView from './MixerDetailView'
@@ -34,10 +32,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
     const [selectedPlant, setSelectedPlant] = useState(preferences.mixerFilters?.selectedPlant || '');
     const [statusFilter, setStatusFilter] = useState(preferences.mixerFilters?.statusFilter || '');
     const [showAddSheet, setShowAddSheet] = useState(false);
-    const [showOverview, setShowOverview] = useState(false);
     const [selectedMixer, setSelectedMixer] = useState(null);
-    const [showOperatorsView, setShowOperatorsView] = useState(false)
-    const [operatorStatusFilter, setOperatorStatusFilter] = useState('')
     const [viewMode, setViewMode] = useState(() => {
         if (preferences.mixerFilters?.viewMode !== undefined && preferences.mixerFilters?.viewMode !== null) return preferences.mixerFilters.viewMode
         if (preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null) return preferences.defaultViewMode
@@ -85,9 +80,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
         } else {
             const lastUsed = localStorage.getItem('mixers_last_view_mode')
             if (lastUsed) setViewMode(lastUsed)
-        }
-        if (preferences?.autoOverview) {
-            setShowOverview(true);
         }
     }, [preferences]);
 
@@ -171,12 +163,14 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setAllMixers(processedBase)
             setMixersLoaded(true)
             setTimeout(() => {
-                MixerService.ensureSpareIfNoOperator(processedBase).catch(() => {})
+                MixerService.ensureSpareIfNoOperator(processedBase).catch(() => {
+                })
             }, 0)
             ;(async () => {
                 const items = processedBase.slice()
                 let index = 0
                 const concurrency = 6
+
                 async function worker() {
                     while (index < items.length) {
                         const current = index++
@@ -204,6 +198,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                         }
                     }
                 }
+
                 await Promise.all(Array.from({length: concurrency}, () => worker()))
             })()
         } catch (error) {
@@ -227,12 +222,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
             setStatusFilter(status);
             updateMixerFilter('statusFilter', status);
         }
-        setShowOverview(false);
-    }
-
-    function handleOperatorStatusClick(status) {
-        setOperatorStatusFilter(status)
-        setShowOperatorsView(true)
     }
 
     function handleViewModeChange(mode) {
@@ -304,32 +293,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 
     const unverifiedCount = mixers.filter(m => !m.isVerified()).length
     const neverVerifiedCount = mixers.filter(m => !m.updatedLast || !m.updatedBy).length
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Mixers Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    <MixerOverview
-                        filteredMixers={filteredMixers}
-                        selectedPlant={selectedPlant}
-                        unverifiedCount={unverifiedCount}
-                        neverVerifiedCount={neverVerifiedCount}
-                        onStatusClick={handleStatusClick}
-                        onOperatorStatusClick={handleOperatorStatusClick}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close</button>
-                </div>
-            </div>
-        </div>
-    );
 
     useEffect(() => {
         function updateStickyCoverHeight() {
@@ -629,9 +592,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i> Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode !== 'grid' && (
@@ -655,35 +615,6 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                             onClose={() => setShowAddSheet(false)}
                             onMixerAdded={newMixer => setMixers([...mixers, newMixer])}
                         />
-                    )}
-                    {showOverview && <OverviewPopup/>}
-                    {showOperatorsView && (
-                        <div className="modal-backdrop" onClick={() => setShowOperatorsView(false)}>
-                            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                                <div className="modal-header">
-                                    <h2>Operators</h2>
-                                    <button className="close-button" onClick={() => setShowOperatorsView(false)}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="modal-body">
-                                    <OperatorsView
-                                        title="Operator Roster"
-                                        showSidebar={false}
-                                        setShowSidebar={() => {
-                                        }}
-                                        onSelectOperator={() => {
-                                        }}
-                                        initialStatusFilter={operatorStatusFilter}
-                                    />
-                                </div>
-                                <div className="modal-footer">
-                                    <button className="primary-button"
-                                            onClick={() => setShowOperatorsView(false)}>Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     )}
                     {showCommentModal && (
                         <MixerCommentModal

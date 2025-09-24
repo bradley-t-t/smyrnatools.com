@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
                     vin: mixer?.vin ?? null,
                     make: mixer?.make ?? null,
                     model: mixer?.model ?? null,
-                    year: mixer?.year ?? null,
+                    year: (() => { const y = normalize("year", mixer?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : null; })(),
                     status: mixer?.status ?? "Active",
                     created_at: now,
                     updated_at: now,
@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
                     vin: mixer?.vin ?? current.vin,
                     make: mixer?.make ?? current.make,
                     model: mixer?.model ?? current.model,
-                    year: typeof mixer?.year === "number" ? mixer.year : current.year,
+                    year: (() => { const y = normalize("year", mixer?.year); return y != null && Number.isFinite(Number(y)) ? Number(y) : current.year; })(),
                     status,
                     updated_at: nowIso(),
                     updated_by: userId,
@@ -839,10 +839,15 @@ Deno.serve(async (req) => {
                     status: 400,
                     headers: corsHeaders
                 });
-                const {data, error} = await supabase.from("mixers").update({
+                const patch: Record<string, any> = {
                     updated_last: nowIso(),
                     updated_by: userId
-                }).eq("id", id).select().maybeSingle();
+                };
+                const y = normalize("year", body?.year ?? body?.data?.year);
+                if (y != null && Number.isFinite(Number(y))) {
+                    patch.year = Number(y);
+                }
+                const {data, error} = await supabase.from("mixers").update(patch).eq("id", id).select().maybeSingle();
                 if (error) return new Response(JSON.stringify({error: error.message}), {
                     status: 400,
                     headers: corsHeaders

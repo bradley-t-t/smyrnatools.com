@@ -2,7 +2,6 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TrailerCard from './TrailerCard';
-import TrailerOverview from './TrailerOverview';
 import '../../styles/FilterStyles.css';
 import './styles/TrailersView.css';
 import {TrailerService} from '../../services/TrailerService';
@@ -35,7 +34,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         return lastUsed || 'grid'
     })
     const [showAddSheet, setShowAddSheet] = useState(false)
-    const [showOverview, setShowOverview] = useState(false)
     const [selectedTrailer, setSelectedTrailer] = useState(null)
     const [reloadTrailers, setReloadTrailers] = useState(false)
     const [showIssueModal, setShowIssueModal] = useState(false)
@@ -63,7 +61,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             setTypeFilter(preferences.trailerFilters.typeFilter || '')
             setViewMode(preferences.trailerFilters.viewMode || preferences.defaultViewMode || 'grid')
         }
-        if (preferences?.autoOverview) setShowOverview(true)
     }, [preferences, reloadTrailers])
 
     useEffect(() => {
@@ -205,14 +202,12 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                 }
             }))
         }
-        setShowOverview(false)
     }
 
     function handleBackFromDetail() {
         setSelectedTrailer(null)
         setReloadTrailers(r => !r)
     }
-
 
     const debouncedSetSearchText = useCallback(AsyncUtility.debounce((value) => {
         setSearchText(value)
@@ -245,29 +240,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             })
             .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'trailerNumber'))
     }, [trailers, tractors, selectedPlant, searchText, typeFilter, preferences.selectedRegion?.code, regionPlantCodes])
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Trailers Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    <TrailerOverview
-                        filteredTrailers={filteredTrailers}
-                        selectedPlant={selectedPlant}
-                        onTypeClick={handleTypeClick}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close</button>
-                </div>
-            </div>
-        </div>
-    )
 
     const content = useMemo(() => {
         if (isLoading) {
@@ -541,9 +513,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i> Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode === 'list' && (
@@ -566,7 +535,6 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                             onTrailerAdded={newTrailer => setTrailers([...trailers, newTrailer])}
                         />
                     )}
-                    {showOverview && <OverviewPopup/>}
                     {showCommentModal && (
                         <TrailerCommentModal
                             trailerId={modalTrailerId}

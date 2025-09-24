@@ -4,7 +4,6 @@ import '../../styles/FilterStyles.css'
 import {ListService} from '../../services/ListService'
 import LoadingScreen from '../common/LoadingScreen'
 import {UserService} from '../../services/UserService'
-import ListOverview from './ListOverview'
 import {usePreferences} from '../../app/context/PreferencesContext'
 import ListAddView from './ListAddView'
 import ListDetailView from './ListDetailView'
@@ -14,14 +13,13 @@ import {RegionService} from '../../services/RegionService'
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const {updateListFilter, resetListFilters, preferences} = usePreferences()
     const headerRef = useRef(null)
-    const [, setListItems] = useState([])
+    const [listItems, setListItems] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchText, setSearchText] = useState('')
     const [selectedPlant, setSelectedPlant] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
     const [showAddSheet, setShowAddSheet] = useState(false)
-    const [showOverview, setShowOverview] = useState(false)
     const [showDetailView, setShowDetailView] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState(null)
@@ -44,6 +42,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 }
             }
         }
+
         fetchCurrentUser()
     }, [])
 
@@ -60,6 +59,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 
     useEffect(() => {
         let cancelled = false
+
         async function loadRegionPlants() {
             let regionCode = preferences?.selectedRegion?.code || ''
             try {
@@ -93,6 +93,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 if (!cancelled) setRegionPlantCodes(null)
             }
         }
+
         loadRegionPlants()
         return () => {
             cancelled = true
@@ -145,37 +146,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 
     const totalItems = filteredItems.length
     const overdueItems = filteredItems.filter(item => ListService.isOverdue(item) && !item.completed).length
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>{statusFilter === 'completed' ? 'Completed Items Overview' : 'List Overview'}</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    <ListOverview
-                        totalItems={totalItems}
-                        overdueItems={overdueItems}
-                        listItems={filteredItems}
-                        selectedPlant={selectedPlant}
-                        isArchived={statusFilter === 'completed'}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-
-    const visiblePlants = regionPlantCodes && regionPlantCodes.size > 0
-        ? plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase()))
-        : plants
 
     const headerColumns = statusFilter === 'completed'
         ? ['38%', '14%', '12%', '12%', '16%', '8%']
@@ -247,7 +217,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                             >
                                 <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants
                                 </option>
-                                {visiblePlants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
+                                {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
                                     <option
                                         key={plant.plant_code}
                                         value={plant.plant_code}
@@ -311,9 +281,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                                 <i className="fas fa-undo"></i>
                             </button>
                         )}
-                        <button className="ios-button" onClick={() => setShowOverview(true)}>
-                            <i className="fas fa-chart-bar"></i> Overview
-                        </button>
                     </div>
                 </div>
                 {filteredItems.length > 0 && (
@@ -423,7 +390,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 <ListAddView
                     onClose={() => setShowAddSheet(false)}
                     onItemAdded={() => fetchAllData()}
-                    plants={visiblePlants}
+                    plants={plants}
                 />
             )}
 
@@ -433,8 +400,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                     onClose={() => setShowDetailView(false)}
                 />
             )}
-
-            {showOverview && <OverviewPopup/>}
         </div>
     )
 }

@@ -6,7 +6,6 @@ import LoadingScreen from '../common/LoadingScreen'
 import PickupTrucksCard from './PickupTrucksCard'
 import PickupTrucksDetailView from './PickupTrucksDetailView'
 import PickupTrucksAddView from './PickupTrucksAddView'
-import PickupTrucksOverview from './PickupTrucksOverview'
 import {PickupTruckService} from '../../services/PickupTruckService'
 import AsyncUtility from '../../utils/AsyncUtility'
 import {PlantService} from '../../services/PlantService'
@@ -24,7 +23,6 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
     const [searchInput, setSearchInput] = useState('')
     const [viewMode, setViewMode] = useState(localStorage.getItem('pickup_trucks_last_view_mode') || 'grid')
     const [showAddSheet, setShowAddSheet] = useState(false)
-    const [showOverview, setShowOverview] = useState(false)
     const [selectedId, setSelectedId] = useState(null)
     const [plants, setPlants] = useState([])
     const [selectedPlant, setSelectedPlant] = useState('')
@@ -393,9 +391,6 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i> Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode !== 'grid' && (
@@ -416,25 +411,6 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                             onClose={() => setShowAddSheet(false)}
                             onAdded={newItem => setPickups([...pickups, newItem])}
                         />
-                    )}
-                    {showOverview && (
-                        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-                            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                                <div className="modal-header">
-                                    <h2>Pickup Trucks Overview</h2>
-                                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="modal-body">
-                                    <PickupTrucksOverview pickups={filtered}/>
-                                </div>
-                                <div className="modal-footer">
-                                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     )}
                 </>
             )}

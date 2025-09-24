@@ -49,8 +49,6 @@ const getIconForMenuItem = (id) => {
             return <i className="fas fa-user"></i>
         case 'Logout':
             return <i className="fas fa-sign-out-alt"></i>
-        case 'Teams':
-            return <i className="fas fa-people-arrows"></i>
         case 'Reports':
             return <i className="fas fa-file-alt"></i>
         default:
@@ -65,7 +63,6 @@ const menuItems = [
     {text: 'Trailers', id: 'Trailers', permission: 'trailers.view', alwaysVisible: false},
     {text: 'Heavy Equipment', id: 'Heavy Equipment', permission: 'equipment.view', alwaysVisible: false},
     {text: 'Pickup Trucks', id: 'Pickup Trucks', permission: 'pickup_trucks.view', alwaysVisible: false},
-    {text: 'Teams', id: 'Teams', permission: 'teams.view', alwaysVisible: false},
     {text: 'Operators', id: 'Operators', permission: 'operators.view', alwaysVisible: false},
     {text: 'Managers', id: 'Managers', permission: 'managers.view', alwaysVisible: false},
     {text: 'List', id: 'List', permission: 'list.view', alwaysVisible: false},
@@ -116,7 +113,7 @@ export default function Navigation({
                     return false
                 })
                 if (regionType === 'Office') filtered = filtered.filter(item => item.id === 'Reports' || item.id === 'Dashboard')
-                else if (regionType === 'Aggregate') filtered = filtered.filter(item => !['Mixers', 'Teams', 'List', 'Tractors', 'Trailers'].includes(item.id))
+                else if (regionType === 'Aggregate') filtered = filtered.filter(item => !['Mixers', 'List', 'Tractors', 'Trailers'].includes(item.id))
                 setVisibleMenuItems(filtered)
                 lastMenuItemsRef.current = filtered
             } catch (error) {

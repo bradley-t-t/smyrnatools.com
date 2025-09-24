@@ -6,7 +6,6 @@ import {UserService} from '../../services/UserService'
 import LoadingScreen from '../common/LoadingScreen'
 import OperatorDetailView from './OperatorDetailView'
 import OperatorCard from './OperatorCard'
-import OperatorsOverview from './OperatorsOverview'
 import OperatorAddView from './OperatorAddView'
 import {usePreferences} from '../../app/context/PreferencesContext'
 import FormatUtility from '../../utils/FormatUtility'
@@ -26,7 +25,6 @@ function OperatorsView({
     const [selectedPlant, setSelectedPlant] = useState(preferences.operatorFilters?.selectedPlant || '')
     const [statusFilter, setStatusFilter] = useState(preferences.operatorFilters?.statusFilter || '')
     const [showAddSheet, setShowAddSheet] = useState(false)
-    const [showOverview, setShowOverview] = useState(false)
     const [showDetailView, setShowDetailView] = useState(false)
     const [selectedOperator, setSelectedOperator] = useState(null)
     const [, setCurrentUserId] = useState(null)
@@ -286,44 +284,11 @@ function OperatorsView({
             setStatusFilter(status)
             updateOperatorFilter('statusFilter', status)
         }
-        setShowOverview(false)
     }
-
-    const statusesForCounts = ['Active', 'Light Duty', 'Pending Start', 'Training', 'Terminated', 'No Hire']
-    statusesForCounts.map(status => ({
-        status,
-        count: operators.filter(op => op.status === status).length
-    }))
-    operators.filter(op => op.isTrainer).length
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Operators Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    <OperatorsOverview
-                        filteredOperators={filteredOperators}
-                        selectedPlant={selectedPlant}
-                        onStatusClick={handleStatusClick}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
 
     function formatDate(dateStr) {
         return FormatUtility.formatDate(dateStr)
     }
-
 
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
@@ -485,10 +450,6 @@ function OperatorsView({
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i>
-                                    Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode === 'list' && (
@@ -499,11 +460,9 @@ function OperatorsView({
                                 <div>Phone</div>
                                 <div>Status</div>
                                 {statusFilter === 'Pending Start' && (
-                                    <div>Pending Start</div>
+                                    <div>Pending Start Date</div>
                                 )}
-                                <div>Position</div>
                                 <div>Trainer</div>
-                                <div>Rating</div>
                             </div>
                         )}
                     </div>
@@ -515,111 +474,64 @@ function OperatorsView({
                         ) : filteredOperators.length === 0 ? (
                             <div className="no-results-container">
                                 <div className="no-results-icon">
-                                    <i className="fas fa-user-slash"></i>
+                                    <i className="fas fa-user-hard-hat"></i>
                                 </div>
                                 <h3>No Operators Found</h3>
-                                <p>
-                                    {searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')
-                                        ? "No operators match your search criteria."
-                                        : "There are no operators in the system yet."}
-                                </p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>
-                                    Add Operator
+                                <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? 'No operators match your search criteria.' : 'There are no operators in the system yet.'}</p>
+                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Operator
                                 </button>
                             </div>
                         ) : viewMode === 'grid' ? (
                             <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
-                                {filteredOperators.map(operator => (
-                                    <OperatorCard
-                                        key={operator.employeeId}
-                                        operator={{
-                                            ...operator,
-                                            daysOff: scheduledOffMap[operator.employeeId] || []
-                                        }}
-                                        plantName={getPlantName(operator.plantCode)}
-                                        trainers={trainers}
-                                        onSelect={() => handleSelectOperator(operator)}
-                                        rating={operator.rating}
-                                        isDuplicateName={duplicateNamesSet.has((operator.name || '').trim().toLowerCase())}
-                                    />
-                                ))}
+                                {filteredOperators.map(operator => {
+                                    const duplicate = duplicateNamesSet.has((operator.name || '').trim().toLowerCase())
+                                    const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer)
+                                    const scheduledOff = Array.isArray(scheduledOffMap[operator.employeeId]) ? scheduledOffMap[operator.employeeId] : []
+                                    return (
+                                        <OperatorCard
+                                            key={operator.employeeId}
+                                            operator={operator}
+                                            trainerName={trainerObj ? trainerObj.name : ''}
+                                            scheduledOff={scheduledOff}
+                                            duplicateName={duplicate}
+                                            onSelect={() => handleSelectOperator(operator)}
+                                            formatDate={formatDate}
+                                        />
+                                    )
+                                })}
                             </div>
                         ) : (
                             <div className="operators-list-table-container">
                                 <table className="operators-list-table">
                                     <colgroup>
-                                        {statusFilter === 'Pending Start' ? (
-                                            <>
-                                                <col style={{width: '9%'}}/>
-                                                <col style={{width: '20%'}}/>
-                                                <col style={{width: '14%'}}/>
-                                                <col style={{width: '12%'}}/>
-                                                <col style={{width: '14%'}}/>
-                                                <col style={{width: '16%'}}/>
-                                                <col style={{width: '9%'}}/>
-                                                <col style={{width: '6%'}}/>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <col style={{width: '10%'}}/>
-                                                <col style={{width: '22%'}}/>
-                                                <col style={{width: '16%'}}/>
-                                                <col style={{width: '12%'}}/>
-                                                <col style={{width: '20%'}}/>
-                                                <col style={{width: '10%'}}/>
-                                                <col style={{width: '10%'}}/>
-                                            </>
-                                        )}
+                                        <col style={{width: '10%'}}/>
+                                        <col style={{width: '30%'}}/>
+                                        <col style={{width: '18%'}}/>
+                                        <col style={{width: '18%'}}/>
+                                        {statusFilter === 'Pending Start' && <col style={{width: '14%'}}/>}
+                                        <col style={{width: '10%'}}/>
                                     </colgroup>
                                     <tbody>
-                                    {filteredOperators.map(operator => (
-                                        <tr key={operator.employeeId} style={{cursor: 'pointer'}}
-                                            onClick={() => handleSelectOperator(operator)}>
-                                            <td>{operator.plantCode ? operator.plantCode : "---"}</td>
-                                            <td>
-                                                {operator.name ? operator.name : "---"}
-                                                {duplicateNamesSet.has((operator.name || '').trim().toLowerCase()) && (
-                                                    <i className="fas fa-exclamation-triangle duplicate-warning-icon"
-                                                       title="Duplicate name" aria-label="Duplicate name"></i>
+                                    {filteredOperators.map(operator => {
+                                        const duplicate = duplicateNamesSet.has((operator.name || '').trim().toLowerCase())
+                                        const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer)
+                                        const scheduledOff = Array.isArray(scheduledOffMap[operator.employeeId]) ? scheduledOffMap[operator.employeeId] : []
+                                        return (
+                                            <tr key={operator.employeeId} onClick={() => handleSelectOperator(operator)}
+                                                style={{cursor: 'pointer'}}>
+                                                <td>{operator.plantCode || '—'}</td>
+                                                <td>
+                                                    <span className={`name-cell${duplicate ? ' duplicate' : ''}`}>{operator.name}</span>
+                                                </td>
+                                                <td>{operator.phone || '—'}</td>
+                                                <td>{operator.status || '—'}</td>
+                                                {statusFilter === 'Pending Start' && (
+                                                    <td>{operator.pendingStartDate ? formatDate(operator.pendingStartDate) : '—'}</td>
                                                 )}
-                                            </td>
-                                            <td>{operator.phone ? operator.phone : "---"}</td>
-                                            <td>
-                                                    <span
-                                                        className="item-status-dot"
-                                                        style={{
-                                                            display: 'inline-block',
-                                                            verticalAlign: 'middle',
-                                                            marginRight: '8px',
-                                                            backgroundColor:
-                                                                operator.status === 'Active' ? 'var(--status-active)' :
-                                                                    operator.status === 'Light Duty' ? 'var(--status-spare)' :
-                                                                        operator.status === 'Training' ? 'var(--status-inshop)' :
-                                                                            operator.status === 'Terminated' ? 'var(--status-retired)' :
-                                                                                operator.status === 'Pending Start' ? 'var(--status-inshop)' :
-                                                                                    operator.status === 'No Hire' ? 'var(--status-retired)' :
-                                                                                        'var(--accent)',
-                                                        }}
-                                                    ></span>
-                                                {operator.status ? operator.status : "---"}
-                                            </td>
-                                            {statusFilter === 'Pending Start' && (
-                                                <td>{operator.pendingStartDate ? formatDate(operator.pendingStartDate) : "---"}</td>
-                                            )}
-                                            <td>{operator.position ? operator.position : "---"}</td>
-                                            <td>{operator.isTrainer ? "Yes" : "No"}</td>
-                                            <td>
-                                                {(() => {
-                                                    const rating = Math.round(operator.rating || 0)
-                                                    const stars = rating > 0 ? rating : 1
-                                                    return Array.from({length: stars}).map((_, i) => (
-                                                        <i key={i} className="fas fa-star"
-                                                           style={{color: 'var(--accent)'}}></i>
-                                                    ))
-                                                })()}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                <td>{trainerObj ? trainerObj.name : '—'}</td>
+                                            </tr>
+                                        )
+                                    })}
                                     </tbody>
                                 </table>
                             </div>
@@ -627,17 +539,12 @@ function OperatorsView({
                     </div>
                     {showAddSheet && (
                         <OperatorAddView
-                            plants={plants}
-                            operators={operators}
                             onClose={() => setShowAddSheet(false)}
-                            onOperatorAdded={() => {
-                                fetchOperators();
-                                setShowAddSheet(false);
-                            }}
+                            onOperatorAdded={() => fetchOperators()}
+                            trainers={trainers}
+                            plants={plants}
                         />
                     )}
-
-                    {showOverview && <OverviewPopup/>}
                 </>
             )}
         </div>

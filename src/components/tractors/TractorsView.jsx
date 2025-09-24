@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TractorCard from './TractorCard';
-import TractorOverview from './TractorOverview';
 import '../../styles/FilterStyles.css';
 import './styles/TractorsView.css';
 import {TractorService} from '../../services/TractorService';
@@ -44,7 +43,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
         return lastUsed || 'grid'
     })
     const [showAddSheet, setShowAddSheet] = useState(false)
-    const [showOverview, setShowOverview] = useState(false)
     const [selectedTractor, setSelectedTractor] = useState(null)
     const [reloadTractors, setReloadTractors] = useState(false)
     const [showIssueModal, setShowIssueModal] = useState(false)
@@ -86,9 +84,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
             setStatusFilter(preferences.tractorFilters.statusFilter || '')
             setFreightFilter(preferences.tractorFilters.freightFilter || '')
             setViewMode(preferences.tractorFilters.viewMode !== undefined && preferences.tractorFilters.viewMode !== null ? preferences.tractorFilters.viewMode : preferences.defaultViewMode !== undefined && preferences.defaultViewMode !== null ? preferences.defaultViewMode : localStorage.getItem('tractors_last_view_mode') || 'grid')
-        }
-        if (preferences?.autoOverview) {
-            setShowOverview(true)
         }
     }, [preferences, reloadTractors])
 
@@ -263,7 +258,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                 statusFilter: status
             })
         }
-        setShowOverview(false)
     }
 
     function handleBackFromDetail() {
@@ -296,31 +290,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const verifiedCount = tractors.filter(m => m.isVerified()).length;
     const unverifiedCount = tractors.length - verifiedCount;
     const neverVerifiedCount = tractors.filter(m => !m.updatedLast || !m.updatedBy).length;
-
-    const OverviewPopup = () => (
-        <div className="modal-backdrop" onClick={() => setShowOverview(false)}>
-            <div className="modal-content overview-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Tractors Overview</h2>
-                    <button className="close-button" onClick={() => setShowOverview(false)}>
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    <TractorOverview
-                        filteredTractors={filteredTractors}
-                        selectedPlant={selectedPlant}
-                        unverifiedCount={unverifiedCount}
-                        neverVerifiedCount={neverVerifiedCount}
-                        onStatusClick={handleStatusClick}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="primary-button" onClick={() => setShowOverview(false)}>Close</button>
-                </div>
-            </div>
-        </div>
-    );
 
     useEffect(() => {
         function updateStickyCoverHeight() {
@@ -646,9 +615,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                                         <i className="fas fa-undo"></i>
                                     </button>
                                 )}
-                                <button className="ios-button" onClick={() => setShowOverview(true)}>
-                                    <i className="fas fa-chart-bar"></i> Overview
-                                </button>
                             </div>
                         </div>
                         {viewMode === 'list' && (
@@ -673,7 +639,6 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                             onTractorAdded={newTractor => setTractors([...tractors, newTractor])}
                         />
                     )}
-                    {showOverview && <OverviewPopup/>}
                     {showCommentModal && (
                         <TractorCommentModal
                             tractorId={modalTractorId}

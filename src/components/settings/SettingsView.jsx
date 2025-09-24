@@ -16,7 +16,6 @@ function SettingsView() {
         toggleNavbarMinimized,
         toggleShowTips,
         toggleShowOnlineOverlay,
-        toggleAutoOverview,
         setThemeMode,
         setAccentColor,
         toggleAcceptReportSubmittedEmails
@@ -129,15 +128,6 @@ function SettingsView() {
                                 <span className="slider round"></span>
                             </label>
                             <span className="toggle-state">{preferences.showOnlineOverlay ? 'Visible' : 'Hidden'}</span>
-                        </div>
-                        <div className="toggle-setting">
-                            <span className="toggle-label">Open Overview Automatically</span>
-                            <label className="switch">
-                                <input type="checkbox" checked={preferences.autoOverview}
-                                       onChange={() => save(toggleAutoOverview)}/>
-                                <span className="slider round"></span>
-                            </label>
-                            <span className="toggle-state">{preferences.autoOverview ? 'Enabled' : 'Disabled'}</span>
                         </div>
                     </div>
                 </div>
