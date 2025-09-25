@@ -27,11 +27,11 @@ export default function DashboardView() {
     const [lastUpdated, setLastUpdated] = useState(null)
     const [refreshKey, setRefreshKey] = useState(0)
     const [stats, setStats] = useState({
-        mixers: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0},
-        tractors: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0},
-        trailers: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0},
-        equipment: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0},
-        pickups: {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0},
+        mixers: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
+        tractors: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
+        trailers: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
+        equipment: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
+        pickups: {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0, allocationPercent: 0},
         operators: {
             total: 0,
             active: 0,
@@ -46,7 +46,8 @@ export default function DashboardView() {
         fleetTotal: 0,
         openIssuesTotal: 0,
         overdueTotal: 0,
-        verificationAverage: 0
+        verificationAverage: 0,
+        overallAllocationPercent: 0
     })
     const [trainingOperators, setTrainingOperators] = useState([])
     const [trainingCollapsed, setTrainingCollapsed] = useState(true)
@@ -114,7 +115,7 @@ export default function DashboardView() {
     const slimOperator = o => ({id: o.id, employeeId: o.employeeId, status: o.status, plantCode: o.plantCode})
 
     const isServiceOverdue = date => {
-        if (!date) return true
+        if (!date) return false
         const diff = Math.ceil((Date.now() - new Date(date).getTime()) / 86400000)
         return diff > 90
     }
@@ -147,10 +148,12 @@ export default function DashboardView() {
         const tractorAssignedIds = new Set()
         const consider = plantCode => !filterActive || plantSet.has(String(plantCode || '').trim())
         const counts = countsRef.current
+        let mixersAvailable = 0, tractorsAvailable = 0, trailersAvailable = 0, equipmentAvailable = 0, pickupsAvailable = 0
         for (const m of allMixersRef.current) {
             if (!consider(m.plantCode)) continue
             mixersTotals.total++
             if (m.status === 'Active') mixersTotals.active++; else if (m.status === 'In Shop') mixersTotals.shop++
+            if (m.status !== 'Retired') mixersAvailable++
             if (isServiceOverdue(m.lastServiceDate)) mixersTotals.overdue++
             if (VerifiedUtility.isVerified(m.updatedLast, m.updatedAt, m.updatedBy)) mixersTotals.verified++
             if (m.assignedOperator) mixerAssignedIds.add(m.assignedOperator)
@@ -164,6 +167,7 @@ export default function DashboardView() {
             if (!consider(t.plantCode)) continue
             tractorsTotals.total++
             if (t.status === 'Active') tractorsTotals.active++; else if (t.status === 'In Shop') tractorsTotals.shop++
+            if (t.status !== 'Retired') tractorsAvailable++
             if (isServiceOverdue(t.lastServiceDate)) tractorsTotals.overdue++
             if (VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)) tractorsTotals.verified++
             if (t.assignedOperator) tractorAssignedIds.add(t.assignedOperator)
@@ -177,6 +181,7 @@ export default function DashboardView() {
             if (!consider(r.plantCode)) continue
             trailersTotals.total++
             if (r.status === 'Active') trailersTotals.active++; else if (r.status === 'In Shop') trailersTotals.shop++
+            if (r.status !== 'Retired') trailersAvailable++
             if (isServiceOverdue(r.lastServiceDate)) trailersTotals.overdue++
             const rc = counts.trailers[r.id]
             if (rc) {
@@ -188,6 +193,7 @@ export default function DashboardView() {
             if (!consider(e.plantCode)) continue
             equipmentTotals.total++
             if (e.status === 'Active') equipmentTotals.active++; else if (e.status === 'In Shop') equipmentTotals.shop++
+            if (e.status !== 'Retired') equipmentAvailable++
             if (isServiceOverdue(e.lastServiceDate)) equipmentTotals.overdue++
             const ec = counts.equipment[e.id]
             if (ec) {
@@ -199,6 +205,7 @@ export default function DashboardView() {
             if (!consider(p.plantCode)) continue
             pickupsTotals.total++
             if (p.status === 'Active') pickupsTotals.active++; else if (p.status === 'In Shop') pickupsTotals.shop++; else if (p.status === 'Stationary') pickupsTotals.stationary++; else if (p.status === 'Spare') pickupsTotals.spare++; else if (p.status === 'Sold') pickupsTotals.sold++; else if (p.status === 'Retired') pickupsTotals.retired++
+            if (p.status !== 'Retired') pickupsAvailable++
         }
         for (const o of allOperatorsRef.current) {
             if (!consider(o.plantCode)) continue
@@ -224,18 +231,27 @@ export default function DashboardView() {
         const openIssuesTotal = mixersTotals.issues + tractorsTotals.issues + trailersTotals.issues + equipmentTotals.issues
         const overdueTotal = mixersTotals.overdue + tractorsTotals.overdue + trailersTotals.overdue + equipmentTotals.overdue
         const fleetTotal = mixersTotals.total + tractorsTotals.total + trailersTotals.total + equipmentTotals.total + pickupsTotals.total
+        const mixersAllocationPercent = mixersAvailable ? Math.round((mixersTotals.active / mixersAvailable) * 100) : 0
+        const tractorsAllocationPercent = tractorsAvailable ? Math.round((tractorsTotals.active / tractorsAvailable) * 100) : 0
+        const trailersAllocationPercent = trailersAvailable ? Math.round((trailersTotals.active / trailersAvailable) * 100) : 0
+        const equipmentAllocationPercent = equipmentAvailable ? Math.round((equipmentTotals.active / equipmentAvailable) * 100) : 0
+        const pickupsAllocationPercent = pickupsAvailable ? Math.round(((pickupsTotals.active + pickupsTotals.stationary) / pickupsAvailable) * 100) : 0
+        const overallAvailable = mixersAvailable + tractorsAvailable + trailersAvailable + equipmentAvailable + pickupsAvailable
+        const overallActiveNumerator = mixersTotals.active + tractorsTotals.active + trailersTotals.active + equipmentTotals.active + pickupsTotals.active + pickupsTotals.stationary
+        const overallAllocationPercent = overallAvailable ? Math.round((overallActiveNumerator / overallAvailable) * 100) : 0
         setStats(s => ({
-            mixers: {...mixersTotals, verifiedPercent: mixersVerifiedPercent},
-            tractors: {...tractorsTotals, verifiedPercent: tractorsVerifiedPercent},
-            trailers: trailersTotals,
-            equipment: equipmentTotals,
-            pickups: pickupsTotals,
+            mixers: {...mixersTotals, verifiedPercent: mixersVerifiedPercent, allocationPercent: mixersAllocationPercent},
+            tractors: {...tractorsTotals, verifiedPercent: tractorsVerifiedPercent, allocationPercent: tractorsAllocationPercent},
+            trailers: {...trailersTotals, allocationPercent: trailersAllocationPercent},
+            equipment: {...equipmentTotals, allocationPercent: equipmentAllocationPercent},
+            pickups: {...pickupsTotals, allocationPercent: pickupsAllocationPercent},
             operators: operatorsTotals,
             managers: s.managers,
             fleetTotal,
             openIssuesTotal,
             overdueTotal,
-            verificationAverage: verificationAvg
+            verificationAverage: verificationAvg,
+            overallAllocationPercent
         }))
         prevSnapshotRef.current = {fleet: fleetTotal}
     }, [dashboardPlant, regionPlants])
@@ -693,7 +709,13 @@ export default function DashboardView() {
                             <select className="ios-select" value={dashboardPlant} onChange={onPlantChange}
                                     disabled={refreshing} aria-label="Plant">
                                 <option value="">All Plants</option>
-                                {regionPlants.map(p => {
+                                {regionPlants.slice().sort((a, b) => {
+                                    const ac = String(a.plantCode || a.plant_code || '').replace(/\D/g, '')
+                                    const bc = String(b.plantCode || b.plant_code || '').replace(/\D/g, '')
+                                    const an = ac ? parseInt(ac, 10) : 0
+                                    const bn = bc ? parseInt(bc, 10) : 0
+                                    return an - bn || String(a.plantCode || a.plant_code || '').localeCompare(String(b.plantCode || b.plant_code || ''))
+                                }).map(p => {
                                     const code = p.plantCode || p.plant_code
                                     const name = p.plantName || p.plant_name || code
                                     return <option key={code} value={code}>{name} ({code})</option>
@@ -720,17 +742,17 @@ export default function DashboardView() {
                         <div className="hero-metric">
                             <div className="metric-label">Fleet</div>
                             <div className="metric-value">{stats.fleetTotal}{diffBadge(stats.fleetTotal)}</div>
-                            <div className="metric-sub">Assets</div>
+                            <div className="metric-sub">Total Assets</div>
                         </div>
                         <div className="hero-metric">
-                            <div className="metric-label">Issues</div>
-                            <div className="metric-value">{stats.openIssuesTotal}</div>
-                            <div className="metric-sub">Open</div>
+                            <div className="metric-label">Asset Allocation</div>
+                            <div className="metric-value accent">{stats.overallAllocationPercent}%</div>
+                            <div className="metric-sub">Overall Asset Allocation</div>
                         </div>
                         <div className="hero-metric">
                             <div className="metric-label">Overdue</div>
                             <div className="metric-value warn">{stats.overdueTotal}</div>
-                            <div className="metric-sub">Service</div>
+                            <div className="metric-sub">Service Overdue</div>
                         </div>
                         <div className="hero-metric wide">
                             <div className="metric-label">Verified</div>
@@ -757,7 +779,8 @@ export default function DashboardView() {
                             <div className="skeleton-pill w20"/>
                             <div className="skeleton-pill w25"/>
                         </div>
-                    </div>)}</div>
+                    </div>)}
+                    </div>
                 ) : (
                     <div className="group-grid">
                         <div className="group-section">
@@ -770,6 +793,7 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Active {stats.mixers.active}</div>
                                         <div className="kpi-pill">In Shop {stats.mixers.shop}</div>
                                         <div className="kpi-pill">Verified {stats.mixers.verifiedPercent}%</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.mixers.allocationPercent}%</div>
                                         <div className="kpi-pill">Issues {stats.mixers.issues}</div>
                                         <div className="kpi-pill">Comments {stats.mixers.comments}</div>
                                     </div>
@@ -781,6 +805,7 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Active {stats.tractors.active}</div>
                                         <div className="kpi-pill">In Shop {stats.tractors.shop}</div>
                                         <div className="kpi-pill">Verified {stats.tractors.verifiedPercent}%</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.tractors.allocationPercent}%</div>
                                         <div className="kpi-pill">Issues {stats.tractors.issues}</div>
                                         <div className="kpi-pill">Comments {stats.tractors.comments}</div>
                                     </div>
@@ -791,6 +816,7 @@ export default function DashboardView() {
                                     <div className="kpi-row">
                                         <div className="kpi-pill">Active {stats.trailers.active}</div>
                                         <div className="kpi-pill">In Shop {stats.trailers.shop}</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.trailers.allocationPercent}%</div>
                                         <div className="kpi-pill">Issues {stats.trailers.issues}</div>
                                         <div className="kpi-pill">Overdue {stats.trailers.overdue}</div>
                                         <div className="kpi-pill">Comments {stats.trailers.comments}</div>
@@ -802,6 +828,7 @@ export default function DashboardView() {
                                     <div className="kpi-row">
                                         <div className="kpi-pill">Active {stats.equipment.active}</div>
                                         <div className="kpi-pill">In Shop {stats.equipment.shop}</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.equipment.allocationPercent}%</div>
                                         <div className="kpi-pill">Issues {stats.equipment.issues}</div>
                                         <div className="kpi-pill">Overdue {stats.equipment.overdue}</div>
                                         <div className="kpi-pill">Comments {stats.equipment.comments}</div>
@@ -817,6 +844,7 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Spare {stats.pickups.spare}</div>
                                         <div className="kpi-pill">Sold {stats.pickups.sold}</div>
                                         <div className="kpi-pill">Retired {stats.pickups.retired}</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.pickups.allocationPercent}%</div>
                                     </div>
                                 </div>
                             </div>
@@ -831,8 +859,8 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Active {stats.operators.active}</div>
                                         <div className="kpi-pill">Light Duty {stats.operators.lightDuty}</div>
                                         <div className="kpi-pill">Assigned {stats.operators.assigned}</div>
-                                        <div className="kpi-pill">Mixer Assign {stats.operators.mixerAssigned}</div>
-                                        <div className="kpi-pill">Tractor Assign {stats.operators.tractorAssigned}</div>
+                                        <div className="kpi-pill">Mixers Assigned {stats.operators.mixerAssigned}</div>
+                                        <div className="kpi-pill">Tractors Assigned {stats.operators.tractorAssigned}</div>
                                         <div className="kpi-pill">Unassigned {stats.operators.unassigned}</div>
                                         <div className="kpi-pill">Pending {stats.operators.pending}</div>
                                     </div>

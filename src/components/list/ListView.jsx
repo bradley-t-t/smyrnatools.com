@@ -13,7 +13,6 @@ import {RegionService} from '../../services/RegionService'
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const {updateListFilter, resetListFilters, preferences} = usePreferences()
     const headerRef = useRef(null)
-    const [listItems, setListItems] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchText, setSearchText] = useState('')
@@ -113,12 +112,11 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     async function fetchAllData() {
         setIsLoading(true)
         try {
-            const [items, plantsData] = await Promise.all([
+            await Promise.all([
                 ListService.fetchListItems(),
                 ListService.fetchPlants()
             ])
-            setListItems(items)
-            setPlants(plantsData)
+            setPlants(ListService.plants)
         } finally {
             setIsLoading(false)
         }
@@ -144,8 +142,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         onSelectItem ? onSelectItem(item.id) : setShowDetailView(true)
     }
 
-    const totalItems = filteredItems.length
-    const overdueItems = filteredItems.filter(item => ListService.isOverdue(item) && !item.completed).length
 
     const headerColumns = statusFilter === 'completed'
         ? ['38%', '14%', '12%', '12%', '16%', '8%']
@@ -283,19 +279,17 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                         )}
                     </div>
                 </div>
-                {filteredItems.length > 0 && (
-                    <div
-                        className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}`}
-                        style={{gridTemplateColumns: headerColumns.join(' ')}}
-                    >
-                        <div>Description</div>
-                        <div>Plant</div>
-                        <div>Deadline</div>
-                        {statusFilter === 'completed' && <div>Completed</div>}
-                        <div>Created By</div>
-                        <div>Status</div>
-                    </div>
-                )}
+                <div
+                    className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}`}
+                    style={{gridTemplateColumns: headerColumns.join(' ')}}
+                >
+                    <div>Description</div>
+                    <div>Plant</div>
+                    <div>Deadline</div>
+                    {statusFilter === 'completed' && <div>Completed</div>}
+                    <div>Created By</div>
+                    <div>Status</div>
+                </div>
             </div>
             <div className="content-container">
                 {isLoading ? (
@@ -405,3 +399,4 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 }
 
 export default ListView
+

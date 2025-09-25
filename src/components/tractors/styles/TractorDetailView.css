@@ -473,7 +473,7 @@
 
 .edit-instructions:before {
     content: '\f05a';
-    font-family: 'Font Awesome 5 Free';
+    font-family: 'Font Awesome 5 Free', sans-serif;
     font-weight: 900;
     margin-right: 10px;
     color: var(--text-light);
@@ -929,4 +929,121 @@ input[type="date"].form-control {
 .modal-content button:first-of-type:disabled {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
+}
+
+.tractor-detail-view .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: var(--modal-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1100;
+}
+
+.tractor-detail-view .modal-content {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    width: 100%;
+    max-width: 680px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.tractor-detail-view .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    flex-shrink: 0;
+}
+
+.tractor-detail-view .modal-header h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tractor-detail-view .modal-header p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.tractor-detail-view .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.tractor-detail-view .missing-list {
+    margin: 0 0 12px 0;
+    padding-left: 18px;
+    color: var(--text-secondary);
+}
+
+.tractor-detail-view .missing-list li {
+    margin: 4px 0;
+}
+
+.tractor-detail-view .form-grid.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .tractor-detail-view .form-grid.two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tractor-detail-view .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    flex-shrink: 0;
+}
+
+.tractor-detail-view .modal-content .form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+    background-color: var(--bg-primary);
+}
+
+.tractor-detail-view .modal-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    background: var(--bg-tertiary);
+}
+
+.tractor-detail-view .modal-note.warning {
+    border-left: 3px solid var(--warning);
+}
+
+.tractor-detail-view .modal-note i {
+    color: var(--warning);
+    font-size: 16px;
+    margin-top: 2px;
+}
+
+.tractor-detail-view .modal-note span {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
 }

@@ -35,8 +35,8 @@ function ReportsView() {
     const [reviewVisibleWeeks, setReviewVisibleWeeks] = useState(2)
 
     const [isLoadingUser, setIsLoadingUser] = useState(true)
-    const [isLoadingMy, setIsLoadingMy] = useState(false)
-    const [isLoadingReview, setIsLoadingReview] = useState(false)
+    const [isLoadingMy, setIsLoadingMy] = useState(true)
+    const [isLoadingReview, setIsLoadingReview] = useState(true)
     const [isLoadingPermissions, setIsLoadingPermissions] = useState(true)
     const [myLoadedWeeks, setMyLoadedWeeks] = useState(new Set())
     const [reviewLoadedWeeks, setReviewLoadedWeeks] = useState(new Set())
@@ -195,7 +195,10 @@ function ReportsView() {
         if (!user || isLoadingPermissions || tab !== 'review') return
         const desiredWeeks = new Set(ReportUtility.getLastNWeekIsos(reviewVisibleWeeks, HARDCODED_TODAY))
         const toLoad = Array.from(desiredWeeks).filter(w => !reviewLoadedWeeks.has(w))
-        if (toLoad.length === 0) return
+        if (toLoad.length === 0) {
+            if (isLoadingReview) setIsLoadingReview(false)
+            return
+        }
         let cancelled = false
 
         async function loadReview() {
@@ -215,7 +218,10 @@ function ReportsView() {
         if (!user || isLoadingPermissions) return
         const desiredWeeks = new Set(ReportUtility.getLastNWeekIsos(myReportsVisibleWeeks, HARDCODED_TODAY))
         const toLoad = Array.from(desiredWeeks).filter(w => !myLoadedWeeks.has(w))
-        if (toLoad.length === 0) return
+        if (toLoad.length === 0) {
+            if (isLoadingMy) setIsLoadingMy(false)
+            return
+        }
         let cancelled = false
 
         async function loadMoreMy() {
@@ -625,8 +631,17 @@ function ReportsView() {
         return {total: items.length, completed, pending}
     }, [weeksToShow, myReportsByWeek])
 
-    const reviewCount = reviewableReports.length
-    const overdueCount = overdueItems.length
+    const handleShowMoreMy = () => {
+        if (isLoadingMy) return
+        setIsLoadingMy(true)
+        setMyReportsVisibleWeeks(w => w + 2)
+    }
+
+    const handleShowMoreReview = () => {
+        if (isLoadingReview) return
+        setIsLoadingReview(true)
+        setReviewVisibleWeeks(w => w + 2)
+    }
 
     return (
         <>
@@ -664,16 +679,14 @@ function ReportsView() {
                                         onClick={() => setTab('all')}
                                         type="button"
                                     >
-                                        My Reports {myCounts.pending > 0 && <span className="rpts-badge"
-                                                                                  aria-label={`${myCounts.pending} pending`}>{myCounts.pending}</span>}
+                                        My Reports
                                     </button>
                                     <button
                                         className={tab === 'review' ? 'active' : ''}
                                         onClick={() => setTab('review')}
                                         type="button"
                                     >
-                                        Review {reviewCount > 0 && <span className="rpts-badge"
-                                                                         aria-label={`${reviewCount} to review`}>{reviewCount}</span>}
+                                        Review
                                     </button>
                                     {hasAnyReviewPermissionPrefix && (
                                         <button
@@ -681,8 +694,7 @@ function ReportsView() {
                                             onClick={() => setTab('overdue')}
                                             type="button"
                                         >
-                                            Overdue {overdueCount > 0 && <span className="rpts-badge"
-                                                                               aria-label={`${overdueCount} overdue`}>{overdueCount}</span>}
+                                            Overdue
                                         </button>
                                     )}
                                 </div>
@@ -711,6 +723,11 @@ function ReportsView() {
                                             <option value="">All Plants</option>
                                             {plants
                                                 .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code))
+                                                .sort((a, b) => {
+                                                    const an = parseInt(String(a.plant_code || '').replace(/\D/g, '') || '0', 10)
+                                                    const bn = parseInt(String(b.plant_code || '').replace(/\D/g, '') || '0', 10)
+                                                    return an - bn || String(a.plant_code || '').localeCompare(String(b.plant_code || ''))
+                                                })
                                                 .map(p => (
                                                     <option key={p.plant_code}
                                                             value={p.plant_code}>{p.plant_name}</option>
@@ -877,13 +894,19 @@ function ReportsView() {
                                                     {(myReportsVisibleWeeks < totalMyWeeks || myReportsVisibleWeeks > 2) && (
                                                         <div className="rpts-cta-row">
                                                             {myReportsVisibleWeeks < totalMyWeeks && (
-                                                                <button
-                                                                    type="button"
-                                                                    className="rpts-cta-primary"
-                                                                    onClick={() => setMyReportsVisibleWeeks(w => w + 2)}
-                                                                >
-                                                                    Show More
-                                                                </button>
+                                                                isLoadingMy ? (
+                                                                    <LoadingScreen message="Loading more reports..." inline/>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="rpts-cta-primary"
+                                                                        onMouseDown={handleShowMoreMy}
+                                                                        onTouchStart={handleShowMoreMy}
+                                                                        onClick={handleShowMoreMy}
+                                                                    >
+                                                                        Show More
+                                                                    </button>
+                                                                )
                                                             )}
                                                             {myReportsVisibleWeeks > 2 && (
                                                                 <button
@@ -1025,13 +1048,19 @@ function ReportsView() {
                                                     {(reviewVisibleWeeks < totalMyWeeks || reviewVisibleWeeks > 2) && (
                                                         <div className="rpts-cta-row">
                                                             {reviewVisibleWeeks < totalMyWeeks && (
-                                                                <button
-                                                                    type="button"
-                                                                    className="rpts-cta-primary"
-                                                                    onClick={() => setReviewVisibleWeeks(w => w + 2)}
-                                                                >
-                                                                    Show More
-                                                                </button>
+                                                                isLoadingReview ? (
+                                                                    <LoadingScreen message="Loading more reports..." inline/>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="rpts-cta-primary"
+                                                                        onMouseDown={handleShowMoreReview}
+                                                                        onTouchStart={handleShowMoreReview}
+                                                                        onClick={handleShowMoreReview}
+                                                                    >
+                                                                        Show More
+                                                                    </button>
+                                                                )
                                                             )}
                                                             {reviewVisibleWeeks > 2 && (
                                                                 <button

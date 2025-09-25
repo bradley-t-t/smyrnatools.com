@@ -1,9 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {usePresence} from '../../app/hooks/usePresence';
+import {usePreferences} from '../../app/context/PreferencesContext';
 import './styles/OnlineUsersOverlay.css';
 
 function OnlineUsersOverlay() {
     const {onlineUsers, loading, error} = usePresence();
+    const {preferences} = usePreferences();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isMinimized, setIsMinimized] = useState(true);
     const [animateCount, setAnimateCount] = useState(false);
@@ -22,6 +24,7 @@ function OnlineUsersOverlay() {
     const toggleExpand = () => setIsExpanded(!isExpanded);
     const toggleMinimize = () => setIsMinimized(!isMinimized);
 
+    if (!preferences || preferences.showOnlineOverlay === false) return null;
     if (!isLoggedIn || loading || error || onlineUsers.length === 0) return null;
 
     return (
