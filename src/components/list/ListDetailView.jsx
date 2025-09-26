@@ -3,11 +3,9 @@ import {ListService} from '../../services/ListService';
 import {UserService} from '../../services/UserService';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
-import ThemeUtility from '../../utils/ThemeUtility';
 import GrammarUtility from '../../utils/GrammarUtility';
 import './styles/ListDetailView.css';
 import './styles/ScrollStyles.css';
-import ListItemChat from './ListItemChat';
 import {RegionService} from '../../services/RegionService';
 
 function ListDetailView({itemId, onClose}) {
@@ -165,17 +163,43 @@ function ListDetailView({itemId, onClose}) {
 
     const statusInfo = ListService.calculateStatusInfo(item);
 
+    useEffect(() => {
+        function onKeyDown(e) {
+            const tag = (e.target && e.target.tagName) || ''
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
+            const key = (e.key || '').toLowerCase()
+            if (key === 'escape') {
+                e.preventDefault()
+                onClose?.()
+            } else if (key === 'e') {
+                e.preventDefault()
+                setEditing(prev => !prev)
+            } else if (key === 'c') {
+                e.preventDefault()
+                handleToggleCompletion()
+            } else if (key === 'delete' || key === 'backspace') {
+                e.preventDefault()
+                setShowDeleteConfirmation(true)
+            }
+        }
+
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    }, [onClose])
+
     if (loading) {
         return (
-            <div className="popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
-                <div className="popup-inner" style={{willChange: 'opacity, transform'}}>
-                    <div className="popup-header">
-                        <button className="back-button" onClick={onClose}>
-                            <i className="fas fa-arrow-left"></i>
-                        </button>
-                        <div style={{width: '36px'}}></div>
+            <div className="list-popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
+                <div className="list-popup-inner" style={{willChange: 'opacity, transform'}}>
+                    <div className="list-popup-header">
+                        <div>
+                            <button className="list-back-button" onClick={onClose} aria-label="Back">
+                                <i className="fas fa-arrow-left"></i>
+                                <span>Back</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="popup-content">
+                    <div className="list-popup-content">
                         <LoadingScreen message="Loading item details..." inline={true}/>
                     </div>
                 </div>
@@ -185,15 +209,17 @@ function ListDetailView({itemId, onClose}) {
 
     if (!item) {
         return (
-            <div className="popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
-                <div className="popup-inner" style={{willChange: 'opacity, transform'}}>
-                    <div className="popup-header">
-                        <button className="back-button" onClick={onClose}>
-                            <i className="fas fa-arrow-left"></i>
-                        </button>
-                        <div style={{width: '36px'}}></div>
+            <div className="list-popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
+                <div className="list-popup-inner" style={{willChange: 'opacity, transform'}}>
+                    <div className="list-popup-header">
+                        <div>
+                            <button className="list-back-button" onClick={onClose} aria-label="Back">
+                                <i className="fas fa-arrow-left"></i>
+                                <span>Back</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="popup-content">
+                    <div className="list-popup-content">
                         <div className="error-state">
                             <i className="fas fa-exclamation-triangle"></i>
                             <h2>Item Not Found</h2>
@@ -207,32 +233,17 @@ function ListDetailView({itemId, onClose}) {
     }
 
     return (
-        <div className="popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
-            <div className="popup-inner" style={{willChange: 'opacity, transform'}}>
-                <div className="popup-header" style={{position: 'relative'}}>
-                    <button className="back-button" onClick={onClose}>
-                        <i className="fas fa-arrow-left"></i>
-                    </button>
-                    <div style={{flex: 1}}></div>
-                    {!editing ? (
-                        <button
-                            className="edit-button"
-                            onClick={() => setEditing(true)}
-                            style={{
-                                position: 'absolute',
-                                right: 16,
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                marginLeft: 'auto'
-                            }}
-                        >
-                            <i className="fas fa-edit"></i>
+        <div className="list-popup-outer" style={{willChange: 'transform', backfaceVisibility: 'hidden'}}>
+            <div className="list-popup-inner" style={{willChange: 'opacity, transform'}}>
+                <div className="list-popup-header">
+                    <div>
+                        <button className="list-back-button" onClick={onClose} aria-label="Back">
+                            <i className="fas fa-arrow-left"></i>
+                            <span>Back</span>
                         </button>
-                    ) : (
-                        <div style={{width: '36px'}}></div>
-                    )}
+                    </div>
                 </div>
-                <div className="popup-content popup-content-split">
+                <div className="list-popup-content">
                     <div className="detail-left">
                         {message.text && (
                             <div className={`message ${message.type}`}>
@@ -241,12 +252,10 @@ function ListDetailView({itemId, onClose}) {
                             </div>
                         )}
                         {editing ? (
-                            <div className="edit-form-container"
-                                 style={{backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : '#ffffff'}}>
+                            <div className="edit-form-container">
                                 <form onSubmit={handleSubmit} className="edit-form">
                                     <div className="form-group">
-                                        <label htmlFor="description"
-                                               style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Description <span
+                                        <label htmlFor="description">Description <span
                                             className="required">*</span></label>
                                         <input
                                             type="text"
@@ -262,28 +271,17 @@ function ListDetailView({itemId, onClose}) {
                                             placeholder="What needs to be done?"
                                             required
                                             autoFocus
-                                            style={{
-                                                backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff',
-                                                color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c',
-                                                borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'
-                                            }}
                                         />
                                     </div>
                                     <div className="form-row">
                                         <div className="form-group">
-                                            <label htmlFor="plantCode"
-                                                   style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Plant</label>
+                                            <label htmlFor="plantCode">Plant</label>
                                             <select
                                                 id="plantCode"
                                                 name="plantCode"
                                                 value={formData.plantCode}
                                                 onChange={handleChange}
                                                 className="form-control"
-                                                style={{
-                                                    backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff',
-                                                    color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c',
-                                                    borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'
-                                                }}
                                             >
                                                 <option value="">Select a plant</option>
                                                 {!regionPlantCodes.has(String(formData.plantCode || '').trim().toUpperCase()) && formData.plantCode && (
@@ -296,8 +294,7 @@ function ListDetailView({itemId, onClose}) {
                                             </select>
                                         </div>
                                         <div className="form-group">
-                                            <label htmlFor="deadline"
-                                                   style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Deadline <span
+                                            <label htmlFor="deadline">Deadline <span
                                                 className="required">*</span></label>
                                             <input
                                                 type="datetime-local"
@@ -307,17 +304,11 @@ function ListDetailView({itemId, onClose}) {
                                                 onChange={handleChange}
                                                 className="form-control"
                                                 required
-                                                style={{
-                                                    backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff',
-                                                    color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c',
-                                                    borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'
-                                                }}
                                             />
                                         </div>
                                     </div>
                                     <div className="form-group">
-                                        <label htmlFor="comments"
-                                               style={{color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : '#718096'}}>Comments</label>
+                                        <label htmlFor="comments">Comments</label>
                                         <textarea
                                             id="comments"
                                             name="comments"
@@ -330,28 +321,13 @@ function ListDetailView({itemId, onClose}) {
                                             className="form-control"
                                             rows="4"
                                             placeholder="Add any additional notes or context here..."
-                                            style={{
-                                                backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : '#ffffff',
-                                                color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c',
-                                                borderColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : '#e2e8f0'
-                                            }}
                                         ></textarea>
                                     </div>
                                     <div className="form-actions">
-                                        <button
-                                            type="button"
-                                            className="cancel-button"
-                                            onClick={() => setEditing(false)}
-                                            style={{
-                                                backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.tertiary : '#f5f5f5',
-                                                color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#718096'
-                                            }}
-                                        >Cancel
+                                        <button type="button" className="cancel-button"
+                                                onClick={() => setEditing(false)}>Cancel
                                         </button>
-                                        <button type="submit" className="save-button"
-                                                style={{backgroundColor: preferences.accentColor === 'red' ? '#b80017' : '#003896'}}>Save
-                                            Changes
-                                        </button>
+                                        <button type="submit" className="save-button">Save Changes</button>
                                     </div>
                                 </form>
                             </div>
@@ -359,15 +335,14 @@ function ListDetailView({itemId, onClose}) {
                             <>
                                 <div className="item-details">
                                     <h2 className="item-title">{item.description}</h2>
-                                    <div className="item-status"
-                                         style={{color: statusInfo.color, marginBottom: '16px', paddingLeft: '24px'}}>
+                                    <div className="item-status" style={{color: statusInfo.color}}>
                                         <i className={`fas fa-${statusInfo.icon}`} style={{marginRight: '8px'}}></i>
                                         <span style={{fontWeight: 600}}>{statusInfo.label}</span>
                                         {item.deadline && (
                                             <span className="item-deadline" style={{marginLeft: '16px'}}>
-                          <i className="fas fa-calendar-alt" style={{marginRight: '4px'}}></i>
+                                                <i className="fas fa-calendar-alt" style={{marginRight: '4px'}}></i>
                                                 {ListService.formatDate(item.deadline)}
-                        </span>
+                                            </span>
                                         )}
                                     </div>
                                     {plant && (
@@ -413,6 +388,9 @@ function ListDetailView({itemId, onClose}) {
                                     </div>
                                 </div>
                                 <div className="action-buttons">
+                                    <button className="edit-secondary-button" onClick={() => setEditing(true)}>
+                                        <i className="fas fa-edit"></i> Edit
+                                    </button>
                                     <button className={`toggle-completion-button${item.completed ? ' completed' : ''}`}
                                             onClick={handleToggleCompletion}>
                                         {item.completed ? (
@@ -432,110 +410,42 @@ function ListDetailView({itemId, onClose}) {
                             </>
                         )}
                     </div>
-                    <div className="detail-right">
-                        <ListItemChat itemId={itemId}/>
-                    </div>
                 </div>
                 {showDeleteConfirmation && (
                     <div className="modal-overlay" onClick={() => setShowDeleteConfirmation(false)}>
-                        <div
-                            className="delete-confirmation-modal"
-                            onClick={e => e.stopPropagation()}
-                            style={{
-                                backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.primary : ThemeUtility.light.background.primary,
-                                color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c'
-                            }}
-                        >
+                        <div className="delete-confirmation-modal" onClick={e => e.stopPropagation()}>
                             <div className="delete-modal-content">
-                                <div
-                                    className="delete-modal-header"
-                                    style={{
-                                        borderBottomColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : ThemeUtility.light.border.light,
-                                        color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c'
-                                    }}
-                                >
-                                    <div
-                                        className="delete-icon-container"
-                                        style={{
-                                            color: preferences.accentColor === 'red' ? ThemeUtility.accent.red.primary : ThemeUtility.accent.blue.primary
-                                        }}
-                                    >
+                                <div className="delete-modal-header">
+                                    <div className="delete-icon-container">
                                         <i className="fas fa-exclamation-triangle"></i>
                                     </div>
-                                    <h2 style={{color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c'}}>Delete
-                                        Item</h2>
-                                    <button
-                                        className="close-modal-button"
-                                        onClick={() => setShowDeleteConfirmation(false)}
-                                        style={{
-                                            color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.secondary : ThemeUtility.light.text.secondary
-                                        }}
-                                    >
+                                    <h2>Delete Item</h2>
+                                    <button className="close-modal-button"
+                                            onClick={() => setShowDeleteConfirmation(false)}>
                                         <i className="fas fa-times"></i>
                                     </button>
                                 </div>
 
-                                <div
-                                    className="delete-modal-body"
-                                    style={{
-                                        backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : ThemeUtility.light.background.secondary,
-                                        color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : '#1a202c'
-                                    }}
-                                >
+                                <div className="delete-modal-body">
                                     <div className="item-to-delete">
                                         <i className="fas fa-file-alt item-icon"></i>
-                                        <span className="item-name" style={{
-                                            color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c',
-                                            fontWeight: 500
-                                        }}>{item.description}</span>
+                                        <span className="item-name">{item.description}</span>
                                     </div>
 
-                                    <p
-                                        className="delete-warning-text"
-                                        style={{
-                                            color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c',
-                                            fontWeight: 500
-                                        }}
-                                    >
-                                        Are you sure you want to delete this item?
-                                    </p>
+                                    <p className="delete-warning-text">Are you sure you want to delete this item?</p>
 
-                                    <div
-                                        className="warning-container"
-                                        style={{
-                                            backgroundColor: preferences.themeMode === 'dark' ? 'rgba(229, 62, 62, 0.1)' : 'rgba(229, 62, 62, 0.08)'
-                                        }}
-                                    >
-                                        <i className="fas fa-exclamation-circle" style={{color: '#e53e3e'}}></i>
-                                        <span style={{
-                                            color: preferences.themeMode === 'dark' ? '#f7fafc' : '#1a202c',
-                                            fontWeight: 500
-                                        }}>This action cannot be undone. All associated information will be permanently removed.</span>
+                                    <div className="warning-container">
+                                        <i className="fas fa-exclamation-circle"></i>
+                                        <span>This action cannot be undone. All associated information will be permanently removed.</span>
                                     </div>
                                 </div>
 
-                                <div
-                                    className="delete-modal-footer"
-                                    style={{
-                                        backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.secondary : ThemeUtility.light.background.secondary,
-                                        borderTopColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.border.light : ThemeUtility.light.border.light
-                                    }}
-                                >
-                                    <button
-                                        className="cancel-delete-button"
-                                        onClick={() => setShowDeleteConfirmation(false)}
-                                        style={{
-                                            backgroundColor: preferences.themeMode === 'dark' ? ThemeUtility.dark.background.tertiary : ThemeUtility.light.background.tertiary,
-                                            color: preferences.themeMode === 'dark' ? ThemeUtility.dark.text.primary : ThemeUtility.light.text.secondary
-                                        }}
-                                    >
+                                <div className="delete-modal-footer">
+                                    <button className="cancel-delete-button"
+                                            onClick={() => setShowDeleteConfirmation(false)}>
                                         Cancel
                                     </button>
-                                    <button
-                                        className="confirm-delete-button"
-                                        onClick={handleDelete}
-                                        style={{backgroundColor: preferences.accentColor === 'red' ? ThemeUtility.accent.red.primary : ThemeUtility.accent.blue.primary}}
-                                    >
+                                    <button className="confirm-delete-button" onClick={handleDelete}>
                                         <i className="fas fa-trash-alt"></i>
                                         Delete Item
                                     </button>

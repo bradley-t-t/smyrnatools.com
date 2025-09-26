@@ -330,10 +330,6 @@
         width: 100%;
     }
 
-    .overview-metrics {
-        padding: var(--spacing-md);
-    }
-
     .metrics-container {
         padding: 0;
     }
@@ -627,11 +623,6 @@
     padding-top: calc(var(--spacing-lg) + 4px);
     display: flex;
     flex-direction: column;
-}
-
-.modal-content.overview-modal {
-    max-width: 1000px;
-    width: 95%;
 }
 
 .card-header {

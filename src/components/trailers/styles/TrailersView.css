@@ -610,11 +610,6 @@
     flex-direction: column;
 }
 
-.modal-content.trailers-overview-modal {
-    max-width: 1000px;
-    width: 95%;
-}
-
 .trailers-card-header {
     display: flex;
     justify-content: space-between;

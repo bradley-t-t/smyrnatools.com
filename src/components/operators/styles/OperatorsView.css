@@ -507,11 +507,6 @@
     animation: slideUp 0.3s ease-out;
 }
 
-.modal-content.overview-modal {
-    max-width: 1000px;
-    width: 95%;
-}
-
 @keyframes slideUp {
     from {
         transform: translateY(20px);

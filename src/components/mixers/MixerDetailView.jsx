@@ -680,31 +680,37 @@ function MixerDetailView({mixerId, onClose}) {
                                             {!mixer.vin && (
                                                 <div className="form-group">
                                                     <label>VIN</label>
-                                                    <input className="form-control" type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)}/>
+                                                    <input className="form-control" type="text" placeholder="VIN"
+                                                           value={vin} onChange={e => setVin(e.target.value)}/>
                                                 </div>
                                             )}
                                             {!mixer.make && (
                                                 <div className="form-group">
                                                     <label>Make</label>
-                                                    <input className="form-control" type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)}/>
+                                                    <input className="form-control" type="text" placeholder="Make"
+                                                           value={make} onChange={e => setMake(e.target.value)}/>
                                                 </div>
                                             )}
                                             {!mixer.model && (
                                                 <div className="form-group">
                                                     <label>Model</label>
-                                                    <input className="form-control" type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)}/>
+                                                    <input className="form-control" type="text" placeholder="Model"
+                                                           value={model} onChange={e => setModel(e.target.value)}/>
                                                 </div>
                                             )}
                                             {!mixer.year && (
                                                 <div className="form-group">
                                                     <label>Year</label>
-                                                    <input className="form-control" type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)}/>
+                                                    <input className="form-control" type="text" placeholder="Year"
+                                                           value={year} onChange={e => setYear(e.target.value)}/>
                                                 </div>
                                             )}
                                             {(!lastServiceDate || MixerUtility.isServiceOverdue(lastServiceDate)) && (
                                                 <div className="form-group">
                                                     <label>Last Service Date</label>
-                                                    <input className="form-control" type="date" value={lastServiceDate ? formatDate(lastServiceDate) : ''} onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}/>
+                                                    <input className="form-control" type="date"
+                                                           value={lastServiceDate ? formatDate(lastServiceDate) : ''}
+                                                           onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}/>
                                                     {lastServiceDate && MixerUtility.isServiceOverdue(lastServiceDate) && (
                                                         <>
                                                             <div className="warning-text">Past Due</div>
@@ -719,14 +725,21 @@ function MixerDetailView({mixerId, onClose}) {
                                             {!lastChipDate && (
                                                 <div className="form-group">
                                                     <label>Last Chip Date</label>
-                                                    <input className="form-control" type="date" value={lastChipDate ? formatDate(lastChipDate) : ''} onChange={e => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}/>
+                                                    <input className="form-control" type="date"
+                                                           value={lastChipDate ? formatDate(lastChipDate) : ''}
+                                                           onChange={e => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}/>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <div className="modal-actions">
-                                        <button type="button" className="primary-button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button>
-                                        <button type="button" className="cancel-button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button>
+                                        <button type="button" className="primary-button"
+                                                onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save &
+                                            Verify
+                                        </button>
+                                        <button type="button" className="cancel-button"
+                                                onClick={() => setShowMissingFieldsModal(false)}>Cancel
+                                        </button>
                                     </div>
                                 </div>
                             </div>

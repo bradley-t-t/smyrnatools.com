@@ -1028,31 +1028,37 @@ ${openIssues.length > 0
                                 {!tractor.vin && (
                                     <div className="form-group">
                                         <label>VIN</label>
-                                        <input className="form-control" type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value)}/>
+                                        <input className="form-control" type="text" placeholder="VIN" value={vin}
+                                               onChange={e => setVin(e.target.value)}/>
                                     </div>
                                 )}
                                 {!tractor.make && (
                                     <div className="form-group">
                                         <label>Make</label>
-                                        <input className="form-control" type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)}/>
+                                        <input className="form-control" type="text" placeholder="Make" value={make}
+                                               onChange={e => setMake(e.target.value)}/>
                                     </div>
                                 )}
                                 {!tractor.model && (
                                     <div className="form-group">
                                         <label>Model</label>
-                                        <input className="form-control" type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)}/>
+                                        <input className="form-control" type="text" placeholder="Model" value={model}
+                                               onChange={e => setModel(e.target.value)}/>
                                     </div>
                                 )}
                                 {!tractor.year && (
                                     <div className="form-group">
                                         <label>Year</label>
-                                        <input className="form-control" type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)}/>
+                                        <input className="form-control" type="text" placeholder="Year" value={year}
+                                               onChange={e => setYear(e.target.value)}/>
                                     </div>
                                 )}
                                 {(!lastServiceDate || TractorUtility.isServiceOverdue(lastServiceDate)) && (
                                     <div className="form-group">
                                         <label>Last Service Date</label>
-                                        <input className="form-control" type="date" value={lastServiceDate ? (lastServiceDate instanceof Date ? lastServiceDate.toISOString().split('T')[0] : lastServiceDate) : ''} onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}/>
+                                        <input className="form-control" type="date"
+                                               value={lastServiceDate ? (lastServiceDate instanceof Date ? lastServiceDate.toISOString().split('T')[0] : lastServiceDate) : ''}
+                                               onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}/>
                                         {lastServiceDate && TractorUtility.isServiceOverdue(lastServiceDate) && (
                                             <>
                                                 <div className="warning-text">Past Due</div>
@@ -1067,8 +1073,12 @@ ${openIssues.length > 0
                             </div>
                         </div>
                         <div className="modal-actions">
-                            <button type="button" className="primary-button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button>
-                            <button type="button" className="cancel-button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button>
+                            <button type="button" className="primary-button" onClick={handleSaveMissingFields}
+                                    disabled={!canSubmitMissing}>Save & Verify
+                            </button>
+                            <button type="button" className="cancel-button"
+                                    onClick={() => setShowMissingFieldsModal(false)}>Cancel
+                            </button>
                         </div>
                     </div>
                 </div>

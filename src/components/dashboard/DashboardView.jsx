@@ -27,8 +27,28 @@ export default function DashboardView() {
     const [lastUpdated, setLastUpdated] = useState(null)
     const [refreshKey, setRefreshKey] = useState(0)
     const [stats, setStats] = useState({
-        mixers: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
-        tractors: {total: 0, active: 0, shop: 0, verified: 0, verifiedPercent: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
+        mixers: {
+            total: 0,
+            active: 0,
+            shop: 0,
+            verified: 0,
+            verifiedPercent: 0,
+            issues: 0,
+            comments: 0,
+            overdue: 0,
+            allocationPercent: 0
+        },
+        tractors: {
+            total: 0,
+            active: 0,
+            shop: 0,
+            verified: 0,
+            verifiedPercent: 0,
+            issues: 0,
+            comments: 0,
+            overdue: 0,
+            allocationPercent: 0
+        },
         trailers: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
         equipment: {total: 0, active: 0, shop: 0, issues: 0, comments: 0, overdue: 0, allocationPercent: 0},
         pickups: {total: 0, active: 0, shop: 0, stationary: 0, spare: 0, sold: 0, retired: 0, allocationPercent: 0},
@@ -148,7 +168,8 @@ export default function DashboardView() {
         const tractorAssignedIds = new Set()
         const consider = plantCode => !filterActive || plantSet.has(String(plantCode || '').trim())
         const counts = countsRef.current
-        let mixersAvailable = 0, tractorsAvailable = 0, trailersAvailable = 0, equipmentAvailable = 0, pickupsAvailable = 0
+        let mixersAvailable = 0, tractorsAvailable = 0, trailersAvailable = 0, equipmentAvailable = 0,
+            pickupsAvailable = 0
         for (const m of allMixersRef.current) {
             if (!consider(m.plantCode)) continue
             mixersTotals.total++
@@ -240,8 +261,16 @@ export default function DashboardView() {
         const overallActiveNumerator = mixersTotals.active + tractorsTotals.active + trailersTotals.active + equipmentTotals.active + pickupsTotals.active + pickupsTotals.stationary
         const overallAllocationPercent = overallAvailable ? Math.round((overallActiveNumerator / overallAvailable) * 100) : 0
         setStats(s => ({
-            mixers: {...mixersTotals, verifiedPercent: mixersVerifiedPercent, allocationPercent: mixersAllocationPercent},
-            tractors: {...tractorsTotals, verifiedPercent: tractorsVerifiedPercent, allocationPercent: tractorsAllocationPercent},
+            mixers: {
+                ...mixersTotals,
+                verifiedPercent: mixersVerifiedPercent,
+                allocationPercent: mixersAllocationPercent
+            },
+            tractors: {
+                ...tractorsTotals,
+                verifiedPercent: tractorsVerifiedPercent,
+                allocationPercent: tractorsAllocationPercent
+            },
             trailers: {...trailersTotals, allocationPercent: trailersAllocationPercent},
             equipment: {...equipmentTotals, allocationPercent: equipmentAllocationPercent},
             pickups: {...pickupsTotals, allocationPercent: pickupsAllocationPercent},
@@ -793,7 +822,8 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Active {stats.mixers.active}</div>
                                         <div className="kpi-pill">In Shop {stats.mixers.shop}</div>
                                         <div className="kpi-pill">Verified {stats.mixers.verifiedPercent}%</div>
-                                        <div className="kpi-pill">Asset Allocation {stats.mixers.allocationPercent}%</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.mixers.allocationPercent}%
+                                        </div>
                                         <div className="kpi-pill">Issues {stats.mixers.issues}</div>
                                         <div className="kpi-pill">Comments {stats.mixers.comments}</div>
                                     </div>
@@ -805,7 +835,8 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Active {stats.tractors.active}</div>
                                         <div className="kpi-pill">In Shop {stats.tractors.shop}</div>
                                         <div className="kpi-pill">Verified {stats.tractors.verifiedPercent}%</div>
-                                        <div className="kpi-pill">Asset Allocation {stats.tractors.allocationPercent}%</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.tractors.allocationPercent}%
+                                        </div>
                                         <div className="kpi-pill">Issues {stats.tractors.issues}</div>
                                         <div className="kpi-pill">Comments {stats.tractors.comments}</div>
                                     </div>
@@ -816,7 +847,8 @@ export default function DashboardView() {
                                     <div className="kpi-row">
                                         <div className="kpi-pill">Active {stats.trailers.active}</div>
                                         <div className="kpi-pill">In Shop {stats.trailers.shop}</div>
-                                        <div className="kpi-pill">Asset Allocation {stats.trailers.allocationPercent}%</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.trailers.allocationPercent}%
+                                        </div>
                                         <div className="kpi-pill">Issues {stats.trailers.issues}</div>
                                         <div className="kpi-pill">Overdue {stats.trailers.overdue}</div>
                                         <div className="kpi-pill">Comments {stats.trailers.comments}</div>
@@ -828,7 +860,9 @@ export default function DashboardView() {
                                     <div className="kpi-row">
                                         <div className="kpi-pill">Active {stats.equipment.active}</div>
                                         <div className="kpi-pill">In Shop {stats.equipment.shop}</div>
-                                        <div className="kpi-pill">Asset Allocation {stats.equipment.allocationPercent}%</div>
+                                        <div className="kpi-pill">Asset
+                                            Allocation {stats.equipment.allocationPercent}%
+                                        </div>
                                         <div className="kpi-pill">Issues {stats.equipment.issues}</div>
                                         <div className="kpi-pill">Overdue {stats.equipment.overdue}</div>
                                         <div className="kpi-pill">Comments {stats.equipment.comments}</div>
@@ -844,7 +878,8 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Spare {stats.pickups.spare}</div>
                                         <div className="kpi-pill">Sold {stats.pickups.sold}</div>
                                         <div className="kpi-pill">Retired {stats.pickups.retired}</div>
-                                        <div className="kpi-pill">Asset Allocation {stats.pickups.allocationPercent}%</div>
+                                        <div className="kpi-pill">Asset Allocation {stats.pickups.allocationPercent}%
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -860,7 +895,8 @@ export default function DashboardView() {
                                         <div className="kpi-pill">Light Duty {stats.operators.lightDuty}</div>
                                         <div className="kpi-pill">Assigned {stats.operators.assigned}</div>
                                         <div className="kpi-pill">Mixers Assigned {stats.operators.mixerAssigned}</div>
-                                        <div className="kpi-pill">Tractors Assigned {stats.operators.tractorAssigned}</div>
+                                        <div className="kpi-pill">Tractors
+                                            Assigned {stats.operators.tractorAssigned}</div>
                                         <div className="kpi-pill">Unassigned {stats.operators.unassigned}</div>
                                         <div className="kpi-pill">Pending {stats.operators.pending}</div>
                                     </div>

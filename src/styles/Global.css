@@ -169,7 +169,7 @@ html, #root {
     overflow-x: hidden;
 }
 
-.detail-view, .overview, .form-container {
+.detail-view, .form-container {
     max-width: 100%;
     overflow-x: hidden;
     width: 100%;

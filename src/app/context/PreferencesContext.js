@@ -17,7 +17,6 @@ const defaultPreferences = {
     accentColor: 'red',
     showTips: true,
     showOnlineOverlay: true,
-    autoOverview: false,
     defaultViewMode: null,
     mixerFilters: {
         searchText: '',
@@ -130,7 +129,6 @@ export const PreferencesProvider = ({children}) => {
             accentColor: data.accent_color,
             showTips: data.show_tips === undefined ? true : data.show_tips,
             showOnlineOverlay: data.show_online_overlay === undefined ? true : data.show_online_overlay,
-            autoOverview: data.auto_overview === undefined ? false : data.auto_overview,
             defaultViewMode: data.default_view_mode === undefined ? null : data.default_view_mode,
             mixerFilters: data.mixer_filters ? {
                 ...data.mixer_filters,
@@ -181,7 +179,6 @@ export const PreferencesProvider = ({children}) => {
                 accent_color: updatedPreferences.accentColor,
                 show_tips: updatedPreferences.showTips,
                 show_online_overlay: updatedPreferences.showOnlineOverlay,
-                auto_overview: updatedPreferences.autoOverview,
                 default_view_mode: updatedPreferences.defaultViewMode,
                 mixer_filters: updatedPreferences.mixerFilters,
                 operator_filters: updatedPreferences.operatorFilters,
@@ -285,7 +282,6 @@ export const PreferencesProvider = ({children}) => {
     const toggleNavbarMinimized = () => updatePreferences('navbarMinimized', !preferences.navbarMinimized)
     const toggleShowTips = () => updatePreferences('showTips', !preferences.showTips)
     const toggleShowOnlineOverlay = () => updatePreferences('showOnlineOverlay', !preferences.showOnlineOverlay)
-    const toggleAutoOverview = () => updatePreferences('autoOverview', !preferences.autoOverview)
     const setThemeMode = mode => (mode === 'light' || mode === 'dark') && updatePreferences('themeMode', mode)
     const setAccentColor = color => (color === 'red' || color === 'blue') && updatePreferences('accentColor', color)
     const saveLastViewedFilters = async filters => {
@@ -317,7 +313,6 @@ export const PreferencesProvider = ({children}) => {
                 toggleNavbarMinimized,
                 toggleShowTips,
                 toggleShowOnlineOverlay,
-                toggleAutoOverview,
                 setThemeMode,
                 setAccentColor,
                 updatePreferences,

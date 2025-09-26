@@ -13,6 +13,7 @@ import {RegionService} from '../../services/RegionService'
 function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const {updateListFilter, resetListFilters, preferences} = usePreferences()
     const headerRef = useRef(null)
+    const searchInputRef = useRef(null)
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchText, setSearchText] = useState('')
@@ -24,6 +25,9 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const [userPlantCode, setUserPlantCode] = useState(null)
     const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false)
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
+    const [selectedIds, setSelectedIds] = useState(new Set())
+    const [sortKey, setSortKey] = useState('')
+    const [sortDir, setSortDir] = useState('asc')
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -134,6 +138,19 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         ? baseFilteredItems.filter(item => regionPlantCodes.has(String(item.plant_code || '').trim().toUpperCase()))
         : baseFilteredItems
 
+    const sortedItems = (() => {
+        if (!sortKey) return filteredItems
+        const items = [...filteredItems]
+        const dir = sortDir === 'desc' ? -1 : 1
+        if (sortKey === 'description') items.sort((a, b) => ((a.description || '').localeCompare(b.description || '')) * dir)
+        else if (sortKey === 'plant') items.sort((a, b) => ((String(a.plant_code || '')).localeCompare(String(b.plant_code || ''))) * dir)
+        else if (sortKey === 'deadline') items.sort((a, b) => ((new Date(a.deadline).getTime() || 0) - (new Date(b.deadline).getTime() || 0)) * dir)
+        else if (sortKey === 'completed_at') items.sort((a, b) => ((new Date(a.completed_at).getTime() || 0) - (new Date(b.completed_at).getTime() || 0)) * dir)
+        else if (sortKey === 'creator') items.sort((a, b) => (ListService.getCreatorName(a.user_id).localeCompare(ListService.getCreatorName(b.user_id))) * dir)
+        else if (sortKey === 'status') items.sort((a, b) => ((a.completed === b.completed) ? 0 : a.completed ? 1 : -1) * dir)
+        return items
+    })()
+
     const getPlantName = plantCode => ListService.getPlantName(plantCode)
     const truncateText = (text, maxLength, byWords = false) => ListService.truncateText(text, maxLength, byWords)
 
@@ -142,10 +159,91 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         onSelectItem ? onSelectItem(item.id) : setShowDetailView(true)
     }
 
+    function toggleSort(key) {
+        if (sortKey === key) {
+            setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+        } else {
+            setSortKey(key)
+            setSortDir('asc')
+        }
+        updateListFilter?.('sortKey', key)
+        updateListFilter?.('sortDir', sortKey === key ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc')
+    }
+
+    function isAllSelected() {
+        if (sortedItems.length === 0) return false
+        for (const it of sortedItems) if (!selectedIds.has(it.id)) return false
+        return true
+    }
+
+    function toggleSelectAll() {
+        if (isAllSelected()) {
+            setSelectedIds(new Set())
+        } else {
+            const next = new Set(selectedIds)
+            sortedItems.forEach(it => next.add(it.id))
+            setSelectedIds(next)
+        }
+    }
+
+    function toggleSelect(id) {
+        const next = new Set(selectedIds)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        setSelectedIds(next)
+    }
+
+    async function bulkToggleCompletion(markComplete) {
+        if (selectedIds.size === 0) return
+        const user = await UserService.getCurrentUser()
+        const userId = user?.id
+        if (!userId) return
+        const itemsById = new Map(ListService.listItems.map(i => [i.id, i]))
+        for (const id of selectedIds) {
+            const it = itemsById.get(id)
+            if (!it) continue
+            const needs = markComplete ? !it.completed : it.completed
+            if (!needs) continue
+            try {
+                await ListService.toggleCompletion(it, userId)
+            } catch {
+            }
+        }
+        setSelectedIds(new Set())
+    }
+
+    async function bulkDelete() {
+        if (selectedIds.size === 0) return
+        const ok = window.confirm('Delete selected items?')
+        if (!ok) return
+        for (const id of selectedIds) {
+            try {
+                await ListService.deleteListItem(id)
+            } catch {
+            }
+        }
+        setSelectedIds(new Set())
+    }
+
+    useEffect(() => {
+        function onKeyDown(e) {
+            if (e.metaKey && e.key.toLowerCase() === 'k') {
+                e.preventDefault()
+                searchInputRef.current?.focus()
+            }
+            if (e.metaKey && e.key.toLowerCase() === 'n') {
+                e.preventDefault()
+                setShowAddSheet(true)
+            }
+        }
+
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    }, [])
 
     const headerColumns = statusFilter === 'completed'
-        ? ['38%', '14%', '12%', '12%', '16%', '8%']
-        : ['44%', '16%', '14%', '16%', '10%']
+        ? ['5%', '34%', '14%', '12%', '16%', '11%', '8%']
+        : ['5%', '39%', '16%', '14%', '16%', '10%']
 
     useEffect(() => {
         function updateStickyCoverHeight() {
@@ -159,6 +257,10 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
     }, [searchText, selectedPlant, statusFilter])
+
+    const visiblePlants = (regionPlantCodes && regionPlantCodes.size > 0)
+        ? plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase()))
+        : plants
 
     return (
         <div className="dashboard-container list-view">
@@ -178,6 +280,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 <div className="search-filters">
                     <div className="search-bar">
                         <input
+                            ref={searchInputRef}
                             type="text"
                             className="ios-search-input"
                             placeholder="Search by description or comments..."
@@ -213,15 +316,18 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                             >
                                 <option value="" disabled={!canBypassPlantRestriction && userPlantCode}>All Plants
                                 </option>
-                                {plants.sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0')).map(plant => (
-                                    <option
-                                        key={plant.plant_code}
-                                        value={plant.plant_code}
-                                        disabled={!canBypassPlantRestriction && userPlantCode && plant.plant_code !== userPlantCode}
-                                    >
-                                        ({plant.plant_code}) {plant.plant_name}
-                                    </option>
-                                ))}
+                                {visiblePlants
+                                    .slice()
+                                    .sort((a, b) => parseInt(a.plant_code?.replace(/\D/g, '') || '0') - parseInt(b.plant_code?.replace(/\D/g, '') || '0'))
+                                    .map(plant => (
+                                        <option
+                                            key={plant.plant_code}
+                                            value={plant.plant_code}
+                                            disabled={!canBypassPlantRestriction && userPlantCode && plant.plant_code !== userPlantCode}
+                                        >
+                                            ({plant.plant_code}) {plant.plant_name}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
                         <div className="filter-wrapper">
@@ -279,16 +385,53 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                         )}
                     </div>
                 </div>
+
+                {selectedIds.size > 0 && (
+                    <div className="bulk-actions-bar">
+                        <div className="bulk-count"><i className="fas fa-check-square"></i> {selectedIds.size} selected
+                        </div>
+                        <div className="bulk-actions">
+                            <button className="bulk-btn" onClick={() => bulkToggleCompletion(true)}><i
+                                className="fas fa-check"></i> Complete
+                            </button>
+                            <button className="bulk-btn danger" onClick={bulkDelete}><i
+                                className="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div
-                    className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}`}
+                    className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}${selectedIds.size > 0 ? ' stacked' : ''}`}
                     style={{gridTemplateColumns: headerColumns.join(' ')}}
                 >
-                    <div>Description</div>
-                    <div>Plant</div>
-                    <div>Deadline</div>
-                    {statusFilter === 'completed' && <div>Completed</div>}
-                    <div>Created By</div>
-                    <div>Status</div>
+                    <div>
+                        <input type="checkbox" aria-label="Select all" checked={isAllSelected()}
+                               onChange={toggleSelectAll}/>
+                    </div>
+                    <div role="button" onClick={() => toggleSort('description')}>
+                        Description {sortKey === 'description' && (
+                        <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}
+                    </div>
+                    <div role="button" onClick={() => toggleSort('plant')}>
+                        Plant {sortKey === 'plant' && (
+                        <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}
+                    </div>
+                    <div role="button" onClick={() => toggleSort('deadline')}>
+                        Deadline {sortKey === 'deadline' && (
+                        <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}
+                    </div>
+                    {statusFilter === 'completed' && <div role="button"
+                                                          onClick={() => toggleSort('completed_at')}>Completed {sortKey === 'completed_at' && (
+                        <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>}
+                    <div role="button" onClick={() => toggleSort('creator')}>
+                        Created By {sortKey === 'creator' && (
+                        <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}
+                    </div>
+                    <div role="button" onClick={() => toggleSort('status')}>
+                        Status {sortKey === 'status' && (
+                        <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}
+                    </div>
                 </div>
             </div>
             <div className="content-container">
@@ -296,7 +439,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                     <div className="loading-container">
                         <LoadingScreen message="Loading list items..." inline={true}/>
                     </div>
-                ) : filteredItems.length === 0 ? (
+                ) : sortedItems.length === 0 ? (
                     <div className="no-results-container">
                         <div className="no-results-icon">
                             <i className="fas fa-clipboard-list"></i>
@@ -307,9 +450,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                                 statusFilter === 'completed' ? "There are no completed items to show." :
                                     "There are no items in the list yet."}
                         </p>
-                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>
-                            Add Item
-                        </button>
+                        <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Item</button>
                     </div>
                 ) : (
                     <div className="mixers-list-table-container">
@@ -320,40 +461,44 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                                 ))}
                             </colgroup>
                             <tbody>
-                            {filteredItems.map(item => (
+                            {sortedItems.map(item => (
                                 <tr
                                     key={item.id}
-                                    className={item.completed ? 'completed' : ''}
+                                    className={`${item.completed ? 'completed' : ''} ${selectedIds.has(item.id) ? 'is-selected' : ''}`.trim()}
                                     onClick={() => handleSelectItem(item)}
                                     style={{cursor: 'pointer'}}
                                 >
+                                    <td onClick={e => e.stopPropagation()}>
+                                        <input type="checkbox" checked={selectedIds.has(item.id)}
+                                               onChange={() => toggleSelect(item.id)} aria-label="Select row"/>
+                                    </td>
                                     <td title={item.description}>
-                                            <span
-                                                className="item-status-dot"
-                                                style={{
-                                                    display: 'inline-block',
-                                                    verticalAlign: 'middle',
-                                                    marginRight: '8px',
-                                                    width: '10px',
-                                                    height: '10px',
-                                                    borderRadius: '50%',
-                                                    backgroundColor: item.completed
-                                                        ? 'var(--success)'
-                                                        : ListService.isOverdue(item)
-                                                            ? 'var(--error)'
-                                                            : 'var(--info)'
-                                                }}
-                                            ></span>
+                                        <span
+                                            className="item-status-dot"
+                                            style={{
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                                marginRight: '8px',
+                                                width: '10px',
+                                                height: '10px',
+                                                borderRadius: '50%',
+                                                backgroundColor: item.completed
+                                                    ? 'var(--success)'
+                                                    : ListService.isOverdue(item)
+                                                        ? 'var(--error)'
+                                                        : 'var(--info)'
+                                            }}
+                                        ></span>
                                         {truncateText(item.description, 60)}
                                     </td>
                                     <td title={getPlantName(item.plant_code)}>
                                         {truncateText(getPlantName(item.plant_code), 20)}
                                     </td>
                                     <td>
-                                            <span
-                                                className={ListService.isOverdue(item) && !item.completed ? 'deadline-overdue' : ''}>
-                                                {new Date(item.deadline).toLocaleDateString()}
-                                            </span>
+                                        <span
+                                            className={ListService.isOverdue(item) && !item.completed ? 'deadline-overdue' : ''}>
+                                            {new Date(item.deadline).toLocaleDateString()}
+                                        </span>
                                     </td>
                                     {statusFilter === 'completed' && (
                                         <td>
@@ -384,7 +529,7 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                 <ListAddView
                     onClose={() => setShowAddSheet(false)}
                     onItemAdded={() => fetchAllData()}
-                    plants={plants}
+                    plants={visiblePlants}
                 />
             )}
 
@@ -399,4 +544,3 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
 }
 
 export default ListView
-

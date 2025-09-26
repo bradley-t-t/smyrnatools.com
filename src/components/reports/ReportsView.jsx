@@ -895,7 +895,8 @@ function ReportsView() {
                                                         <div className="rpts-cta-row">
                                                             {myReportsVisibleWeeks < totalMyWeeks && (
                                                                 isLoadingMy ? (
-                                                                    <LoadingScreen message="Loading more reports..." inline/>
+                                                                    <LoadingScreen message="Loading more reports..."
+                                                                                   inline/>
                                                                 ) : (
                                                                     <button
                                                                         type="button"
@@ -1049,7 +1050,8 @@ function ReportsView() {
                                                         <div className="rpts-cta-row">
                                                             {reviewVisibleWeeks < totalMyWeeks && (
                                                                 isLoadingReview ? (
-                                                                    <LoadingScreen message="Loading more reports..." inline/>
+                                                                    <LoadingScreen message="Loading more reports..."
+                                                                                   inline/>
                                                                 ) : (
                                                                     <button
                                                                         type="button"

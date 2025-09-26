@@ -105,7 +105,6 @@ export function AuthProvider({children}) {
                     accent_color: 'red',
                     show_tips: true,
                     show_online_overlay: true,
-                    auto_overview: false,
                     default_view_mode: null,
                     mixer_filters: baseFilters,
                     operator_filters: baseFilters,

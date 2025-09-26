@@ -446,11 +446,6 @@
     flex-direction: column;
 }
 
-.equipments-modal-content.equipments-overview-modal {
-    max-width: 1000px;
-    width: 95%;
-}
-
 .equipments-loading-container, .equipments-loading-indicator {
     display: flex;
     flex-direction: column;
