@@ -20,7 +20,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
     const [updatedByEmail] = useState('');
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [hasUnsavedChanges] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [scheduledOffDays, setScheduledOffDays] = useState([]);
     const [rating, setRating] = useState(0);
     const [phone, setPhone] = useState('');
@@ -114,7 +114,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             plant_code: assignedPlant,
             position: position,
             is_trainer: isTrainer,
-            assigned_trainer: assignedTrainer,
+            assigned_trainer: status === 'Training' && !isTrainer ? assignedTrainer : null,
             pending_start_date: status === 'Pending Start' ? pendingStartDate : null,
             rating: typeof rating === 'number' ? rating : Number(rating) || 0,
             phone: phone || null
@@ -243,7 +243,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                         <label>Status</label>
                         <select
                             value={status}
-                            onChange={(e) => setStatus(e.target.value)}
+                            onChange={(e) => { const value = e.target.value; setStatus(value); if (value === 'Active') setAssignedTrainer(''); }}
                             className="form-control"
                         >
                             <option value="Active">Active</option>
