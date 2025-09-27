@@ -857,7 +857,7 @@
 
 .operators-list-header-row {
     display: grid;
-    grid-template-columns: 11% 35% 21% 20% 10%;
+    grid-template-columns: 9% 30% 18% 18% 24%;
     gap: 0;
     width: 100%;
     box-sizing: border-box;

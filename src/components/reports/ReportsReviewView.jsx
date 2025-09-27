@@ -9,6 +9,7 @@ import {EfficiencyReviewPlugin} from './types/WeeklyEfficiencyReport'
 import {SafetyManagerReviewPlugin} from './types/WeeklySafetyManagerReport'
 import {GeneralManagerReviewPlugin} from './types/WeeklyGeneralManagerReport'
 import {ReportUtility} from '../../utils/ReportUtility'
+import {exportGeneralManagerReport} from '../../utils/ExportUtility'
 
 const plugins = {
     plant_manager: PlantManagerReviewPlugin,
@@ -29,6 +30,8 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     const [hasManagerEditPermission, setHasManagerEditPermission] = useState(false)
     const [showManagerEditButton, setShowManagerEditButton] = useState(false)
     const [plants, setPlants] = useState([])
+    const [exporting, setExporting] = useState(false)
+    const [exportError, setExportError] = useState('')
 
     useEffect(() => {
         async function fetchOwnerName() {
@@ -165,6 +168,18 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
     const weekVerbose = ReportUtility.getWeekVerbose(report.weekIso || initialData?.week)
     const reportDateVerbose = form.report_date ? ReportUtility.formatVerboseDate(form.report_date) : ''
 
+    async function handleExport() {
+        if (exporting) return
+        setExportError('')
+        setExporting(true)
+        try {
+            await exportGeneralManagerReport({form, plants, weekIso: report.weekIso || initialData?.week, filename: `general_manager_report_${report.weekIso || initialData?.week || ''}.xlsx`})
+        } catch (e) {
+            setExportError(e?.message || 'Export failed')
+        }
+        setExporting(false)
+    }
+
     return (
         <div className="rpts-reports-review-view">
             <div className="rpts-reports-review-container">
@@ -173,6 +188,11 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                         <i className="fas fa-arrow-left"></i> Back
                     </button>
                     <div className="rpts-reports-review-actions">
+                        {report.name === 'general_manager' && (
+                            <button type="button" className="rpts-manager-edit-button" disabled={exporting} onClick={handleExport}>
+                                {exporting ? 'Exporting...' : 'Export'}
+                            </button>
+                        )}
                         {hasManagerEditPermission && showManagerEditButton && (
                             <button
                                 type="button"
@@ -206,6 +226,7 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                         </div>
                     )}
                 </div>
+                {exportError && <div className="rpts-sbmt-error">{exportError}</div>}
                 <div className="rpts-form-header-row">
                     <div className="rpts-form-title">
                         {reportTitle}
@@ -244,19 +265,19 @@ function ReportsReviewView({report, initialData, onBack, user, completedByUser, 
                                             </label>
                                             {field.type === 'textarea' || (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
                                                 <textarea
-                                                    value={form[field.name] || ''}
+                                                    value={form[field.name] ?? ''}
                                                     readOnly
                                                     disabled
                                                 />
                                             ) : field.type === 'select' ? (
-                                                <select value={form[field.name] || ''} readOnly disabled>
+                                                <select value={form[field.name] ?? ''} readOnly disabled>
                                                     <option value="">Select...</option>
                                                     {field.options?.map(opt => (
                                                         <option key={opt} value={opt}>{opt}</option>
                                                     ))}
                                                 </select>
                                             ) : (
-                                                <input type={field.type} value={form[field.name] || ''} readOnly
+                                                <input type={field.type} value={form[field.name] ?? ''} readOnly
                                                        disabled/>
                                             )}
                                         </div>

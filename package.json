@@ -17,7 +17,8 @@
     "react-scripts": "5.0.1",
     "react-tsparticles": "^2.12.0",
     "tsparticles": "^2.12.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "exceljs": "^4.4.0"
   },
   "scripts": {
     "prestart": "node scripts/optimize-images.js",

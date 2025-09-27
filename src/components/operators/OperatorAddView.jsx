@@ -4,7 +4,7 @@ import {UserService} from '../../services/UserService';
 import UserUtility from '../../utils/UserUtility';
 import './styles/OperatorAddView.css';
 
-function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
+function OperatorAddView({plants, operators = [], onClose, onOperatorAdded, allowedPlantCodes}) {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [assignedPlant, setAssignedPlant] = useState('');
@@ -18,6 +18,14 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
     const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
 
     useEffect(() => {
+        if (allowedPlantCodes && allowedPlantCodes.size > 0) {
+            if (assignedPlant && !allowedPlantCodes.has(String(assignedPlant).trim().toUpperCase())) {
+                setAssignedPlant('');
+            }
+        }
+    }, [allowedPlantCodes]);
+
+    useEffect(() => {
         async function checkPermission() {
             const userId = sessionStorage.getItem('userId');
             if (userId) {
@@ -29,45 +37,44 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
         checkPermission();
     }, []);
 
+    const filteredPlants = plants
+        .filter(p => {
+            const code = String(p.plant_code || '').trim().toUpperCase();
+            return allowedPlantCodes && allowedPlantCodes.size > 0 ? allowedPlantCodes.has(code) : false;
+        })
+        .sort((a, b) => {
+            const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
+            const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
+            return aCode - bCode;
+        });
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-
         if (!name) {
             setError('Name is required');
             return;
         }
-
         if (!assignedPlant) {
             setError('Plant is required');
             return;
         }
-
         if (!hasTrainingPermission && ['Training', 'Pending Start'].includes(status)) {
             setError('You do not have permission to assign this status.');
             return;
         }
-
         const normalizedNewName = name.trim().toLowerCase();
         const hasDuplicate = Array.isArray(operators) && operators.some(o => (o?.name || '').trim().toLowerCase() === normalizedNewName);
-
         if (hasDuplicate) {
             const proceed = window.confirm(`An operator named "${name.trim()}" already exists. Create anyway?`);
-            if (!proceed) {
-                return;
-            }
+            if (!proceed) return;
         }
-
         setIsSaving(true);
-
         try {
             let userId = sessionStorage.getItem('userId');
-            if (!UserUtility.isValidUUID(userId)) {
-                throw new Error('Invalid or missing User ID. Please log in again.');
-            }
-
+            if (!UserUtility.isValidUUID(userId)) throw new Error('Invalid or missing User ID. Please log in again.');
             const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-
+            const normalizedPending = (status === 'Pending Start' && pendingStartDate) ? pendingStartDate.slice(0,10) : null;
             const newOperator = {
                 employee_id: UserUtility.generateUUID(),
                 smyrna_id: null,
@@ -76,16 +83,14 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                 status,
                 position: position || null,
                 is_trainer: isTrainer,
-                assigned_trainer: UserUtility.safeUUID(assignedTrainer),
+                assigned_trainer: (['Training','Pending Start'].includes(status) && !isTrainer) ? UserUtility.safeUUID(assignedTrainer) : null,
                 created_at: now,
                 updated_at: now,
                 updated_by: userId,
-                pending_start_date: status === 'Pending Start' ? pendingStartDate : null,
+                pending_start_date: normalizedPending,
                 phone: phone || null
             };
-
             const savedOperator = await OperatorService.createOperator(newOperator);
-
             if (savedOperator) {
                 onOperatorAdded(savedOperator);
                 onClose();
@@ -111,57 +116,30 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="name">Name*</label>
-                            <input
-                                id="name"
-                                type="text"
-                                className="ios-input"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Enter full name"
-                                required
-                            />
+                            <input id="name" type="text" className="ios-input" value={name}
+                                   onChange={(e) => setName(e.target.value)} placeholder="Enter full name" required/>
                         </div>
                         <div className="form-group">
                             <label htmlFor="phone">Phone</label>
-                            <input
-                                id="phone"
-                                type="tel"
-                                className="ios-input"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="(555) 555-5555"
-                            />
+                            <input id="phone" type="tel" className="ios-input" value={phone}
+                                   onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-5555"/>
                         </div>
                         <div className="form-row-horizontal">
                             <div className="form-group">
                                 <label htmlFor="assignedPlant">Assigned Plant*</label>
-                                <select
-                                    id="assignedPlant"
-                                    className="ios-select"
-                                    value={assignedPlant}
-                                    onChange={(e) => setAssignedPlant(e.target.value)}
-                                    required
-                                >
+                                <select id="assignedPlant" className="ios-select" value={assignedPlant}
+                                        onChange={(e) => setAssignedPlant(e.target.value)} required>
                                     <option value="">Select Plant</option>
-                                    {plants.sort((a, b) => {
-                                        const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
-                                        const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
-                                        return aCode - bCode;
-                                    }).map(plant => (
-                                        <option key={plant.plant_code} value={plant.plant_code}>
-                                            ({plant.plant_code}) {plant.plant_name}
-                                        </option>
+                                    {filteredPlants.map(plant => (
+                                        <option key={plant.plant_code}
+                                                value={plant.plant_code}>({plant.plant_code}) {plant.plant_name}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="form-group">
                                 <label htmlFor="status">Status</label>
-                                <select
-                                    id="status"
-                                    className="ios-select"
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                >
+                                <select id="status" className="ios-select" value={status}
+                                        onChange={(e) => setStatus(e.target.value)}>
                                     <option value="Active">Active</option>
                                     <option value="Light Duty">Light Duty</option>
                                     <option value="Terminated">Terminated</option>
@@ -174,24 +152,15 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                         {status === 'Pending Start' && (
                             <div className="form-group">
                                 <label htmlFor="pendingStartDate">Pending Start Date</label>
-                                <input
-                                    id="pendingStartDate"
-                                    type="date"
-                                    className="ios-input"
-                                    value={pendingStartDate}
-                                    onChange={e => setPendingStartDate(e.target.value)}
-                                />
+                                <input id="pendingStartDate" type="date" className="ios-input" value={pendingStartDate}
+                                       onChange={e => setPendingStartDate(e.target.value)}/>
                             </div>
                         )}
                         <div className="form-row-horizontal">
                             <div className="form-group">
                                 <label htmlFor="position">Position</label>
-                                <select
-                                    id="position"
-                                    className="ios-select"
-                                    value={position}
-                                    onChange={(e) => setPosition(e.target.value)}
-                                >
+                                <select id="position" className="ios-select" value={position}
+                                        onChange={(e) => setPosition(e.target.value)}>
                                     <option value="">Select Position</option>
                                     <option value="Mixer Operator">Mixer Operator</option>
                                     <option value="Tractor Operator">Tractor Operator</option>
@@ -200,57 +169,38 @@ function OperatorAddView({plants, operators = [], onClose, onOperatorAdded}) {
                             {hasTrainingPermission && (
                                 <div className="form-group">
                                     <label htmlFor="isTrainer">Trainer Status</label>
-                                    <select
-                                        id="isTrainer"
-                                        className="ios-select"
-                                        value={isTrainer ? "true" : "false"}
-                                        onChange={(e) => {
-                                            const isTrainerValue = e.target.value === "true";
-                                            setIsTrainer(isTrainerValue);
-                                            if (isTrainerValue) {
-                                                setAssignedTrainer('0');
-                                            }
-                                        }}
-                                    >
+                                    <select id="isTrainer" className="ios-select" value={isTrainer ? 'true' : 'false'}
+                                            onChange={(e) => {
+                                                const isTrainerValue = e.target.value === 'true';
+                                                setIsTrainer(isTrainerValue);
+                                                if (isTrainerValue) {
+                                                    setAssignedTrainer('0');
+                                                }
+                                            }}>
                                         <option value="false">Not a Trainer</option>
                                         <option value="true">Trainer</option>
                                     </select>
                                 </div>
                             )}
                         </div>
-                        {hasTrainingPermission && (
+                        {hasTrainingPermission && (status === 'Training' || status === 'Pending Start') && (
                             <div className="form-group">
                                 <label htmlFor="assignedTrainer">Assigned Trainer</label>
-                                <select
-                                    id="assignedTrainer"
-                                    className="ios-select"
-                                    value={assignedTrainer}
-                                    onChange={(e) => setAssignedTrainer(e.target.value)}
-                                    disabled={isTrainer}
-                                >
+                                <select id="assignedTrainer" className="ios-select" value={assignedTrainer}
+                                        onChange={(e) => setAssignedTrainer(e.target.value)} disabled={isTrainer}>
                                     <option value="0">None</option>
-                                    {operators
-                                        .filter(operator => operator.isTrainer)
-                                        .map(trainer => (
-                                            <option key={trainer.employeeId} value={trainer.employeeId}>
-                                                {trainer.name}
-                                            </option>
-                                        ))}
+                                    {operators.filter(operator => operator.isTrainer).map(trainer => (
+                                        <option key={trainer.employeeId}
+                                                value={trainer.employeeId}>{trainer.name}</option>
+                                    ))}
                                 </select>
                                 {operators.filter(op => op.isTrainer).length === 0 && (
-                                    <div className="warning-message">
-                                        No trainers available
-                                    </div>
+                                    <div className="warning-message">No trainers available</div>
                                 )}
                             </div>
                         )}
-                        <button
-                            type="submit"
-                            className="ios-button-primary"
-                            disabled={isSaving}
-                        >
-                            {isSaving ? 'Adding...' : 'Add Operator'}
-                        </button>
+                        <button type="submit" className="ios-button-primary"
+                                disabled={isSaving}>{isSaving ? 'Adding...' : 'Add Operator'}</button>
                     </form>
                 </div>
             </div>

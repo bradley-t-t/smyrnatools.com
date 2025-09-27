@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import supabase, {DatabaseService} from '../../services/DatabaseService';
 import './styles/OperatorDetailView.css';
 
-function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
+function OperatorDetailView({operatorId, onClose, onScheduledOffSaved: _onScheduledOffSaved, allowedPlantCodes}) {
     const [operator, setOperator] = useState(null);
     const [plants, setPlants] = useState([]);
     const [trainers, setTrainers] = useState([]);
@@ -19,11 +19,19 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const [assignedTrainer, setAssignedTrainer] = useState('');
     const [hasTrainingPermission, setHasTrainingPermission] = useState(false);
     const [updatedByEmail] = useState('');
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [scheduledOffDays, setScheduledOffDays] = useState([]);
+    const [_showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [_hasUnsavedChanges, _setHasUnsavedChanges] = useState(false);
+    const [_scheduledOffDays, setScheduledOffDays] = useState([]);
     const [rating, setRating] = useState(0);
     const [phone, setPhone] = useState('');
+
+    useEffect(() => {
+        if (allowedPlantCodes && allowedPlantCodes.size > 0) {
+            if (assignedPlant && !allowedPlantCodes.has(String(assignedPlant).trim().toUpperCase())) {
+                setAssignedPlant('');
+            }
+        }
+    }, [allowedPlantCodes]);
 
     useEffect(() => {
         document.body.classList.add('in-detail-view');
@@ -55,6 +63,17 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
         })));
     };
 
+    const filteredPlants = plants
+        .filter(p => {
+            const code = String(p.plant_code || '').trim().toUpperCase();
+            return allowedPlantCodes && allowedPlantCodes.size > 0 ? allowedPlantCodes.has(code) : false;
+        })
+        .sort((a, b) => {
+            const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
+            const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
+            return aCode - bCode;
+        });
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -69,7 +88,9 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             setStatus(data.status || '');
             setAssignedPlant(data.plant_code || '');
             setPosition(data.position || '');
-            setPendingStartDate(data.pending_start_date || '');
+            const rawPending = data.pending_start_date || '';
+            const normalizedPending = typeof rawPending === 'string' && rawPending.includes('T') ? rawPending.slice(0,10) : rawPending;
+            setPendingStartDate(normalizedPending);
             setIsTrainer(data.is_trainer || false);
             setAssignedTrainer(data.assigned_trainer || '');
             setHasTrainingPermission(true);
@@ -91,7 +112,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     };
 
     const handleBackClick = async () => {
-        if (hasUnsavedChanges) {
+        if (_hasUnsavedChanges) {
             await handleSave();
         }
         if (onClose) onClose();
@@ -107,6 +128,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     const handleSave = async () => {
         setIsSaving(true);
         setMessage('');
+        const pendingForSave = (status === 'Pending Start' && pendingStartDate) ? pendingStartDate.slice(0,10) : null;
         const updateObj = {
             smyrna_id: smyrnaId,
             name: name,
@@ -114,8 +136,8 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
             plant_code: assignedPlant,
             position: position,
             is_trainer: isTrainer,
-            assigned_trainer: status === 'Training' && !isTrainer ? assignedTrainer : null,
-            pending_start_date: status === 'Pending Start' ? pendingStartDate : null,
+            assigned_trainer: (['Training','Pending Start'].includes(status) && !isTrainer) ? assignedTrainer : null,
+            pending_start_date: pendingForSave,
             rating: typeof rating === 'number' ? rating : Number(rating) || 0,
             phone: phone || null
         };
@@ -273,11 +295,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                             className="form-control"
                         >
                             <option value="">Select Plant</option>
-                            {plants.sort((a, b) => {
-                                const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0');
-                                const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0');
-                                return aCode - bCode;
-                            }).map(plant => (
+                            {filteredPlants.map(plant => (
                                 <option key={plant.plant_code} value={plant.plant_code}>
                                     ({plant.plant_code}) {plant.plant_name}
                                 </option>
@@ -344,7 +362,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                                 <option value="true">Trainer</option>
                             </select>
                         </div>
-                        {status === 'Training' && (
+                        {(status === 'Training' || status === 'Pending Start') && (
                             <div className="form-group">
                                 <label>Assigned Trainer</label>
                                 <select
@@ -381,7 +399,7 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
                     </button>
                 </div>
             </div>
-            {showDeleteConfirmation && (
+            {_showDeleteConfirmation && (
                 <div className="confirmation-modal">
                     <div className="confirmation-content">
                         <h2>Confirm Delete</h2>
@@ -399,4 +417,4 @@ function OperatorDetailView({operatorId, onClose, onScheduledOffSaved}) {
     );
 }
 
-export default OperatorDetailView;
+export default OperatorDetailView

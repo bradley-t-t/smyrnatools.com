@@ -29,7 +29,6 @@ function OperatorsView({
     const [selectedOperator, setSelectedOperator] = useState(null)
     const [, setCurrentUserId] = useState(null)
     const [trainers, setTrainers] = useState([])
-    const [scheduledOffMap, setScheduledOffMap] = useState([])
     const [reloadFlag] = useState(false)
     const [viewMode, setViewMode] = useState(() => {
         if (preferences.operatorFilters?.viewMode !== undefined && preferences.operatorFilters?.viewMode !== null) return preferences.operatorFilters.viewMode
@@ -123,8 +122,7 @@ function OperatorsView({
             await Promise.all([
                 fetchOperators(),
                 fetchPlants(),
-                fetchTrainers(),
-                fetchScheduledOff()
+                fetchTrainers()
             ])
         } catch (error) {
         } finally {
@@ -138,19 +136,23 @@ function OperatorsView({
                 .from('operators')
                 .select('*')
             if (error) throw error
-            const formattedOperators = data.map(op => ({
-                employeeId: op.employee_id,
-                smyrnaId: op.smyrna_id || '',
-                name: op.name,
-                plantCode: op.plant_code,
-                status: op.status,
-                isTrainer: op.is_trainer,
-                assignedTrainer: op.assigned_trainer,
-                position: op.position,
-                pendingStartDate: op.pending_start_date || '',
-                rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0,
-                phone: op.phone || ''
-            }))
+            const formattedOperators = data.map(op => {
+                const rawPending = op.pending_start_date || ''
+                const normalizedPending = (typeof rawPending === 'string' && rawPending.includes('T')) ? rawPending.slice(0,10) : rawPending
+                return {
+                    employeeId: op.employee_id,
+                    smyrnaId: op.smyrna_id || '',
+                    name: op.name,
+                    plantCode: op.plant_code,
+                    status: op.status,
+                    isTrainer: op.is_trainer,
+                    assignedTrainer: op.assigned_trainer,
+                    position: op.position,
+                    pendingStartDate: normalizedPending,
+                    rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0,
+                    phone: op.phone || ''
+                }
+            })
             setOperators(formattedOperators)
             localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators))
             localStorage.setItem('cachedOperatorsDate', new Date().toISOString())
@@ -194,21 +196,6 @@ function OperatorsView({
         }
     }
 
-    const fetchScheduledOff = async () => {
-        try {
-            const {data, error} = await supabase
-                .from('operators_scheduled_off')
-                .select('id, days_off')
-            if (error) throw error
-            const map = {}
-            ;(data || []).forEach(item => {
-                map[item.id] = Array.isArray(item.days_off) ? item.days_off : []
-            })
-            setScheduledOffMap(map)
-        } catch (error) {
-            setScheduledOffMap({})
-        }
-    }
 
     const reloadAll = async () => {
         await fetchAllData()
@@ -264,27 +251,12 @@ function OperatorsView({
             return nameA.localeCompare(nameB)
         })
 
-    const getPlantName = (plantCode) => {
-        const plant = plants.find(p => p.plant_code === plantCode)
-        return plant ? plant.plant_name : plantCode || 'No Plant'
-    }
-
     const handleSelectOperator = (operator) => {
         setSelectedOperator(operator)
         if (onSelectOperator) {
             onSelectOperator(operator.employeeId)
         } else {
             setShowDetailView(true)
-        }
-    }
-
-    function handleStatusClick(status) {
-        if (status === 'All Statuses') {
-            setStatusFilter('')
-            updateOperatorFilter('statusFilter', '')
-        } else {
-            setStatusFilter(status)
-            updateOperatorFilter('statusFilter', status)
         }
     }
 
@@ -336,6 +308,7 @@ function OperatorsView({
                         fetchOperators()
                     }}
                     onScheduledOffSaved={reloadAll}
+                    allowedPlantCodes={regionPlantCodes}
                 />
             )}
             {!showDetailView && (
@@ -461,9 +434,6 @@ function OperatorsView({
                                 <div>Name</div>
                                 <div>Phone</div>
                                 <div>Status</div>
-                                {statusFilter === 'Pending Start' && (
-                                    <div>Pending Start Date</div>
-                                )}
                                 <div>Trainer</div>
                             </div>
                         )}
@@ -488,13 +458,11 @@ function OperatorsView({
                                 {filteredOperators.map(operator => {
                                     const duplicate = duplicateNamesSet.has((operator.name || '').trim().toLowerCase())
                                     const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer)
-                                    const scheduledOff = Array.isArray(scheduledOffMap[operator.employeeId]) ? scheduledOffMap[operator.employeeId] : []
                                     return (
                                         <OperatorCard
                                             key={operator.employeeId}
                                             operator={operator}
                                             trainerName={trainerObj ? trainerObj.name : ''}
-                                            scheduledOff={scheduledOff}
                                             duplicateName={duplicate}
                                             onSelect={() => handleSelectOperator(operator)}
                                             formatDate={formatDate}
@@ -510,14 +478,12 @@ function OperatorsView({
                                         <col style={{width: '30%'}}/>
                                         <col style={{width: '18%'}}/>
                                         <col style={{width: '18%'}}/>
-                                        {statusFilter === 'Pending Start' && <col style={{width: '14%'}}/>}
-                                        <col style={{width: '10%'}}/>
+                                        <col style={{width: '24%'}}/>
                                     </colgroup>
                                     <tbody>
                                     {filteredOperators.map(operator => {
                                         const duplicate = duplicateNamesSet.has((operator.name || '').trim().toLowerCase())
                                         const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer)
-                                        const scheduledOff = Array.isArray(scheduledOffMap[operator.employeeId]) ? scheduledOffMap[operator.employeeId] : []
                                         return (
                                             <tr key={operator.employeeId} onClick={() => handleSelectOperator(operator)}
                                                 style={{cursor: 'pointer'}}>
@@ -528,9 +494,6 @@ function OperatorsView({
                                                 </td>
                                                 <td>{operator.phone || '—'}</td>
                                                 <td>{operator.status || '—'}</td>
-                                                {statusFilter === 'Pending Start' && (
-                                                    <td>{operator.pendingStartDate ? formatDate(operator.pendingStartDate) : '—'}</td>
-                                                )}
                                                 <td>{trainerObj ? trainerObj.name : '—'}</td>
                                             </tr>
                                         )
@@ -546,6 +509,8 @@ function OperatorsView({
                             onOperatorAdded={() => fetchOperators()}
                             trainers={trainers}
                             plants={plants}
+                            operators={operators}
+                            allowedPlantCodes={regionPlantCodes}
                         />
                     )}
                 </>
