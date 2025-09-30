@@ -15,7 +15,7 @@ export class Tractor {
         this.updatedAt = data.updated_at ?? new Date().toISOString()
         this.updatedLast = data.updated_last ?? new Date().toISOString()
         this.updatedBy = data.updated_by ?? null
-        this.vin = data.vin ?? ''
+        this.vin = (data.vin ?? '').toUpperCase()
         this.make = data.make ?? ''
         this.model = data.model ?? ''
         this.year = data.year ?? ''
@@ -52,7 +52,7 @@ export class Tractor {
             updated_at: DateUtility.nowDb(),
             updated_last: DateUtility.toDbTimestamp(this.updatedLast),
             updated_by: this.updatedBy,
-            vin: this.vin,
+            vin: (this.vin || '').toUpperCase(),
             make: this.make,
             model: this.model,
             year: this.year,

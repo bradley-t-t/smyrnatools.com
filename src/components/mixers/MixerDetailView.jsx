@@ -73,7 +73,7 @@ function MixerDetailView({mixerId, onClose}) {
                 setCleanlinessRating(mixerData.cleanlinessRating || 0)
                 setLastServiceDate(mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null)
                 setLastChipDate(mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null)
-                setVin(mixerData.vin || '')
+                setVin((mixerData.vin || '').toUpperCase())
                 setMake(mixerData.make || '')
                 setModel(mixerData.model || '')
                 setYear(mixerData.year || '')
@@ -85,7 +85,7 @@ function MixerDetailView({mixerId, onClose}) {
                     cleanlinessRating: mixerData.cleanlinessRating || 0,
                     lastServiceDate: mixerData.lastServiceDate ? new Date(mixerData.lastServiceDate) : null,
                     lastChipDate: mixerData.lastChipDate ? new Date(mixerData.lastChipDate) : null,
-                    vin: mixerData.vin || '',
+                    vin: (mixerData.vin || '').toUpperCase(),
                     make: mixerData.make || '',
                     model: mixerData.model || '',
                     year: mixerData.year || ''
@@ -232,7 +232,7 @@ function MixerDetailView({mixerId, onClose}) {
                 cleanlinessRating: (overrideValues.cleanlinessRating ?? cleanlinessRating) || null,
                 lastServiceDate: formatDate(overrideValues.lastServiceDate ?? lastServiceDate),
                 lastChipDate: formatDate(overrideValues.lastChipDate ?? lastChipDate),
-                vin: overrideValues.vin ?? vin,
+                vin: ((overrideValues.vin ?? vin) || '').toUpperCase(),
                 make: overrideValues.make ?? make,
                 model: overrideValues.model ?? model,
                 year: overrideValues.year ?? year,
@@ -360,7 +360,7 @@ function MixerDetailView({mixerId, onClose}) {
                 return
             }
             const overrides = {}
-            if (needVin) overrides.vin = String(vin).trim()
+            if (needVin) overrides.vin = String(vin).trim().toUpperCase()
             if (needMake) overrides.make = String(make).trim()
             if (needModel) overrides.model = String(model).trim()
             if (needYear) overrides.year = String(year).trim()
@@ -485,7 +485,7 @@ function MixerDetailView({mixerId, onClose}) {
         if (!mixer) return
         const hasComments = comments && comments.length > 0
         const openIssues = (issues || []).filter(issue => !issue.time_completed)
-        let summary = `Mixer Summary for Truck #${mixer.truckNumber || ''}\n\nBasic Information\nStatus: ${mixer.status || ''}\nAssigned Plant: ${getPlantName(mixer.assignedPlant)}\nAssigned Operator: ${getOperatorName(mixer.assignedOperator)}\nCleanliness Rating: ${mixer.cleanlinessRating || 'N/A'}\nLast Service Date: ${mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'N/A'}\nLast Chip Date: ${mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'N/A'}\nVIN: ${mixer.vin || ''}\nMake: ${mixer.make || ''}\nModel: ${mixer.model || ''}\nYear: ${mixer.year || ''}\n\nComments\n${hasComments
+        let summary = `Mixer Summary for Truck #${mixer.truckNumber || ''}\n\nBasic Information\nStatus: ${mixer.status || ''}\nAssigned Plant: ${getPlantName(mixer.assignedPlant)}\nAssigned Operator: ${getOperatorName(mixer.assignedOperator)}\nCleanliness Rating: ${mixer.cleanlinessRating || 'N/A'}\nLast Service Date: ${mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'N/A'}\nLast Chip Date: ${mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'N/A'}\nVIN: ${(mixer.vin || '').toUpperCase()}\nMake: ${mixer.make || ''}\nModel: ${mixer.model || ''}\nYear: ${mixer.year || ''}\n\nComments\n${hasComments
             ? comments.map(c =>
                 `- ${c.author || 'Unknown'}: ${c.text || ''} (${new Date(c.created_at).toLocaleString()})`
             ).join('\n')
@@ -681,7 +681,8 @@ function MixerDetailView({mixerId, onClose}) {
                                                 <div className="form-group">
                                                     <label>VIN</label>
                                                     <input className="form-control" type="text" placeholder="VIN"
-                                                           value={vin} onChange={e => setVin(e.target.value)}/>
+                                                           value={vin}
+                                                           onChange={e => setVin(e.target.value.toUpperCase())}/>
                                                 </div>
                                             )}
                                             {!mixer.make && (
@@ -1001,7 +1002,7 @@ function MixerDetailView({mixerId, onClose}) {
                             <h3>Asset Details</h3>
                             <div className="form-group">
                                 <label>VIN</label>
-                                <input type="text" value={vin} onChange={e => setVin(e.target.value)}
+                                <input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase())}
                                        className="form-control" readOnly={!canEditMixer}/>
                             </div>
                             <div className="form-group">

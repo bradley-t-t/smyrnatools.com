@@ -70,6 +70,7 @@ class MixerServiceImpl {
     }
 
     static async addMixer(mixer, userId) {
+        if (mixer && typeof mixer === 'object') mixer.vin = (mixer.vin || '').toUpperCase()
         const {res, json} = await APIUtility.post('/mixer-service/create', {userId, mixer})
         if (!res.ok) throw new Error(json?.error || 'Failed to create mixer')
         return new Mixer(json?.data)
@@ -82,6 +83,7 @@ class MixerServiceImpl {
             if (!userId) throw new Error('Authentication required')
         }
         if (mixer.id) delete mixer.id
+        mixer.vin = (mixer.vin || '').toUpperCase()
         return this.addMixer(mixer, userId)
     }
 
@@ -93,6 +95,7 @@ class MixerServiceImpl {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) throw new Error('User ID is required')
+        if (mixer && typeof mixer === 'object') mixer.vin = (mixer.vin || '').toUpperCase()
         const {res, json} = await APIUtility.post('/mixer-service/update', {id, mixer, userId})
         if (!res.ok) throw new Error(json?.error || 'Failed to update mixer')
         return new Mixer(json?.data)
@@ -114,6 +117,7 @@ class MixerServiceImpl {
             userId = typeof user === 'object' && user !== null ? user.id : user
         }
         if (!userId) userId = '00000000-0000-0000-0000-000000000000'
+        if (fieldName === 'vin') newValue = (newValue || '').toUpperCase()
         const {res, json} = await APIUtility.post('/mixer-service/add-history', {
             mixerId,
             fieldName,
@@ -157,7 +161,8 @@ class MixerServiceImpl {
 
     static async searchMixersByVin(query) {
         if (!query?.trim()) throw new Error('Search query is required')
-        const {res, json} = await APIUtility.post('/mixer-service/search-by-vin', {query: query.trim()})
+        const upper = query.trim().toUpperCase()
+        const {res, json} = await APIUtility.post('/mixer-service/search-by-vin', {query: upper})
         if (!res.ok) throw new Error(json?.error || 'Failed to search mixers by VIN')
         return (json?.data ?? []).map(row => this._attachIsVerified(new Mixer(row)))
     }

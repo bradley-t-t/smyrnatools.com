@@ -405,7 +405,7 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
                                         ))
                                     })()}
                                 </td>
-                                <td>{mixer.vinNumber ? mixer.vinNumber : (mixer.vin ? mixer.vin : "---")}</td>
+                                <td>{mixer.vinNumber ? String(mixer.vinNumber).toUpperCase() : (mixer.vin ? String(mixer.vin).toUpperCase() : "---")}</td>
                                 <td>
                                     {mixer.isVerified() ? (
                                         <span style={{display: 'inline-flex', alignItems: 'center'}}>
@@ -637,3 +637,4 @@ function MixersView({title = 'Mixer Fleet', showSidebar, setShowSidebar, onSelec
 }
 
 export default MixersView;
+
