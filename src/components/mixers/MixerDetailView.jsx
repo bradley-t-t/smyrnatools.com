@@ -13,6 +13,7 @@ import MixerUtility from '../../utils/MixerUtility'
 import {Mixer} from "../../config/models/mixers/Mixer"
 import LoadingScreen from "../common/LoadingScreen"
 import {RegionService} from '../../services/RegionService'
+import {ValidationUtility} from '../../utils/ValidationUtility'
 
 function MixerDetailView({mixerId, onClose}) {
     const {preferences} = usePreferences()
@@ -285,9 +286,10 @@ function MixerDetailView({mixerId, onClose}) {
     }
 
     async function handleVerifyMixer() {
-        if (!mixer.vin || !mixer.make || !mixer.model || !mixer.year) {
+        const vinValid = !!mixer.vin && ValidationUtility.isVIN(mixer.vin)
+        if (!vinValid || !mixer.make || !mixer.model || !mixer.year) {
             let missing = []
-            if (!mixer.vin) missing.push('VIN')
+            if (!vinValid) missing.push('VIN')
             if (!mixer.make) missing.push('Make')
             if (!mixer.model) missing.push('Model')
             if (!mixer.year) missing.push('Year')
@@ -346,16 +348,16 @@ function MixerDetailView({mixerId, onClose}) {
 
     async function handleSaveMissingFields() {
         try {
-            const needVin = !mixer.vin
+            const needVin = !mixer.vin || !ValidationUtility.isVIN(mixer.vin)
             const needMake = !mixer.make
             const needModel = !mixer.model
             const needYear = !mixer.year
-            const vinOk = needVin ? !!String(vin).trim() : true
+            const vinOk = needVin ? ValidationUtility.isVIN(vin) : true
             const makeOk = needMake ? !!String(make).trim() : true
             const modelOk = needModel ? !!String(model).trim() : true
             const yearOk = needYear ? !!String(year).trim() : true
             if (!(vinOk && makeOk && modelOk && yearOk)) {
-                setMessage('Please fill all required fields before verifying.')
+                setMessage(!vinOk ? 'Invalid VIN. Please enter a valid 17-character VIN.' : 'Please fill all required fields before verifying.')
                 setTimeout(() => setMessage(''), 4000)
                 return
             }
@@ -544,7 +546,7 @@ function MixerDetailView({mixerId, onClose}) {
     const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
 
     const canSubmitMissing = missingFields.every(f => {
-        if (f === 'VIN') return !!String(vin).trim()
+        if (f === 'VIN') return ValidationUtility.isVIN(vin)
         if (f === 'Make') return !!String(make).trim()
         if (f === 'Model') return !!String(model).trim()
         if (f === 'Year') return !!String(year).trim()
@@ -677,12 +679,13 @@ function MixerDetailView({mixerId, onClose}) {
                                             </ul>
                                         )}
                                         <div className="form-grid two-col">
-                                            {!mixer.vin && (
+                                            {(!mixer.vin || !ValidationUtility.isVIN(mixer.vin)) && (
                                                 <div className="form-group">
                                                     <label>VIN</label>
                                                     <input className="form-control" type="text" placeholder="VIN"
                                                            value={vin}
                                                            onChange={e => setVin(e.target.value.toUpperCase())}/>
+                                                    {vin && !ValidationUtility.isVIN(vin) && <div className="warning-text">Invalid VIN</div>}
                                                 </div>
                                             )}
                                             {!mixer.make && (

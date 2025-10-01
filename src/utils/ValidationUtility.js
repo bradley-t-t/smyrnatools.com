@@ -23,8 +23,19 @@ const ValidationUtility = {
             if (o[k] !== undefined) out[k] = o[k]
         });
         return out
+    }, isVIN(v) {
+        if (typeof v !== 'string') return false
+        const vin = v.trim().toUpperCase()
+        if (vin.length !== 17) return false
+        if (/[^A-Z0-9]/.test(vin)) return false
+        if (/(NEED|UNKNOWN|PENDING|PLACEHOLDER)/.test(vin)) return false
+        if (/^[A-Z0-9]$/.test(vin)) return false
+        if (/^(.)\1{16}$/.test(vin)) return false
+        return true
+    }, requireVIN(v, msg = 'Invalid VIN') {
+        if (!this.isVIN(v)) throw new Error(msg)
+        return v.trim().toUpperCase()
     }
 };
 export default ValidationUtility;
 export {ValidationUtility}
-
