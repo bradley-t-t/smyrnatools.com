@@ -556,6 +556,7 @@ export default function DashboardView() {
                         operatorName: o.name || '',
                         trainerName: trainer?.name || '',
                         trainerPlant: trainer?.plantCode || '',
+                        operatorPosition: o.position || '',
                         operatorPlant: o.plantCode || ''
                     }
                 })
@@ -924,6 +925,7 @@ export default function DashboardView() {
                                                     <th>Plant (Training At)</th>
                                                     <th>Operator</th>
                                                     <th>Trainer</th>
+                                                    <th>Position</th>
                                                     <th>Plant (Training For)</th>
                                                 </tr>
                                                 </thead>
@@ -932,6 +934,7 @@ export default function DashboardView() {
                                                     <td>{r.trainerPlant || '-'}</td>
                                                     <td>{r.operatorName || '-'}</td>
                                                     <td>{r.trainerName || '-'}</td>
+                                                    <td>{r.operatorPosition || '-'}</td>
                                                     <td>{r.operatorPlant || '-'}</td>
                                                 </tr>)}
                                                 </tbody>
