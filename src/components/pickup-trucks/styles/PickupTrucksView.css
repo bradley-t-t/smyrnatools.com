@@ -95,22 +95,6 @@
     margin-right: 8px
 }
 
-.dashboard-container.pickup-trucks-view {
-    padding-top: 0 !important;
-    padding-right: var(--spacing-lg);
-    padding-bottom: var(--spacing-lg);
-    padding-left: var(--spacing-lg);
-}
-
-@media (max-width: 768px) {
-    .dashboard-container.pickup-trucks-view {
-        padding-top: 0 !important;
-        padding-right: var(--spacing-md);
-        padding-bottom: var(--spacing-md);
-        padding-left: var(--spacing-md);
-    }
-}
-
 .pickup-trucks-view {
     overscroll-behavior-y: none;
     padding-top: 0;

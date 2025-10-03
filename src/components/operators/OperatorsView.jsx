@@ -10,6 +10,7 @@ import OperatorAddView from './OperatorAddView'
 import {usePreferences} from '../../app/context/PreferencesContext'
 import FormatUtility from '../../utils/FormatUtility'
 import {RegionService} from '../../services/RegionService'
+import TopSection from '../sections/TopSection'
 
 function OperatorsView({
                            title = 'Operator Roster',
@@ -46,16 +47,12 @@ function OperatorsView({
     useEffect(() => {
         const fetchCurrentUser = async () => {
             const user = await UserService.getCurrentUser()
-            if (user) {
-                setCurrentUserId(user.id)
-            }
+            if (user) setCurrentUserId(user.id)
         }
         fetchCurrentUser()
     }, [])
 
-    useEffect(() => {
-        fetchAllData()
-    }, [reloadFlag])
+    useEffect(() => { fetchAllData() }, [reloadFlag])
 
     useEffect(() => {
         if (preferences.operatorFilters) {
@@ -66,16 +63,11 @@ function OperatorsView({
         }
     }, [preferences.operatorFilters, preferences.defaultViewMode])
 
-    useEffect(() => {
-        if (initialStatusFilter) {
-            setStatusFilter(initialStatusFilter)
-        }
-    }, [initialStatusFilter])
+    useEffect(() => { if (initialStatusFilter) setStatusFilter(initialStatusFilter) }, [initialStatusFilter])
 
     useEffect(() => {
         const prefCode = preferences.selectedRegion?.code || ''
         let cancelled = false
-
         async function loadRegionPlants() {
             let regionCode = prefCode
             try {
@@ -92,164 +84,90 @@ function OperatorsView({
                         }
                     }
                 }
-                if (!regionCode) {
-                    setRegionPlantCodes(null)
-                    return
-                }
+                if (!regionCode) { setRegionPlantCodes(null); return }
                 const regionPlants = await RegionService.fetchRegionPlants(regionCode)
                 if (cancelled) return
                 const codes = new Set(regionPlants.map(p => String(p.plantCode || p.plant_code || '').trim().toUpperCase()).filter(Boolean))
                 setRegionPlantCodes(codes)
                 const sel = String(selectedPlant || '').trim().toUpperCase()
-                if (sel && !codes.has(sel)) {
-                    setSelectedPlant('')
-                    updateOperatorFilter('selectedPlant', '')
-                }
-            } catch {
-                if (!cancelled) setRegionPlantCodes(null)
-            }
+                if (sel && !codes.has(sel)) { setSelectedPlant(''); updateOperatorFilter('selectedPlant', '') }
+            } catch { if (!cancelled) setRegionPlantCodes(null) }
         }
-
         loadRegionPlants()
-        return () => {
-            cancelled = true
-        }
+        return () => { cancelled = true }
     }, [preferences.selectedRegion?.code])
 
     const fetchAllData = async () => {
         setIsLoading(true)
-        try {
-            await Promise.all([
-                fetchOperators(),
-                fetchPlants(),
-                fetchTrainers()
-            ])
-        } catch (error) {
-        } finally {
-            setIsLoading(false)
-        }
+        try { await Promise.all([fetchOperators(), fetchPlants(), fetchTrainers()]) } catch {} finally { setIsLoading(false) }
     }
 
     const fetchOperators = async () => {
         try {
-            const {data, error} = await supabase
-                .from('operators')
-                .select('*')
+            const {data, error} = await supabase.from('operators').select('*')
             if (error) throw error
             const formattedOperators = data.map(op => {
                 const rawPending = op.pending_start_date || ''
                 const normalizedPending = (typeof rawPending === 'string' && rawPending.includes('T')) ? rawPending.slice(0,10) : rawPending
-                return {
-                    employeeId: op.employee_id,
-                    smyrnaId: op.smyrna_id || '',
-                    name: op.name,
-                    plantCode: op.plant_code,
-                    status: op.status,
-                    isTrainer: op.is_trainer,
-                    assignedTrainer: op.assigned_trainer,
-                    position: op.position,
-                    pendingStartDate: normalizedPending,
-                    rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0,
-                    phone: op.phone || ''
-                }
+                return { employeeId: op.employee_id, smyrnaId: op.smyrna_id || '', name: op.name, plantCode: op.plant_code, status: op.status, isTrainer: op.is_trainer, assignedTrainer: op.assigned_trainer, position: op.position, pendingStartDate: normalizedPending, rating: typeof op.rating === 'number' ? op.rating : Number(op.rating) || 0, phone: op.phone || '' }
             })
             setOperators(formattedOperators)
             localStorage.setItem('cachedOperators', JSON.stringify(formattedOperators))
             localStorage.setItem('cachedOperatorsDate', new Date().toISOString())
-        } catch (error) {
+        } catch {
             const cachedData = localStorage.getItem('cachedOperators')
             const cacheDate = localStorage.getItem('cachedOperatorsDate')
             if (cachedData && cacheDate) {
                 const cachedTime = new Date(cacheDate).getTime()
                 const hourAgo = new Date().getTime() - 3600000
-                if (cachedTime > hourAgo) {
-                    setOperators(JSON.parse(cachedData))
-                }
+                if (cachedTime > hourAgo) setOperators(JSON.parse(cachedData))
             }
         }
     }
 
     const fetchPlants = async () => {
-        try {
-            const {data, error} = await supabase
-                .from('plants')
-                .select('*')
-            if (error) throw error
-            setPlants(data)
-        } catch (error) {
-        }
+        try { const {data, error} = await supabase.from('plants').select('*'); if (error) throw error; setPlants(data) } catch {}
     }
 
     const fetchTrainers = async () => {
-        try {
-            const {data, error} = await supabase
-                .from('operators')
-                .select('employee_id, name')
-                .eq('is_trainer', true)
-            if (error) throw error
-            setTrainers(data.map(t => ({
-                employeeId: t.employee_id,
-                name: t.name
-            })))
-        } catch (error) {
-            setTrainers([])
-        }
+        try { const {data, error} = await supabase.from('operators').select('employee_id, name').eq('is_trainer', true); if (error) throw error; setTrainers(data.map(t => ({ employeeId: t.employee_id, name: t.name }))) } catch { setTrainers([]) }
     }
 
-
-    const reloadAll = async () => {
-        await fetchAllData()
-    }
+    const reloadAll = async () => { await fetchAllData() }
 
     const duplicateNamesSet = React.useMemo(() => {
         const counts = new Map()
-        operators.forEach(op => {
-            const key = (op?.name || '').trim().toLowerCase()
-            if (!key) return
-            counts.set(key, (counts.get(key) || 0) + 1)
-        })
-        const dups = new Set()
-        counts.forEach((count, key) => {
-            if (count > 1) dups.add(key)
-        })
-        return dups
+        operators.forEach(op => { const key = (op?.name || '').trim().toLowerCase(); if (!key) return; counts.set(key, (counts.get(key) || 0) + 1) })
+        const dups = new Set(); counts.forEach((count, key) => { if (count > 1) dups.add(key) }); return dups
     }, [operators])
 
-    const filteredOperators = operators
-        .filter(operator => {
-            const matchesSearch = searchText.trim() === '' ||
-                operator.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                operator.employeeId.toLowerCase().includes(searchText.toLowerCase())
-            const matchesPlant = selectedPlant === '' || operator.plantCode === selectedPlant
-            const matchesRegion = !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(String(operator.plantCode || '').trim().toUpperCase())
-            let matchesStatus = true
-            if (statusFilter && statusFilter !== 'All Statuses') {
-                if (statuses.includes(statusFilter)) {
-                    matchesStatus = operator.status === statusFilter
-                } else if (statusFilter === 'Trainer') {
-                    matchesStatus = operator.isTrainer === true || String(operator.isTrainer).toLowerCase() === 'true'
-                } else if (statusFilter === 'Not Trainer') {
-                    matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true'
-                }
-            }
-            return matchesSearch && matchesPlant && matchesRegion && matchesStatus
-        })
-        .sort((a, b) => {
-            if (a.status === 'Active' && b.status !== 'Active') return -1
-            if (a.status !== 'Active' && b.status === 'Active') return 1
-            if (a.status === 'Training' && b.status !== 'Training') return -1
-            if (a.status !== 'Training' && b.status === 'Training') return 1
-            if (a.status === 'Pending Start' && b.status !== 'Pending Start') return -1
-            if (a.status !== 'Pending Start' && b.status === 'Pending Start') return 1
-            if (a.status === 'Terminated' && b.status !== 'Terminated') return 1
-            if (a.status !== 'Terminated' && b.status === 'Terminated') return -1
-            if (a.status === 'No Hire' && b.status !== 'No Hire') return 1
-            if (a.status !== 'No Hire' && b.status === 'No Hire') return -1
-            if (a.status !== b.status) return a.status.localeCompare(b.status)
-            const nameA = a.name.split(' ').pop().toLowerCase()
-            const nameB = b.name.split(' ').pop().toLowerCase()
-            return nameA.localeCompare(nameB)
-        })
+    const filteredOperators = operators.filter(operator => {
+        const matchesSearch = searchText.trim() === '' || operator.name.toLowerCase().includes(searchText.toLowerCase()) || operator.employeeId.toLowerCase().includes(searchText.toLowerCase())
+        const matchesPlant = selectedPlant === '' || operator.plantCode === selectedPlant
+        const matchesRegion = !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(String(operator.plantCode || '').trim().toUpperCase())
+        let matchesStatus = true
+        if (statusFilter && statusFilter !== 'All Statuses') {
+            if (statuses.includes(statusFilter)) matchesStatus = operator.status === statusFilter
+            else if (statusFilter === 'Trainer') matchesStatus = operator.isTrainer === true || String(operator.isTrainer).toLowerCase() === 'true'
+            else if (statusFilter === 'Not Trainer') matchesStatus = operator.isTrainer !== true && String(operator.isTrainer).toLowerCase() !== 'true'
+        }
+        return matchesSearch && matchesPlant && matchesRegion && matchesStatus
+    }).sort((a, b) => {
+        if (a.status === 'Active' && b.status !== 'Active') return -1
+        if (a.status !== 'Active' && b.status === 'Active') return 1
+        if (a.status === 'Training' && b.status !== 'Training') return -1
+        if (a.status !== 'Training' && b.status === 'Training') return 1
+        if (a.status === 'Pending Start' && b.status !== 'Pending Start') return -1
+        if (a.status !== 'Pending Start' && b.status === 'Pending Start') return 1
+        if (a.status === 'Terminated' && b.status !== 'Terminated') return 1
+        if (a.status !== 'Terminated' && b.status === 'Terminated') return -1
+        if (a.status === 'No Hire' && b.status !== 'No Hire') return 1
+        if (a.status !== 'No Hire' && b.status === 'No Hire') return -1
+        if (a.status !== b.status) return a.status.localeCompare(b.status)
+        const nameA = a.name.split(' ').pop().toLowerCase()
+        const nameB = b.name.split(' ').pop().toLowerCase()
+        return nameA.localeCompare(nameB)
+    })
 
     const handleSelectOperator = (operator) => {
         setSelectedOperator(operator)
@@ -260,20 +178,11 @@ function OperatorsView({
         }
     }
 
-    function formatDate(dateStr) {
-        return FormatUtility.formatDate(dateStr)
-    }
+    function formatDate(dateStr) { return FormatUtility.formatDate(dateStr) }
 
     function handleViewModeChange(mode) {
-        if (viewMode === mode) {
-            setViewMode(null)
-            updateOperatorFilter('viewMode', null)
-            localStorage.removeItem('operators_last_view_mode')
-        } else {
-            setViewMode(mode)
-            updateOperatorFilter('viewMode', mode)
-            localStorage.setItem('operators_last_view_mode', mode)
-        }
+        if (viewMode === mode) { setViewMode(null); updateOperatorFilter('viewMode', null); localStorage.removeItem('operators_last_view_mode') }
+        else { setViewMode(mode); updateOperatorFilter('viewMode', mode); localStorage.setItem('operators_last_view_mode', mode) }
     }
 
     function handleResetFilters() {
@@ -291,167 +200,60 @@ function OperatorsView({
             const root = document.querySelector('.dashboard-container.operators-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
-
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
     }, [viewMode, searchText, selectedPlant, statusFilter])
 
+    const showReset = (searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses'))
+
     return (
-        <div
-            className={`dashboard-container operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
+        <div className={`dashboard-container operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
             {showDetailView && selectedOperator && (
                 <OperatorDetailView
                     operatorId={selectedOperator.employeeId}
-                    onClose={() => {
-                        setShowDetailView(false)
-                        fetchOperators()
-                    }}
+                    onClose={() => { setShowDetailView(false); fetchOperators() }}
                     onScheduledOffSaved={reloadAll}
                     allowedPlantCodes={regionPlantCodes}
                 />
             )}
             {!showDetailView && (
                 <>
-                    <div className="operators-sticky-header" ref={headerRef}>
-                        <div className="dashboard-header">
-                            <h1>
-                                {title}
-                            </h1>
-                            <div className="dashboard-actions">
-                                <button
-                                    className="action-button primary rectangular-button"
-                                    onClick={() => setShowAddSheet(true)}
-                                    style={{height: '44px', lineHeight: '1'}}
-                                >
-                                    <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Operator
-                                </button>
-                            </div>
-                        </div>
-                        <div className="search-filters">
-                            <div className="search-bar">
-                                <input
-                                    type="text"
-                                    className="ios-search-input"
-                                    placeholder="Search by name or ID..."
-                                    value={searchText}
-                                    onChange={(e) => {
-                                        const value = e.target.value
-                                        setSearchText(value)
-                                        updateOperatorFilter('searchText', value)
-                                    }}
-                                />
-                                {searchText && (
-                                    <button className="clear" onClick={() => {
-                                        setSearchText('')
-                                        updateOperatorFilter('searchText', '')
-                                    }}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                )}
-                            </div>
-                            <div className="filters">
-                                <div className="view-toggle-icons">
-                                    <button
-                                        className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                                        onClick={() => handleViewModeChange('grid')}
-                                        aria-label="Grid view"
-                                        type="button"
-                                    >
-                                        <i className="fas fa-th-large"></i>
-                                    </button>
-                                    <button
-                                        className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                                        onClick={() => handleViewModeChange('list')}
-                                        aria-label="List view"
-                                        type="button"
-                                    >
-                                        <i className="fas fa-list"></i>
-                                    </button>
-                                </div>
-                                <div className="filter-wrapper">
-                                    <select
-                                        className="ios-select"
-                                        value={selectedPlant}
-                                        onChange={(e) => {
-                                            const value = e.target.value
-                                            setSelectedPlant(value)
-                                            updateOperatorFilter('selectedPlant', value)
-                                        }}
-                                        aria-label="Filter by plant"
-                                        style={{
-                                            '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
-                                            '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
-                                        }}
-                                    >
-                                        <option value="">All Plants</option>
-                                        {plants
-                                            .filter(p => {
-                                                const code = String(p.plant_code || '').trim().toUpperCase()
-                                                return regionPlantCodes && regionPlantCodes.size > 0 ? regionPlantCodes.has(code) : false
-                                            })
-                                            .sort((a, b) => {
-                                                const aCode = parseInt((a.plant_code || '').replace(/\D/g, '') || '0')
-                                                const bCode = parseInt((b.plant_code || '').replace(/\D/g, '') || '0')
-                                                return aCode - bCode
-                                            }).map(plant => (
-                                                <option key={plant.plant_code} value={plant.plant_code}>
-                                                    ({plant.plant_code}) {plant.plant_name}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </div>
-                                <div className="filter-wrapper">
-                                    <select
-                                        className="ios-select"
-                                        value={statusFilter}
-                                        onChange={(e) => {
-                                            const value = e.target.value
-                                            setStatusFilter(value)
-                                            updateOperatorFilter('statusFilter', value)
-                                        }}
-                                        style={{
-                                            '--select-active-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)',
-                                            '--select-focus-border': preferences.accentColor === 'red' ? 'var(--accent-red)' : 'var(--accent-blue)'
-                                        }}
-                                    >
-                                        {filterOptions.map(option => (
-                                            <option key={option} value={option}>{option}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {(searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses')) && (
-                                    <button className="filter-reset-button" onClick={handleResetFilters}>
-                                        <i className="fas fa-undo"></i>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        {viewMode === 'list' && (
-                            <div
-                                className={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}>
-                                <div>Plant</div>
-                                <div>Name</div>
-                                <div>Phone</div>
-                                <div>Status</div>
-                                <div>Trainer</div>
-                            </div>
-                        )}
-                    </div>
+                    <TopSection
+                        title={title}
+                        flushTop={true}
+                        showCoverOverlay={true}
+                        forwardedRef={headerRef}
+                        addButtonLabel="Add Operator"
+                        onAddClick={() => setShowAddSheet(true)}
+                        searchInput={searchText}
+                        onSearchInputChange={value => { setSearchText(value); updateOperatorFilter('searchText', value) }}
+                        onClearSearch={() => { setSearchText(''); updateOperatorFilter('searchText', '') }}
+                        searchPlaceholder="Search by name or ID..."
+                        viewMode={viewMode}
+                        onViewModeChange={handleViewModeChange}
+                        plants={plants.map(p => ({...p, plantCode: p.plant_code, plantName: p.plant_name}))}
+                        regionPlantCodes={regionPlantCodes}
+                        selectedPlant={selectedPlant}
+                        onSelectedPlantChange={value => { setSelectedPlant(value); updateOperatorFilter('selectedPlant', value) }}
+                        statusFilter={statusFilter}
+                        statusOptions={filterOptions}
+                        onStatusFilterChange={value => { setStatusFilter(value); updateOperatorFilter('statusFilter', value) }}
+                        showReset={showReset}
+                        onReset={handleResetFilters}
+                        listHeaderLabels={['Plant','Name','Phone','Status','Trainer']}
+                        showListHeader={viewMode === 'list'}
+                        listHeaderClassName={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}
+                    />
                     <div className="content-container">
                         {isLoading ? (
-                            <div className="loading-container">
-                                <LoadingScreen message="Loading operators..." inline={true}/>
-                            </div>
+                            <div className="loading-container"><LoadingScreen message="Loading operators..." inline={true}/></div>
                         ) : filteredOperators.length === 0 ? (
                             <div className="no-results-container">
-                                <div className="no-results-icon">
-                                    <i className="fas fa-user-hard-hat"></i>
-                                </div>
+                                <div className="no-results-icon"><i className="fas fa-user-hard-hat"></i></div>
                                 <h3>No Operators Found</h3>
                                 <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? 'No operators match your search criteria.' : 'There are no operators in the system yet.'}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Operator
-                                </button>
+                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Operator</button>
                             </div>
                         ) : viewMode === 'grid' ? (
                             <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
@@ -485,16 +287,12 @@ function OperatorsView({
                                         const duplicate = duplicateNamesSet.has((operator.name || '').trim().toLowerCase())
                                         const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer)
                                         return (
-                                            <tr key={operator.employeeId} onClick={() => handleSelectOperator(operator)}
-                                                style={{cursor: 'pointer'}}>
-                                                <td>{operator.plantCode || '—'}</td>
-                                                <td>
-                                                    <span
-                                                        className={`name-cell${duplicate ? ' duplicate' : ''}`}>{operator.name}</span>
-                                                </td>
-                                                <td>{operator.phone || '—'}</td>
-                                                <td>{operator.status || '—'}</td>
-                                                <td>{trainerObj ? trainerObj.name : '—'}</td>
+                                            <tr key={operator.employeeId} onClick={() => handleSelectOperator(operator)} style={{cursor: 'pointer'}}>
+                                                <td>{operator.plantCode || '\u2014'}</td>
+                                                <td><span className={`name-cell${duplicate ? ' duplicate' : ''}`}>{operator.name}</span></td>
+                                                <td>{operator.phone || '\u2014'}</td>
+                                                <td>{operator.status || '\u2014'}</td>
+                                                <td>{trainerObj ? trainerObj.name : '\u2014'}</td>
                                             </tr>
                                         )
                                     })}

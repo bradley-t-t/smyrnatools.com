@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
 import TrailerCard from './TrailerCard';
@@ -16,6 +16,7 @@ import {RegionService} from '../../services/RegionService'
 import AsyncUtility from '../../utils/AsyncUtility'
 import LookupUtility from '../../utils/LookupUtility'
 import FleetUtility from '../../utils/FleetUtility'
+import TopSection from '../sections/TopSection'
 
 function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const {preferences, saveLastViewedFilters, updateTrailerFilter, updatePreferences} = usePreferences()
@@ -42,6 +43,7 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
     const [modalTrailerNumber, setModalTrailerNumber] = useState('')
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const filterOptions = ['All Types', 'Cement', 'End Dump', 'Past Due Service', 'Verified', 'Not Verified', 'Open Issues']
+    const headerRef = useRef(null)
 
     useEffect(() => {
         async function fetchAllData() {
@@ -86,14 +88,11 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
             try {
                 const regionPlants = await RegionService.fetchRegionPlants(code)
                 if (cancelled) return
-                const codes = new Set(regionPlants.map(p => p.plantCode))
+                const codes = new Set(regionPlants.map(p => p.plantCode || p.plant_code))
                 setRegionPlantCodes(codes)
                 if (selectedPlant && !codes.has(selectedPlant)) {
                     setSelectedPlant('')
-                    updatePreferences('trailerFilters', {
-                        ...preferences.trailerFilters,
-                        selectedPlant: ''
-                    })
+                    updatePreferences('trailerFilters', { ...preferences.trailerFilters, selectedPlant: '' })
                 }
             } catch {
                 setRegionPlantCodes(null)
@@ -101,10 +100,20 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         }
 
         loadRegionPlants()
-        return () => {
-            cancelled = true
-        }
+        return () => { cancelled = true }
     }, [preferences.selectedRegion?.code])
+
+    useEffect(() => {
+        function updateStickyCoverHeight() {
+            const el = headerRef.current
+            const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
+            const root = document.querySelector('.dashboard-container.trailers-view')
+            if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
+        }
+        updateStickyCoverHeight()
+        window.addEventListener('resize', updateStickyCoverHeight)
+        return () => window.removeEventListener('resize', updateStickyCoverHeight)
+    }, [viewMode, searchInput, selectedPlant, typeFilter])
 
     function handleViewModeChange(mode) {
         if (viewMode === mode) {
@@ -151,32 +160,24 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
                                 if (idx >= 0) arr[idx] = {...arr[idx], comments, issues, openIssuesCount, commentsCount}
                                 return arr
                             })
-                        } catch (e) {
-                        }
+                        } catch {}
                     }
                 }
 
                 await Promise.all(Array.from({length: concurrency}, () => worker()))
             })()
-        } catch {
-        }
+        } catch {}
     }
 
     async function fetchTractors() {
         try {
             const data = await TractorService.fetchTractors();
             setTractors(Array.isArray(data) ? data : []);
-        } catch {
-            setTractors([]);
-        }
+        } catch { setTractors([]) }
     }
 
     async function fetchPlants() {
-        try {
-            const data = await PlantService.fetchPlants();
-            setPlants(data);
-        } catch {
-        }
+        try { const data = await PlantService.fetchPlants(); setPlants(data); } catch {}
     }
 
     function handleSelectTrailer(trailerId) {
@@ -186,373 +187,71 @@ function TrailersView({title = 'Trailer Fleet', onSelectTrailer}) {
         if (onSelectTrailer) onSelectTrailer(trailerId);
     }
 
-    function handleTypeClick(type) {
-        if (type === 'All Types') {
-            setTypeFilter('')
-            updatePreferences(prev => ({
-                ...prev,
-                trailerFilters: {
-                    ...prev.trailerFilters,
-                    typeFilter: ''
-                }
-            }))
-        } else {
-            setTypeFilter(type)
-            updatePreferences(prev => ({
-                ...prev,
-                trailerFilters: {
-                    ...prev.trailerFilters,
-                    typeFilter: type
-                }
-            }))
-        }
-    }
-
     function handleBackFromDetail() {
         setSelectedTrailer(null)
         setReloadTrailers(r => !r)
     }
 
-    const debouncedSetSearchText = useCallback(AsyncUtility.debounce((value) => {
+    const debouncedSetSearchText = useCallback(AsyncUtility.debounce(value => {
         setSearchText(value)
-        updatePreferences(prev => ({
-            ...prev,
-            trailerFilters: {
-                ...prev.trailerFilters,
-                searchText: value
-            }
-        }))
+        updatePreferences(prev => ({ ...prev, trailerFilters: { ...prev.trailerFilters, searchText: value } }))
     }, 300), [updatePreferences])
 
-    const filteredTrailers = useMemo(() => {
-        return trailers
-            .filter(trailer => {
-                const matchesSearch = !searchText.trim() ||
-                    trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-                    (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
-                const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
-                const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(trailer.assignedPlant)
-                let matchesType = true
-                if (typeFilter && typeFilter !== 'All Types') {
-                    matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter :
-                        typeFilter === 'Past Due Service' ? TrailerUtility.isServiceOverdue(trailer.lastServiceDate) :
-                            typeFilter === 'Verified' ? trailer.isVerified() :
-                                typeFilter === 'Not Verified' ? !trailer.isVerified() :
-                                    typeFilter === 'Open Issues' ? (Number(trailer.openIssuesCount || 0) > 0) : false
-                }
-                return matchesSearch && matchesPlant && matchesRegion && matchesType
-            })
-            .sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'trailerNumber'))
-    }, [trailers, tractors, selectedPlant, searchText, typeFilter, preferences.selectedRegion?.code, regionPlantCodes])
+    const filteredTrailers = useMemo(() => trailers.filter(trailer => {
+        const matchesSearch = !searchText.trim() || trailer.trailerNumber?.toLowerCase().includes(searchText.toLowerCase()) || (trailer.assignedTractor && tractors.find(t => t.id === trailer.assignedTractor)?.truckNumber.toLowerCase().includes(searchText.toLowerCase()))
+        const matchesPlant = !selectedPlant || trailer.assignedPlant === selectedPlant
+        const matchesRegion = !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(trailer.assignedPlant)
+        let matchesType = true
+        if (typeFilter && typeFilter !== 'All Types') {
+            matchesType = ['Cement', 'End Dump'].includes(typeFilter) ? trailer.trailerType === typeFilter : typeFilter === 'Past Due Service' ? TrailerUtility.isServiceOverdue(trailer.lastServiceDate) : typeFilter === 'Verified' ? trailer.isVerified() : typeFilter === 'Not Verified' ? !trailer.isVerified() : typeFilter === 'Open Issues' ? (Number(trailer.openIssuesCount || 0) > 0) : false
+        }
+        return matchesSearch && matchesPlant && matchesRegion && matchesType
+    }).sort((a, b) => FleetUtility.compareByStatusThenNumber(a, b, 'status', 'trailerNumber')), [trailers, tractors, selectedPlant, searchText, typeFilter, preferences.selectedRegion?.code, regionPlantCodes])
 
     const content = useMemo(() => {
-        if (isLoading) {
-            return (
-                <div className="loading-container">
-                    <LoadingScreen message="Loading trailers..." inline={true}/>
-                </div>
-            )
-        }
-        if (filteredTrailers.length === 0) {
-            return (
-                <div className="no-results-container">
-                    <div className="no-results-icon">
-                        <i className="fas fa-trailer"></i>
-                    </div>
-                    <h3>No Trailers Found</h3>
-                    <p>{searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types') ? "No trailers match your search criteria." : "There are no trailers in the system yet."}</p>
-                    <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Trailer</button>
-                </div>
-            )
-        }
-        if (viewMode === 'grid') {
-            return (
-                <div className={`trailers-grid ${searchText ? 'search-results' : ''}`}>
-                    {filteredTrailers.map(trailer => (
-                        <TrailerCard
-                            key={trailer.id}
-                            trailer={trailer}
-                            tractorName={LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor)}
-                            plantName={LookupUtility.getPlantName(plants, trailer.assignedPlant)}
-                            showTractorWarning={LookupUtility.isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor)}
-                            onSelect={() => handleSelectTrailer(trailer.id)}
-                        />
-                    ))}
-                </div>
-            )
-        }
-        if (viewMode === 'list') {
-            return (
-                <div className="trailers-list-table-container">
-                    <table className="trailers-list-table">
-                        <colgroup>
-                            <col style={{width: '12%'}}/>
-                            <col style={{width: '14%'}}/>
-                            <col style={{width: '12%'}}/>
-                            <col style={{width: '18%'}}/>
-                            <col style={{width: '14%'}}/>
-                            <col style={{width: '22%'}}/>
-                            <col style={{width: '8%'}}/>
-                        </colgroup>
-                        <tbody>
-                        {filteredTrailers.map(trailer => {
-                            const commentsCount = Number(trailer.commentsCount || 0)
-                            const issuesCount = Number(trailer.openIssuesCount || 0)
-                            return (
-                                <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)}
-                                    style={{cursor: 'pointer'}}>
-                                    <td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td>
-                                    <td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td>
-                                    <td>
-                                        <span
-                                            className="item-status-dot"
-                                            style={{
-                                                display: 'inline-block',
-                                                verticalAlign: 'middle',
-                                                marginRight: '8px',
-                                                backgroundColor:
-                                                    trailer.status === 'Active' ? 'var(--status-active)' :
-                                                        trailer.status === 'Spare' ? 'var(--status-spare)' :
-                                                            trailer.status === 'In Shop' ? 'var(--status-inshop)' :
-                                                                trailer.status === 'Retired' ? 'var(--status-retired)' :
-                                                                    'var(--accent)',
-                                            }}
-                                        ></span>
-                                        {trailer.status ? trailer.status : "---"}
-                                    </td>
-                                    <td>{trailer.trailerType ? trailer.trailerType : "---"}</td>
-                                    <td>
-                                        {(() => {
-                                            const rating = Math.round(trailer.cleanlinessRating || 0)
-                                            const stars = rating > 0 ? rating : 1
-                                            return Array.from({length: stars}).map((_, i) => (
-                                                <i key={i} className="fas fa-star"
-                                                   style={{color: 'var(--accent)'}}></i>
-                                            ))
-                                        })()}
-                                    </td>
-                                    <td>
-                                        {LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor) ? LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor) : "---"}
-                                        {LookupUtility.isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor) && (
-                                            <span className="warning-badge">
-                                                <i className="fas fa-exclamation-triangle"></i>
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setModalTrailerId(trailer.id)
-                                                    setModalTrailerNumber(trailer.trailerNumber || '')
-                                                    setShowCommentModal(true)
-                                                }}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    cursor: 'pointer'
-                                                }}
-                                                title="View comments"
-                                            >
-                                                <i className="fas fa-comments"
-                                                   style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                <span>{commentsCount}</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setModalTrailerId(trailer.id)
-                                                    setModalTrailerNumber(trailer.trailerNumber || '')
-                                                    setShowIssueModal(true)
-                                                }}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    cursor: 'pointer',
-                                                    marginLeft: 12
-                                                }}
-                                                title="View issues"
-                                            >
-                                                <i className="fas fa-tools"
-                                                   style={{color: 'var(--accent)', marginRight: 4}}></i>
-                                                <span>{issuesCount}</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                        </tbody>
-                    </table>
-                </div>
-            )
-        }
+        if (isLoading) return <div className="loading-container"><LoadingScreen message="Loading trailers..." inline={true}/></div>
+        if (filteredTrailers.length === 0) return <div className="no-results-container"><div className="no-results-icon"><i className="fas fa-trailer"></i></div><h3>No Trailers Found</h3><p>{searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types') ? "No trailers match your search criteria." : "There are no trailers in the system yet."}</p><button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Trailer</button></div>
+        if (viewMode === 'grid') return <div className={`trailers-grid ${searchText ? 'search-results' : ''}`}>{filteredTrailers.map(trailer => <TrailerCard key={trailer.id} trailer={trailer} tractorName={LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor)} plantName={LookupUtility.getPlantName(plants, trailer.assignedPlant)} showTractorWarning={LookupUtility.isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor)} onSelect={() => handleSelectTrailer(trailer.id)}/> )}</div>
+        if (viewMode === 'list') return <div className="trailers-list-table-container"><table className="trailers-list-table"><colgroup><col style={{width: '12%'}}/><col style={{width: '14%'}}/><col style={{width: '12%'}}/><col style={{width: '18%'}}/><col style={{width: '14%'}}/><col style={{width: '22%'}}/><col style={{width: '8%'}}/></colgroup><tbody>{filteredTrailers.map(trailer => { const commentsCount = Number(trailer.commentsCount || 0); const issuesCount = Number(trailer.openIssuesCount || 0); return <tr key={trailer.id} onClick={() => handleSelectTrailer(trailer.id)} style={{cursor: 'pointer'}}><td>{trailer.assignedPlant ? trailer.assignedPlant : "---"}</td><td>{trailer.trailerNumber ? trailer.trailerNumber : "---"}</td><td><span className="item-status-dot" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '8px', backgroundColor: trailer.status === 'Active' ? 'var(--status-active)' : trailer.status === 'Spare' ? 'var(--status-spare)' : trailer.status === 'In Shop' ? 'var(--status-inshop)' : trailer.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'}}></span>{trailer.status ? trailer.status : "---"}</td><td>{trailer.trailerType ? trailer.trailerType : "---"}</td><td>{(() => { const rating = Math.round(trailer.cleanlinessRating || 0); const stars = rating > 0 ? rating : 1; return Array.from({length: stars}).map((_, i) => <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>) })()}</td><td>{LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor) ? LookupUtility.getTractorTruckNumber(tractors, trailer.assignedTractor) : "---"}{LookupUtility.isIdAssignedToMultiple(trailers, 'assignedTractor', trailer.assignedTractor) && <span className="warning-badge"><i className="fas fa-exclamation-triangle"></i></span>}</td><td><div style={{display: 'flex', alignItems: 'center', gap: 12}}><button type="button" onClick={e => { e.stopPropagation(); setModalTrailerId(trailer.id); setModalTrailerNumber(trailer.trailerNumber || ''); setShowCommentModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer'}} title="View comments"><i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i><span>{commentsCount}</span></button><button type="button" onClick={e => { e.stopPropagation(); setModalTrailerId(trailer.id); setModalTrailerNumber(trailer.trailerNumber || ''); setShowIssueModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', marginLeft: 12}} title="View issues"><i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i><span>{issuesCount}</span></button></div></td></tr> })}</tbody></table></div>
         return null
     }, [isLoading, filteredTrailers, viewMode, searchText, selectedPlant, typeFilter, tractors, plants, trailers])
+
+    const showReset = (searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types'))
 
     return (
         <div className="dashboard-container trailers-view">
             {selectedTrailer ? (
-                <TrailerDetailView
-                    trailer={selectedTrailer}
-                    onClose={handleBackFromDetail}
-                />
+                <TrailerDetailView trailer={selectedTrailer} onClose={handleBackFromDetail}/>
             ) : (
                 <>
-                    <div className="trailers-sticky-header">
-                        <div className="dashboard-header">
-                            <h1>{title}</h1>
-                            <div className="dashboard-actions">
-                                <button
-                                    className="action-button primary rectangular-button"
-                                    onClick={() => setShowAddSheet(true)}
-                                    style={{height: '44px', lineHeight: '1'}}
-                                >
-                                    <i className="fas fa-plus" style={{marginRight: '8px'}}></i> Add Trailer
-                                </button>
-                            </div>
-                        </div>
-                        <div className="search-filters">
-                            <div className="search-bar">
-                                <input
-                                    type="text"
-                                    className="ios-search-input"
-                                    placeholder="Search by trailer or tractor..."
-                                    value={searchInput}
-                                    onChange={e => {
-                                        setSearchInput(e.target.value);
-                                        debouncedSetSearchText(e.target.value)
-                                    }}
-                                />
-                                {searchInput && (
-                                    <button className="clear" onClick={() => {
-                                        debouncedSetSearchText('');
-                                        setSearchInput('')
-                                    }}>
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                )}
-                            </div>
-                            <div className="filters">
-                                <div className="view-toggle-icons">
-                                    <button
-                                        className={`view-toggle-btn${viewMode === 'grid' ? ' active' : ''}`}
-                                        onClick={() => handleViewModeChange('grid')}
-                                        aria-label="Grid view"
-                                        type="button"
-                                    >
-                                        <i className="fas fa-th-large"></i>
-                                    </button>
-                                    <button
-                                        className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
-                                        onClick={() => handleViewModeChange('list')}
-                                        aria-label="List view"
-                                        type="button"
-                                    >
-                                        <i className="fas fa-list"></i>
-                                    </button>
-                                </div>
-                                <div className="filter-wrapper">
-                                    <select
-                                        className="ios-select"
-                                        value={selectedPlant}
-                                        onChange={e => {
-                                            setSelectedPlant(e.target.value)
-                                            updatePreferences('trailerFilters', {
-                                                ...preferences.trailerFilters,
-                                                selectedPlant: e.target.value
-                                            })
-                                        }}
-                                        aria-label="Filter by plant"
-                                    >
-                                        <option value="">All Plants</option>
-                                        {plants
-                                            .filter(p => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.size === 0 || regionPlantCodes.has(p.plantCode))
-                                            .sort((a, b) => parseInt(a.plantCode?.replace(/\D/g, '') || '0') - parseInt(b.plantCode?.replace(/\D/g, '') || '0')).map(plant => (
-                                                <option key={plant.plantCode} value={plant.plantCode}>
-                                                    ({plant.plantCode}) {plant.plantName}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </div>
-                                <div className="filter-wrapper">
-                                    <select
-                                        className="ios-select"
-                                        value={typeFilter}
-                                        onChange={e => {
-                                            setTypeFilter(e.target.value)
-                                            updatePreferences('trailerFilters', {
-                                                ...preferences.trailerFilters,
-                                                typeFilter: e.target.value
-                                            })
-                                        }}
-                                    >
-                                        {filterOptions.map(option => (
-                                            <option key={option} value={option}>{option}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {(searchText || selectedPlant || (typeFilter && typeFilter !== 'All Types')) && (
-                                    <button className="filter-reset-button" onClick={() => {
-                                        setSearchText('')
-                                        setSearchInput('')
-                                        setSelectedPlant('')
-                                        setTypeFilter('')
-                                        updatePreferences('trailerFilters', {
-                                            ...preferences.trailerFilters,
-                                            searchText: '',
-                                            selectedPlant: '',
-                                            typeFilter: ''
-                                        })
-                                    }}>
-                                        <i className="fas fa-undo"></i>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        {viewMode === 'list' && (
-                            <div className="trailers-list-header-row">
-                                <div>Plant</div>
-                                <div>Trailer #</div>
-                                <div>Status</div>
-                                <div>Type</div>
-                                <div>Cleanliness</div>
-                                <div>Tractor</div>
-                                <div>More</div>
-                            </div>
-                        )}
-                    </div>
+                    <TopSection
+                        title={title}
+                        addButtonLabel="Add Trailer"
+                        onAddClick={() => setShowAddSheet(true)}
+                        searchInput={searchInput}
+                        onSearchInputChange={v => { setSearchInput(v); debouncedSetSearchText(v) }}
+                        onClearSearch={() => { setSearchInput(''); debouncedSetSearchText('') }}
+                        searchPlaceholder="Search by trailer or tractor..."
+                        viewMode={viewMode}
+                        onViewModeChange={handleViewModeChange}
+                        plants={plants}
+                        regionPlantCodes={regionPlantCodes}
+                        selectedPlant={selectedPlant}
+                        onSelectedPlantChange={v => { setSelectedPlant(v); updatePreferences('trailerFilters', { ...preferences.trailerFilters, selectedPlant: v }) }}
+                        statusFilter={typeFilter}
+                        statusOptions={filterOptions}
+                        onStatusFilterChange={v => { setTypeFilter(v); updatePreferences('trailerFilters', { ...preferences.trailerFilters, typeFilter: v }) }}
+                        showReset={showReset}
+                        onReset={() => { setSearchText(''); setSearchInput(''); setSelectedPlant(''); setTypeFilter(''); updatePreferences('trailerFilters', { ...preferences.trailerFilters, searchText: '', selectedPlant: '', typeFilter: '' }) }}
+                        listHeaderLabels={['Plant','Trailer #','Status','Type','Cleanliness','Tractor','More']}
+                        showListHeader={viewMode === 'list'}
+                        listHeaderClassName="trailers-list-header-row"
+                        forwardedRef={headerRef}
+                    />
                     <div className="content-container">{content}</div>
-                    {showAddSheet && (
-                        <TrailerAddView
-                            plants={plants}
-                            onClose={() => setShowAddSheet(false)}
-                            onTrailerAdded={newTrailer => setTrailers([...trailers, newTrailer])}
-                        />
-                    )}
-                    {showCommentModal && (
-                        <TrailerCommentModal
-                            trailerId={modalTrailerId}
-                            trailerNumber={modalTrailerNumber}
-                            onClose={() => setShowCommentModal(false)}
-                        />
-                    )}
-                    {showIssueModal && (
-                        <TrailerIssueModal
-                            trailerId={modalTrailerId}
-                            trailerNumber={modalTrailerNumber}
-                            onClose={() => setShowIssueModal(false)}
-                        />
-                    )}
+                    {showAddSheet && <TrailerAddView plants={plants} onClose={() => setShowAddSheet(false)} onTrailerAdded={newTrailer => setTrailers([...trailers, newTrailer])}/>}
+                    {showCommentModal && <TrailerCommentModal trailerId={modalTrailerId} trailerNumber={modalTrailerNumber} onClose={() => setShowCommentModal(false)}/>}
+                    {showIssueModal && <TrailerIssueModal trailerId={modalTrailerId} trailerNumber={modalTrailerNumber} onClose={() => setShowIssueModal(false)}/>}
                 </>
             )}
         </div>
