@@ -167,7 +167,8 @@ function PickupTrucksAddView({onClose, onAdded}) {
                                     <div className="form-group">
                                         <label>VIN</label>
                                         <input type="text" className="ios-input" value={vin}
-                                               onChange={e => setVin(e.target.value)} placeholder="Enter VIN"/>
+                                               onChange={e => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g,''))} placeholder="Enter VIN (no I, O, Q)"/>
+                                        <div className="vin-hint">Letters I, O, and Q are not used.</div>
                                     </div>
                                     <div className="form-group">
                                         <label>Year</label>

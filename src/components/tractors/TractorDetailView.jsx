@@ -14,6 +14,7 @@ import OperatorSelectModal from "../mixers/OperatorSelectModal";
 import {usePreferences} from '../../app/context/PreferencesContext';
 import {RegionService} from '../../services/RegionService';
 import {ValidationUtility} from '../../utils/ValidationUtility'
+import VerificationRequirementsModal from '../common/VerificationRequirementsModal';
 
 function TractorDetailView({tractorId, onClose}) {
     const {preferences} = usePreferences()
@@ -381,7 +382,6 @@ function TractorDetailView({tractorId, onClose}) {
     if (!tractor) { return (<div className="tractor-detail-view"><div className="detail-header" style={{backgroundColor: 'var(--detail-header-bg)', color: 'var(--text-primary)'}}><button className="back-button" onClick={onClose}><i className="fas fa-arrow-left"></i></button><h1>Tractor Not Found</h1></div><div className="error-message"><p>Could not find the requested tractor. It may have been deleted.</p><button className="primary-button" onClick={onClose}>Return to Tractors</button></div></div>) }
 
     const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
-    const canSubmitMissing = missingFields.every(f => { if (f === 'VIN') return ValidationUtility.isVIN(vin); if (f === 'Make') return !!String(make).trim(); if (f === 'Model') return !!String(model).trim(); if (f === 'Year') return !!String(year).trim(); return true })
 
     return (
         <div className="tractor-detail-view">
@@ -411,6 +411,23 @@ function TractorDetailView({tractorId, onClose}) {
                             <div className="verification-item" title={`Last Updated: ${new Date(tractor.updatedAt).toLocaleString()}`}><div className="verification-icon" style={{color: tractor.updatedBy ? 'var(--success)' : 'var(--error)'}}><i className="fas fa-user-check"></i></div><div className="verification-info"><span className="verification-label">Verified By</span><span className="verification-value" style={{color: tractor.updatedBy ? 'inherit' : 'var(--error)'}}>{tractor.updatedBy ? (updatedByEmail || 'Unknown User') : 'No verification record'}</span></div></div>
                         </div>
                         <button className="verify-now-button" onClick={handleVerifyTractor} disabled={!canEditTractor}><i className="fas fa-check-circle"></i> Verify Now</button>
+                        <VerificationRequirementsModal
+                            open={showMissingFieldsModal}
+                            onClose={() => setShowMissingFieldsModal(false)}
+                            onSaveAndVerify={handleSaveMissingFields}
+                            missingFields={missingFields}
+                            vin={vin}
+                            make={make}
+                            model={model}
+                            year={year}
+                            lastServiceDate={lastServiceDate}
+                            setVin={setVin}
+                            setMake={setMake}
+                            setModel={setModel}
+                            setYear={setYear}
+                            setLastServiceDate={setLastServiceDate}
+                            isServiceOverdue={TractorUtility.isServiceOverdue}
+                        />
                         <div className="verification-notice"><i className="fas fa-info-circle"></i><p>Assets require verification after any changes are made and are reset weekly. <strong>Due: Every Friday at 10:00 AM.</strong> Resets on Mondays at 5pm.</p></div>
                     </div>
                 </div>
@@ -436,7 +453,7 @@ function TractorDetailView({tractorId, onClose}) {
                     <div className="form-sections">
                         <div className="form-section vehicle-info">
                             <h3>Asset Details</h3>
-                            <div className="form-group"><label>VIN</label><input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase())} className="form-control" readOnly={!canEditTractor}/></div>
+                            <div className="form-group"><label>VIN</label><input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g,''))} className="form-control" readOnly={!canEditTractor}/></div>
                             <div className="form-group"><label>Make</label><input type="text" value={make} onChange={e => setMake(e.target.value)} className="form-control" readOnly={!canEditTractor}/></div>
                             <div className="form-group"><label>Model</label><input type="text" value={model} onChange={e => setModel(e.target.value)} className="form-control" readOnly={!canEditTractor}/></div>
                             <div className="form-group"><label>Year</label><input type="text" value={year} onChange={e => setYear(e.target.value)} className="form-control" readOnly={!canEditTractor}/></div>
@@ -447,7 +464,6 @@ function TractorDetailView({tractorId, onClose}) {
             </div>
             {showHistory && <TractorHistoryView tractor={tractor} onClose={() => setShowHistory(false)}/>}
             {showDeleteConfirmation && (<div className="confirmation-modal" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}><div className="confirmation-content" style={{width: '90%', maxWidth: '500px', margin: '0 auto'}}><h2>Confirm Delete</h2><p>Are you sure you want to delete Truck #{tractor.truckNumber}? This action cannot be undone.</p><div className="confirmation-actions" style={{display: 'flex', justifyContent: 'center', gap: '12px'}}><button className="cancel-button" onClick={() => setShowDeleteConfirmation(false)}>Cancel</button><button className="danger-button" onClick={handleDelete}>Delete</button></div></div></div>)}
-            {showMissingFieldsModal && (<div className="modal-overlay"><div className="modal-content"><div className="modal-header"><h3>{(missingFields && missingFields.length > 0) ? 'Missing Required Information' : 'Review Before Verifying'}</h3><p>{(missingFields && missingFields.length > 0) ? 'Please enter the following fields to verify this asset.' : 'Please confirm details before verifying.'}</p></div><div className="modal-body">{missingFields && missingFields.length > 0 && (<ul className="missing-list">{missingFields.map(field => <li key={field}>{field}</li>)}</ul>)}<div className="form-grid two-col">{(!tractor.vin || !ValidationUtility.isVIN(tractor.vin)) && (<div className="form-group"><label>VIN</label><input className="form-control" type="text" placeholder="VIN" value={vin} onChange={e => setVin(e.target.value.toUpperCase())}/>{vin && !ValidationUtility.isVIN(vin) && <div className="warning-text">Invalid VIN</div>}</div>)}{!tractor.make && (<div className="form-group"><label>Make</label><input className="form-control" type="text" placeholder="Make" value={make} onChange={e => setMake(e.target.value)}/></div>)}{!tractor.model && (<div className="form-group"><label>Model</label><input className="form-control" type="text" placeholder="Model" value={model} onChange={e => setModel(e.target.value)}/></div>)}{!tractor.year && (<div className="form-group"><label>Year</label><input className="form-control" type="text" placeholder="Year" value={year} onChange={e => setYear(e.target.value)}/></div>)}{(!lastServiceDate || TractorUtility.isServiceOverdue(lastServiceDate)) && (<div className="form-group"><label>Last Service Date</label><input className="form-control" type="date" value={lastServiceDate ? (lastServiceDate instanceof Date ? lastServiceDate.toISOString().split('T')[0] : lastServiceDate) : ''} onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}/>{lastServiceDate && TractorUtility.isServiceOverdue(lastServiceDate) && (<><div className="warning-text">Past Due</div><div className="modal-note warning"><i className="fas fa-exclamation-triangle"></i><span>You can Save & Verify without updating the service date, but it is recommended to get this tractor serviced when it is past due.</span></div></>)}</div>)}</div></div><div className="modal-actions"><button type="button" className="primary-button" onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save & Verify</button><button type="button" className="cancel-button" onClick={() => setShowMissingFieldsModal(false)}>Cancel</button></div></div></div>)}
         </div>
     );
 }

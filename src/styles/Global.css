@@ -463,3 +463,9 @@ td, th {
     align-items: center;
     gap: 8px;
 }
+
+.vin-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px
+}

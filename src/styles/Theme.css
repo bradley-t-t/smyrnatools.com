@@ -61,6 +61,9 @@
     --modal-bg: rgba(0, 0, 0, 0.5);
     --error-bg: var(--danger-bg);
     --error-bg-hover: var(--danger-bg-hover);
+    --warning-bg: rgba(236, 201, 75, 0.15);
+    --warning-text: #6b4f00;
+    --warning-border: rgba(236, 201, 75, 0.5);
     --transition-all: all 0.2s ease;
     --radius-input: 8px;
     --radius-md: 10px;
@@ -140,6 +143,9 @@
     --modal-bg: rgba(0, 0, 0, 0.5);
     --error-bg: var(--danger-bg);
     --error-bg-hover: var(--danger-bg-hover);
+    --warning-bg: rgba(250, 166, 26, 0.22);
+    --warning-text: #ffbf4d;
+    --warning-border: rgba(250, 166, 26, 0.5);
     --transition-all: all 0.2s ease;
     --radius-input: 8px;
     --radius-md: 10px;

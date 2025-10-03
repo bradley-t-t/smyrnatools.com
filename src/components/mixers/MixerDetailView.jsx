@@ -14,6 +14,7 @@ import {Mixer} from "../../config/models/mixers/Mixer"
 import LoadingScreen from "../common/LoadingScreen"
 import {RegionService} from '../../services/RegionService'
 import {ValidationUtility} from '../../utils/ValidationUtility'
+import VerificationRequirementsModal from '../common/VerificationRequirementsModal'
 
 function MixerDetailView({mixerId, onClose}) {
     const {preferences} = usePreferences()
@@ -545,14 +546,6 @@ function MixerDetailView({mixerId, onClose}) {
 
     const assignedPlantInRegion = assignedPlant && regionPlantCodes.has(String(assignedPlant).trim().toUpperCase())
 
-    const canSubmitMissing = missingFields.every(f => {
-        if (f === 'VIN') return ValidationUtility.isVIN(vin)
-        if (f === 'Make') return !!String(make).trim()
-        if (f === 'Model') return !!String(model).trim()
-        if (f === 'Year') return !!String(year).trim()
-        return true
-    })
-
     return (
         <div className="mixer-detail-view">
             {showComments && <MixerCommentModal mixerId={mixerId} mixerNumber={mixer?.truckNumber}
@@ -665,89 +658,25 @@ function MixerDetailView({mixerId, onClose}) {
                         <button className="verify-now-button" onClick={handleVerifyMixer} disabled={!canEditMixer}>
                             <i className="fas fa-check-circle"></i> Verify Now
                         </button>
-                        {showMissingFieldsModal && (
-                            <div className="modal-overlay">
-                                <div className="modal-content">
-                                    <div className="modal-header">
-                                        <h3>{(missingFields && missingFields.length > 0) ? 'Missing Required Information' : 'Review Before Verifying'}</h3>
-                                        <p>{(missingFields && missingFields.length > 0) ? 'Please enter the following fields to verify this asset.' : 'Please confirm details before verifying.'}</p>
-                                    </div>
-                                    <div className="modal-body">
-                                        {missingFields && missingFields.length > 0 && (
-                                            <ul className="missing-list">
-                                                {missingFields.map(field => <li key={field}>{field}</li>)}
-                                            </ul>
-                                        )}
-                                        <div className="form-grid two-col">
-                                            {(!mixer.vin || !ValidationUtility.isVIN(mixer.vin)) && (
-                                                <div className="form-group">
-                                                    <label>VIN</label>
-                                                    <input className="form-control" type="text" placeholder="VIN"
-                                                           value={vin}
-                                                           onChange={e => setVin(e.target.value.toUpperCase())}/>
-                                                    {vin && !ValidationUtility.isVIN(vin) && <div className="warning-text">Invalid VIN</div>}
-                                                </div>
-                                            )}
-                                            {!mixer.make && (
-                                                <div className="form-group">
-                                                    <label>Make</label>
-                                                    <input className="form-control" type="text" placeholder="Make"
-                                                           value={make} onChange={e => setMake(e.target.value)}/>
-                                                </div>
-                                            )}
-                                            {!mixer.model && (
-                                                <div className="form-group">
-                                                    <label>Model</label>
-                                                    <input className="form-control" type="text" placeholder="Model"
-                                                           value={model} onChange={e => setModel(e.target.value)}/>
-                                                </div>
-                                            )}
-                                            {!mixer.year && (
-                                                <div className="form-group">
-                                                    <label>Year</label>
-                                                    <input className="form-control" type="text" placeholder="Year"
-                                                           value={year} onChange={e => setYear(e.target.value)}/>
-                                                </div>
-                                            )}
-                                            {(!lastServiceDate || MixerUtility.isServiceOverdue(lastServiceDate)) && (
-                                                <div className="form-group">
-                                                    <label>Last Service Date</label>
-                                                    <input className="form-control" type="date"
-                                                           value={lastServiceDate ? formatDate(lastServiceDate) : ''}
-                                                           onChange={e => setLastServiceDate(e.target.value ? new Date(e.target.value) : null)}/>
-                                                    {lastServiceDate && MixerUtility.isServiceOverdue(lastServiceDate) && (
-                                                        <>
-                                                            <div className="warning-text">Past Due</div>
-                                                            <div className="modal-note warning">
-                                                                <i className="fas fa-exclamation-triangle"></i>
-                                                                <span>You can Save & Verify without updating the service date, but it is recommended to get this mixer serviced when it is past due.</span>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {!lastChipDate && (
-                                                <div className="form-group">
-                                                    <label>Last Chip Date</label>
-                                                    <input className="form-control" type="date"
-                                                           value={lastChipDate ? formatDate(lastChipDate) : ''}
-                                                           onChange={e => setLastChipDate(e.target.value ? new Date(e.target.value) : null)}/>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="modal-actions">
-                                        <button type="button" className="primary-button"
-                                                onClick={handleSaveMissingFields} disabled={!canSubmitMissing}>Save &
-                                            Verify
-                                        </button>
-                                        <button type="button" className="cancel-button"
-                                                onClick={() => setShowMissingFieldsModal(false)}>Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        <VerificationRequirementsModal
+                            open={showMissingFieldsModal}
+                            onClose={() => setShowMissingFieldsModal(false)}
+                            onSaveAndVerify={handleSaveMissingFields}
+                            missingFields={missingFields}
+                            vin={vin}
+                            make={make}
+                            model={model}
+                            year={year}
+                            lastServiceDate={lastServiceDate}
+                            lastChipDate={lastChipDate}
+                            setVin={setVin}
+                            setMake={setMake}
+                            setModel={setModel}
+                            setYear={setYear}
+                            setLastServiceDate={setLastServiceDate}
+                            setLastChipDate={setLastChipDate}
+                            isServiceOverdue={MixerUtility.isServiceOverdue}
+                        />
                         <div className="verification-notice">
                             <i className="fas fa-info-circle"></i>
                             <p>Assets require verification after any changes are made and are reset weekly. <strong>Due:
@@ -1005,7 +934,7 @@ function MixerDetailView({mixerId, onClose}) {
                             <h3>Asset Details</h3>
                             <div className="form-group">
                                 <label>VIN</label>
-                                <input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase())}
+                                <input type="text" value={vin} placeholder="VIN (no I, O, Q)" onChange={e => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g,''))}
                                        className="form-control" readOnly={!canEditMixer}/>
                             </div>
                             <div className="form-group">
