@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState, useRef} from 'react';
 import PropTypes from 'prop-types';
 import {usePreferences} from '../../app/context/PreferencesContext';
 import LoadingScreen from '../common/LoadingScreen';
@@ -22,6 +22,7 @@ import TopSection from '../sections/TopSection'
 
 function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
     const {preferences, saveLastViewedFilters, updateTractorFilter, updatePreferences} = usePreferences()
+    const tractorsHeaderRef = useRef(null)
     const [tractors, setTractors] = useState([])
     const [operators, setOperators] = useState([])
     const [plants, setPlants] = useState([])
@@ -226,23 +227,35 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
 
     const canShowUnassignedOverlay = tractorsLoaded && operatorsLoaded && !isLoading && unassignedActiveOperatorsCount > 0
 
+    useEffect(() => {
+        function updateStickyCoverHeight() {
+            const el = tractorsHeaderRef.current
+            const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
+            const root = document.querySelector('.global-dashboard-container.tractors-view')
+            if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
+        }
+        updateStickyCoverHeight()
+        window.addEventListener('resize', updateStickyCoverHeight)
+        return () => window.removeEventListener('resize', updateStickyCoverHeight)
+    }, [viewMode, searchInput, selectedPlant, statusFilter])
+
     const content = useMemo(() => {
-        if (isLoading || isRegionLoading) return <div className="loading-container"><LoadingScreen message="Loading tractors..." inline={true}/></div>
-        if (filteredTractors.length === 0) return <div className="no-results-container"><div className="no-results-icon"><i className="fas fa-truck"></i></div><h3>No Tractors Found</h3><p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p><button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button></div>
-        if (viewMode === 'grid') return <div className={`tractors-grid ${searchText ? 'search-results' : ''}`}>{filteredTractors.map(tractor => <TractorCard key={tractor.id} tractor={{ ...tractor, operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator) }} operatorName={lookupGetOperatorName(operators, tractor.assignedOperator)} plantName={lookupGetPlantName(plants, tractor.assignedPlant)} showOperatorWarning={isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator)} onSelect={() => handleSelectTractor(tractor.id)}/>)}</div>
+        if (isLoading || isRegionLoading) return <div className="global-loading-container loading-container"><LoadingScreen message="Loading tractors..." inline={true}/></div>
+        if (filteredTractors.length === 0) return <div className="global-no-results-container no-results-container"><div className="no-results-icon"><i className="fas fa-truck"></i></div><h3>No Tractors Found</h3><p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No tractors match your search criteria." : "There are no tractors in the system yet."}</p><button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Tractor</button></div>
+        if (viewMode === 'grid') return <div className={`global-grid tractors-grid ${searchText ? 'search-results' : ''}`}>{filteredTractors.map(tractor => <TractorCard key={tractor.id} tractor={{ ...tractor, operatorSmyrnaId: lookupGetOperatorSmyrnaId(operators, tractor.assignedOperator) }} operatorName={lookupGetOperatorName(operators, tractor.assignedOperator)} plantName={lookupGetPlantName(plants, tractor.assignedPlant)} showOperatorWarning={isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator)} onSelect={() => handleSelectTractor(tractor.id)}/>)}</div>
         return <div className="tractors-list-table-container"><table className="tractors-list-table"><colgroup><col style={{width: '10%'}}/><col style={{width: '12%'}}/><col style={{width: '12%'}}/><col style={{width: '18%'}}/><col style={{width: '12%'}}/><col style={{width: '18%'}}/><col style={{width: '10%'}}/><col style={{width: '8%'}}/></colgroup><tbody>{filteredTractors.map(tractor => { const commentsCount = Number(tractor.commentsCount || 0); const issuesCount = Number(tractor.openIssuesCount || 0); return <tr key={tractor.id} onClick={() => handleSelectTractor(tractor.id)} style={{cursor: 'pointer'}}><td>{tractor.assignedPlant ? tractor.assignedPlant : "---"}</td><td>{tractor.truckNumber ? tractor.truckNumber : "---"}</td><td><span className="item-status-dot" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '8px', backgroundColor: tractor.status === 'Active' ? 'var(--status-active)' : tractor.status === 'Spare' ? 'var(--status-spare)' : tractor.status === 'In Shop' ? 'var(--status-inshop)' : tractor.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'}}></span>{tractor.status ? tractor.status : "---"}</td><td>{lookupGetOperatorName(operators, tractor.assignedOperator) ? lookupGetOperatorName(operators, tractor.assignedOperator) : "---"}{isIdAssignedToMultiple(tractors, 'assignedOperator', tractor.assignedOperator) && <span className="warning-badge"><i className="fas fa-exclamation-triangle"></i></span>}</td><td>{(() => { const rating = Math.round(tractor.cleanlinessRating || 0); const stars = rating > 0 ? rating : 1; return Array.from({length: stars}).map((_, i) => <i key={i} className="fas fa-star" style={{color: 'var(--accent)'}}></i>) })()}</td><td>{tractor.vin ? String(tractor.vin).toUpperCase() : "---"}</td><td>{tractor.isVerified() ? <span style={{display: 'inline-flex', alignItems: 'center'}}><i className="fas fa-check-circle" style={{color: 'var(--success)', marginRight: 6}}></i>Verified</span> : <span style={{display: 'inline-flex', alignItems: 'center'}}><i className="fas fa-flag" style={{color: 'var(--error)', marginRight: 6}}></i>Not Verified</span>}</td><td><div style={{display: 'flex', alignItems: 'center', gap: 12}}><button type="button" onClick={e => { e.stopPropagation(); setModalTractorId(tractor.id); setModalTractorNumber(tractor.truckNumber || ''); setShowCommentModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer'}} title="View comments"><i className="fas fa-comments" style={{color: 'var(--accent)', marginRight: 4}}></i><span>{commentsCount}</span></button><button type="button" onClick={e => { e.stopPropagation(); setModalTractorId(tractor.id); setModalTractorNumber(tractor.truckNumber || ''); setShowIssueModal(true) }} style={{background: 'transparent', border: 'none', padding: 0, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', marginLeft: 12}} title="View issues"><i className="fas fa-tools" style={{color: 'var(--accent)', marginRight: 4}}></i><span>{issuesCount}</span></button></div></td></tr> })}</tbody></table></div>
     }, [isLoading, isRegionLoading, filteredTractors, viewMode, searchText, selectedPlant, statusFilter, operators, plants, tractors])
 
     const showReset = (searchText || selectedPlant || freightFilter || (statusFilter && statusFilter !== 'All Statuses'))
 
     return (
-        <div className={`dashboard-container tractors-view${selectedTractor ? ' detail-open' : ''}`}>
+        <div className={`global-dashboard-container dashboard-container global-flush-top flush-top tractors-view${selectedTractor ? ' detail-open' : ''}`}>
             {selectedTractor ? (
                 <TractorDetailView tractorId={selectedTractor} onClose={handleBackFromDetail}/>
             ) : (
                 <>
                     {canShowUnassignedOverlay && (
-                        <div className="operators-availability-overlay">
+                        <div className="global-availability-overlay operators-availability-overlay">
                             {unassignedActiveOperatorsCount} active operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned
                         </div>
                     )}
@@ -271,8 +284,9 @@ function TractorsView({title = 'Tractor Fleet', onSelectTractor}) {
                         listHeaderLabels={['Plant','Truck #','Status','Operator','Cleanliness','VIN','Verified','More']}
                         showListHeader={viewMode === 'list'}
                         listHeaderClassName="tractors-list-header-row"
+                        forwardedRef={tractorsHeaderRef}
                     />
-                    <div className="content-container">{content}</div>
+                    <div className="global-content-container global-view content-container">{content}</div>
                     {showAddSheet && <TractorAddView plants={plants} operators={operators} onClose={() => setShowAddSheet(false)} onTractorAdded={newTractor => setTractors([...tractors, newTractor])}/>}
                     {showCommentModal && <TractorCommentModal tractorId={modalTractorId} tractorNumber={modalTractorNumber} onClose={() => setShowCommentModal(false)}/>}
                     {showIssueModal && <TractorIssueModal tractorId={modalTractorId} tractorNumber={modalTractorNumber} onClose={() => setShowIssueModal(false)}/>}

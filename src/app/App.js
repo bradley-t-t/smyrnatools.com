@@ -90,23 +90,23 @@ UpdateLoadingScreen.propTypes = {version: PropTypes.string}
 
 function UpdateWarningPopup({onRefreshNow, onClose, latestVersion}) {
     return (
-        <div className="vu-modal-backdrop" onClick={onClose}>
-            <div className="vu-modal-content" onClick={e => e.stopPropagation()}>
-                <div className="vu-modal-header">
+        <div className="global-modal-backdrop" onClick={onClose}>
+            <div className="global-modal-content" onClick={e => e.stopPropagation()}>
+                <div className="global-modal-header">
                     <h2>Update Available</h2>
-                    <button className="vu-close-button" onClick={onClose} aria-label="Close">
+                    <button className="global-close-button" onClick={onClose} aria-label="Close">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
-                <div className="vu-modal-body">
+                <div className="global-modal-body">
                     <p>A new version is available.</p>
                     {latestVersion ? <p style={{opacity: 0.8}}>Version: {latestVersion}</p> : null}
                     <p>Refresh now to apply the update, or close this popup to keep working. The page will automatically
                         refresh in 5 minutes to apply updates.</p>
                 </div>
-                <div className="vu-modal-footer">
-                    <button className="vu-action-button" onClick={onClose} aria-label="Close">Close</button>
-                    <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh
+                <div className="global-modal-footer">
+                    <button className="global-action-button" onClick={onClose} aria-label="Close">Close</button>
+                    <button className="global-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh
                         Now
                     </button>
                 </div>
@@ -125,14 +125,14 @@ function ScheduledUpdateBanner({remainingMs, onRefreshNow, onDismiss}) {
     const minutes = Math.max(0, Math.floor(remainingMs / 60000))
     const seconds = Math.max(0, Math.floor((remainingMs % 60000) / 1000))
     return (
-        <div className="vu-update-banner">
-            <div className="vu-banner-content">
-                <i className="fas fa-sync vu-banner-icon"></i>
+        <div className="global-update-banner">
+            <div className="global-banner-content">
+                <i className="fas fa-sync global-banner-icon"></i>
                 <span>An update is scheduled. The page will refresh in {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')} to apply updates.</span>
             </div>
-            <div className="vu-banner-actions">
-                <button className="vu-action-button" onClick={onDismiss} aria-label="Dismiss">Dismiss</button>
-                <button className="vu-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh
+            <div className="global-banner-actions">
+                <button className="global-action-button" onClick={onDismiss} aria-label="Dismiss">Dismiss</button>
+                <button className="global-action-button primary" onClick={onRefreshNow} aria-label="Refresh Now">Refresh
                     Now
                 </button>
             </div>

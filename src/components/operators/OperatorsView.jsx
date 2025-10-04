@@ -197,7 +197,7 @@ function OperatorsView({
         function updateStickyCoverHeight() {
             const el = headerRef.current
             const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
-            const root = document.querySelector('.dashboard-container.operators-view')
+            const root = document.querySelector('.global-dashboard-container.operators-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
         updateStickyCoverHeight()
@@ -208,7 +208,7 @@ function OperatorsView({
     const showReset = (searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses'))
 
     return (
-        <div className={`dashboard-container operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
+        <div className={`global-dashboard-container dashboard-container global-flush-top flush-top operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}>
             {showDetailView && selectedOperator && (
                 <OperatorDetailView
                     operatorId={selectedOperator.employeeId}
@@ -244,19 +244,20 @@ function OperatorsView({
                         listHeaderLabels={['Plant','Name','Phone','Status','Trainer']}
                         showListHeader={viewMode === 'list'}
                         listHeaderClassName={`operators-list-header-row${statusFilter === 'Pending Start' ? ' pending' : ''}`}
+                        sticky={true}
                     />
-                    <div className="content-container">
+                    <div className="global-content-container content-container">
                         {isLoading ? (
-                            <div className="loading-container"><LoadingScreen message="Loading operators..." inline={true}/></div>
+                            <div className="global-loading-container loading-container"><LoadingScreen message="Loading operators..." inline={true}/></div>
                         ) : filteredOperators.length === 0 ? (
-                            <div className="no-results-container">
+                            <div className="global-no-results-container no-results-container">
                                 <div className="no-results-icon"><i className="fas fa-user-hard-hat"></i></div>
                                 <h3>No Operators Found</h3>
                                 <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? 'No operators match your search criteria.' : 'There are no operators in the system yet.'}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Operator</button>
+                                <button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Operator</button>
                             </div>
                         ) : viewMode === 'grid' ? (
-                            <div className={`operators-grid ${searchText ? 'search-results' : ''}`}>
+                            <div className={`global-grid operators-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredOperators.map(operator => {
                                     const duplicate = duplicateNamesSet.has((operator.name || '').trim().toLowerCase())
                                     const trainerObj = trainers.find(t => t.employeeId === operator.assignedTrainer)

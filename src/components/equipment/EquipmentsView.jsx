@@ -128,7 +128,7 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
         function updateStickyCoverHeight() {
             const el = headerRef.current
             const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
-            const root = document.querySelector('.dashboard-container.equipments-view')
+            const root = document.querySelector('.global-dashboard-container.equipments-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
         updateStickyCoverHeight()
@@ -137,16 +137,16 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
     }, [viewMode, searchInput, selectedPlant, statusFilter])
 
     const content = useMemo(() => {
-        if (isLoading) return <div className="loading-container"><LoadingScreen message="Loading equipment..." inline={true}/></div>
-        if (filteredEquipments.length === 0) return <div className="no-results-container"><div className="no-results-icon"><i className="fas fa-truck-loading"></i></div><h3>No Equipment Found</h3><p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No equipment matches your search criteria." : "There is no equipment in the system yet."}</p><button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Equipment</button></div>
-        if (viewMode === 'grid') return <div className={`equipments-grid ${searchText ? 'search-results' : ''}`}>{filteredEquipments.map(equipment => <EquipmentCard key={equipment.id} equipment={equipment} plantName={lookupGetPlantName(plants, equipment.assignedPlant)} onSelect={() => handleSelectEquipment(equipment.id)}/> )}</div>
+        if (isLoading) return <div className="global-loading-container loading-container"><LoadingScreen message="Loading equipment..." inline={true}/></div>
+        if (filteredEquipments.length === 0) return <div className="global-no-results-container no-results-container"><div className="no-results-icon"><i className="fas fa-truck-loading"></i></div><h3>No Equipment Found</h3><p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No equipment matches your search criteria." : "There is no equipment in the system yet."}</p><button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Equipment</button></div>
+        if (viewMode === 'grid') return <div className={`global-grid equipments-grid ${searchText ? 'search-results' : ''}`}>{filteredEquipments.map(equipment => <EquipmentCard key={equipment.id} equipment={equipment} plantName={lookupGetPlantName(plants, equipment.assignedPlant)} onSelect={() => handleSelectEquipment(equipment.id)}/> )}</div>
         return <div className="equipments-list-table-container"><table className="equipments-list-table"><colgroup><col style={{width:'12%'}}/><col style={{width:'14%'}}/><col style={{width:'12%'}}/><col style={{width:'24%'}}/><col style={{width:'14%'}}/><col style={{width:'16%'}}/><col style={{width:'8%'}}/></colgroup><tbody>{filteredEquipments.map(equipment => { const issuesCount = Number(equipment.openIssuesCount || 0); const commentsCount = Number(equipment.commentsCount || 0); return <tr key={equipment.id} onClick={() => handleSelectEquipment(equipment.id)} style={{cursor:'pointer'}}><td>{equipment.assignedPlant || '---'}</td><td>{equipment.identifyingNumber || '---'}</td><td><span className="item-status-dot" style={{display:'inline-block',verticalAlign:'middle',marginRight:'8px',width:'10px',height:'10px',borderRadius:'50%',backgroundColor: equipment.status === 'Active' ? 'var(--status-active)' : equipment.status === 'Spare' ? 'var(--status-spare)' : equipment.status === 'In Shop' ? 'var(--status-inshop)' : equipment.status === 'Retired' ? 'var(--status-retired)' : 'var(--accent)'}}></span>{equipment.status || '---'}</td><td>{equipment.equipmentType || '---'}</td><td>{(() => { const rating = Math.round(equipment.cleanlinessRating || 0); const stars = rating > 0 ? rating : 1; return Array.from({length:stars}).map((_,i)=><i key={i} className="fas fa-star" style={{color:'var(--accent)'}}></i>) })()}</td><td>{(() => { const rating = Math.round(equipment.conditionRating || 0); const stars = rating > 0 ? rating : 1; return Array.from({length:stars}).map((_,i)=><i key={i} className="fas fa-star" style={{color:'var(--accent)'}}></i>) })()}</td><td><div style={{display:'flex',alignItems:'center',gap:12}}><button type="button" onClick={e => { e.stopPropagation(); setModalEquipmentId(equipment.id); setModalEquipmentNumber(equipment.identifyingNumber || ''); setShowIssueModal(true) }} style={{background:'transparent',border:'none',padding:0,display:'inline-flex',alignItems:'center',cursor:'pointer'}} title="View issues"><i className="fas fa-tools" style={{color:'var(--accent)',marginRight:4}}></i><span>{issuesCount}</span></button><button type="button" onClick={e => { e.stopPropagation(); setModalEquipmentId(equipment.id); setModalEquipmentNumber(equipment.identifyingNumber || ''); setShowCommentModal(true) }} style={{background:'transparent',border:'none',padding:0,display:'inline-flex',alignItems:'center',cursor:'pointer'}} title="View comments"><i className="fas fa-comment" style={{color:'var(--accent)',marginRight:4}}></i><span>{commentsCount}</span></button></div></td></tr> })}</tbody></table></div>
     }, [isLoading, filteredEquipments, viewMode, searchText, selectedPlant, statusFilter, plants])
 
     const showReset = (searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses'))
 
     return (
-        <div className={`dashboard-container equipments-view${selectedEquipment ? ' detail-open' : ''}`}>
+        <div className={`global-dashboard-container dashboard-container global-flush-top flush-top equipments-view${selectedEquipment ? ' detail-open' : ''}`}>
             {selectedEquipment ? (
                 <EquipmentDetailView equipmentId={selectedEquipment.id} onClose={() => setSelectedEquipment(null)}/>
             ) : (
@@ -174,8 +174,9 @@ function EquipmentsView({title = 'Equipment Fleet', onSelectEquipment}) {
                         showListHeader={viewMode === 'list'}
                         listHeaderClassName="equipments-list-header-row"
                         forwardedRef={headerRef}
+                        sticky={true}
                     />
-                    <div className="content-container">{content}</div>
+                    <div className="global-content-container content-container">{content}</div>
                     {showAddSheet && <EquipmentAddView plants={plants} onClose={() => setShowAddSheet(false)} onEquipmentAdded={newEquipment => setEquipments([...equipments, newEquipment])}/>}
                     {showCommentModal && <EquipmentCommentModal equipmentId={modalEquipmentId} equipmentNumber={modalEquipmentNumber} onClose={() => setShowCommentModal(false)}/>}
                     {showIssueModal && <EquipmentIssueModal equipmentId={modalEquipmentId} equipmentNumber={modalEquipmentNumber} onClose={() => setShowIssueModal(false)}/>}

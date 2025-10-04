@@ -55,7 +55,7 @@ function PlantsView({title = 'Plants'}) {
     })
 
     return (
-        <div className="dashboard-container plants-view">
+        <div className="global-dashboard-container dashboard-container plants-view">
             {selectedPlant ? (
                 <PlantsDetailView
                     plant={selectedPlant}
@@ -69,7 +69,7 @@ function PlantsView({title = 'Plants'}) {
                         <h1>{title}</h1>
                         <div className="dashboard-actions">
                             <button
-                                className="action-button primary rectangular-button"
+                                className="global-action-button action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}
                                 style={{height: '44px', lineHeight: '1'}}
                             >
@@ -93,19 +93,19 @@ function PlantsView({title = 'Plants'}) {
                             )}
                         </div>
                     </div>
-                    <div className="content-container">
+                    <div className="global-content-container content-container">
                         {isLoading ? (
-                            <div className="loading-container">
+                            <div className="global-loading-container loading-container">
                                 <LoadingScreen message="Loading plants..." inline={true}/>
                             </div>
                         ) : filteredPlants.length === 0 ? (
-                            <div className="no-results-container">
+                            <div className="global-no-results-container no-results-container">
                                 <div className="no-results-icon">
                                     <i className="fas fa-seedling"></i>
                                 </div>
                                 <h3>No Plants Found</h3>
                                 <p>{searchText ? "No plants match your search criteria." : "There are no plants in the system yet."}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Plant
+                                <button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Plant
                                 </button>
                             </div>
                         ) : (

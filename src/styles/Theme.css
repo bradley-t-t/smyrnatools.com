@@ -85,6 +85,9 @@
     --elevation-1: var(--shadow-sm);
     --elevation-2: var(--shadow-md);
     --elevation-3: var(--shadow-lg);
+    --bg-hover: var(--bg-tertiary);
+    --star-unselected: var(--divider);
+    --star-unselected-dark: var(--divider);
 }
 
 .dark-mode {
@@ -158,6 +161,9 @@
     --gradient-accent: linear-gradient(120deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
     --gradient-accent-soft: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.3) 0%, rgba(var(--accent-primary-rgb), 0.08) 100%);
     --gradient-surface: linear-gradient(180deg, var(--card-bg) 0%, var(--bg-secondary) 140%);
+    --bg-hover: var(--bg-tertiary);
+    --star-unselected: var(--divider);
+    --star-unselected-dark: var(--divider);
 }
 
 .accent-red {

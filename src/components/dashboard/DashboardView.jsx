@@ -721,7 +721,7 @@ export default function DashboardView() {
     }, [assetIssueDetails, dashboardPlant, regionPlants, refreshKey])
 
     return (
-        <div className="dashboard-container" data-filtering={isFiltering || undefined}>
+        <div className="global-dashboard-container dashboard-container" data-filtering={isFiltering || undefined}>
             <div className="dashboard-header">
                 <h1>Dashboard</h1>
                 <div className="dashboard-actions">
@@ -761,44 +761,7 @@ export default function DashboardView() {
                     </div>
                 </div>
             </div>
-            <div className="dashboard-hero simple">
-                <div className="hero-left">
-                    <div className="hero-region">
-                        <div className="hero-region-name">{regionDisplayName}</div>
-                        <div
-                            className="hero-region-sub">{dashboardPlant ? `Plant ${dashboardPlant}` : (dashboardRegionCode ? `${regionPlants.length} Plants` : `${allPlantsCount} Plants`)}</div>
-                    </div>
-                    <div className="hero-metrics compact">
-                        <div className="hero-metric">
-                            <div className="metric-label">Fleet</div>
-                            <div className="metric-value">{stats.fleetTotal}{diffBadge(stats.fleetTotal)}</div>
-                            <div className="metric-sub">Total Assets</div>
-                        </div>
-                        <div className="hero-metric">
-                            <div className="metric-label">Asset Allocation</div>
-                            <div className="metric-value accent">{stats.overallAllocationPercent}%</div>
-                            <div className="metric-sub">Overall Asset Allocation</div>
-                        </div>
-                        <div className="hero-metric">
-                            <div className="metric-label">Overdue</div>
-                            <div className="metric-value warn">{stats.overdueTotal}</div>
-                            <div className="metric-sub">Service Overdue</div>
-                        </div>
-                        <div className="hero-metric wide">
-                            <div className="metric-label">Verified</div>
-                            <div className="metric-value accent">{stats.verificationAverage}%</div>
-                            <div className="metric-sub">Overall Verification</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {error && <div className="error-banner">
-                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
-                    <span>{error}</span>
-                    <button className="btn danger ghost" onClick={onRetry}>Retry</button>
-                </div>
-            </div>}
-            <div className="content-container" aria-busy={showSkeleton}>
+            <div className="global-content-container content-container" aria-busy={showSkeleton}>
                 {showSkeleton ? (
                     <div className="dashboard-grid skeleton-grid">{Array.from({length: 8}).map((_, i) => <div
                         className="kpi-card skeleton-card" key={i}>

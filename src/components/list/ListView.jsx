@@ -28,8 +28,8 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
     const [canBypassPlantRestriction, setCanBypassPlantRestriction] = useState(false)
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
     const [selectedIds, setSelectedIds] = useState(new Set())
-    const [sortKey, setSortKey] = useState('')
-    const [sortDir, setSortDir] = useState('asc')
+    const [sortKey, _setSortKey] = useState('')
+    const [sortDir, _setSortDir] = useState('asc')
     const [viewMode, setViewMode] = useState('list')
 
     useEffect(() => {
@@ -162,33 +162,6 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         onSelectItem ? onSelectItem(item.id) : setShowDetailView(true)
     }
 
-    function toggleSort(key) {
-        if (sortKey === key) {
-            setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
-        } else {
-            setSortKey(key)
-            setSortDir('asc')
-        }
-        updateListFilter?.('sortKey', key)
-        updateListFilter?.('sortDir', sortKey === key ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc')
-    }
-
-    function isAllSelected() {
-        if (sortedItems.length === 0) return false
-        for (const it of sortedItems) if (!selectedIds.has(it.id)) return false
-        return true
-    }
-
-    function toggleSelectAll() {
-        if (isAllSelected()) {
-            setSelectedIds(new Set())
-        } else {
-            const next = new Set(selectedIds)
-            sortedItems.forEach(it => next.add(it.id))
-            setSelectedIds(next)
-        }
-    }
-
     function toggleSelect(id) {
         const next = new Set(selectedIds)
         if (next.has(id)) next.delete(id)
@@ -244,21 +217,45 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
         return () => window.removeEventListener('keydown', onKeyDown)
     }, [])
 
-    const headerColumns = statusFilter === 'completed'
-        ? ['5%', '34%', '14%', '12%', '16%', '11%', '8%']
-        : ['5%', '39%', '16%', '14%', '16%', '10%']
+    useEffect(() => {
+        function updateStickyCoverHeight() {
+            const el = headerRef.current
+            const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
+            const root = document.querySelector('.global-dashboard-container.list-view')
+            if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
+        }
+        updateStickyCoverHeight()
+        window.addEventListener('resize', updateStickyCoverHeight)
+        return () => window.removeEventListener('resize', updateStickyCoverHeight)
+    }, [viewMode, searchInput, selectedPlant, statusFilter])
 
+    const derivedVisiblePlants = (() => {
+        if (!Array.isArray(plants)) return []
+        if (canBypassPlantRestriction) return plants
+        if (regionPlantCodes && regionPlantCodes.size > 0) return plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase()))
+        if (userPlantCode) return plants.filter(p => String(p.plant_code || '').trim().toUpperCase() === String(userPlantCode || '').trim().toUpperCase())
+        return plants
+    })()
 
-    const visiblePlants = (regionPlantCodes && regionPlantCodes.size > 0)
-        ? plants.filter(p => regionPlantCodes.has(String(p.plant_code || '').trim().toUpperCase()))
-        : plants
+    const derivedStatusOptions = ['All Status', 'Pending', 'Completed', 'Overdue']
 
-    const statusOptions = ['All Status','Overdue','Pending','Completed']
-    const statusValueForTop = statusFilter ? (statusFilter === 'overdue' ? 'Overdue' : statusFilter === 'pending' ? 'Pending' : statusFilter === 'completed' ? 'Completed' : 'All Status') : 'All Status'
-    const showReset = !!(searchText || selectedPlant || statusFilter)
+    const derivedStatusValueForTop = (() => {
+        if (!statusFilter) return 'All Status'
+        const v = String(statusFilter).toLowerCase()
+        if (v === 'completed') return 'Completed'
+        if (v === 'overdue') return 'Overdue'
+        if (v === 'pending') return 'Pending'
+        return 'All Status'
+    })()
+
+    const derivedListHeaderLabels = statusFilter === 'completed'
+        ? ['', 'Description', 'Plant', 'Deadline', 'Completed', 'Creator', 'Status']
+        : ['', 'Description', 'Plant', 'Deadline', 'Creator', 'Status']
+
+    const derivedShowReset = !!(searchText || selectedPlant || statusFilter)
 
     return (
-        <div className={`dashboard-container list-view${showDetailView && selectedItem ? ' detail-open' : ''}`}>
+        <div className={`global-dashboard-container dashboard-container global-flush-top flush-top list-view${showDetailView && selectedItem ? ' detail-open' : ''}`}>
             {showDetailView && selectedItem ? (
                 <ListDetailView itemId={selectedItem?.id} onClose={() => setShowDetailView(false)}/>
             ) : (
@@ -273,52 +270,35 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                         searchPlaceholder="Search by description or comments..."
                         viewMode={viewMode}
                         onViewModeChange={m => setViewMode(m || 'list')}
-                        plants={visiblePlants.map(p => ({plantCode: p.plant_code, plantName: p.plant_name}))}
+                        plants={derivedVisiblePlants.map(p => ({plantCode: p.plant_code, plantName: p.plant_name}))}
                         regionPlantCodes={regionPlantCodes}
                         selectedPlant={selectedPlant}
                         onSelectedPlantChange={v => { setSelectedPlant(v); updateListFilter?.('selectedPlant', v) }}
-                        statusFilter={statusValueForTop}
-                        statusOptions={statusOptions}
+                        statusFilter={derivedStatusValueForTop}
+                        statusOptions={derivedStatusOptions}
                         onStatusFilterChange={v => { const mapped = v === 'All Status' ? '' : v.toLowerCase(); setStatusFilter(mapped); updateListFilter?.('statusFilter', mapped); if (onStatusFilterChange) onStatusFilterChange(mapped) }}
-                        showReset={showReset}
+                        showReset={derivedShowReset}
                         onReset={() => { setSearchText(''); setSearchInput(''); if (canBypassPlantRestriction) setSelectedPlant(''); else if (userPlantCode) setSelectedPlant(userPlantCode); setStatusFilter(''); resetListFilters?.(); if (!canBypassPlantRestriction && userPlantCode) updateListFilter?.('selectedPlant', userPlantCode); if (onStatusFilterChange) onStatusFilterChange('') }}
-                        showListHeader={false}
+                        listHeaderLabels={viewMode === 'list' ? derivedListHeaderLabels : []}
+                        showListHeader={viewMode === 'list'}
+                        listHeaderClassName="list-list-header-row"
                         forwardedRef={headerRef}
+                        sticky={true}
                     />
-                    {selectedIds.size > 0 && (
-                        <div className="bulk-actions-bar">
-                            <div className="bulk-count"><i className="fas fa-check-square"></i> {selectedIds.size} selected</div>
-                            <div className="bulk-actions">
-                                <button className="bulk-btn" onClick={() => bulkToggleCompletion(true)}><i className="fas fa-check"></i> Complete</button>
-                                <button className="bulk-btn danger" onClick={bulkDelete}><i className="fas fa-trash"></i> Delete</button>
-                            </div>
-                        </div>
-                    )}
-                    {viewMode === 'list' && (
-                        <div className={`list-list-header-row${statusFilter === 'completed' ? ' completed' : ''}${selectedIds.size > 0 ? ' stacked' : ''}`} style={{gridTemplateColumns: headerColumns.join(' ')}}>
-                            <div><input type="checkbox" aria-label="Select all" checked={isAllSelected()} onChange={toggleSelectAll}/></div>
-                            <div role="button" onClick={() => toggleSort('description')}>Description {sortKey === 'description' && (<i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>
-                            <div role="button" onClick={() => toggleSort('plant')}>Plant {sortKey === 'plant' && (<i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>
-                            <div role="button" onClick={() => toggleSort('deadline')}>Deadline {sortKey === 'deadline' && (<i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>
-                            {statusFilter === 'completed' && <div role="button" onClick={() => toggleSort('completed_at')}>Completed {sortKey === 'completed_at' && (<i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>}
-                            <div role="button" onClick={() => toggleSort('creator')}>Created By {sortKey === 'creator' && (<i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>
-                            <div role="button" onClick={() => toggleSort('status')}>Status {sortKey === 'status' && (<i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'}`}></i>)}</div>
-                        </div>
-                    )}
-                    <div className="content-container">
+                    <div className="global-content-container global-view content-container">
                         {isLoading ? (
-                            <div className="loading-container"><LoadingScreen message="Loading list items..." inline={true}/></div>
+                            <div className="global-loading-container loading-container"><LoadingScreen message="Loading list items..." inline={true}/></div>
                         ) : sortedItems.length === 0 ? (
-                            <div className="no-results-container">
+                            <div className="global-no-results-container no-results-container">
                                 <div className="no-results-icon"><i className="fas fa-clipboard-list"></i></div>
                                 <h3>{statusFilter === 'completed' ? 'No Completed Items Found' : 'No List Items Found'}</h3>
                                 <p>{searchText || selectedPlant ? 'No items match your search criteria.' : statusFilter === 'completed' ? 'There are no completed items to show.' : 'There are no items in the list yet.'}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Item</button>
+                                <button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Item</button>
                             </div>
                         ) : viewMode === 'list' ? (
                             <div className="mixers-list-table-container">
                                 <table className="mixers-list-table">
-                                    <colgroup>{headerColumns.map((w,i)=><col key={i} style={{width:w}}/>)}</colgroup>
+                                    <colgroup>{(statusFilter === 'completed' ? ['5%','34%','14%','12%','16%','11%','8%'] : ['5%','39%','16%','14%','16%','10%']).map((w,i)=><col key={i} style={{width:w}}/>)}</colgroup>
                                     <tbody>
                                     {sortedItems.map(item => (
                                         <tr key={item.id} className={`${item.completed ? 'completed' : ''} ${selectedIds.has(item.id) ? 'is-selected' : ''}`} onClick={() => handleSelectItem(item)} style={{cursor:'pointer'}}>
@@ -347,7 +327,16 @@ function ListView({title = 'Tasks List', onSelectItem, onStatusFilterChange}) {
                             </div>
                         )}
                     </div>
-                    {showAddSheet && <ListAddView onClose={() => setShowAddSheet(false)} onItemAdded={() => fetchAllData()} plants={visiblePlants}/>}
+                    {selectedIds.size > 0 && (
+                        <div className="bulk-actions-bar">
+                            <div className="bulk-count"><i className="fas fa-check-square"></i> {selectedIds.size} selected</div>
+                            <div className="bulk-actions">
+                                <button className="bulk-btn" onClick={() => bulkToggleCompletion(true)}><i className="fas fa-check"></i> Complete</button>
+                                <button className="bulk-btn danger" onClick={bulkDelete}><i className="fas fa-trash"></i> Delete</button>
+                            </div>
+                        </div>
+                    )}
+                    {showAddSheet && <ListAddView onClose={() => setShowAddSheet(false)} onItemAdded={() => fetchAllData()} plants={derivedVisiblePlants}/>}
                 </>
             )}
             {showDetailView && !selectedItem && null}

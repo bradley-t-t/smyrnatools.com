@@ -1,28 +1,9 @@
 .add-mixer-modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+
 }
 
 .add-mixer-modal {
-    background-color: var(--bg-primary);
-    border-radius: 18px;
-    box-shadow: var(--shadow-lg);
-    width: 98%;
-    max-width: 650px;
-    max-height: 92vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: slide-up 0.25s cubic-bezier(.4, 1.4, .6, 1) 1;
-    border: 1px solid var(--border-light);
+
 }
 
 .add-mixer-modal.enhanced {
@@ -261,7 +242,7 @@ label {
 
 .error-message {
     color: var(--danger);
-    background-color: var(--danger-bg, rgba(255, 59, 48, 0.1));
+    background-color: var(--danger-bg);
     margin-bottom: 12px;
     padding: 10px 14px;
     border-radius: 8px;
@@ -310,16 +291,5 @@ label {
 
     .form-section {
         padding: 8px 4px 6px 4px;
-    }
-}
-
-@keyframes slide-up {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
     }
 }

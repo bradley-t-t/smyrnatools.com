@@ -56,7 +56,7 @@ function RegionsView({title = 'Regions'}) {
     })
 
     return (
-        <div className="dashboard-container regions-view">
+        <div className="global-dashboard-container dashboard-container regions-view">
             {selectedRegion ? (
                 <RegionsDetailView
                     region={selectedRegion}
@@ -70,7 +70,7 @@ function RegionsView({title = 'Regions'}) {
                         <h1>{title}</h1>
                         <div className="dashboard-actions">
                             <button
-                                className="action-button primary rectangular-button"
+                                className="global-action-button action-button primary rectangular-button"
                                 onClick={() => setShowAddSheet(true)}
                                 style={{height: '44px', lineHeight: '1'}}
                             >
@@ -94,19 +94,19 @@ function RegionsView({title = 'Regions'}) {
                             )}
                         </div>
                     </div>
-                    <div className="content-container">
+                    <div className="global-content-container content-container">
                         {isLoading ? (
-                            <div className="loading-container">
+                            <div className="global-loading-container loading-container">
                                 <LoadingScreen message="Loading regions..." inline={true}/>
                             </div>
                         ) : filteredRegions.length === 0 ? (
-                            <div className="no-results-container">
+                            <div className="global-no-results-container no-results-container">
                                 <div className="no-results-icon">
                                     <i className="fas fa-globe"></i>
                                 </div>
                                 <h3>No Regions Found</h3>
                                 <p>{searchText ? "No regions match your search criteria." : "There are no regions in the system yet."}</p>
-                                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Region
+                                <button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Region
                                 </button>
                             </div>
                         ) : (

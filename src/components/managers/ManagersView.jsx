@@ -163,7 +163,7 @@ function ManagersView({title = 'Managers', onSelectManager}) {
     const showReset = (searchText || selectedPlant || roleFilter)
 
     return (
-        <div className={`dashboard-container managers-view${showDetailView && selectedManager ? ' detail-open' : ''}`}>
+        <div className={`global-dashboard-container dashboard-container global-flush-top flush-top managers-view${showDetailView && selectedManager ? ' detail-open' : ''}`}>
             {showDetailView && selectedManager ? (
                 <ManagerDetailView managerId={selectedManager.id} onClose={() => { setShowDetailView(false); fetchManagers() }}/>
             ) : (
@@ -191,18 +191,19 @@ function ManagersView({title = 'Managers', onSelectManager}) {
                         showListHeader={viewMode === 'list'}
                         listHeaderClassName="managers-list-header-row"
                         forwardedRef={headerRef}
+                        sticky={true}
                     />
-                    <div className="content-container">
+                    <div className="global-content-container content-container">
                         {isLoading ? (
-                            <div className="loading-container"><LoadingScreen message="Loading managers..." inline={true}/></div>
+                            <div className="global-loading-container loading-container"><LoadingScreen message="Loading managers..." inline={true}/></div>
                         ) : filteredManagers.length === 0 ? (
-                            <div className="no-results-container">
+                            <div className="global-no-results-container no-results-container">
                                 <div className="no-results-icon"><i className="fas fa-user-tie"></i></div>
                                 <h3>No Managers Found</h3>
                                 <p>{searchText || selectedPlant || roleFilter ? "No managers match your search criteria." : "There are no managers in the system yet."}</p>
                             </div>
                         ) : viewMode === 'grid' ? (
-                            <div className={`managers-grid ${searchText ? 'search-results' : ''}`}>
+                            <div className={`global-grid managers-grid ${searchText ? 'search-results' : ''}`}>
                                 {filteredManagers.map(manager => (
                                     <ManagerCard key={manager.id} manager={manager} plantName={getPlantName(manager.plantCode)} onSelect={() => handleSelectManager(manager)}/>
                                 ))}

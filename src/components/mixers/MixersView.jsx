@@ -292,26 +292,28 @@ function MixersView({title = 'Mixer Fleet', onSelectMixer}) {
     const content = useMemo(() => {
         if (isLoading || isRegionLoading) {
             return (
-                <div className="loading-container">
+                <div className="global-loading-container loading-container">
                     <LoadingScreen message="Loading mixers..." inline={true}/>
                 </div>
             )
         }
         if (filteredMixers.length === 0) {
             return (
-                <div className="no-results-container">
+                <div className="global-no-results-container no-results-container">
                     <div className="no-results-icon">
                         <i className="fas fa-truck-loading"></i>
                     </div>
                     <h3>No Mixers Found</h3>
                     <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? "No mixers match your search criteria." : "There are no mixers in the system yet."}</p>
-                    <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Mixer</button>
+                    <button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add
+                        Mixer
+                    </button>
                 </div>
             )
         }
         if (viewMode === 'grid') {
             return (
-                <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
+                <div className={`global-grid mixers-grid ${searchText ? 'search-results' : ''}`}>
                     {filteredMixers.map(mixer => (
                         <MixerCard
                             key={mixer.id}
@@ -448,9 +450,10 @@ function MixersView({title = 'Mixer Fleet', onSelectMixer}) {
         function updateStickyCoverHeight() {
             const el = headerRef.current
             const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
-            const root = document.querySelector('.dashboard-container.mixers-view')
+            const root = document.querySelector('.global-dashboard-container.mixers-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
+
         updateStickyCoverHeight()
         window.addEventListener('resize', updateStickyCoverHeight)
         return () => window.removeEventListener('resize', updateStickyCoverHeight)
@@ -459,14 +462,16 @@ function MixersView({title = 'Mixer Fleet', onSelectMixer}) {
     const showReset = (searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses'))
 
     return (
-        <div className={`dashboard-container mixers-view${selectedMixer ? ' detail-open' : ''}`}>
+        <div
+            className={`global-dashboard-container dashboard-container global-flush-top flush-top mixers-view${selectedMixer ? ' detail-open' : ''}`}>
             {selectedMixer ? (
                 <MixerDetailView mixerId={selectedMixer} onClose={() => setSelectedMixer(null)}/>
             ) : (
                 <>
                     {canShowUnassignedOverlay && (
-                        <div className="operators-availability-overlay">
-                            {unassignedActiveOperatorsCount} active operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned
+                        <div className="global-availability-overlay operators-availability-overlay">
+                            {unassignedActiveOperatorsCount} active
+                            operator{unassignedActiveOperatorsCount !== 1 ? 's' : ''} unassigned
                         </div>
                     )}
                     <TopSection
@@ -474,29 +479,52 @@ function MixersView({title = 'Mixer Fleet', onSelectMixer}) {
                         addButtonLabel="Add Mixer"
                         onAddClick={() => setShowAddSheet(true)}
                         searchInput={searchInput}
-                        onSearchInputChange={(v) => { setSearchInput(v); debouncedSetSearchText(v) }}
-                        onClearSearch={() => { setSearchInput(''); debouncedSetSearchText('') }}
+                        onSearchInputChange={(v) => {
+                            setSearchInput(v);
+                            debouncedSetSearchText(v)
+                        }}
+                        onClearSearch={() => {
+                            setSearchInput('');
+                            debouncedSetSearchText('')
+                        }}
                         searchPlaceholder="Search by truck or operator..."
                         viewMode={viewMode}
                         onViewModeChange={handleViewModeChange}
                         plants={plants}
                         regionPlantCodes={regionPlantCodes}
                         selectedPlant={selectedPlant}
-                        onSelectedPlantChange={(v) => { setSelectedPlant(v); updateMixerFilter('selectedPlant', v) }}
+                        onSelectedPlantChange={(v) => {
+                            setSelectedPlant(v);
+                            updateMixerFilter('selectedPlant', v)
+                        }}
                         statusFilter={statusFilter}
                         statusOptions={filterOptions}
-                        onStatusFilterChange={(v) => { setStatusFilter(v); updateMixerFilter('statusFilter', v) }}
+                        onStatusFilterChange={(v) => {
+                            setStatusFilter(v);
+                            updateMixerFilter('statusFilter', v)
+                        }}
                         showReset={showReset}
-                        onReset={() => { setSearchText(''); setSearchInput(''); setSelectedPlant(''); setStatusFilter(''); resetMixerFilters(); setViewMode(viewMode) }}
-                        listHeaderLabels={['Plant','Truck #','Status','Operator','Cleanliness','VIN','Verified','More']}
+                        onReset={() => {
+                            setSearchText('');
+                            setSearchInput('');
+                            setSelectedPlant('');
+                            setStatusFilter('');
+                            resetMixerFilters();
+                            setViewMode(viewMode)
+                        }}
+                        listHeaderLabels={['Plant', 'Truck #', 'Status', 'Operator', 'Cleanliness', 'VIN', 'Verified', 'More']}
                         showListHeader={viewMode === 'list'}
                         listHeaderClassName="mixers-list-header-row"
                         forwardedRef={headerRef}
                     />
-                    <div className="content-container">{content}</div>
-                    {showAddSheet && <MixerAddView plants={plants} operators={operators} onClose={() => setShowAddSheet(false)} onMixerAdded={newMixer => setMixers([...mixers, newMixer])}/>}
-                    {showCommentModal && <MixerCommentModal mixerId={modalMixerId} mixerNumber={modalMixerNumber} onClose={() => setShowCommentModal(false)}/>}
-                    {showIssueModal && <MixerIssueModal mixerId={modalMixerId} mixerNumber={modalMixerNumber} onClose={() => setShowIssueModal(false)}/>}
+                    <div className="global-content-container global-view content-container">{content}</div>
+                    {showAddSheet &&
+                        <MixerAddView plants={plants} operators={operators} onClose={() => setShowAddSheet(false)}
+                                      onMixerAdded={newMixer => setMixers([...mixers, newMixer])}/>}
+                    {showCommentModal && <MixerCommentModal mixerId={modalMixerId} mixerNumber={modalMixerNumber}
+                                                            onClose={() => setShowCommentModal(false)}/>}
+                    {showIssueModal && <MixerIssueModal mixerId={modalMixerId} mixerNumber={modalMixerNumber}
+                                                        onClose={() => setShowIssueModal(false)}/>}
                 </>
             )}
         </div>

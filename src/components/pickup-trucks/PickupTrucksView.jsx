@@ -107,7 +107,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
         function updateStickyCoverHeight() {
             const el = headerRef.current
             const h = el ? Math.ceil(el.getBoundingClientRect().height) : 0
-            const root = document.querySelector('.dashboard-container.pickup-trucks-view')
+            const root = document.querySelector('.global-dashboard-container.pickup-trucks-view')
             if (root && h) root.style.setProperty('--sticky-cover-height', h + 'px')
         }
         updateStickyCoverHeight()
@@ -159,17 +159,17 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
     }, [pickups])
 
     const content = useMemo(() => {
-        if (isLoading) return <div className="loading-container"><LoadingScreen message="Loading pickup trucks..." inline={true}/></div>
+        if (isLoading) return <div className="global-loading-container loading-container"><LoadingScreen message="Loading pickup trucks..." inline={true}/></div>
         if (filtered.length === 0) return (
-            <div className="no-results-container">
+            <div className="global-no-results-container no-results-container">
                 <div className="no-results-icon"><i className="fas fa-truck-pickup"></i></div>
                 <h3>No Pickup Trucks Found</h3>
                 <p>{searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses') ? 'No pickups match your search criteria.' : 'There are no pickup trucks in the system yet.'}</p>
-                <button className="primary-button" onClick={() => setShowAddSheet(true)}>Add Pickup Truck</button>
+                <button className="global-primary-button primary-button" onClick={() => setShowAddSheet(true)}>Add Pickup Truck</button>
             </div>
         )
         if (viewMode === 'grid') return (
-            <div className={`mixers-grid ${searchText ? 'search-results' : ''}`}>
+            <div className={`global-grid mixers-grid ${searchText ? 'search-results' : ''}`}>
                 {filtered.map(p => {
                     const vinKey = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
                     const assignedKey = String(p.assigned || '').trim().toLowerCase()
@@ -217,7 +217,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
     const showReset = (searchText || selectedPlant || (statusFilter && statusFilter !== 'All Statuses'))
 
     return (
-        <div className={`dashboard-container pickup-trucks-view${selectedId ? ' detail-open' : ''}`}>
+        <div className={`global-dashboard-container dashboard-container global-flush-top flush-top pickup-trucks-view${selectedId ? ' detail-open' : ''}`}>
             {selectedId ? (
                 <PickupTrucksDetailView pickupId={selectedId} onClose={() => { setSelectedId(null); fetchAllPickups() }}/>
             ) : (
@@ -246,7 +246,7 @@ function PickupTrucksView({title = 'Pickup Trucks'}) {
                         listHeaderClassName="mixers-list-header-row pickup-trucks-columns"
                         forwardedRef={headerRef}
                     />
-                    <div className="content-container">{content}</div>
+                    <div className="global-content-container content-container">{content}</div>
                     {showAddSheet && <PickupTrucksAddView onClose={() => setShowAddSheet(false)} onAdded={newItem => setPickups([...pickups, newItem])}/>}
                 </>
             )}
